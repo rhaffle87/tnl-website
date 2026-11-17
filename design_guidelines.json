@@ -1,0 +1,341 @@
+{
+  "project_name": "TNL Studio — Telecommunication Network Laboratory ITS Surabaya",
+  "app_type": "hybrid_fullstack",
+  "archetype": "ARCHETYPE 1: ORGANIC & TECHNICAL EARTHY (Precision Engineering + Academic Prestige)",
+  "context": "Public academic laboratory website & recruitment portal + Custom block-based CMS (TNL Studio) for student lab assistants at Department of Electrical Engineering, ITS Surabaya (Gedung B-301)",
+  "locale_support": {
+    "default_locale": "id",
+    "supported_locales": ["id", "en"],
+    "date_format": "DD MMMM YYYY (e.g. 24 Agustus 2026)",
+    "currency_format": "Rp (IDR)",
+    "phone_country_code": "+62"
+  },
+  "colors": {
+    "brand_tokens": {
+      "black": "#111518",
+      "tan": "#a8977b",
+      "tan_dark_for_light_bg": "#7f715c",
+      "dark_green": "#43594A",
+      "dark_green_hover": "#35483b",
+      "surface": "#f4f4f5",
+      "border": "#eaeaec",
+      "body_text": "#3f4245",
+      "white": "#ffffff"
+    },
+    "surfaces": [
+      {
+        "name": "page",
+        "kind": "solid",
+        "bg": "#f4f4f5",
+        "on_bg": "#111518",
+        "on_bg_muted": "#3f4245",
+        "roles": {
+          "link": "#43594A",
+          "accent_label": "#7f715c",
+          "error": "#b91c1c",
+          "success": "#2e7d32"
+        }
+      },
+      {
+        "name": "card_white",
+        "kind": "solid",
+        "bg": "#ffffff",
+        "on_bg": "#111518",
+        "on_bg_muted": "#3f4245",
+        "roles": {
+          "link": "#43594A",
+          "accent_label": "#7f715c",
+          "border_rule": "#eaeaec",
+          "accent_border": "#a8977b"
+        }
+      },
+      {
+        "name": "hero_dark_gradient",
+        "kind": "gradient",
+        "contrast_against": "#111518",
+        "guarantee": "scrim: linear-gradient(135deg, #111518 0%, #1c2720 50%, #43594A 100%)",
+        "on_bg": "#ffffff",
+        "on_bg_muted": "#eaeaec",
+        "roles": {
+          "accent_numeral": "#a8977b",
+          "accent_badge": "#a8977b",
+          "link": "#a8977b",
+          "error": "#fca5a5",
+          "success": "#86efac"
+        }
+      },
+      {
+        "name": "header_sticky",
+        "kind": "glass",
+        "contrast_against": "#ffffff",
+        "guarantee": "backdrop-blur-xl bg-white/95 border-b border-[#eaeaec] shadow-xs",
+        "on_bg": "#111518",
+        "on_bg_muted": "#3f4245",
+        "roles": {
+          "link": "#111518",
+          "link_hover": "#43594A",
+          "active_indicator": "#43594A"
+        }
+      },
+      {
+        "name": "footer_dark",
+        "kind": "solid",
+        "bg": "#111518",
+        "on_bg": "#ffffff",
+        "on_bg_muted": "#a8977b",
+        "roles": {
+          "link": "#ffffff",
+          "link_hover": "#a8977b",
+          "copyright": "#7f715c"
+        }
+      },
+      {
+        "name": "admin_panel_sidebar",
+        "kind": "solid",
+        "bg": "#111518",
+        "on_bg": "#ffffff",
+        "on_bg_muted": "#a8977b",
+        "roles": {
+          "active_item": "#43594A",
+          "active_text": "#ffffff",
+          "badge": "#a8977b"
+        }
+      },
+      {
+        "name": "admin_content_surface",
+        "kind": "solid",
+        "bg": "#f4f4f5",
+        "on_bg": "#111518",
+        "on_bg_muted": "#3f4245",
+        "roles": {
+          "card_bg": "#ffffff",
+          "border": "#eaeaec",
+          "primary_action": "#43594A"
+        }
+      },
+      {
+        "name": "role_badge_coordinator",
+        "kind": "solid",
+        "bg": "#43594A",
+        "on_bg": "#ffffff",
+        "on_bg_muted": "#eaeaec"
+      },
+      {
+        "name": "role_badge_head",
+        "kind": "solid",
+        "bg": "#7f715c",
+        "on_bg": "#ffffff",
+        "on_bg_muted": "#f4f4f5"
+      },
+      {
+        "name": "role_badge_staff",
+        "kind": "solid",
+        "bg": "#eaeaec",
+        "on_bg": "#111518",
+        "on_bg_muted": "#3f4245"
+      }
+    ],
+    "accent": "#43594A",
+    "on_accent": "#ffffff",
+    "secondary_accent": "#a8977b",
+    "on_secondary_accent": "#111518"
+  },
+  "typography": {
+    "font_family_primary": "Poppins, sans-serif",
+    "font_family_quote": "Georgia, serif",
+    "font_weights": {
+      "headings": 700,
+      "navigation": 500,
+      "body": 400,
+      "quote": 600
+    },
+    "scale_px": {
+      "display": 60,
+      "h1": 40,
+      "h2": 35,
+      "h3": 30,
+      "h4": 25,
+      "h5": 20,
+      "h6": 16,
+      "body": 16,
+      "caption": 14
+    },
+    "line_heights": {
+      "body": "1.65",
+      "heading": "1.2"
+    },
+    "responsive_hero_title": {
+      "desktop": "text-[60px] leading-[1.15]",
+      "tablet": "text-[40px] leading-[1.2]",
+      "mobile": "text-[35px] leading-[1.2]"
+    }
+  },
+  "layout_and_spacing": {
+    "container_max_width": "max-w-[1290px] mx-auto px-4 sm:px-6 lg:px-8",
+    "section_spacing": "py-[60px] md:py-[60px] py-[50px]",
+    "card_styling": "rounded-[15px] bg-white border border-[#eaeaec] shadow-[0_20px_80px_rgba(193,199,212,0.25)] p-6 sm:p-8 transition-transform duration-200 hover:-translate-y-1",
+    "button_styling": "rounded-[6px] min-h-[50px] px-6 font-medium inline-flex items-center justify-center transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#43594A] focus:ring-offset-2",
+    "input_styling": "h-[50px] rounded-[6px] border border-[#eaeaec] bg-white px-4 text-base text-[#111518] focus:border-[#43594A] focus:ring-2 focus:ring-[#a8977b] focus:outline-none",
+    "section_heading_rule": "flex items-center gap-3 mb-8 sm:mb-10; Left accent bar: w-1.5 h-8 bg-[#43594A] rounded-full; optional tan count chip: px-2.5 py-0.5 text-xs font-bold bg-[#a8977b]/15 text-[#7f715c] rounded-full",
+    "breakpoints": {
+      "tablet": "1024px",
+      "mobile": "767px"
+    }
+  },
+  "entry_surfaces": {
+    "/": "split hero with B-301 room badge, accent title, intro copy and dual CTAs on dark gradient left, live server rack image right",
+    "/member": "Head of Laboratory featured banner in dark gradient with Scholar/SINTA badges, followed by 5-col faculty and batch-tabbed assistant directory",
+    "/activity": "split activity overview with R&D project clusters, practicum modules, and alternating assistant life timeline",
+    "/news": "three-column featured article grid with category filter tabs and search bar",
+    "/contact": "split contact layout with icon-tile laboratory info (Gedung B-301 ITS) left, interactive inquiry form right",
+    "/publications": "indexed research repository table with filter by year, track (5G/6G, IoT, SDN, Cloud), and direct Scopus/PDF download links",
+    "/admin/login": "branded split login — TNL Studio maintainer positioning on dark green gradient left, secure auth form on white card right",
+    "/admin": "dense command-center CMS dashboard with quick stats, page builder workbench, media manager, and event registrar pipeline"
+  },
+  "public_routes_structure": [
+    {
+      "route": "/",
+      "name": "Home",
+      "sections": [
+        "Announcement popup (dismissible modal/banner for urgent lab recruitment/events)",
+        "Sticky white navigation with ITS logo, Lab badge, menu dropdowns, language switch (EN/ID), 'Join Us' CTA",
+        "Hero section: 'B-301 Gedung B EE' badge, main heading with tan accent word, 2 CTAs ('Explore Research', 'Join Assistant Recruitment'), telecommunication lab server rack image",
+        "Live stats counter strip: Lecturers, Active Assistants, Research Tracks, B-301 Lab Room Capacity",
+        "About TNL section: Left-accent heading + 4 icon-tile grid (Network Virtualization, 5G/6G Testbed, IoT & Smart Systems, Cloud Networking)",
+        "Research Focus cards: Numbered cards '01' to '05' with left tan accent border + dark gradient 'See all research' link card",
+        "Fields of Study interactive carousel with navigation arrows and dot indicators",
+        "Trio of Quick-Link action cards: Practicum Modules, Lab Assistant Recruitment, Industry Training",
+        "Latest News & Research Highlights: 3-column card grid with date chips and read-more triggers",
+        "Partner & Accreditation Logo Strip: ITS Surabaya, IEEE Communications Society, Telkom Indonesia, APJII, Kominfo",
+        "Footer on deep black (#111518) with 4 columns (About, Navigation, Research Tracks, Contact/Location) + bottom copyright and terms"
+      ]
+    },
+    {
+      "route": "/member",
+      "name": "Members & Faculty",
+      "components": [
+        "Dark gradient banner for Head of Laboratory (Dr. Ir. Wirawan, M.Eng. / Prof. Dev) with Scholar, SINTA, Scopus links, email, bio",
+        "5-column faculty & researcher grid with role badges, office info, research domains",
+        "Laboratory Assistant directory with Batch tabs (e.g. Batch 2023, 2024, 2025, 2026)",
+        "Role-based division grouping (Coordinator, Secretary/Treasurer, Network Division, Cloud & IoT Division)",
+        "Distinct role pill badges (dark green for Coordinator, tan-dark for Head, gray for Staff)",
+        "Assistant profile detail modal (HD photo, role, division, expertise tags, public email, CV download link, LinkedIn/GitHub)",
+        "Alumni archive filter toggle"
+      ]
+    },
+    {
+      "route": "/activity",
+      "name": "Laboratory Activities & Projects",
+      "sub_tabs": ["R&D Projects", "Practicum (Praktikum)", "Professional Training", "Assistant Life"],
+      "components": [
+        "R&D Projects: Research cluster cards, active testbeds, live prototype demos, grant sponsors",
+        "Practicum: Academic telecommunication network lab modules, schedule download, assistant contact",
+        "Events & Workshops: Event cards with auto-status badge (Open/Upcoming/Past), poster carousel, date/location tiles, WhatsApp contact person chips, registration auto-closing",
+        "Assistant Activity: Alternating image/text rows with large faded numerals (01, 02, 03), date chip, category chip (Social/Internal/Academic), photo gallery with 1/N counter badge"
+      ]
+    },
+    {
+      "route": "/news",
+      "name": "News & Publications",
+      "components": [
+        "Search input + Category filter chips (Announcements, Research Breakthroughs, Student Achievements, Workshops)",
+        "3-column article cards with thumbnail, publish date, read time, category tag, excerpt",
+        "Article detail page view with breadcrumbs, reading progress bar, author card, related news"
+      ]
+    },
+    {
+      "route": "/contact",
+      "name": "Contact & Visit",
+      "components": [
+        "Icon-box information cards: Room B-301 Gedung B, Department of Electrical Engineering, ITS Sukolilo, Surabaya 60111",
+        "Direct email (elits@ee.its.ac.id / tnl@ee.its.ac.id) and phone extensions",
+        "Interactive Inquiry & Lab Visit Reservation Form with validation",
+        "Interactive campus map guide"
+      ]
+    }
+  ],
+  "admin_cms_architecture": {
+    "system_name": "TNL Studio",
+    "auth_roles": ["Super Admin", "Editor", "Contributor", "Registrar", "Viewer"],
+    "features": [
+      {
+        "name": "Block-Based Page Builder",
+        "concept": "Gutenberg/Notion-style structured blocks with drag-and-drop reordering, duplicate, visibility toggling, draft vs published, and revision restore",
+        "block_library": [
+          "Hero (Gradient/Image + Title + Badges + CTAs)",
+          "Inner-page Hero",
+          "Rich Text (Markdown/HTML editor)",
+          "Image & Banner with Alt text enforcement",
+          "Image Gallery & Carousel",
+          "Video Embed (YouTube/Vimeo/ITS Media)",
+          "Feature Tiles Grid (4 or 6 tiles)",
+          "Stats Counters (Live metric tiles)",
+          "Numbered Research Cards ('01'-'05')",
+          "Alternating Activity Rows with Large Numeral",
+          "Timeline / Milestone Stepper",
+          "Accordion / FAQ",
+          "Tabs Container",
+          "Member Directory Grid",
+          "News Feed (Latest N articles)",
+          "Event Cards with Auto-Registration",
+          "Partner Logos Strip",
+          "CTA Action Band",
+          "Icon-box Contact Panel",
+          "Contact Form & Visit Booking",
+          "Downloadable Documents List",
+          "Custom HTML (Guarded)"
+        ]
+      },
+      {
+        "name": "Theme Token Customizer",
+        "description": "Visual theme editor allowing student lab assistants to preview and adjust brand colors, typography sizes, card radii, and button styles with draft/published state and one-click 'Reset to TNL Default' button"
+      },
+      {
+        "name": "Media Library",
+        "description": "Folder hierarchy, bulk image uploader, mandatory alt text enforcement, 'used-in-N-pages' reference counter, and copy CDN URL"
+      },
+      {
+        "name": "Event & Workshop Registrar",
+        "description": "Pipeline for student registrations, filter by status (Pending/Approved/Attended), bulk email trigger, CSV/Excel export, and QR ticket verification"
+      },
+      {
+        "name": "Lab Maintainer Guide",
+        "description": "Built-in interactive onboarding guide for incoming student lab assistant batches (SOP for updating news, adding members, launching recruitment)"
+      }
+    ]
+  },
+  "media_assets": {
+    "image_urls": {
+      "hero_server_rack": "https://images.unsplash.com/photo-1695668548342-c0c1ad479aee?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTF8MHwxfHNlYXJjaHwxfHx0ZWxlY29tbXVuaWNhdGlvbiUyMG5ldHdvcmslMjBzZXJ2ZXIlMjBlbmdpbmVlcmluZyUyMGxhYnxlbnwwfHx8fDE3OTIyMTkxOTh8MA&ixlib=rb-4.1.0&q=85",
+      "network_switch_cables": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTF8MHwxfHNlYXJjaHwzfHx0ZWxlY29tbXVuaWNhdGlvbiUyMG5ldHdvcmslMjBzZXJ2ZXIlMjBlbmdpbmVlcmluZyUyMGxhYnxlbnwwfHx8fDE3OTIyMTkxOTh8MA&ixlib=rb-4.1.0&q=85",
+      "server_rack_detail": "https://images.unsplash.com/photo-1698668975271-2ba9a323be6b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTF8MHwxfHNlYXJjaHw0fHx0ZWxlY29tbXVuaWNhdGlvbiUyMG5ldHdvcmslMjBzZXJ2ZXIlMjBlbmdpbmVlcmluZyUyMGxhYnxlbnwwfHx8fDE3OTIyMTkxOTh8MA&ixlib=rb-4.1.0&q=85",
+      "student_researchers_lab": "https://images.pexels.com/photos/40117751/pexels-photo-40117751.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "lab_classroom_tables": "https://images.unsplash.com/photo-1705727210721-961cc64a6895?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHwyfHxpbmRvbmVzaWFuJTIwdW5pdmVyc2l0eSUyMHN0dWRlbnQlMjByZXNlYXJjaGVyJTIwbGFib3JhdG9yeXxlbnwwfHx8fDE3OTIyMTkxOTh8MA&ixlib=rb-4.1.0&q=85",
+      "partner_digital_media": "https://images.unsplash.com/photo-1665823989787-f1cf14d56b04?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwxfHx0ZWNobm9sb2d5JTIwY29tcGFueSUyMHBhcnRuZXIlMjBsb2dvJTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc5MjIxOTE5OXww&ixlib=rb-4.1.0&q=85",
+      "partner_nvidia": "https://images.pexels.com/photos/30608594/pexels-photo-30608594.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "partner_openai": "https://images.pexels.com/photos/15863044/pexels-photo-15863044.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    }
+  },
+  "motion_and_interactions": {
+    "transitions": "transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, background-color 0.15s ease",
+    "card_hover": "hover:-translate-y-1 hover:shadow-[0_24px_90px_rgba(193,199,212,0.35)]",
+    "modal_animation": "scale-up with backdrop-blur-md opacity transition",
+    "tabs_indicator": "motion layout transition with soft spring physics",
+    "reduced_motion": "@media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }"
+  },
+  "accessibility_requirements": {
+    "wcag_level": "WCAG AA",
+    "keyboard_navigation": "Visible 2px focus ring on all focusable controls with color #43594A or #a8977b",
+    "alt_text_rule": "Every image element MUST have non-empty, descriptive alt text",
+    "data_testid_convention": "All interactive buttons, inputs, links, tabs, and status cards MUST have kebab-case data-testid tags (e.g. data-testid='hero-join-us-button', data-testid='member-batch-2025-tab')"
+  },
+  "instructions_to_main_agent": [
+    "Template is farm-ts: FastAPI backend + React 19 / Vite / Tailwind v4 frontend at /app/frontend.",
+    "Implement both the public academic marketing website and the custom CMS '/admin' (TNL Studio) seamlessly.",
+    "Ensure the EN/ID bilingual toggle switches UI strings and seeded content without page refresh.",
+    "Ensure all theme tokens (brand black #111518, tan #a8977b, dark green #43594A, surface #f4f4f5, border #eaeaec) are defined in index.css and accessible dynamically.",
+    "Deliver the block-based page builder in the admin dashboard with functional drag, reorder, visibility toggle, and live preview.",
+    "Include pre-seeded realistic data for ITS Electrical Engineering TNL: Lab Head (Dr. Wirawan / Prof. Dev), 5 faculty lecturers, 12 active student assistants across batches 2024-2026, research tracks (5G/6G, SDN, IoT, Cloud), practicum modules, and workshop events with live registration counters.",
+    "Always maintain WCAG AA contrast by using #7f715c for small tan text on light backgrounds and #a8977b on dark backgrounds."
+  ]
+}

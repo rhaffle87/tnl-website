@@ -1,0 +1,63 @@
+# Clean-clone bring-up:  docker compose up --build
+# Then seed:             docker compose exec backend python seed.py --reset
+# Admin sign-in:         http://localhost:3000/admin/login  (see README)
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      MONGO_URL: mongodb://mongodb:27017
+      DB_NAME: ${DB_NAME:-tnl}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:3000}
+      APP_URL: ${PUBLIC_SITE_URL:-http://localhost:3000}
+      EMERGENT_LLM_KEY: ${EMERGENT_LLM_KEY:-}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      MEDIA_DIR: /data/media
+      GOOGLE_ALLOWED_DOMAINS: ${GOOGLE_ALLOWED_DOMAINS:-its.ac.id,student.its.ac.id}
+      GOOGLE_ALLOWED_EMAILS: ${GOOGLE_ALLOWED_EMAILS:-}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@its.ac.id}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-ChangeMe2026!}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-TNL Studio <noreply@its.ac.id>}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+    volumes:
+      - media-data:/data/media
+    ports:
+      - "8001:8001"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  mongo-data:
+  media-data:

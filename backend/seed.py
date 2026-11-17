@@ -1,0 +1,1040 @@
+"""Idempotent seed for TNL Studio — real content from the current lab site.
+
+Run:  cd /app/backend && python seed.py
+      cd /app/backend && python seed.py --reset    (drop app collections first)
+
+Unverified material (R&D clusters, testbeds, hero statistics, funder claims) is
+seeded as DRAFTS flagged "TODO: verify" — never published, never presented as fact.
+Never seeds lorem ipsum, fake phone numbers or copied social links.
+"""
+
+import asyncio
+import os
+import shutil
+import sys
+from datetime import datetime, timedelta, timezone
+from uuid import uuid4
+
+import httpx
+
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+
+from lib.auth import hash_password  # noqa: E402
+from lib.db import db, ensure_indexes  # noqa: E402
+from models.content import (  # noqa: E402
+    Activity, Event, Member, Partner, Post, PracticumModule, Project, Publication,
+)
+from models.core import SettingsDoc, ThemeTokens  # noqa: E402
+
+NOW = datetime.now(timezone.utc)
+TODO = "TODO: verify"
+
+ABOUT_EN = (
+    "The Telecommunication Network Laboratory (TNL) is a teaching and research laboratory in the "
+    "Department of Electrical Engineering, Institut Teknologi Sepuluh Nopember, based in Room B-301 "
+    "of Building B. The laboratory supports undergraduate practicum in telecommunication networks, "
+    "hosts applied research in network engineering and the Internet of Things, and runs professional "
+    "training for students and industry partners. Day-to-day activities are carried out by lecturers, "
+    "researchers and a team of student laboratory assistants."
+)
+ABOUT_ID = (
+    "Laboratorium Jaringan Telekomunikasi (TNL) merupakan laboratorium pendidikan dan penelitian di "
+    "Departemen Teknik Elektro, Institut Teknologi Sepuluh Nopember, yang berlokasi di Ruang B-301 "
+    "Gedung B. Laboratorium ini mendukung praktikum jaringan telekomunikasi untuk mahasiswa sarjana, "
+    "menjadi tempat penelitian terapan di bidang rekayasa jaringan dan Internet of Things, serta "
+    "menyelenggarakan pelatihan profesional bagi mahasiswa dan mitra industri. Kegiatan harian "
+    "dijalankan oleh dosen, peneliti, dan tim asisten laboratorium."
+)
+
+# Head's statement, as published on the official laboratory page (riset.its.ac.id/lab-tnl).
+HEAD_QUOTE_EN = (
+    "Telecommunication Network Laboratory focuses on research and innovation in modern networking, "
+    "encompassing system design, performance optimization, and the implementation of emerging "
+    "technologies to support both industry and academic needs."
+)
+HEAD_QUOTE_ID = (
+    "Laboratorium Jaringan Telekomunikasi berfokus pada penelitian dan inovasi di bidang jaringan modern, "
+    "mencakup perancangan sistem, optimasi unjuk kerja, dan penerapan teknologi terkini untuk mendukung "
+    "kebutuhan industri maupun akademik."
+)
+
+# Lecturers and researchers OF THE LABORATORY, exactly as listed on the lab's own member
+# page (riset.its.ac.id/lab-tnl/member). Institutional e-mail addresses come from the
+# department directory (its.ac.id/telektro). Public staff directory data only.
+# (photo file name on the lab site, used to pull the real portrait)
+LECTURERS = [
+    ("Prof. Eko Setijadi, S.T., M.T., Ph.D", "ekoset@ee.its.ac.id", "Professor Researcher",
+     ["Antenna and propagation", "Wireless communication"], "2.png"),
+    ("Sri Rahayu, S.T., M.Kom.", "s.rahayu@its.ac.id", "Lecturer Researcher",
+     ["Computer networks", "Information systems"], "3.png"),
+    ("Dr.techn. Prasetiyono Hari Mukti, S.T., M.T.", "prasetiyono@its.ac.id", "Lecturer Researcher",
+     ["Internet of Things", "Antenna and propagation"], "4-1.png"),
+]
+
+# Published scholarly output involving laboratory staff. Every entry below is a real,
+# citable record; anything the laboratory still needs to confirm is seeded as a draft instead.
+PUBLICATIONS = [
+    {
+        "title": ("A Comparative Study on the Impact of Antenna Height in Okumura-Hata Propagation "
+                  "Model for VHF/UHF in Mataram City"),
+        "authors": "A. Affandi et al.",
+        "venue": "2026 International Seminar on Intelligent Technology and Its Applications (ISITIA)",
+        "year": 2026, "ptype": "conference",
+        "tags": ["propagation", "VHF/UHF", "Okumura-Hata"],
+        "abstract": ("A comparative study of how antenna height affects path-loss prediction with the "
+                     "Okumura-Hata model for VHF/UHF bands, evaluated for Mataram City."),
+    },
+    {
+        "title": ("IEC104-IDS-2025: Labeled Network Traffic Dataset for Intrusion Detection in "
+                  "IEC 60870-5-104 SCADA Communication"),
+        "authors": "A. Affandi et al.",
+        "venue": "Zenodo (open dataset)",
+        "year": 2026, "ptype": "other",
+        "tags": ["network security", "intrusion detection", "SCADA", "dataset"],
+        "abstract": ("A labelled network traffic dataset for intrusion detection research on "
+                     "IEC 60870-5-104 SCADA communication."),
+    },
+    {
+        "title": "Software Defined Modem for Interconnection of Terrestrial and Underwater Acoustics Network",
+        "authors": "A. Affandi et al.",
+        "venue": "2025 International Seminar on Intelligent Technology and Its Applications (ISITIA)",
+        "year": 2025, "ptype": "conference",
+        "tags": ["software defined radio", "underwater acoustics", "network interconnection"],
+        "abstract": ("Design of a software defined modem that interconnects terrestrial networks with an "
+                     "underwater acoustic network."),
+    },
+    {
+        "title": ("Impact Analysis of Electronic-Based Government System Implementation by the Local "
+                  "Government Through Public Wi-Fi Services"),
+        "authors": "A. Affandi et al.",
+        "venue": "2025 International Seminar on Intelligent Technology and Its Applications (ISITIA)",
+        "year": 2025, "ptype": "conference",
+        "tags": ["public Wi-Fi", "e-government", "digital services"],
+        "abstract": ("An impact analysis of electronic-based government services delivered to citizens "
+                     "through local-government public Wi-Fi."),
+    },
+    {
+        "title": "Decision Support System for Personnel Transfer Recommendation",
+        "authors": "A. Affandi et al.",
+        "venue": "2025 International Seminar on Intelligent Technology and Its Applications (ISITIA)",
+        "year": 2025, "ptype": "conference",
+        "tags": ["decision support", "information systems"],
+        "abstract": "A decision support system that produces personnel transfer recommendations.",
+    },
+    {
+        "title": ("Implementasi Jaringan Internet Desa untuk Mendukung Transformasi Digital di Kantor "
+                  "Desa Sedaeng"),
+        "authors": "P. H. Mukti et al.",
+        "venue": "Sewagati — Jurnal Pengabdian kepada Masyarakat, vol. 9, no. 2, pp. 358–365",
+        "year": 2025, "ptype": "journal",
+        "doi": "10.12962/j26139960.v9i2.2416",
+        "tags": ["community service", "rural connectivity", "digital transformation"],
+        "abstract": ("A community service report on building a village internet network with Mikrotik LHG "
+                     "point-to-point links to support digital transformation at the Sedaeng village office, "
+                     "Tosari, Pasuruan."),
+    },
+    {
+        "title": "Cloud Node Auto-Scaling System Automation Based on Computing Workload Prediction",
+        "authors": "T. F. Arya, R. F. Rachmad, A. Affandi",
+        "venue": "Jurnal RESTI (Rekayasa Sistem dan Teknologi Informasi), vol. 8, no. 5, pp. 597–606",
+        "year": 2024, "ptype": "journal",
+        "doi": "10.29207/resti.v8i5.5928",
+        "tags": ["cloud computing", "auto-scaling", "workload prediction"],
+        "abstract": ("Automation of horizontal cloud node auto-scaling driven by machine-learning predictions "
+                     "of computing workload from CPU and RAM usage."),
+    },
+    {
+        "title": "Assessment of IT Governance in Supporting XYZ University KPIs Using COBIT 2019",
+        "authors": "A. Affandi et al.",
+        "venue": "2024 International Seminar on Intelligent Technology and Its Applications (ISITIA)",
+        "year": 2024, "ptype": "conference",
+        "tags": ["IT governance", "COBIT 2019"],
+        "abstract": ("An assessment of IT governance maturity and its support for university key performance "
+                     "indicators using the COBIT 2019 framework."),
+    },
+    {
+        "title": "The Implementation of ISO 37301:2021 on Compliance Management System",
+        "authors": "A. Affandi et al.",
+        "venue": "IEEE International Conference on Consumer Electronics (ICCE)",
+        "year": 2024, "ptype": "conference",
+        "tags": ["compliance management", "ISO 37301"],
+        "abstract": "A study of implementing an ISO 37301:2021 compliance management system.",
+    },
+]
+
+# Hero highlight tiles, as published on the official laboratory page.
+HERO_HIGHLIGHTS = [
+    ("Advanced Research Equipment", "Perangkat Penelitian Lanjut",
+     "Modern routers, fiber optics, and wireless testbeds",
+     "Router modern, serat optik, dan testbed nirkabel"),
+    ("Hands-On Practicum", "Praktikum Langsung",
+     "Comprehensive networking modules for students",
+     "Modul jaringan yang komprehensif untuk mahasiswa"),
+    ("Research Collaboration", "Kolaborasi Penelitian",
+     "Open to university and industry partnerships",
+     "Terbuka untuk kemitraan universitas dan industri"),
+    ("Certified Training Programs", "Program Pelatihan Bersertifikat",
+     "Accredited short courses and workshops",
+     "Kursus singkat dan lokakarya tersertifikasi"),
+]
+
+FOCUS_AREAS = [
+    {"name": "Research & Development", "name_id": "Penelitian & Pengembangan"},
+    {"name": "Practicum", "name_id": "Praktikum"},
+    {"name": "Training", "name_id": "Pelatihan"},
+    {"name": "Assistant Activity", "name_id": "Kegiatan Asisten"},
+    {"name": "IoT Research Hub", "name_id": "Pusat Riset IoT"},
+]
+
+FOCUS_DETAIL = [
+    ("Research & Development", "Penelitian & Pengembangan",
+     "Applied research in telecommunication networks carried out by lecturers, researchers and student assistants.",
+     "Penelitian terapan di bidang jaringan telekomunikasi yang dilakukan oleh dosen, peneliti, dan asisten."),
+    ("Practicum", "Praktikum",
+     "Undergraduate laboratory practicum in telecommunication networks, supervised by lab assistants in B-301.",
+     "Praktikum jaringan telekomunikasi untuk mahasiswa sarjana, dibimbing oleh asisten laboratorium di B-301."),
+    ("Training", "Pelatihan",
+     "Internal and external training programmes, including vendor-based networking certification preparation.",
+     "Program pelatihan internal dan eksternal, termasuk persiapan sertifikasi jaringan berbasis vendor."),
+    ("Assistant Activity", "Kegiatan Asisten",
+     "Recruitment, internal development and community activities that keep the assistant team running.",
+     "Rekrutmen, pengembangan internal, dan kegiatan kebersamaan yang menjaga keberlangsungan tim asisten."),
+    ("IoT Research Hub", "Pusat Riset IoT",
+     "Internet of Things development work, from sensor nodes to gateway and network integration.",
+     "Pengembangan Internet of Things, mulai dari simpul sensor hingga integrasi gateway dan jaringan."),
+]
+
+ASSISTANT_ACTIVITIES = [
+    ("Open House Laboratory", "Open House Laboratorium", "academic",
+     "An open session introducing the laboratory, its facilities in B-301 and its research focus to students who are considering joining.",
+     "Sesi terbuka yang memperkenalkan laboratorium, fasilitas di B-301, dan fokus penelitiannya kepada mahasiswa yang tertarik bergabung."),
+    ("Open Registration Assistants", "Open Recruitment Asisten", "internal",
+     "The annual recruitment cycle for new laboratory assistants, covering administrative selection, interviews and technical assessment.",
+     "Siklus rekrutmen tahunan untuk asisten laboratorium baru, meliputi seleksi administrasi, wawancara, dan penilaian teknis."),
+    ("Internalisasi & Welcome Party", "Internalisasi & Welcome Party", "internal",
+     "An onboarding programme that welcomes newly accepted assistants and introduces the laboratory's working culture and responsibilities.",
+     "Program pengenalan yang menyambut asisten baru serta memperkenalkan budaya kerja dan tanggung jawab di laboratorium."),
+    ("Bukber TNL", "Bukber TNL", "social",
+     "A shared iftar gathering during Ramadan for current assistants, alumni and lecturers of the laboratory.",
+     "Buka puasa bersama selama Ramadan bagi asisten aktif, alumni, dan dosen laboratorium."),
+    ("Malam Wisuda & Pelepasan Asisten", "Malam Wisuda & Pelepasan Asisten", "social",
+     "A farewell evening held for graduating assistants, marking the handover of responsibilities to the next batch.",
+     "Malam perpisahan bagi asisten yang akan diwisuda, sekaligus menandai serah terima tanggung jawab kepada angkatan berikutnya."),
+    ("Binbarshow", "Binbarshow", "academic",
+     "A showcase session where assistants present the results of their guided development and learning programme.",
+     "Sesi pemaparan hasil program pembinaan dan pembelajaran terbimbing yang dijalani oleh para asisten."),
+    ("Internal Training", "Pelatihan Internal", "internal",
+     "Technical training delivered within the assistant team to build networking and laboratory skills before each practicum period.",
+     "Pelatihan teknis di internal tim asisten untuk membangun keterampilan jaringan dan laboratorium sebelum setiap periode praktikum."),
+    ("External Training", "Pelatihan Eksternal", "academic",
+     "Training opened to students outside the laboratory, delivered by assistants and lecturers of TNL.",
+     "Pelatihan yang dibuka untuk mahasiswa di luar laboratorium, dibawakan oleh asisten dan dosen TNL."),
+]
+
+DIVISIONS = ["Research & Development", "Practicum", "Training", "Media & Information", "Human Resource"]
+# The real 2025/2026 assistant roster, transcribed from the laboratory's own member page
+# (riset.its.ac.id/lab-tnl/member) together with each member's published portrait.
+# (name, photo file, position, position label, division)
+# position drives grouping and ordering on the Member page: coordinator → head → vice → staff.
+ASSISTANTS = [
+    # Senior assistants — board
+    ("Muhammad Rifqi Firmansyah", "4.png", "coordinator", "Coordinator — Lead", None),
+    ("Haykal Ramadhan", "5.png", "coordinator", "Coordinator — Vice", None),
+    ("Nurul Alya Fithri", "6.png", "coordinator", "Secretary", None),
+    ("Najwa Uma Fadhilah", "7.png", "coordinator", "Treasurer", None),
+    # Senior assistants — division leads and vices
+    ("Karissa Maheswari Sasikirana", "8.png", "head", "Academics — Lead", "Academics"),
+    ("Krisnanda Khairul Kusumawardana", "9.png", "vice", "Academics — Vice", "Academics"),
+    ("Safinatun Najah", "11.png", "head", "Event — Lead", "Event"),
+    ("Fikri Fajar Fawwaz", "10.png", "vice", "Event — Vice", "Event"),
+    ("Tine Joeana", "12.png", "head", "Media — Lead", "Media"),
+    ("Juan Farrel Aryasatya", "13.png", "head", "Research — Lead", "Research"),
+    # Junior assistants — staff
+    ("Rafli Alif Ihza Hartono", "14.png", "staff", "Academics — Staff", "Academics"),
+    ("Steffano Asian Budi Setyo", "15.png", "staff", "Academics — Staff", "Academics"),
+    ("Muhammad Zidan Hifzhurrahman", "16.png", "staff", "Academics — Staff", "Academics"),
+    ("Nathanael Tumpal Sianturi", "17.png", "staff", "Academics — Staff", "Academics"),
+    ("Roy Wiranata", "18.png", "staff", "Event — Staff", "Event"),
+    ("Sarah Sofhi Susanty", "19.png", "staff", "Event — Staff", "Event"),
+    ("Lidya Melisa Ardeori Remindauw", "melisa.png", "staff", "Event — Staff", "Event"),
+    ("Muhammad Rizqy Fadhlurrahman", "20.png", "staff", "Media — Staff", "Media"),
+    ("Bulan Nurhaliza", "21.png", "staff", "Media — Staff", "Media"),
+    ("Janice Kayleen Eliana Sembiring Brahmana", "22.png", "staff", "Media — Staff", "Media"),
+    ("Dhika Wahyu Arfian Putra", "23.png", "staff", "Research — Staff", "Research"),
+    ("Rafi Adin Maulvi Nazir Ahmad", "24.png", "staff", "Research — Staff", "Research"),
+    ("Raihan Muzhaffar Athallah", "25.png", "staff", "Research — Staff", "Research"),
+    ("Widya Firdausi Ahla Samariansyah", "26.png", "staff", "Research — Staff", "Research"),
+]
+
+ASSISTANT_BATCH = "2025/2026"
+
+# Source of the real member portraits and of the lab's published copy.
+LAB_SITE_UPLOADS = "https://riset.its.ac.id/lab-tnl/wp-content/uploads/2025/11"
+
+# Illustrative networking photography, used only where the laboratory has not supplied a
+# photo of B-301 yet. Every one of these is captioned as illustrative on the page so no
+# visitor reads them as a picture of the laboratory itself.
+ILLUSTRATIVE = [
+    ("hero-network-rack.jpg",
+     "https://images.unsplash.com/photo-1695668548342-c0c1ad479aee?crop=entropy&cs=srgb&fm=jpg&w=1200&q=80",
+     "Illustrative photo of a network equipment rack — not a photo of Room B-301"),
+    ("fiber-patch-panel.jpg",
+     "https://images.pexels.com/photos/2420212/pexels-photo-2420212.jpeg?auto=compress&cs=tinysrgb&w=1200",
+     "Illustrative photo of fibre optic patch cables on a server rack — not a photo of Room B-301"),
+    ("structured-cabling.jpg",
+     "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?crop=entropy&cs=srgb&fm=jpg&w=1200&q=80",
+     "Illustrative photo of structured network cabling — not a photo of Room B-301"),
+    ("switch-ports.jpg",
+     "https://images.unsplash.com/flagged/photo-1579274216947-86eaa4b00475?crop=entropy&cs=srgb&fm=jpg&w=1200&q=80",
+     "Illustrative photo of switch ports and patch leads — not a photo of Room B-301"),
+]
+
+AVATAR = "/api/media-files/placeholders/avatar.svg"
+
+HOME_BLOCKS = [
+    {"type": "hero", "props": {
+        "badge": "B-301", "badge_id": "B-301",
+        "title_before": "Telecommunication", "title_accent": "Network",
+        "title_after": "Laboratory",
+        "title_before_id": "Laboratorium Jaringan", "title_accent_id": "Telekomunikasi", "title_after_id": "",
+        "intro": ("Teaching, research and training in telecommunication networks at the Department of "
+                  "Electrical Engineering, Institut Teknologi Sepuluh Nopember."),
+        "intro_id": ("Pendidikan, penelitian, dan pelatihan di bidang jaringan telekomunikasi pada "
+                     "Departemen Teknik Elektro, Institut Teknologi Sepuluh Nopember."),
+        "primary_label": "Explore our activities", "primary_label_id": "Lihat kegiatan kami", "primary_url": "/activity",
+        "secondary_label": "Join us", "secondary_label_id": "Gabung bersama kami", "secondary_url": "/activity?tab=training",
+    }},
+    {"type": "feature_tiles", "props": {
+        "tiles": [{"title": e, "title_id": i, "description": de, "description_id": di}
+                  for e, i, de, di in HERO_HIGHLIGHTS],
+    }},
+    {"type": "stats", "props": {"source": "live"}},
+    {"type": "about", "props": {
+        "heading": "About the Laboratory", "heading_id": "Tentang Laboratorium",
+        "body": ABOUT_EN, "body_id": ABOUT_ID,
+        "tiles": [{"name": e, "name_id": i, "description": de, "description_id": di}
+                  for e, i, de, di in FOCUS_DETAIL],
+    }},
+    {"type": "numbered_cards", "props": {
+        "heading": "Focus Areas", "heading_id": "Bidang Fokus",
+        "see_all_label": "See all activities", "see_all_label_id": "Lihat semua kegiatan",
+        "see_all_url": "/activity",
+        "cards": [{"title": e, "title_id": i, "description": de, "description_id": di}
+                  for e, i, de, di in FOCUS_DETAIL],
+    }},
+    {"type": "carousel", "props": {
+        "heading": "Fields of Study", "heading_id": "Bidang Keilmuan",
+        "slides": [{"title": e, "title_id": i, "description": de, "description_id": di}
+                   for e, i, de, di in FOCUS_DETAIL],
+    }},
+    {"type": "quick_links", "props": {
+        "cards": [
+            {"title": "People", "title_id": "Anggota",
+             "description": "Lecturers, researchers and the student assistant team of the laboratory.",
+             "description_id": "Dosen, peneliti, dan tim asisten mahasiswa laboratorium.", "url": "/member"},
+            {"title": "Programs & Activities", "title_id": "Program & Kegiatan",
+             "description": "Research, practicum, training and assistant activities throughout the year.",
+             "description_id": "Penelitian, praktikum, pelatihan, dan kegiatan asisten sepanjang tahun.", "url": "/activity"},
+            {"title": "Join", "title_id": "Bergabung",
+             "description": "Open registrations for training programmes and assistant recruitment.",
+             "description_id": "Pendaftaran terbuka untuk program pelatihan dan rekrutmen asisten.", "url": "/activity?tab=training"},
+        ],
+    }},
+    {"type": "gallery", "props": {
+        "heading": "Inside the laboratory", "heading_id": "Di dalam laboratorium",
+        "note": ("Illustrative networking photography. These are not photographs of Room B-301 — "
+                 "they will be replaced once the laboratory supplies its own photos."),
+        "note_id": ("Foto ilustrasi bidang jaringan. Gambar ini bukan foto Ruang B-301 dan akan diganti "
+                    "setelah laboratorium menyediakan dokumentasi sendiri."),
+        "images": [],
+    }},
+    {"type": "news_feed", "props": {"heading": "Latest News", "heading_id": "Berita Terbaru", "count": 3}},
+    {"type": "partners", "props": {"heading": "Partners", "heading_id": "Mitra"}},
+    {"type": "cta_band", "props": {
+        "title": "Interested in working with the laboratory?",
+        "title_id": "Tertarik bekerja sama dengan laboratorium?",
+        "body": "Get in touch with the Telecommunication Network Laboratory for collaboration, training or a laboratory visit.",
+        "body_id": "Hubungi Laboratorium Jaringan Telekomunikasi untuk kerja sama, pelatihan, atau kunjungan laboratorium.",
+        "button_label": "Contact us", "button_label_id": "Hubungi kami", "button_url": "/contact",
+    }},
+]
+
+
+def inner_hero(title, title_id, desc, desc_id, eyebrow, eyebrow_id):
+    return {"type": "inner_hero", "props": {
+        "title": title, "title_id": title_id, "description": desc, "description_id": desc_id,
+        "eyebrow": eyebrow, "eyebrow_id": eyebrow_id,
+    }}
+
+
+SYSTEM_PAGES = [
+    ("home", "Home", "Beranda", HOME_BLOCKS),
+    ("member", "Member", "Anggota", [
+        inner_hero("Member", "Anggota",
+                   "Lecturers, researchers and student assistants of the Telecommunication Network Laboratory.",
+                   "Dosen, peneliti, dan asisten mahasiswa Laboratorium Jaringan Telekomunikasi.",
+                   "People", "Anggota"),
+        {"type": "member_sections", "props": {"show_head": True, "show_lecturers": True, "show_assistants": True}},
+    ]),
+    ("activity", "Activity", "Kegiatan", [
+        inner_hero("Activity", "Kegiatan",
+                   "Research and development, practicum, training and assistant activities at B-301.",
+                   "Penelitian dan pengembangan, praktikum, pelatihan, serta kegiatan asisten di B-301.",
+                   "Programs", "Program"),
+        {"type": "activity_tabs", "props": {}},
+    ]),
+    ("news", "News", "Berita", [
+        inner_hero("News", "Berita",
+                   "Announcements, activity reports and updates from the laboratory.",
+                   "Pengumuman, laporan kegiatan, dan pembaruan dari laboratorium.",
+                   "Updates", "Pembaruan"),
+        {"type": "news_feed", "props": {"count": 24, "show_filters": True}},
+    ]),
+    ("publications", "Publications", "Publikasi", [
+        inner_hero("Publications", "Publikasi",
+                   "Journal articles, conference papers and other scholarly output from the laboratory.",
+                   "Artikel jurnal, makalah konferensi, dan luaran ilmiah lain dari laboratorium.",
+                   "Research output", "Luaran penelitian"),
+        {"type": "publication_list", "props": {}},
+    ]),
+    ("contact", "Contact", "Kontak", [
+        inner_hero("Contact", "Kontak",
+                   "Reach the Telecommunication Network Laboratory in Room B-301, Building B, ITS Surabaya.",
+                   "Hubungi Laboratorium Jaringan Telekomunikasi di Ruang B-301, Gedung B, ITS Surabaya.",
+                   "Get in touch", "Hubungi kami"),
+        {"type": "contact_panel", "props": {}},
+        {"type": "contact_form", "props": {}},
+        {"type": "map", "props": {"label": "Gedung B, Institut Teknologi Sepuluh Nopember, Surabaya"}},
+    ]),
+    ("terms", "Terms of Use", "Ketentuan Penggunaan", [
+        inner_hero("Terms of Use", "Ketentuan Penggunaan",
+                   "The conditions that apply when using this website.",
+                   "Ketentuan yang berlaku saat menggunakan situs web ini.", "Legal", "Legal"),
+        {"type": "rich_text", "props": {
+            "html": ("<h3>Use of this website</h3><p>This website is published by the Telecommunication Network "
+                     "Laboratory, Department of Electrical Engineering, Institut Teknologi Sepuluh Nopember. "
+                     "Content is provided for information about the laboratory's teaching, research and training "
+                     "activities.</p><h3>Content accuracy</h3><p>Schedules, registration periods and contact "
+                     "details may change. Where information is time-sensitive, please confirm with the laboratory "
+                     "before relying on it.</p><h3>Intellectual property</h3><p>Laboratory names, logos and "
+                     "published material remain the property of the laboratory and the institute. Please request "
+                     "permission before reproducing material from this site.</p>"),
+            "html_id": ("<h3>Penggunaan situs web ini</h3><p>Situs web ini diterbitkan oleh Laboratorium Jaringan "
+                        "Telekomunikasi, Departemen Teknik Elektro, Institut Teknologi Sepuluh Nopember. Konten "
+                        "disediakan sebagai informasi mengenai kegiatan pendidikan, penelitian, dan pelatihan "
+                        "laboratorium.</p><h3>Keakuratan konten</h3><p>Jadwal, periode pendaftaran, dan data "
+                        "kontak dapat berubah. Untuk informasi yang bersifat waktu tertentu, mohon konfirmasi "
+                        "terlebih dahulu kepada laboratorium.</p><h3>Hak kekayaan intelektual</h3><p>Nama, logo, "
+                        "dan materi yang diterbitkan tetap menjadi milik laboratorium dan institut. Mohon meminta "
+                        "izin sebelum menggunakan kembali materi dari situs ini.</p>"),
+        }},
+    ]),
+    ("privacy", "Privacy Policy", "Kebijakan Privasi", [
+        inner_hero("Privacy Policy", "Kebijakan Privasi",
+                   "How the laboratory handles personal data collected through this website.",
+                   "Bagaimana laboratorium mengelola data pribadi yang dikumpulkan melalui situs web ini.",
+                   "Legal", "Legal"),
+        {"type": "rich_text", "props": {
+            "html": ("<h3>What we collect</h3><p>When you register for an event or send a message through the "
+                     "contact form, we collect the details you enter in that form, such as your name, email "
+                     "address, phone number and student number.</p><h3>Why we collect it</h3><p>Registration data "
+                     "is used only to manage your participation in the event you registered for: verifying "
+                     "eligibility, contacting you about the event, recording attendance and issuing certificates. "
+                     "Contact messages are used only to reply to your enquiry.</p><h3>Your rights</h3><p>In line "
+                     "with Indonesia's Personal Data Protection Law (UU PDP), you may ask us to correct, delete or "
+                     "anonymise your data at any time. Registration data is removed or anonymised automatically "
+                     "after the retention period set by the laboratory. Participant lists are never published.</p>"
+                     "<h3>Contact</h3><p>To exercise any of these rights, email the laboratory using the address "
+                     "on the contact page.</p>"),
+            "html_id": ("<h3>Data yang kami kumpulkan</h3><p>Saat Anda mendaftar kegiatan atau mengirim pesan "
+                        "melalui formulir kontak, kami mengumpulkan data yang Anda isikan pada formulir tersebut, "
+                        "seperti nama, alamat email, nomor telepon, dan nomor induk mahasiswa.</p><h3>Tujuan "
+                        "pengumpulan</h3><p>Data pendaftaran hanya digunakan untuk mengelola keikutsertaan Anda "
+                        "pada kegiatan yang Anda daftarkan: verifikasi kelayakan, komunikasi terkait kegiatan, "
+                        "pencatatan kehadiran, dan penerbitan sertifikat. Pesan kontak hanya digunakan untuk "
+                        "menjawab pertanyaan Anda.</p><h3>Hak Anda</h3><p>Sesuai Undang-Undang Pelindungan Data "
+                        "Pribadi (UU PDP), Anda dapat meminta koreksi, penghapusan, atau anonimisasi data kapan "
+                        "saja. Data pendaftaran dihapus atau dianonimkan secara otomatis setelah masa retensi yang "
+                        "ditetapkan laboratorium. Daftar peserta tidak pernah dipublikasikan.</p><h3>Kontak</h3>"
+                        "<p>Untuk menggunakan hak tersebut, kirim email ke laboratorium melalui alamat yang "
+                        "tercantum pada halaman kontak.</p>"),
+        }},
+    ]),
+]
+
+
+async def seed_settings() -> None:
+    doc = SettingsDoc(
+        site_title="Telecommunication Network Laboratory",
+        site_title_id="Laboratorium Jaringan Telekomunikasi",
+        short_name="TNL",
+        focus_areas=FOCUS_AREAS,
+        language_default="id",
+        theme={"draft": ThemeTokens(), "published": ThemeTokens()},
+    ).model_dump()
+    doc["contact"] = {
+        "email": "telconnetlab@gmail.com",
+        "phone": None,
+        "address": "Building B, Room B-301, Department of Electrical Engineering, ITS, Surabaya",
+        "address_id": "Gedung B, Ruang B-301, Departemen Teknik Elektro, ITS, Surabaya",
+        "room": "B-301",
+        "maps_url": "https://www.google.com/maps/search/?api=1&query=Gedung+B+Teknik+Elektro+ITS+Surabaya",
+    }
+    doc["social"] = {"instagram": "https://www.instagram.com/tnllab_its",
+                     "youtube": None, "linkedin": None, "github": None}
+    doc["seo"] = {
+        "title_template": "{title} — Telecommunication Network Laboratory ITS",
+        "default_description": ("Telecommunication Network Laboratory (TNL), Department of Electrical "
+                                "Engineering, Institut Teknologi Sepuluh Nopember — Room B-301, Surabaya."),
+        "og_image_url": None,
+    }
+    doc["announcement"] = {
+        "enabled": True,
+        "title": "Cisco Packet Tracer Training — registration open",
+        "title_id": "Pelatihan Cisco Packet Tracer — pendaftaran dibuka",
+        "body": "An introductory networking training using Cisco Packet Tracer, held in Room B-301.",
+        "body_id": "Pelatihan dasar jaringan menggunakan Cisco Packet Tracer, diadakan di Ruang B-301.",
+        "version": 1,
+    }
+    await db.settings.update_one({"id": "settings"}, {"$set": doc}, upsert=True)
+    print("  settings: site identity, contact, social, announcement")
+
+
+async def seed_admin() -> None:
+    email = (os.environ.get("SEED_ADMIN_EMAIL") or "admin@its.ac.id").strip().lower()
+    password = os.environ.get("SEED_ADMIN_PASSWORD") or "TnlStudio2026!"
+    name = os.environ.get("SEED_ADMIN_NAME") or "TNL Lab Administrator"
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        await db.users.update_one({"email": email}, {"$set": {
+            "role": "super_admin", "active": True, "password_hash": hash_password(password)}})
+        print(f"  users: refreshed Super Admin {email}")
+    else:
+        await db.users.insert_one({
+            "id": str(uuid4()), "name": name, "email": email, "role": "super_admin",
+            "divisions": [], "active": True, "password_hash": hash_password(password),
+            "totp_secret": None, "totp_enabled": False, "invite_token": None,
+            "created_at": NOW, "last_login_at": None,
+        })
+        print(f"  users: Super Admin {email}")
+
+    # Role demonstration accounts, so the rotating assistant team can see each role's view.
+    demos = [
+        ("Media Division Editor", "editor@its.ac.id", "editor", ["media"]),
+        ("Academics Contributor", "contributor@its.ac.id", "contributor", ["academics"]),
+        ("Event Registrar", "registrar@its.ac.id", "registrar", ["event"]),
+        ("Lab Viewer", "viewer@its.ac.id", "viewer", []),
+    ]
+    for dname, demail, drole, ddiv in demos:
+        if not await db.users.find_one({"email": demail}):
+            await db.users.insert_one({
+                "id": str(uuid4()), "name": dname, "email": demail, "role": drole,
+                "divisions": ddiv, "active": True, "password_hash": hash_password("TnlStudio2026!"),
+                "totp_secret": None, "totp_enabled": False, "invite_token": None,
+                "created_at": NOW, "last_login_at": None,
+            })
+    print("  users: 4 role demo accounts (editor/contributor/registrar/viewer)")
+
+
+async def seed_pages(photos: dict[str, str] | None = None) -> None:
+    photos = photos or {}
+    for slug, title, title_id, blocks in SYSTEM_PAGES:
+        built = []
+        for b in blocks:
+            props = dict(b["props"])
+            # Illustrative photography is injected here so the page content itself stays
+            # free of hard-coded media URLs — editors can swap any of it in the CMS.
+            if b["type"] == "hero" and photos.get("hero-network-rack.jpg"):
+                props["image_url"] = photos["hero-network-rack.jpg"]
+                props["image_alt"] = ("Illustrative photo of a network equipment rack — "
+                                      "not a photo of Room B-301")
+                props["image_caption"] = "Illustrative photo — not Room B-301"
+                props["image_caption_id"] = "Foto ilustrasi — bukan Ruang B-301"
+            if b["type"] == "gallery":
+                imgs = [{"url": photos[n], "alt": alt} for n, _, alt in ILLUSTRATIVE if photos.get(n)]
+                if not imgs:
+                    continue
+                props["images"] = imgs
+            built.append({"id": str(uuid4()), "type": b["type"], "props": props, "hidden": False})
+        existing = await db.pages.find_one({"slug": slug})
+        doc = {
+            "id": existing["id"] if existing else str(uuid4()),
+            "slug": slug, "title": title, "title_id": title_id,
+            "blocks": built, "status": "published", "is_system": True,
+            "revisions": [], "needs_review": False, "issues": [],
+            "created_at": existing.get("created_at") if existing else NOW,
+            "updated_at": NOW,
+        }
+        await db.pages.update_one({"slug": slug}, {"$set": doc}, upsert=True)
+    print(f"  pages: {len(SYSTEM_PAGES)} system pages published (block-built)")
+
+
+async def _store_remote_image(url: str, key: str, alt: str, folder: str) -> str | None:
+    """Download a remote image into the media library once, and return its local URL.
+    Returns None (so the caller falls back to the placeholder) if the fetch fails —
+    seeding must never break because an external host is unreachable."""
+    media_dir = os.environ.get("MEDIA_DIR", "/app/backend/media")
+    path = os.path.join(media_dir, key)
+    local_url = f"/api/media-files/{key}"
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    if not os.path.exists(path):
+        bundled = os.path.join(os.path.dirname(__file__), "media", key)
+        if os.path.exists(bundled):
+            shutil.copy2(bundled, path)
+        else:
+            try:
+                async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
+                    res = await client.get(url)
+                if res.status_code != 200 or not res.content:
+                    return None
+                with open(path, "wb") as fh:
+                    fh.write(res.content)
+            except Exception:
+                return None
+    if not await db.media.find_one({"url": local_url}):
+        await db.media.insert_one({
+            "id": str(uuid4()), "filename": os.path.basename(key), "url": local_url, "key": key,
+            "alt": alt, "folder": folder, "kind": "image",
+            "content_type": "image/jpeg" if key.endswith(".jpg") else "image/png",
+            "bytes": os.path.getsize(path), "created_at": NOW, "sizes": {},
+        })
+    return local_url
+
+
+async def seed_illustrative_photos() -> dict[str, str]:
+    """Illustrative networking photography for pages with no B-301 photo yet."""
+    urls: dict[str, str] = {}
+    for name, remote, alt in ILLUSTRATIVE:
+        local = await _store_remote_image(remote, f"illustrative/{name}", alt, "illustrative")
+        if local:
+            urls[name] = local
+    print(f"  media: {len(urls)}/{len(ILLUSTRATIVE)} illustrative networking photos (captioned, not B-301)")
+    return urls
+
+
+async def seed_members() -> None:
+    await db.members.delete_many({})
+    members: list[dict] = []
+    HEAD_PHOTO = await _store_remote_image(
+        f"{LAB_SITE_UPLOADS}/1-1.png", "members/1-1.png",
+        "Portrait of Dr. Ir. Achmad Affandi, DEA., Head of Laboratory", "members",
+    )
+
+    members.append(Member(
+        name="Achmad Affandi", title_prefix="Dr. Ir.", role="lecturer",
+        position="Head of Laboratory", division=None, is_head=True,
+        bio=("Head of the Telecommunication Network Laboratory since March 2025 and a senior lecturer in the "
+             "Department of Electrical Engineering, Institut Teknologi Sepuluh Nopember. He teaches wireless "
+             "communications, ICT infrastructure and IT service management, and leads research and training "
+             "within the laboratory."),
+        bio_id=("Kepala Laboratorium Jaringan Telekomunikasi sejak Maret 2025 sekaligus dosen senior Departemen "
+                "Teknik Elektro, Institut Teknologi Sepuluh Nopember. Beliau mengampu komunikasi nirkabel, "
+                "infrastruktur TIK, dan manajemen layanan TI, serta memimpin kegiatan penelitian dan pelatihan "
+                "di laboratorium."),
+        quote=HEAD_QUOTE_EN, quote_id=HEAD_QUOTE_ID,
+        email_public="affandi@its.ac.id",
+        photo_url=HEAD_PHOTO or AVATAR,
+        photo_alt="Portrait of Dr. Ir. Achmad Affandi, DEA., Head of Laboratory",
+        expertise=["Wireless communications", "ICT infrastructure", "IT service management",
+                   "Telecommunication networks"],
+        order=0, status="active", published=True,
+    ).model_dump())
+    members[-1]["name"] = "Dr. Ir. Achmad Affandi, DEA."
+
+    for i, (full_name, email, position_label, expertise, photo_file) in enumerate(LECTURERS, start=1):
+        photo = await _store_remote_image(
+            f"{LAB_SITE_UPLOADS}/{photo_file}", f"members/{photo_file}",
+            f"Portrait of {full_name}", "members",
+        )
+        m = Member(
+            name=full_name, role="lecturer", position="Lecturer", email_public=email,
+            bio=("Lecturer and researcher of the Telecommunication Network Laboratory, Department of "
+                 "Electrical Engineering, Institut Teknologi Sepuluh Nopember."),
+            bio_id=("Dosen dan peneliti Laboratorium Jaringan Telekomunikasi, Departemen Teknik Elektro, "
+                    "Institut Teknologi Sepuluh Nopember."),
+            photo_url=photo or AVATAR,
+            photo_alt=f"Portrait of {full_name}" if photo else f"Portrait placeholder for {full_name}",
+            expertise=expertise, order=i, status="active", published=True,
+        ).model_dump()
+        m["position_label"] = position_label
+        members.append(m)
+
+    # The real 2025/2026 assistant roster, with each member's published portrait.
+    # Social fields stay EMPTY — the lab site publishes none, so none are invented.
+    order = 10
+    for name, photo_file, position, label, division in ASSISTANTS:
+        photo = await _store_remote_image(
+            f"{LAB_SITE_UPLOADS}/{photo_file}", f"members/{photo_file}",
+            f"Portrait of {name}, {label}", "members",
+        )
+        members.append(Member(
+            name=name, role="assistant", position=position, division=division,
+            batch=ASSISTANT_BATCH,
+            bio=f"{label} of the Telecommunication Network Laboratory assistant team, {ASSISTANT_BATCH}.",
+            bio_id=f"{label} tim asisten Laboratorium Jaringan Telekomunikasi, {ASSISTANT_BATCH}.",
+            photo_url=photo or AVATAR,
+            photo_alt=f"Portrait of {name}, {label}" if photo else f"Portrait placeholder for {name}",
+            expertise=[], order=order, status="active", published=True,
+        ).model_dump())
+        members[-1]["position_label"] = label
+        order += 1
+
+    for m in members:
+        m.setdefault("position_label", m.get("position"))
+    await db.members.insert_many(members)
+    with_photo = sum(1 for m in members if m["photo_url"] != AVATAR)
+    print(f"  members: 1 head + {len(LECTURERS)} lecturers + {len(ASSISTANTS)} real assistants "
+          f"({ASSISTANT_BATCH}) — {with_photo}/{len(members)} with their real portrait")
+
+
+async def seed_activities() -> None:
+    await db.activities.delete_many({})
+    docs = []
+    for i, (title, title_id, category, desc, desc_id) in enumerate(ASSISTANT_ACTIVITIES):
+        docs.append(Activity(
+            title=title, title_id=title_id, category=category,
+            description=desc, description_id=desc_id,
+            images=[], order=i, published=True,
+        ).model_dump())
+    await db.activities.insert_many(docs)
+    print(f"  activities: {len(docs)} assistant activities")
+
+
+async def seed_practicum() -> None:
+    await db.practicum.delete_many({})
+    modules = [
+        ("TNL-01", "Network Fundamentals", "Dasar Jaringan",
+         "Addressing, subnetting and the layered model that underpins every later module.",
+         "Pengalamatan, subnetting, dan model berlapis yang menjadi dasar seluruh modul berikutnya."),
+        ("TNL-02", "Switching and VLAN", "Switching dan VLAN",
+         "Switch configuration, VLAN segmentation and trunking in the laboratory testbed.",
+         "Konfigurasi switch, segmentasi VLAN, dan trunking pada testbed laboratorium."),
+        ("TNL-03", "Routing", "Routing",
+         "Static and dynamic routing between networks, configured on laboratory equipment.",
+         "Routing statis dan dinamis antar jaringan, dikonfigurasi pada perangkat laboratorium."),
+        ("TNL-04", "Network Services", "Layanan Jaringan",
+         "DHCP, DNS and address translation as deployed in a small campus network.",
+         "DHCP, DNS, dan translasi alamat sebagaimana diterapkan pada jaringan kampus kecil."),
+        ("TNL-05", "Network Measurement", "Pengukuran Jaringan",
+         "Measuring throughput, delay and loss, and interpreting the results.",
+         "Mengukur throughput, delay, dan loss, serta menafsirkan hasilnya."),
+    ]
+    docs = [PracticumModule(code=c, name=n, name_id=ni, description=d, description_id=di,
+                            semester="Odd semester", order=i, published=True).model_dump()
+            for i, (c, n, ni, d, di) in enumerate(modules)]
+    await db.practicum.insert_many(docs)
+    print(f"  practicum: {len(docs)} modules")
+
+
+async def seed_partners() -> None:
+    await db.partners.delete_many({})
+    partners = [
+        ("ZTE", "https://www.zte.com.cn"),
+        ("Huawei", "https://www.huawei.com"),
+        ("Institut Teknologi Sepuluh Nopember", "https://www.its.ac.id"),
+    ]
+    docs = [Partner(name=n, url=u, logo_url=None, order=i, published=True).model_dump()
+            for i, (n, u) in enumerate(partners)]
+    await db.partners.insert_many(docs)
+    print(f"  partners: {len(docs)} (ZTE, Huawei, ITS)")
+
+
+async def seed_events() -> None:
+    await db.events.delete_many({})
+    today = datetime.now(timezone.utc).date()
+    ev = Event(
+        title="Cisco Packet Tracer Training",
+        title_id="Pelatihan Cisco Packet Tracer",
+        slug="cisco-packet-tracer-training",
+        type="training",
+        description=("An introductory networking training using Cisco Packet Tracer, delivered by assistants of "
+                     "the Telecommunication Network Laboratory. Participants build and test switched and routed "
+                     "topologies in simulation before applying them on laboratory equipment in Room B-301."),
+        description_id=("Pelatihan dasar jaringan menggunakan Cisco Packet Tracer yang dibawakan oleh asisten "
+                        "Laboratorium Jaringan Telekomunikasi. Peserta membangun dan menguji topologi switching "
+                        "dan routing secara simulasi sebelum menerapkannya pada perangkat laboratorium di Ruang "
+                        "B-301."),
+        start_date=str(today + timedelta(days=21)),
+        end_date=str(today + timedelta(days=22)),
+        reg_open_date=str(today - timedelta(days=3)),
+        reg_close_date=str(today + timedelta(days=14)),
+        capacity=40, price=0,
+        location="Room B-301, Building B, Department of Electrical Engineering, ITS",
+        modules=[
+            {"title": "Introduction to Packet Tracer", "detail": "Workspace, device types and building a first topology.", "date": None},
+            {"title": "Switching and VLAN", "detail": "Segmenting a network with VLANs and configuring trunk links.", "date": None},
+            {"title": "Routing between networks", "detail": "Static routing and a dynamic routing protocol.", "date": None},
+            {"title": "Network services", "detail": "DHCP, DNS and address translation in simulation.", "date": None},
+            {"title": "Assessment", "detail": "A guided build-and-verify exercise closing the training.", "date": None},
+        ],
+        contacts=[{"name": "Training Division, TNL", "phone": None, "email": "telconnetlab@gmail.com"}],
+        form_fields=[
+            {"type": "text", "label": "Full name", "required": True, "options": [], "show_if_field": None, "show_if_value": None},
+            {"type": "email", "label": "Email", "required": True, "options": [], "show_if_field": None, "show_if_value": None},
+            {"type": "tel", "label": "WhatsApp", "required": True, "options": [], "show_if_field": None, "show_if_value": None},
+            {"type": "nim", "label": "NRP / NIM", "required": True, "options": [], "show_if_field": None, "show_if_value": None},
+            {"type": "select", "label": "Department", "required": True,
+             "options": ["Electrical Engineering", "Computer Engineering", "Informatics", "Other"],
+             "show_if_field": None, "show_if_value": None},
+            {"type": "text", "label": "Please state your department", "required": False, "options": [],
+             "show_if_field": "Department", "show_if_value": "Other"},
+            {"type": "select", "label": "Experience level", "required": True,
+             "options": ["No experience", "Some coursework", "Hands-on experience"],
+             "show_if_field": None, "show_if_value": None},
+            {"type": "textarea", "label": "What do you hope to learn?", "required": False, "options": [],
+             "show_if_field": None, "show_if_value": None},
+        ],
+        status="published",
+    ).model_dump()
+    await db.events.insert_one(ev)
+
+    recruitment = Event(
+        title="Open Recruitment — Laboratory Assistant",
+        title_id="Open Recruitment — Asisten Laboratorium",
+        slug="open-recruitment-laboratory-assistant",
+        type="recruitment",
+        description=("Recruitment for new assistants of the Telecommunication Network Laboratory. Selection covers "
+                     "administrative screening, an interview, and a technical assessment on networking fundamentals."),
+        description_id=("Rekrutmen asisten baru Laboratorium Jaringan Telekomunikasi. Seleksi meliputi penyaringan "
+                        "administrasi, wawancara, dan penilaian teknis mengenai dasar-dasar jaringan."),
+        start_date=str(today + timedelta(days=60)),
+        end_date=str(today + timedelta(days=75)),
+        reg_open_date=str(today + timedelta(days=30)),
+        reg_close_date=str(today + timedelta(days=55)),
+        capacity=0, price=0,
+        location="Room B-301, Building B, Department of Electrical Engineering, ITS",
+        modules=[
+            {"title": "Administrative screening", "detail": "Submission of academic records and a statement of interest.", "date": None},
+            {"title": "Interview", "detail": "A conversation with the coordinator and division heads.", "date": None},
+            {"title": "Technical assessment", "detail": "Networking fundamentals and laboratory practice.", "date": None},
+        ],
+        contacts=[{"name": "Human Resource Division, TNL", "phone": None, "email": "telconnetlab@gmail.com"}],
+        form_fields=[
+            {"type": "text", "label": "Full name", "required": True, "options": [], "show_if_field": None, "show_if_value": None},
+            {"type": "email", "label": "Email", "required": True, "options": [], "show_if_field": None, "show_if_value": None},
+            {"type": "tel", "label": "WhatsApp", "required": True, "options": [], "show_if_field": None, "show_if_value": None},
+            {"type": "nim", "label": "NRP / NIM", "required": True, "options": [], "show_if_field": None, "show_if_value": None},
+            {"type": "select", "label": "Preferred division", "required": True,
+             "options": DIVISIONS, "show_if_field": None, "show_if_value": None},
+            {"type": "textarea", "label": "Why do you want to join the laboratory?", "required": True,
+             "options": [], "show_if_field": None, "show_if_value": None},
+            {"type": "file", "label": "Curriculum vitae (PDF)", "required": False, "options": [],
+             "show_if_field": None, "show_if_value": None},
+        ],
+        status="published",
+    ).model_dump()
+    await db.events.insert_one(recruitment)
+    print("  events: Cisco Packet Tracer Training (registration OPEN) + assistant recruitment (upcoming)")
+
+
+async def seed_unverified_drafts() -> None:
+    """R&D clusters, testbeds and any funder claim — DRAFTS flagged TODO: verify."""
+    await db.projects.delete_many({})
+    clusters = [
+        ("Network Engineering", "Rekayasa Jaringan", ["routing", "switching", "measurement"]),
+        ("Internet of Things", "Internet of Things", ["sensor node", "gateway", "telemetry"]),
+        ("Wireless Communication", "Komunikasi Nirkabel", ["propagation", "antenna"]),
+    ]
+    docs = []
+    for name, name_id, tags in clusters:
+        docs.append(Project(
+            kind="rd", title=f"{name} research cluster", title_id=f"Klaster riset {name_id}",
+            description=(f"{TODO} — placeholder entry for the {name} research cluster. Replace this description "
+                         f"with the cluster's actual scope, then publish."),
+            description_id=(f"{TODO} — entri sementara untuk klaster riset {name_id}. Ganti deskripsi ini dengan "
+                            f"ruang lingkup klaster yang sebenarnya, lalu terbitkan."),
+            background=f"{TODO} — background not yet confirmed with the laboratory.",
+            cluster=name, tags=tags, status="draft", verified=False,
+            focus=name, year=str(datetime.now(timezone.utc).year),
+        ).model_dump())
+    testbeds = [
+        ("Laboratory network testbed", "Testbed jaringan laboratorium"),
+        ("IoT development testbed", "Testbed pengembangan IoT"),
+    ]
+    for name, name_id in testbeds:
+        docs.append(Project(
+            kind="rd", title=name, title_id=name_id, is_testbed=True,
+            description=(f"{TODO} — placeholder entry for a laboratory testbed. Confirm the equipment, capacity "
+                         f"and purpose with the laboratory before publishing."),
+            description_id=(f"{TODO} — entri sementara untuk testbed laboratorium. Konfirmasikan perangkat, "
+                            f"kapasitas, dan tujuannya kepada laboratorium sebelum diterbitkan."),
+            background=f"{TODO} — specification not yet confirmed.",
+            status="draft", verified=False, location="Room B-301",
+        ).model_dump())
+    docs.append(Project(
+        kind="social", title="Community networking outreach",
+        title_id="Pengabdian masyarakat bidang jaringan",
+        description=(f"{TODO} — placeholder entry for a community project. Confirm the location, participant "
+                     f"count and outcomes with the laboratory before publishing."),
+        description_id=(f"{TODO} — entri sementara untuk kegiatan pengabdian masyarakat. Konfirmasikan lokasi, "
+                        f"jumlah peserta, dan hasilnya sebelum diterbitkan."),
+        background=f"{TODO} — background not yet confirmed.",
+        status="draft", verified=False,
+    ).model_dump())
+    for d in docs:
+        d["needs_review"] = True
+        d["issues"] = [{"field": "description", "severity": "error", "code": "unverified_claim",
+                        "message": "Seeded as unverified. Confirm the details with the laboratory, then publish.",
+                        "hint": TODO}]
+    await db.projects.insert_many(docs)
+    print(f"  projects: {len(docs)} R&D clusters / testbeds / social — ALL DRAFT, flagged “{TODO}”")
+
+
+async def seed_publications() -> None:
+    """Real, citable scholarly records involving laboratory staff — published."""
+    await db.publications.delete_many({})
+    docs = [Publication(status="published", **p).model_dump() for p in PUBLICATIONS]
+    await db.publications.insert_many(docs)
+    years = sorted({d["year"] for d in docs}, reverse=True)
+    print(f"  publications: {len(docs)} real records ({years[-1]}–{years[0]}), all published")
+
+
+async def seed_posts() -> None:
+    """News grounded in real, published laboratory activity. No invented articles —
+    each post summarises an activity that has a citable public record."""
+    await db.posts.delete_many({})
+    posts = [
+        Post(
+            title="Registration open: Cisco Packet Tracer networking training",
+            title_id="Pendaftaran dibuka: pelatihan jaringan Cisco Packet Tracer",
+            slug="cisco-packet-tracer-training-registration-open",
+            category="Training",
+            tags=["training", "Cisco Packet Tracer", "registration"],
+            excerpt=("The laboratory has opened registration for its Cisco Packet Tracer training, "
+                     "aimed at strengthening practical networking skills."),
+            excerpt_id=("Laboratorium membuka pendaftaran pelatihan Cisco Packet Tracer untuk memperkuat "
+                        "keterampilan praktis di bidang jaringan."),
+            body=("<p>The Telecommunication Network Laboratory has opened registration for its Cisco Packet "
+                  "Tracer training programme. Participants work through network topology design, device "
+                  "configuration and simulation-based troubleshooting, guided by laboratory assistants in "
+                  "Room B-301.</p><p>The programme is open to Electrical Engineering students and to "
+                  "participants from other departments. Seats are limited and allocated in registration "
+                  "order; applicants beyond the quota are placed on a waiting list.</p>"
+                  "<p>Register through the Activity page of this site.</p>"),
+            body_id=("<p>Laboratorium Jaringan Telekomunikasi membuka pendaftaran program pelatihan Cisco "
+                     "Packet Tracer. Peserta mempelajari perancangan topologi jaringan, konfigurasi perangkat, "
+                     "dan penelusuran gangguan berbasis simulasi, dengan bimbingan asisten laboratorium di "
+                     "Ruang B-301.</p><p>Program ini terbuka bagi mahasiswa Teknik Elektro maupun peserta dari "
+                     "departemen lain. Kuota terbatas dan dialokasikan sesuai urutan pendaftaran; pendaftar di "
+                     "luar kuota ditempatkan pada daftar tunggu.</p>"
+                     "<p>Pendaftaran dapat dilakukan melalui halaman Kegiatan pada situs ini.</p>"),
+            author="Telecommunication Network Laboratory",
+            status="published", published_at=NOW - timedelta(days=3),
+        ),
+        Post(
+            title="Village internet network supports digital transformation in Sedaeng",
+            title_id="Jaringan internet desa mendukung transformasi digital di Sedaeng",
+            slug="village-internet-network-sedaeng",
+            category="Community Service",
+            tags=["community service", "rural connectivity", "digital transformation"],
+            excerpt=("Laboratory staff reported the deployment of a village internet network at the Sedaeng "
+                     "village office in the journal Sewagati."),
+            excerpt_id=("Sivitas laboratorium melaporkan pembangunan jaringan internet desa di Kantor Desa "
+                        "Sedaeng melalui jurnal Sewagati."),
+            body=("<p>A community service activity involving laboratory staff delivered an internet network for "
+                  "the Sedaeng village office, supporting the village administration's shift to digital "
+                  "services. The work is documented in the article <em>Implementasi Jaringan Internet Desa untuk "
+                  "Mendukung Transformasi Digital di Kantor Desa Sedaeng</em>, published in Sewagati (2025).</p>"
+                  "<p>The activity reflects one of the laboratory's standing aims: extending connectivity beyond "
+                  "the campus to rural areas, and studying what that connectivity makes possible once it is in "
+                  "place. The full record is listed on the Publications page.</p>"),
+            body_id=("<p>Kegiatan pengabdian masyarakat yang melibatkan sivitas laboratorium membangun jaringan "
+                     "internet untuk Kantor Desa Sedaeng guna mendukung peralihan layanan pemerintahan desa ke "
+                     "layanan digital. Kegiatan ini terdokumentasi dalam artikel <em>Implementasi Jaringan "
+                     "Internet Desa untuk Mendukung Transformasi Digital di Kantor Desa Sedaeng</em> yang terbit "
+                     "di Sewagati (2025).</p>"
+                     "<p>Kegiatan tersebut sejalan dengan salah satu tujuan laboratorium, yaitu memperluas "
+                     "konektivitas hingga ke wilayah perdesaan dan mengkaji manfaat yang muncul setelahnya. "
+                     "Catatan lengkapnya tersedia pada halaman Publikasi.</p>"),
+            author="Telecommunication Network Laboratory",
+            status="published", published_at=NOW - timedelta(days=24),
+        ),
+        Post(
+            title="Laboratory research presented at ISITIA 2025",
+            title_id="Penelitian laboratorium dipresentasikan pada ISITIA 2025",
+            slug="laboratory-research-at-isitia-2025",
+            category="Research",
+            tags=["research", "ISITIA", "conference"],
+            excerpt=("Several studies involving laboratory staff were presented at the International Seminar "
+                     "on Intelligent Technology and Its Applications."),
+            excerpt_id=("Sejumlah penelitian yang melibatkan sivitas laboratorium dipresentasikan pada "
+                        "International Seminar on Intelligent Technology and Its Applications."),
+            body=("<p>Research involving laboratory staff was presented at the 2025 International Seminar on "
+                  "Intelligent Technology and Its Applications (ISITIA). The papers covered a software defined "
+                  "modem interconnecting terrestrial and underwater acoustic networks, an impact analysis of "
+                  "electronic-based government services delivered over public Wi-Fi, and a decision support "
+                  "system for personnel transfer recommendations.</p>"
+                  "<p>Each paper is listed with its venue and year on the Publications page of this site.</p>"),
+            body_id=("<p>Penelitian yang melibatkan sivitas laboratorium dipresentasikan pada International "
+                     "Seminar on Intelligent Technology and Its Applications (ISITIA) 2025. Makalah yang "
+                     "dipresentasikan mencakup software defined modem untuk interkoneksi jaringan terestrial dan "
+                     "akustik bawah air, analisis dampak layanan pemerintahan berbasis elektronik melalui Wi-Fi "
+                     "publik, serta sistem pendukung keputusan untuk rekomendasi mutasi personel.</p>"
+                     "<p>Setiap makalah tercantum beserta forum dan tahun terbitnya pada halaman Publikasi "
+                     "situs ini.</p>"),
+            author="Telecommunication Network Laboratory",
+            status="published", published_at=NOW - timedelta(days=58),
+        ),
+    ]
+    await db.posts.insert_many([p.model_dump() for p in posts])
+    print(f"  posts: {len(posts)} published, each grounded in a citable activity (no placeholder articles)")
+
+
+async def seed_placeholder_avatar() -> None:
+    media_dir = os.environ.get("MEDIA_DIR", "/app/backend/media")
+    folder = os.path.join(media_dir, "placeholders")
+    os.makedirs(folder, exist_ok=True)
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" '
+        'aria-label="Portrait placeholder">'
+        '<rect width="400" height="400" fill="#f4f4f5"/>'
+        '<circle cx="200" cy="155" r="62" fill="#a8977b"/>'
+        '<path d="M70 360c0-66 58-112 130-112s130 46 130 112z" fill="#43594A"/>'
+        '</svg>'
+    )
+    with open(os.path.join(folder, "avatar.svg"), "w", encoding="utf-8") as fh:
+        fh.write(svg)
+    if not await db.media.find_one({"url": AVATAR}):
+        await db.media.insert_one({
+            "id": str(uuid4()), "filename": "avatar.svg", "url": AVATAR,
+            "key": "placeholders/avatar.svg",
+            "alt": "Portrait placeholder used until a member photo is uploaded",
+            "folder": "placeholders", "kind": "image", "content_type": "image/svg+xml",
+            "bytes": len(svg), "created_at": NOW, "sizes": {},
+        })
+    print("  media: placeholder avatar")
+
+
+async def main() -> None:
+    reset = "--reset" in sys.argv
+    if reset:
+        for coll in ("pages", "posts", "members", "events", "activities", "projects", "publications",
+                     "partners", "practicum", "registrations", "messages", "media", "audit_log",
+                     "saved_blocks", "collections_def", "collection_items", "outbox", "api_keys"):
+            await db[coll].drop()
+        print("Dropped app collections (users and settings preserved).")
+
+    print("Seeding TNL Studio…")
+    await seed_settings()
+    await seed_admin()
+    await seed_placeholder_avatar()
+    photos = await seed_illustrative_photos()
+    await seed_pages(photos)
+    await seed_members()
+    await seed_activities()
+    await seed_practicum()
+    await seed_partners()
+    await seed_events()
+    await seed_publications()
+    await seed_posts()
+    await seed_unverified_drafts()
+    await ensure_indexes()
+    print("\nSeed complete.")
+    print(f"  Sign in at /admin/login as {os.environ.get('SEED_ADMIN_EMAIL')} "
+          f"/ {os.environ.get('SEED_ADMIN_PASSWORD')}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

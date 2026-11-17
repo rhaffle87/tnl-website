@@ -1,0 +1,417 @@
+"""Public, unauthenticated reads (maintenance-aware) + contact inbox submission +
+event registration engine + certificate verification."""
+
+import os
+import re
+import uuid
+from datetime import datetime, timezone
+
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
+from fastapi.responses import Response
+from pydantic import BaseModel
+
+from lib.auth import client_ip, rate_limit, user_for_request
+from lib.db import db
+from lib.dates import today_iso
+from lib.mailer import send_email
+from lib.quality import EMAIL_OK
+from lib.serialize import jsonable
+from lib.settings import get_settings
+
+router = APIRouter(tags=["public"])
+
+
+async def check_maintenance(request: Request) -> None:
+    s = await get_settings()
+    if s.get("maintenance_mode"):
+        user = await user_for_request(request)
+        if not user:
+            raise HTTPException(status_code=503, detail="The site is in maintenance mode. Please try again soon.")
+
+
+def field_key(label: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", (label or "").lower()).strip("-")
+    return f"f_{slug or 'field'}"
+
+
+def event_reg_status(ev: dict, today: str) -> dict:
+    open_d, close_d = ev.get("reg_open_date"), ev.get("reg_close_date")
+    end_d = ev.get("end_date") or ev.get("start_date")
+    if end_d and today > end_d:
+        status = "past"
+    elif close_d and today > close_d:
+        status = "closed"
+    elif open_d and today < open_d:
+        status = "upcoming"
+    elif open_d and today >= open_d:
+        status = "open"
+    else:
+        status = "closed"
+    return {"reg_status": status}
+
+
+async def with_seats(evs: list[dict], today: str) -> list[dict]:
+    for ev in evs:
+        ev.update(event_reg_status(ev, today))
+        cap = ev.get("capacity") or 0
+        if cap:
+            used = await db.registrations.count_documents(
+                {"event_id": ev["id"], "status": {"$in": ["pending", "accepted", "attended"]}})
+            ev["seats_left"] = max(0, cap - used)
+            if ev["reg_status"] == "open" and used >= cap:
+                ev["reg_status"] = "full"
+        else:
+            ev["seats_left"] = None
+    return evs
+
+
+# ---------------------------------------------------------------- reads
+@router.get("/public/settings", dependencies=[Depends(check_maintenance)])
+async def public_settings():
+    s = await get_settings()
+    s.pop("theme", None)
+    s["server_today"] = today_iso()
+    return jsonable(s)
+
+
+@router.get("/public/stats", dependencies=[Depends(check_maintenance)])
+async def public_stats():
+    s = await get_settings()
+    lecturers = await db.members.count_documents({"role": "lecturer", "published": True})
+    assistants = await db.members.count_documents({"role": "assistant", "status": "active", "published": True})
+    return {
+        "lecturers": lecturers,
+        "assistants": assistants,
+        "research_tracks": len(s.get("focus_areas") or []),
+        "room": (s.get("contact") or {}).get("room", "B-301"),
+    }
+
+
+@router.get("/public/pages/{slug}", dependencies=[Depends(check_maintenance)])
+async def public_page(slug: str):
+    page = await db.pages.find_one({"slug": slug, "status": "published"})
+    if not page:
+        raise HTTPException(status_code=404, detail="Page not found.")
+    return jsonable(page)
+
+
+@router.get("/public/members", dependencies=[Depends(check_maintenance)])
+async def public_members(status: str | None = None, batch: str | None = None):
+    q: dict = {"published": True}
+    if status in ("active", "alumni"):
+        q["status"] = status
+    if batch:
+        q["batch"] = batch
+    docs = await db.members.find(q, {"nim": 0, "email_personal": 0, "phone": 0}).sort(
+        [("order", 1), ("created_at", 1)]).to_list(1000)
+    # Per-person privacy opt-ins: private fields render only when the admin enabled them.
+    out = []
+    for m in docs:
+        if m.get("show_nim") and m.get("nim"):
+            m["nim"] = m["nim"]
+        else:
+            m.pop("nim", None)
+        if m.get("show_personal_email") and m.get("email_personal"):
+            pass
+        else:
+            m.pop("email_personal", None)
+        out.append(m)
+    return jsonable(out)
+
+
+@router.get("/public/posts", dependencies=[Depends(check_maintenance)])
+async def public_posts(category: str | None = None, q: str | None = None, tag: str | None = None,
+                       limit: int = 24, offset: int = 0):
+    query: dict = {"status": "published"}
+    if category:
+        query["category"] = category
+    if tag:
+        query["tags"] = tag
+    if q:
+        query["$or"] = [{"title": {"$regex": re.escape(q), "$options": "i"}},
+                        {"excerpt": {"$regex": re.escape(q), "$options": "i"}},
+                        {"body": {"$regex": re.escape(q), "$options": "i"}}]
+    total = await db.posts.count_documents(query)
+    docs = await db.posts.find(query).sort("published_at", -1).skip(offset).limit(min(limit, 50)).to_list(50)
+    brief = [{k: d.get(k) for k in ("id", "slug", "title", "title_id", "excerpt", "excerpt_id", "category",
+                                    "tags", "cover_url", "cover_alt", "published_at", "author")} for d in docs]
+    return {"items": jsonable(brief), "total": total}
+
+
+@router.get("/public/posts/{slug}", dependencies=[Depends(check_maintenance)])
+async def public_post(slug: str):
+    post = await db.posts.find_one({"slug": slug, "status": "published"})
+    if not post:
+        raise HTTPException(status_code=404, detail="Article not found.")
+    related = await db.posts.find(
+        {"status": "published", "slug": {"$ne": slug}, "category": post.get("category")}
+    ).sort("published_at", -1).limit(3).to_list(3)
+    post["related"] = [{k: r.get(k) for k in ("id", "slug", "title", "title_id", "cover_url", "cover_alt",
+                                              "category", "published_at")} for r in related]
+    return jsonable(post)
+
+
+@router.get("/public/events", dependencies=[Depends(check_maintenance)])
+async def public_events(type: str | None = None, include_past: bool = True):
+    q: dict = {"status": "published"}
+    if type:
+        q["type"] = type
+    docs = await db.events.find(q).sort([("start_date", 1)]).to_list(200)
+    today = today_iso()
+    if not include_past:
+        docs = [d for d in docs if event_reg_status(d, today)["reg_status"] != "past"]
+    return jsonable(await with_seats(docs, today))
+
+
+@router.get("/public/events/{slug}", dependencies=[Depends(check_maintenance)])
+async def public_event(slug: str):
+    ev = await db.events.find_one({"slug": slug, "status": "published"})
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found.")
+    return jsonable((await with_seats([ev], today_iso()))[0])
+
+
+@router.get("/public/activities", dependencies=[Depends(check_maintenance)])
+async def public_activities(category: str | None = None):
+    q: dict = {"published": True}
+    if category:
+        q["category"] = category
+    docs = await db.activities.find(q).sort([("order", 1), ("date", -1)]).to_list(200)
+    return jsonable(docs)
+
+
+@router.get("/public/projects", dependencies=[Depends(check_maintenance)])
+async def public_projects(kind: str | None = None):
+    q: dict = {"status": "published"}
+    if kind in ("rd", "social"):
+        q["kind"] = kind
+    docs = await db.projects.find(q).sort([("year", -1), ("created_at", -1)]).to_list(200)
+    return jsonable(docs)
+
+
+@router.get("/public/publications", dependencies=[Depends(check_maintenance)])
+async def public_publications(year: int | None = None, ptype: str | None = None):
+    q: dict = {"status": "published"}
+    if year:
+        q["year"] = year
+    if ptype:
+        q["ptype"] = ptype
+    docs = await db.publications.find(q).sort([("year", -1), ("created_at", -1)]).to_list(500)
+    return jsonable(docs)
+
+
+@router.get("/public/partners", dependencies=[Depends(check_maintenance)])
+async def public_partners():
+    docs = await db.partners.find({"published": True}).sort([("order", 1)]).to_list(100)
+    return jsonable(docs)
+
+
+@router.get("/public/practicum", dependencies=[Depends(check_maintenance)])
+async def public_practicum():
+    docs = await db.practicum.find({"published": True}).sort([("order", 1)]).to_list(100)
+    return jsonable(docs)
+
+
+# ---------------------------------------------------------------- contact inbox
+class ContactIn(BaseModel):
+    name: str
+    email: str
+    subject: str
+    message: str
+    company_website: str = ""  # honeypot
+
+
+@router.post("/contact")
+async def submit_contact(payload: ContactIn, request: Request):
+    rate_limit(f"contact:{client_ip(request)}", 5, 3600)
+    if payload.company_website.strip():
+        raise HTTPException(status_code=400, detail="Spam detected.")
+    if not EMAIL_OK.match(payload.email):
+        raise HTTPException(status_code=422, detail="Please enter a valid email address.")
+    await db.messages.insert_one({
+        "id": str(uuid.uuid4()), "name": payload.name.strip(), "email": payload.email.strip(),
+        "subject": payload.subject.strip()[:200], "body": payload.message.strip()[:5000],
+        "status": "new", "created_at": datetime.now(timezone.utc),
+    })
+    return {"ok": True, "message": "Thank you — your message has been received."}
+
+
+# ---------------------------------------------------------------- registration engine
+def _store_upload(data: bytes, filename: str, prefix: str) -> str:
+    media_dir = os.environ.get("MEDIA_DIR", "/app/backend/media")
+    sub = os.path.join(media_dir, "uploads")
+    os.makedirs(sub, exist_ok=True)
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", filename or "file")[-80:]
+    name = f"{prefix}_{uuid.uuid4().hex[:8]}_{safe}"
+    with open(os.path.join(sub, name), "wb") as fh:
+        fh.write(data)
+    return f"/api/media-files/uploads/{name}"
+
+
+ALLOWED_UPLOAD_EXT = (".pdf", ".jpg", ".jpeg", ".png", ".webp", ".doc", ".docx", ".zip")
+
+
+@router.post("/registrations/{event_id}")
+async def submit_registration(event_id: str, request: Request):
+    ev = await db.events.find_one({"id": event_id, "status": "published"})
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found.")
+    today = today_iso()
+    st = event_reg_status(ev, today)
+    if st["reg_status"] not in ("open", "full"):
+        raise HTTPException(status_code=400, detail=f"Registration is not open right now ({st['reg_status']}).")
+
+    form = await request.form()
+    if (form.get("company_website") or "").strip():
+        raise HTTPException(status_code=400, detail="Spam detected.")
+
+    turnstile_key = os.environ.get("TURNSTILE_SECRET_KEY", "")
+    if turnstile_key:
+        token = form.get("cf-turnstile-response") or ""
+        async with httpx.AsyncClient(timeout=10) as hc:
+            resp = await hc.post("https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                                 data={"secret": turnstile_key, "response": token,
+                                       "remoteip": client_ip(request)})
+        if not resp.json().get("success"):
+            raise HTTPException(status_code=400, detail="Captcha verification failed. Please try again.")
+
+    if form.get("consent") not in ("1", "true", "on"):
+        raise HTTPException(status_code=422, detail="Consent is required to register (UU PDP).")
+
+    data: dict = {}
+    missing: list[str] = []
+    errors: list[str] = []
+    for f in ev.get("form_fields") or []:
+        label = f.get("label", "")
+        key = field_key(label)
+        ftype = f.get("type", "text")
+        if f.get("show_if_field"):
+            ctrl_val = data.get(field_key(f["show_if_field"]))
+            if ctrl_val != f.get("show_if_value"):
+                continue
+        raw = form.get(key)
+        if ftype == "file":
+            up = raw if isinstance(raw, UploadFile) else None
+            if up is not None and up.filename:
+                content = await up.read()
+                if len(content) > 5 * 1024 * 1024:
+                    errors.append(f"{label}: file must be under 5 MB.")
+                    continue
+                if not up.filename.lower().endswith(ALLOWED_UPLOAD_EXT):
+                    errors.append(f"{label}: file type not allowed.")
+                    continue
+                data[key] = {"url": _store_upload(content, up.filename, "reg"), "name": up.filename}
+            elif f.get("required"):
+                missing.append(label)
+            continue
+        text = (raw or "").strip() if isinstance(raw, str) else ""
+        if not text:
+            if f.get("required"):
+                missing.append(label)
+            continue
+        if ftype == "email" and not EMAIL_OK.match(text):
+            errors.append(f"{label}: please enter a valid email address.")
+        if ftype == "tel" and len(re.sub(r"\D", "", text)) < 8:
+            errors.append(f"{label}: please enter a valid phone/WhatsApp number.")
+        if ftype == "nim" and len(text) < 5:
+            errors.append(f"{label}: NIM/NRP looks too short.")
+        data[key] = text
+
+    if missing or errors:
+        raise HTTPException(status_code=422, detail={
+            "message": "Please check the highlighted fields.",
+            "missing": missing, "errors": errors,
+        })
+
+    email = next((v for k, v in data.items() if isinstance(v, str) and EMAIL_OK.match(v)), "")
+    nim = next((v for k, v in data.items() if isinstance(v, str) and ("nim" in k or "nrp" in k)), "")
+    if email and await db.registrations.find_one({"event_id": event_id, "email": email.lower()}):
+        raise HTTPException(status_code=409, detail="This email has already registered for this event.")
+    if nim and await db.registrations.find_one({"event_id": event_id, "nim": nim}):
+        raise HTTPException(status_code=409, detail="This NIM/NRP has already registered for this event.")
+
+    # Spam quota is spent only on a genuine, fully valid submission — a visitor who
+    # mistypes a field is not locked out, while bots posting valid-looking payloads are.
+    rate_limit(f"reg:{client_ip(request)}", 8, 3600)
+
+    cap = ev.get("capacity") or 0
+    used = await db.registrations.count_documents(
+        {"event_id": event_id, "status": {"$in": ["pending", "accepted", "attended"]}})
+    status = "waitlisted" if (cap and used >= cap) else "pending"
+
+    reg = {
+        "id": str(uuid.uuid4()), "event_id": event_id, "event_title": ev.get("title", ""),
+        "data": data, "email": email.lower(), "nim": nim, "status": status,
+        "consent": True, "certificate_code": None, "notes": "",
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.registrations.insert_one(reg)
+
+    name = next((v for v in data.values() if isinstance(v, str) and 2 < len(v) < 80), email)
+    state = {"pending": "received and pending review", "waitlisted": "placed on the waiting list"}[status]
+    await send_email(
+        email or "unknown@example.org",
+        f"Registration received — {ev.get('title', '')}",
+        f"<p>Hello {name},</p><p>Your registration for <b>{ev.get('title', '')}</b> has been {state}.</p>"
+        f"<p>Telecommunication Network Laboratory — ITS</p>",
+    )
+    msg = ("Registration received. Please check your email for confirmation."
+           if status == "pending" else "The event is full — you have been placed on the waiting list.")
+    return {"ok": True, "status": status, "message": msg}
+
+
+# ---------------------------------------------------------------- certificates
+@router.get("/verify/{code}")
+async def verify_certificate(code: str):
+    reg = await db.registrations.find_one({"certificate_code": code.upper()})
+    if not reg or reg.get("status") not in ("accepted", "attended"):
+        return {"valid": False, "message": "No valid certificate found for this code."}
+    return {
+        "valid": True,
+        "name": reg.get("data", {}).get("f_full-name") or reg.get("data", {}).get("f_name") or reg.get("email"),
+        "event_title": reg.get("event_title"),
+        "status": reg.get("status"),
+        "code": reg.get("certificate_code"),
+        "message": "This certificate is valid.",
+    }
+
+
+@router.get("/certificates/{code}/pdf")
+async def certificate_pdf(code: str):
+    reg = await db.registrations.find_one({"certificate_code": code.upper()})
+    if not reg or reg.get("status") not in ("accepted", "attended"):
+        raise HTTPException(status_code=404, detail="Certificate not found.")
+    try:
+        from fpdf import FPDF
+    except ImportError:
+        raise HTTPException(status_code=501, detail="PDF generation needs the fpdf2 package installed.")
+    name = reg.get("data", {}).get("f_full-name") or reg.get("email", "Participant")
+    base = os.environ.get("APP_URL", "").rstrip("/")
+    pdf = FPDF(orientation="L", format="A4")
+    pdf.add_page()
+    pdf.set_draw_color(67, 89, 74)
+    pdf.set_line_width(1.2)
+    pdf.rect(12, 12, 273, 173)
+    pdf.set_font("helvetica", "B", 26)
+    pdf.set_text_color(17, 21, 24)
+    pdf.cell(0, 24, "Telecommunication Network Laboratory — ITS", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("helvetica", "", 15)
+    pdf.set_text_color(67, 89, 74)
+    pdf.cell(0, 12, "Certificate of Participation", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(14)
+    pdf.set_font("helvetica", "B", 30)
+    pdf.set_text_color(17, 21, 24)
+    pdf.cell(0, 18, name, align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("helvetica", "", 13)
+    pdf.set_text_color(63, 66, 69)
+    pdf.cell(0, 12, f"has successfully participated in {reg.get('event_title', '')}", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(10)
+    pdf.set_font("helvetica", "", 10)
+    pdf.cell(0, 8, f"Certificate code: {reg.get('certificate_code')}  ·  Verify at {base}/verify/{reg.get('certificate_code')}",
+             align="C", new_x="LMARGIN", new_y="NEXT")
+    return Response(
+        content=bytes(pdf.output()),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="certificate-{code}.pdf"'},
+    )
