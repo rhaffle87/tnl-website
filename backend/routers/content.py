@@ -40,6 +40,7 @@ SEARCH_FIELDS = {
     "publications": ("title", "authors", "venue"),
     "partners": ("name",),
     "practicum": ("name", "code", "semester"),
+    "equipment": ("name", "category", "specs", "location", "status"),
 }
 # Fields the AI draft review reads, per resource.
 REVIEW_TEXT = {
@@ -51,6 +52,7 @@ REVIEW_TEXT = {
     "publications": ("title", "abstract"),
     "practicum": ("name", "description"),
     "partners": ("name",),
+    "equipment": ("name", "specs"),
 }
 
 
@@ -133,7 +135,7 @@ async def list_items(resource: str, q: str | None = None, status: str | None = N
     _model(resource)
     query: dict = {}
     if status:
-        if resource in ("members", "activities", "partners", "practicum") and status in ("published", "draft"):
+        if resource in ("members", "activities", "partners", "practicum", "equipment") and status in ("published", "draft"):
             query["published"] = status == "published"
         else:
             query["status"] = status
@@ -141,7 +143,7 @@ async def list_items(resource: str, q: str | None = None, status: str | None = N
         fields = SEARCH_FIELDS.get(resource, ("title",))
         query["$or"] = [{f: {"$regex": re.escape(q), "$options": "i"}} for f in fields]
     total = await db[resource].count_documents(query)
-    sort = [("order", 1), ("created_at", -1)] if resource in ("members", "activities", "partners", "practicum") \
+    sort = [("order", 1), ("created_at", -1)] if resource in ("members", "activities", "partners", "practicum", "equipment") \
         else [("created_at", -1)]
     docs = await db[resource].find(query).sort(sort).skip(offset).limit(min(limit, 200)).to_list(200)
     return {"items": jsonable(docs), "total": total}
@@ -168,7 +170,7 @@ async def create_item(resource: str, payload: dict, request: Request,
         payload.pop(key, None)
     # Contributors may only create drafts — publishing needs approval.
     if user.get("role") == "contributor":
-        if resource in ("members", "activities", "partners", "practicum"):
+        if resource in ("members", "activities", "partners", "practicum", "equipment"):
             payload["published"] = False
         else:
             payload["status"] = "draft"
@@ -288,7 +290,7 @@ async def bulk_action(resource: str, payload: dict, request: Request,
     action = payload.get("action")
     if not ids or action not in ("publish", "unpublish", "delete"):
         raise HTTPException(status_code=422, detail="Choose items and a valid action.")
-    flag_field = "published" if resource in ("members", "activities", "partners", "practicum") else "status"
+    flag_field = "published" if resource in ("members", "activities", "partners", "practicum", "equipment") else "status"
     done, skipped = 0, []
     for item_id in ids:
         doc = await db[resource].find_one({"id": item_id})

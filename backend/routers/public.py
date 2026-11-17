@@ -230,6 +230,20 @@ async def public_practicum():
     return jsonable(docs)
 
 
+@router.get("/public/equipment", dependencies=[Depends(check_maintenance)])
+async def public_equipment(category: str | None = None, status: str | None = None):
+    q: dict = {"published": True}
+    if category:
+        q["category"] = category
+    if status:
+        q["status"] = status
+    docs = await db.equipment.find(
+        q,
+        {"serial_number": 0, "asset_code": 0, "internal_notes": 0, "needs_review": 0, "issues": 0}
+    ).sort([("order", 1), ("created_at", -1)]).to_list(200)
+    return jsonable(docs)
+
+
 # ---------------------------------------------------------------- contact inbox
 class ContactIn(BaseModel):
     name: str

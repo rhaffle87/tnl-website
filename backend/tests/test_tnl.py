@@ -429,3 +429,89 @@ def test_publication_author_relink_and_public_relations(client):
             assert mid in p.get("linked_member_ids", [])
 
 
+def test_practicum_resources_and_shifts(client):
+    login(client)
+    res = client.get("/public/practicum")
+    assert res.status_code == 200
+    items = res.json()
+    assert isinstance(items, list)
+    assert len(items) > 0
+    # Seeded modules should include resources and shifts
+    first = items[0]
+    assert "resources" in first
+    assert "shifts" in first
+    assert isinstance(first["resources"], list)
+    assert isinstance(first["shifts"], list)
+    if first["resources"]:
+        assert "file_url" in first["resources"][0]
+        assert "file_type" in first["resources"][0]
+    if first["shifts"]:
+        assert "day" in first["shifts"][0]
+        assert "time_slot" in first["shifts"][0]
+        assert "coordinator_name" in first["shifts"][0]
+
+
+def test_equipment_crud_and_public_privacy(client):
+    login(client)
+    # 1. Create equipment as admin
+    payload = {
+        "name": "Testbed Edge Switch 10G",
+        "name_id": "Switch Edge Testbed 10G",
+        "category": "networking",
+        "specs": "24-Port 10GbE SFP+ L3 Managed Switch",
+        "specs_id": "Switch L3 Managed 24-Port 10GbE SFP+",
+        "quantity": 1,
+        "location": "Ruang B-301",
+        "status": "available",
+        "serial_number": "SEC-TNL-SWITCH-9999",
+        "asset_code": "ASSET-ITS-DTE-9999",
+        "internal_notes": "Private maintainer console password: secret-password",
+        "order": 1,
+        "published": True,
+    }
+    create_res = client.post("/admin/content/equipment", json=payload)
+    assert create_res.status_code == 201
+    eq_id = create_res.json()["id"]
+
+    # 2. Check admin list contains private fields
+    admin_item = client.get(f"/admin/content/equipment/{eq_id}").json()
+    assert admin_item["serial_number"] == "SEC-TNL-SWITCH-9999"
+    assert admin_item["asset_code"] == "ASSET-ITS-DTE-9999"
+    assert "secret-password" in admin_item["internal_notes"]
+
+    # 3. Check public equipment endpoint strips sensitive/internal fields
+    public_res = client.get("/public/equipment")
+    assert public_res.status_code == 200
+    pub_items = public_res.json()
+    created_pub = next((x for x in pub_items if x["id"] == eq_id), None)
+    assert created_pub is not None
+    assert "serial_number" not in created_pub
+    assert "asset_code" not in created_pub
+    assert "internal_notes" not in created_pub
+    assert created_pub["name"] == "Testbed Edge Switch 10G"
+
+    # 4. Check category filter
+    filter_res = client.get("/public/equipment?category=networking")
+    assert filter_res.status_code == 200
+    assert any(x["id"] == eq_id for x in filter_res.json())
+
+    empty_cat_res = client.get("/public/equipment?category=non_existent_category")
+    assert empty_cat_res.status_code == 200
+    assert len(empty_cat_res.json()) == 0
+
+
+def test_document_media_upload_allowed(client):
+    login(client)
+    # Upload simulated Cisco Packet Tracer file (.pkt)
+    dummy_pkt = b"PACKET_TRACER_BINARY_DATA_V8"
+    files = {"file": ("network_topology.pkt", dummy_pkt, "application/octet-stream")}
+    data = {"alt": "Network topology packet tracer simulation for lab 01", "folder": "academic"}
+    res = client.post("/admin/media", data=data, files=files)
+    assert res.status_code == 201
+    out = res.json()
+    assert out["kind"] == "document"
+    assert out["url"].startswith("/api/media-files/academic/")
+    assert "network_topology" in out["filename"]
+
+
+

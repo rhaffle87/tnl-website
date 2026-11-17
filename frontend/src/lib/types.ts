@@ -217,6 +217,25 @@ export interface Partner {
   updated_at: string;
 }
 
+export interface PracticumResource {
+  id?: string;
+  title: string;
+  file_url: string;
+  file_type?: string;
+  size_bytes?: number | null;
+  updated_at?: string;
+}
+
+export interface PracticumShift {
+  id?: string;
+  day: string;
+  time_slot: string;
+  coordinator_name: string;
+  quota?: number;
+  room?: string;
+  notes?: string | null;
+}
+
 export interface PracticumModule {
   id: string;
   code?: string | null;
@@ -225,10 +244,35 @@ export interface PracticumModule {
   description: string;
   description_id: string;
   semester?: string | null;
+  resources?: PracticumResource[];
+  shifts?: PracticumShift[];
   order: number;
   published: boolean;
   needs_review: boolean;
   issues: QualityIssue[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Equipment {
+  id: string;
+  name: string;
+  name_id?: string | null;
+  category: "server" | "sdr" | "networking" | "optical" | "test_tool" | "other" | string;
+  specs: string;
+  specs_id?: string | null;
+  photo_url?: string | null;
+  photo_alt?: string | null;
+  quantity: number;
+  location: string;
+  status: "available" | "in_use" | "maintenance" | string;
+  serial_number?: string | null;
+  asset_code?: string | null;
+  internal_notes?: string | null;
+  order: number;
+  published: boolean;
+  needs_review?: boolean;
+  issues?: QualityIssue[];
   created_at: string;
   updated_at: string;
 }

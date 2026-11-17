@@ -6,6 +6,7 @@ import { apiGet } from "@/lib/api";
 import type {
   Activity,
   AuthUser,
+  Equipment,
   LabEvent,
   ListResponse,
   Member,
@@ -154,6 +155,19 @@ export function usePracticum(): UseQueryResult<PracticumModule[]> {
   return useQuery({
     queryKey: ["public", "practicum"],
     queryFn: () => apiGet<Practicum[]>("/public/practicum"),
+    retry: false,
+    staleTime: STALE,
+  });
+}
+
+export function useEquipment(params?: { category?: string; status?: string }): UseQueryResult<Equipment[]> {
+  const query = new URLSearchParams();
+  if (params?.category) query.set("category", params.category);
+  if (params?.status) query.set("status", params.status);
+  const qs = query.toString();
+  return useQuery({
+    queryKey: ["public", "equipment", params?.category ?? "", params?.status ?? ""],
+    queryFn: () => apiGet<Equipment[]>(`/public/equipment${qs ? `?${qs}` : ""}`),
     retry: false,
     staleTime: STALE,
   });

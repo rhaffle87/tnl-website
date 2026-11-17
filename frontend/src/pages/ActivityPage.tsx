@@ -9,19 +9,29 @@ import {
     Calendar,
     ChevronLeft,
     ChevronRight,
+    Clock,
+    Cpu,
+    Download,
+    FileCode,
+    FileText,
     FlaskConical,
     GraduationCap,
+    HardDrive,
+    Layers,
     MapPin,
     MessageCircle,
+    Radio,
+    Server,
     Sparkles,
     Users,
+    Wrench,
 } from "lucide-react";
-import { useActivities, useEvents, usePage, usePracticum, useProjects } from "@/lib/hooks";
+import { useActivities, useEquipment, useEvents, usePage, usePracticum, useProjects } from "@/lib/hooks";
 import { pick, useLocale } from "@/lib/i18n";
 import { BlockRenderer } from "@/components/site/Blocks";
 import { EmptyState, SectionHeading, Spinner, StatusBadge, TypeBadge, formatDate } from "@/components/site/Primitives";
 import { RegistrationDialog } from "@/components/site/RegistrationDialog";
-import type { Activity, LabEvent, Project } from "@/lib/types";
+import type { Activity, Equipment, LabEvent, PracticumModule, Project } from "@/lib/types";
 
 type TabKey = "rd" | "practicum" | "training" | "assistant";
 
@@ -391,11 +401,203 @@ function ProjectCard({ project }: { project: Project }) {
     );
 }
 
+function formatBytes(bytes?: number | null): string {
+    if (!bytes) return "";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function ResourceIcon({ type }: { type?: string }) {
+    const t = (type || "").toLowerCase();
+    if (t === "pdf") return <FileText className="h-4 w-4 shrink-0" style={{ color: "#ef4444" }} />;
+    if (t === "pkt") return <Layers className="h-4 w-4 shrink-0" style={{ color: "#0284c7" }} />;
+    if (t === "py" || t === "txt" || t === "json") return <FileCode className="h-4 w-4 shrink-0" style={{ color: "#10b981" }} />;
+    return <Download className="h-4 w-4 shrink-0" style={{ color: "#f59e0b" }} />;
+}
+
+const EQUIP_STATUS_STYLE: Record<string, { bg: string; fg: string }> = {
+    available: { bg: "rgba(34, 197, 94, 0.15)", fg: "#16a34a" },
+    in_use: { bg: "rgba(245, 158, 11, 0.15)", fg: "#d97706" },
+    maintenance: { bg: "rgba(239, 68, 68, 0.15)", fg: "#dc2626" },
+};
+
+function EquipmentCard({ item }: { item: Equipment }) {
+    const { locale, t } = useLocale();
+    const stStyle = EQUIP_STATUS_STYLE[item.status] || EQUIP_STATUS_STYLE.available;
+    const statusLabel =
+        item.status === "available"
+            ? t("status_available")
+            : item.status === "in_use"
+                ? t("status_in_use")
+                : t("status_maintenance");
+
+    const categoryLabel =
+        item.category === "server"
+            ? t("category_server")
+            : item.category === "sdr"
+                ? t("category_sdr")
+                : item.category === "networking"
+                    ? t("category_networking")
+                    : item.category === "optical"
+                        ? t("category_optical")
+                        : item.category === "test_tool"
+                            ? t("category_test_tool")
+                            : item.category;
+
+    return (
+        <article
+            className="tnl-card tnl-card-hover flex flex-col justify-between overflow-hidden p-6"
+            data-testid={`equipment-card-${item.id}`}
+        >
+            <div>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <span className="tnl-count-chip text-xs uppercase tracking-wider">{categoryLabel}</span>
+                    <span
+                        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                        style={{ background: stStyle.bg, color: stStyle.fg }}
+                        data-testid={`equipment-status-${item.id}`}
+                    >
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: stStyle.fg }} />
+                        {statusLabel}
+                    </span>
+                </div>
+
+                {item.photo_url ? (
+                    <div className="mb-4 h-44 w-full overflow-hidden rounded-lg border" style={{ background: "var(--tnl-surface)", borderColor: "var(--tnl-border)" }}>
+                        <img
+                            src={item.photo_url}
+                            alt={item.photo_alt || item.name}
+                            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                            loading="lazy"
+                        />
+                    </div>
+                ) : null}
+
+                <h3 className="text-[18px] font-bold leading-snug">{pick(locale, item.name, item.name_id)}</h3>
+
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
+                    <span className="flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {item.location}
+                    </span>
+                    {item.quantity ? (
+                        <span>
+                            {item.quantity} {locale === "id" ? "Unit" : "Units"}
+                        </span>
+                    ) : null}
+                </div>
+
+                <p className="mt-3 text-sm leading-relaxed text-[var(--tnl-body)]">
+                    {pick(locale, item.specs, item.specs_id)}
+                </p>
+            </div>
+        </article>
+    );
+}
+
+function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) {
+    const { locale, t } = useLocale();
+    const resources = mod.resources ?? [];
+    const shifts = mod.shifts ?? [];
+
+    return (
+        <article
+            className="tnl-card border-l-4 p-6 flex flex-col justify-between"
+            style={{ borderLeftColor: "var(--tnl-tan)" }}
+            data-testid={`practicum-card-${mod.id}`}
+        >
+            <div>
+                <div className="flex items-baseline justify-between gap-2">
+                    <span className="block text-[32px] font-bold leading-none" style={{ color: "var(--tnl-tan)" }}>
+                        {String(index + 1).padStart(2, "0")}
+                    </span>
+                    {mod.code ? (
+                        <span className="tnl-count-chip text-xs">
+                            {mod.code}
+                            {mod.semester ? ` · ${mod.semester}` : ""}
+                        </span>
+                    ) : null}
+                </div>
+
+                <h3 className="mt-3 text-[19px] font-bold leading-snug">{pick(locale, mod.name, mod.name_id)}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)]">
+                    {pick(locale, mod.description, mod.description_id)}
+                </p>
+
+                {resources.length ? (
+                    <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--tnl-border)" }}>
+                        <h4 className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                            <Download className="h-3.5 w-3.5" />
+                            {t("resources")} ({resources.length})
+                        </h4>
+                        <div className="flex flex-col gap-2">
+                            {resources.map((res, idx) => (
+                                <a
+                                    key={res.id || idx}
+                                    href={res.file_url}
+                                    download
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group flex items-center justify-between gap-2 rounded-lg border p-2 text-xs transition-colors hover:border-[var(--tnl-tan)]"
+                                    style={{ background: "var(--background)", borderColor: "var(--tnl-border)" }}
+                                    data-testid={`practicum-resource-${mod.id}-${idx}`}
+                                >
+                                    <div className="flex min-w-0 items-center gap-2">
+                                        <ResourceIcon type={res.file_type} />
+                                        <span className="truncate font-medium group-hover:underline">{res.title}</span>
+                                    </div>
+                                    <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-mono border" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-body)" }}>
+                                        {res.file_type?.toUpperCase() || "FILE"}
+                                        {res.size_bytes ? ` · ${formatBytes(res.size_bytes)}` : ""}
+                                    </span>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                ) : null}
+
+                {shifts.length ? (
+                    <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--tnl-border)" }}>
+                        <h4 className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                            <Clock className="h-3.5 w-3.5" />
+                            {t("shift_schedule")}
+                        </h4>
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse text-left text-xs">
+                                <thead>
+                                    <tr className="border-b text-[11px] font-semibold" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-tan-text)" }}>
+                                        <th className="py-1.5 pr-2">{t("day")}</th>
+                                        <th className="py-1.5 px-2">{t("time_slot")}</th>
+                                        <th className="py-1.5 px-2">{t("coordinator")}</th>
+                                        <th className="py-1.5 pl-2">{t("room")}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y" style={{ borderColor: "var(--tnl-border)" }}>
+                                    {shifts.map((sh, idx) => (
+                                        <tr key={sh.id || idx}>
+                                            <td className="py-2 pr-2 font-semibold" style={{ color: "var(--tnl-green)" }}>{sh.day}</td>
+                                            <td className="py-2 px-2 whitespace-nowrap">{sh.time_slot}</td>
+                                            <td className="py-2 px-2">{sh.coordinator_name}</td>
+                                            <td className="py-2 pl-2 whitespace-nowrap" style={{ color: "var(--tnl-body)" }}>{sh.room || "B-301"}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                ) : null}
+            </div>
+        </article>
+    );
+}
+
 export default function ActivityPage() {
     const { locale, t } = useLocale();
     const [params, setParams] = useSearchParams();
     const requested = params.get("tab") as TabKey | null;
     const [tab, setTab] = useState<TabKey>(requested && TABS.some((x) => x.key === requested) ? requested : "rd");
+    const [equipCat, setEquipCat] = useState<string>("all");
 
     useEffect(() => {
         if (requested && TABS.some((x) => x.key === requested)) setTab(requested);
@@ -411,11 +613,27 @@ export default function ActivityPage() {
 
     const { data: projects, isLoading: projectsLoading } = useProjects();
     const { data: practicum, isLoading: practicumLoading } = usePracticum();
+    const { data: equipment, isLoading: equipLoading } = useEquipment();
     const { data: events, isLoading: eventsLoading } = useEvents();
     const { data: activities, isLoading: activitiesLoading } = useActivities();
 
     const clusters = useMemo(() => (projects ?? []).filter((p) => p.kind === "rd" && !p.is_testbed), [projects]);
     const testbeds = useMemo(() => (projects ?? []).filter((p) => p.is_testbed), [projects]);
+
+    const EQUIP_CATEGORIES = [
+        { key: "all", labelKey: "all_equipment" as const },
+        { key: "server", labelKey: "category_server" as const },
+        { key: "sdr", labelKey: "category_sdr" as const },
+        { key: "networking", labelKey: "category_networking" as const },
+        { key: "optical", labelKey: "category_optical" as const },
+        { key: "test_tool", labelKey: "category_test_tool" as const },
+    ];
+
+    const filteredEquip = useMemo(() => {
+        if (!equipment) return [];
+        if (equipCat === "all") return equipment;
+        return equipment.filter((eq) => eq.category === equipCat);
+    }, [equipment, equipCat]);
 
     return (
         <div data-testid="activity-page">
@@ -481,7 +699,59 @@ export default function ActivityPage() {
                                 </div>
                             ) : null}
 
-                            <div className="tnl-hero-gradient tnl-card mt-14 p-10 text-center">
+                            <div className="mt-16" data-testid="lab-equipment-section">
+                                <SectionHeading
+                                    title={t("lab_equipment")}
+                                    count={filteredEquip.length}
+                                    countLabel={locale === "id" ? "perangkat" : "items"}
+                                    testId="equipment-heading"
+                                />
+                                <p className="mt-1 text-sm max-w-3xl" style={{ color: "var(--tnl-body)" }}>
+                                    {t("equipment_subtitle")}
+                                </p>
+
+                                <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label={t("lab_equipment")}>
+                                    {EQUIP_CATEGORIES.map((cat) => (
+                                        <button
+                                            key={cat.key}
+                                            type="button"
+                                            onClick={() => setEquipCat(cat.key)}
+                                            className="rounded-full px-4 py-1.5 text-xs font-semibold transition-all border"
+                                            style={
+                                                equipCat === cat.key
+                                                    ? { background: "var(--tnl-green)", color: "#ffffff", borderColor: "var(--tnl-green)" }
+                                                    : { background: "var(--background)", color: "var(--tnl-body)", borderColor: "var(--tnl-border)" }
+                                            }
+                                            data-testid={`equipment-cat-filter-${cat.key}`}
+                                        >
+                                            {t(cat.labelKey)}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {equipLoading ? (
+                                    <div className="mt-8">
+                                        <Spinner label={t("loading")} />
+                                    </div>
+                                ) : filteredEquip.length === 0 ? (
+                                    <div className="mt-8">
+                                        <EmptyState
+                                            title={t("coming_soon")}
+                                            body={t("coming_soon_body")}
+                                            testId="equipment-empty-state"
+                                            icon={<Cpu className="h-7 w-7" style={{ color: "var(--tnl-tan-text)" }} />}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                                        {filteredEquip.map((item) => (
+                                            <EquipmentCard key={item.id} item={item} />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="tnl-hero-gradient tnl-card mt-16 p-10 text-center">
                                 <h3 className="tnl-h4 text-[22px]" style={{ color: "#ffffff" }}>
                                     {t("collaborate_title")}
                                 </h3>
@@ -508,28 +778,9 @@ export default function ActivityPage() {
                             ) : (practicum ?? []).length === 0 ? (
                                 <EmptyState title={t("coming_soon")} body={t("coming_soon_body")} testId="practicum-empty-state" />
                             ) : (
-                                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                                <div className="grid gap-6 md:grid-cols-2">
                                     {(practicum ?? []).map((mod, i) => (
-                                        <article
-                                            key={mod.id}
-                                            className="tnl-card tnl-card-hover border-l-4 p-6"
-                                            style={{ borderLeftColor: "var(--tnl-tan)" }}
-                                            data-testid={`practicum-card-${mod.id}`}
-                                        >
-                                            <span className="block text-[30px] font-bold leading-none" style={{ color: "var(--tnl-tan)" }}>
-                                                {String(i + 1).padStart(2, "0")}
-                                            </span>
-                                            <h3 className="mt-3 text-[18px] font-bold">{pick(locale, mod.name, mod.name_id)}</h3>
-                                            {mod.code ? (
-                                                <p className="mt-1 text-xs font-semibold" style={{ color: "var(--tnl-tan-text)" }}>
-                                                    {mod.code}
-                                                    {mod.semester ? ` · ${mod.semester}` : ""}
-                                                </p>
-                                            ) : null}
-                                            <p className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)]">
-                                                {pick(locale, mod.description, mod.description_id)}
-                                            </p>
-                                        </article>
+                                        <PracticumCard key={mod.id} mod={mod} index={i} />
                                     ))}
                                 </div>
                             )}

@@ -228,6 +228,25 @@ class Partner(BaseModel):
     updated_at: datetime = Field(default_factory=now_utc)
 
 
+class PracticumResource(BaseModel):
+    id: str = Field(default_factory=_uuid)
+    title: str
+    file_url: str
+    file_type: str = "pdf"  # pdf | pkt | py | zip | docx | other
+    size_bytes: int | None = None
+    updated_at: datetime = Field(default_factory=now_utc)
+
+
+class PracticumShift(BaseModel):
+    id: str = Field(default_factory=_uuid)
+    day: str  # Senin, Selasa, Rabu, Kamis, Jumat
+    time_slot: str  # e.g. 08:00 - 10:00 WIB
+    coordinator_name: str
+    quota: int = 20
+    room: str = "Ruang B-301"
+    notes: str | None = None
+
+
 class PracticumModule(BaseModel):
     model_config = {"extra": "forbid"}
     id: str = Field(default_factory=_uuid)
@@ -237,6 +256,33 @@ class PracticumModule(BaseModel):
     description: str = ""
     description_id: str = ""
     semester: str | None = None
+    resources: list[PracticumResource] = []
+    shifts: list[PracticumShift] = []
+    order: int = 0
+    published: bool = True
+    needs_review: bool = False
+    issues: list[dict] = []
+    created_at: datetime = Field(default_factory=now_utc)
+    updated_at: datetime = Field(default_factory=now_utc)
+
+
+class Equipment(BaseModel):
+    model_config = {"extra": "forbid"}
+    id: str = Field(default_factory=_uuid)
+    name: str
+    name_id: str | None = None
+    category: str = "server"  # server | sdr | networking | optical | test_tool | other
+    specs: str = ""
+    specs_id: str | None = None
+    photo_url: str | None = None
+    photo_alt: str | None = None
+    quantity: int = 1
+    location: str = "Ruang B-301"
+    status: str = "available"  # available | in_use | maintenance
+    # Internal inventory fields (stripped from public responses)
+    serial_number: str | None = None
+    asset_code: str | None = None
+    internal_notes: str | None = None
     order: int = 0
     published: bool = True
     needs_review: bool = False
@@ -285,9 +331,11 @@ CONTENT_MODELS: dict[str, type[BaseModel]] = {
     "publications": Publication,
     "partners": Partner,
     "practicum": PracticumModule,
+    "equipment": Equipment,
 }
 
 TITLE_FIELD: dict[str, str] = {
     "posts": "title", "members": "name", "events": "title", "activities": "title",
     "projects": "title", "publications": "title", "partners": "name", "practicum": "name",
+    "equipment": "name",
 }

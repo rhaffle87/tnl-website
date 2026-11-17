@@ -18,8 +18,19 @@ from lib.storage import delete_object, local_path, put_object, safe_name
 router = APIRouter(tags=["media"])
 
 IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"}
-DOC_TYPES = {"application/pdf", "application/msword",
-             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
+DOC_TYPES = {
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/zip",
+    "application/x-zip-compressed",
+    "text/plain",
+    "text/x-python",
+    "application/x-python-code",
+    "text/csv",
+    "application/json",
+}
+DOC_EXTENSIONS = {".pdf", ".doc", ".docx", ".pkt", ".py", ".zip", ".txt", ".csv", ".json"}
 MAX_BYTES = 10 * 1024 * 1024
 DERIVATIVES = (480, 960, 1600)
 
@@ -101,17 +112,24 @@ async def list_media(folder: str | None = None, q: str | None = None, kind: str 
 
 
 @router.post("/admin/media", status_code=201, dependencies=[Depends(require("media:manage"))])
+@router.post("/admin/media/upload", status_code=201, dependencies=[Depends(require("media:manage"))])
 async def upload_media(request: Request, file: UploadFile = File(...), alt: str = Form(...),
                        folder: str = Form("general")):
     if not alt.strip():
-        raise HTTPException(status_code=422, detail="Alt text is required: describe what the image shows.")
+        raise HTTPException(status_code=422, detail="Alt text is required: describe what the file shows or contains.")
     data = await file.read()
     if len(data) > MAX_BYTES:
         raise HTTPException(status_code=413, detail="Files must be under 10 MB.")
     ctype = file.content_type or "application/octet-stream"
-    if ctype not in IMAGE_TYPES | DOC_TYPES:
-        raise HTTPException(status_code=415, detail="Only images (JPG, PNG, WebP, GIF) and PDF/Word documents are allowed.")
-    kind = "image" if ctype in IMAGE_TYPES else "document"
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    is_image = ctype in IMAGE_TYPES
+    is_doc = (ctype in DOC_TYPES) or (ext in DOC_EXTENSIONS)
+    if not (is_image or is_doc):
+        raise HTTPException(
+            status_code=415,
+            detail="Only images (JPG, PNG, WebP, GIF) and academic/lab documents (PDF, Word, PKT, Python, ZIP) are allowed."
+        )
+    kind = "image" if is_image else "document"
     key = f"{folder or 'general'}/{safe_name(file.filename or 'file')}"
     url = put_object(data, key, ctype)
     doc: dict = {

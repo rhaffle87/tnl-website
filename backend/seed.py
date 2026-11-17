@@ -24,7 +24,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 from lib.auth import hash_password  # noqa: E402
 from lib.db import db, ensure_indexes  # noqa: E402
 from models.content import (  # noqa: E402
-    Activity, Event, Member, Partner, Post, PracticumModule, Project, Publication,
+    Activity, Equipment, Event, Member, Partner, Post, PracticumModule, PracticumResource, PracticumShift, Project, Publication,
 )
 from models.core import SettingsDoc, ThemeTokens  # noqa: E402
 
@@ -707,25 +707,147 @@ async def seed_practicum() -> None:
     modules = [
         ("TNL-01", "Network Fundamentals", "Dasar Jaringan",
          "Addressing, subnetting and the layered model that underpins every later module.",
-         "Pengalamatan, subnetting, dan model berlapis yang menjadi dasar seluruh modul berikutnya."),
+         "Pengalamatan, subnetting, dan model berlapis yang menjadi dasar seluruh modul berikutnya.",
+         [
+             PracticumResource(title="Modul 01: IPv4 Addressing & Subnetting Guide (PDF)", file_url="/api/media-files/academic/modul-01-fundamentals.pdf", file_type="pdf", size_bytes=1048576),
+             PracticumResource(title="Topology Lab 01: Subnetting Lab (PKT)", file_url="/api/media-files/academic/lab-01-topology.pkt", file_type="pkt", size_bytes=245760),
+         ],
+         [
+             PracticumShift(day="Senin", time_slot="08:00 - 10:00 WIB", coordinator_name="Daffa & Fathur", quota=24, room="Ruang B-301", notes="Shift A - Harap membawa laptop dan Packet Tracer v8+"),
+             PracticumShift(day="Rabu", time_slot="13:00 - 15:00 WIB", coordinator_name="Rafi & Alya", quota=24, room="Ruang B-301", notes="Shift B - Wajib hadir 10 menit sebelum sesi dimulai"),
+         ]),
         ("TNL-02", "Switching and VLAN", "Switching dan VLAN",
          "Switch configuration, VLAN segmentation and trunking in the laboratory testbed.",
-         "Konfigurasi switch, segmentasi VLAN, dan trunking pada testbed laboratorium."),
+         "Konfigurasi switch, segmentasi VLAN, dan trunking pada testbed laboratorium.",
+         [
+             PracticumResource(title="Modul 02: Switch Configuration & 802.1Q Trunking (PDF)", file_url="/api/media-files/academic/modul-02-switching.pdf", file_type="pdf", size_bytes=1420000),
+             PracticumResource(title="Switch CLI Configuration Script (TXT)", file_url="/api/media-files/academic/switch-vlan-config.txt", file_type="txt", size_bytes=16384),
+         ],
+         [
+             PracticumShift(day="Selasa", time_slot="10:00 - 12:00 WIB", coordinator_name="Nabil & Salsa", quota=24, room="Ruang B-301", notes="Praktikum di rak switch B-301"),
+             PracticumShift(day="Kamis", time_slot="15:30 - 17:30 WIB", coordinator_name="Arya & Kevin", quota=24, room="Ruang B-301", notes="Praktikum di rak switch B-301"),
+         ]),
         ("TNL-03", "Routing", "Routing",
          "Static and dynamic routing between networks, configured on laboratory equipment.",
-         "Routing statis dan dinamis antar jaringan, dikonfigurasi pada perangkat laboratorium."),
+         "Routing statis dan dinamis antar jaringan, dikonfigurasi pada perangkat laboratorium.",
+         [
+             PracticumResource(title="Modul 03: OSPF & BGP Dynamic Routing Laboratory (PDF)", file_url="/api/media-files/academic/modul-03-routing.pdf", file_type="pdf", size_bytes=1840000),
+             PracticumResource(title="Dynamic Routing Packet Tracer Simulation (PKT)", file_url="/api/media-files/academic/lab-03-ospf.pkt", file_type="pkt", size_bytes=312000),
+         ],
+         [
+             PracticumShift(day="Senin", time_slot="13:00 - 15:00 WIB", coordinator_name="Fathur & Dimas", quota=24, room="Ruang B-301", notes="Eksperimen router Cisco & MikroTik"),
+         ]),
         ("TNL-04", "Network Services", "Layanan Jaringan",
          "DHCP, DNS and address translation as deployed in a small campus network.",
-         "DHCP, DNS, dan translasi alamat sebagaimana diterapkan pada jaringan kampus kecil."),
+         "DHCP, DNS, dan translasi alamat sebagaimana diterapkan pada jaringan kampus kecil.",
+         [
+             PracticumResource(title="Modul 04: DNS, DHCP & NAT Enterprise Deployment (PDF)", file_url="/api/media-files/academic/modul-04-services.pdf", file_type="pdf", size_bytes=1250000),
+             PracticumResource(title="Automated DNS/DHCP Provisioning Script (PY)", file_url="/api/media-files/academic/services-setup.py", file_type="py", size_bytes=24500),
+         ],
+         [
+             PracticumShift(day="Rabu", time_slot="08:00 - 10:00 WIB", coordinator_name="Rayhan & Zaki", quota=24, room="Ruang B-301", notes="Hands-on server Ubuntu Linux"),
+         ]),
         ("TNL-05", "Network Measurement", "Pengukuran Jaringan",
          "Measuring throughput, delay and loss, and interpreting the results.",
-         "Mengukur throughput, delay, dan loss, serta menafsirkan hasilnya."),
+         "Mengukur throughput, delay, dan loss, serta menafsirkan hasilnya.",
+         [
+             PracticumResource(title="Modul 05: QoS Benchmarking with iperf3 & Wireshark (PDF)", file_url="/api/media-files/academic/modul-05-measurement.pdf", file_type="pdf", size_bytes=2100000),
+             PracticumResource(title="QoS Automated Log Analysis Script (PY)", file_url="/api/media-files/academic/measure-analyze.py", file_type="py", size_bytes=18000),
+         ],
+         [
+             PracticumShift(day="Jumat", time_slot="08:30 - 11:00 WIB", coordinator_name="Daffa & Rayhan", quota=24, room="Ruang B-301", notes="Shift Final & Pengambilan Data Laporan Akhir"),
+         ]),
     ]
     docs = [PracticumModule(code=c, name=n, name_id=ni, description=d, description_id=di,
+                            resources=res, shifts=sh,
                             semester="Odd semester", order=i, published=True).model_dump()
-            for i, (c, n, ni, d, di) in enumerate(modules)]
+            for i, (c, n, ni, d, di, res, sh) in enumerate(modules)]
     await db.practicum.insert_many(docs)
-    print(f"  practicum: {len(docs)} modules")
+    print(f"  practicum: {len(docs)} modules with resources and shifts")
+
+
+async def seed_equipment() -> None:
+    await db.equipment.delete_many({})
+    items = [
+        Equipment(
+            name="Proxmox Virtualization 3-Node Cluster (Dell PowerEdge R640)",
+            name_id="Klaster Virtualisasi 3-Node Proxmox (Dell PowerEdge R640)",
+            category="server",
+            specs="3x Dell PowerEdge R640, Dual Intel Xeon Silver 4210 (20 Cores total per node), 128GB DDR4 ECC RAM, 2x 10GbE SFP+ uplinks, 2TB Enterprise NVMe SSD storage. High-availability virtualized testbed for Cloud Core Network & NFV experiments.",
+            specs_id="3 unit Dell PowerEdge R640, Dual Intel Xeon Silver 4210, RAM 128GB DDR4 ECC, uplink 2x 10GbE SFP+, penyimpanan NVMe Enterprise 2TB. Testbed virtualisasi berkinerja tinggi untuk Cloud Core Network & eksperimen NFV.",
+            quantity=3,
+            location="Ruang B-301 (Server Rack 1)",
+            status="available",
+            serial_number="TNL-SRV-2024-001/003",
+            asset_code="ITS-DTE-TNL-2024-EQ01",
+            internal_notes="Managed via Proxmox Web GUI at https://10.10.10.2:8006. Production credentials secured by super_admin.",
+            order=1,
+            published=True,
+        ),
+        Equipment(
+            name="USRP B210 Software Defined Radio (Ettus Research)",
+            name_id="Software Defined Radio USRP B210 (Ettus Research)",
+            category="sdr",
+            specs="Dual-channel transceiver RF coverage from 70 MHz to 6 GHz. Continuous streaming up to 56 MHz realtime bandwidth over USB 3.0. Integrated with GNU Radio, OpenAirInterface (OAI), and srsRAN for 4G/5G NR standalone base station research.",
+            specs_id="Transceiver dual-channel cakupan frekuensi 70 MHz - 6 GHz. Realtime bandwidth hingga 56 MHz melalui USB 3.0. Digunakan untuk riset GNU Radio, OpenAirInterface (OAI), dan pemancar 4G/5G NR mandiri.",
+            quantity=2,
+            location="Ruang B-301 (Meja Riset SDR)",
+            status="available",
+            serial_number="TNL-SDR-2023-014/015",
+            asset_code="ITS-DTE-TNL-2023-EQ04",
+            internal_notes="Connected to dedicated GPU research workstation. Calibration files stored on TNL server.",
+            order=2,
+            published=True,
+        ),
+        Equipment(
+            name="Cisco Catalyst 3850 & MikroTik Cloud Core CCR1036-8G-2S+",
+            name_id="Cisco Catalyst 3850 & MikroTik Cloud Core CCR1036-8G-2S+",
+            category="networking",
+            specs="Cisco Catalyst 3850 24-Port Gigabit PoE+ Enterprise Managed Switch with 10G uplink module, paired with 36-core MikroTik Cloud Core Router (CCR1036) for high-throughput edge routing, BGP peering, and practicum network topologies.",
+            specs_id="Switch managed enterprise Cisco Catalyst 3850 24 port PoE+ dengan modul 10G, dipadukan router 36-core MikroTik Cloud Core CCR1036 untuk routing throughput tinggi, BGP, dan praktikum.",
+            quantity=4,
+            location="Ruang B-301 (Network Rack 2)",
+            status="available",
+            serial_number="TNL-NET-2022-088",
+            asset_code="ITS-DTE-TNL-2022-EQ09",
+            internal_notes="Core routing for lab practicum and internal subnet isolation.",
+            order=3,
+            published=True,
+        ),
+        Equipment(
+            name="Optical Time Domain Reflectometer (OTDR) & Fujikura Fusion Splicer",
+            name_id="Optical Time Domain Reflectometer (OTDR) & Fusion Splicer Fujikura",
+            category="optical",
+            specs="Precision optical fiber test kit: Dual-wavelength (1310/1550nm) OTDR with integrated Visual Fault Locator (VFL) and Optical Power Meter (OPM), along with automated core-alignment fusion splicer for high-precision fiber splicing and attenuation analysis.",
+            specs_id="Kit pengujian serat optik presisi: OTDR dual-wavelength (1310/1550nm) dilengkapi VFL dan Optical Power Meter, serta fusion splicer otomatis berteknologi core-alignment untuk penyambungan serat optik.",
+            quantity=2,
+            location="Ruang B-301 (Lemari Instrumen Optik)",
+            status="available",
+            serial_number="TNL-OPT-2021-003",
+            asset_code="ITS-DTE-TNL-2021-EQ02",
+            internal_notes="Penyimpanan baterai dan cleaver pisau presisi dicek berkala oleh divisi Academics.",
+            order=4,
+            published=True,
+        ),
+        Equipment(
+            name="Rohde & Schwarz Spectrum Analyzer (up to 6 GHz)",
+            name_id="Penganalisis Spektrum Rohde & Schwarz (hingga 6 GHz)",
+            category="test_tool",
+            specs="High-precision RF spectrum analyzer operating from 9 kHz up to 6 GHz. Features low phase noise, tracking generator, and resolution bandwidth down to 1 Hz for wireless channel characterization and RF filter design validation.",
+            specs_id="Penganalisis spektrum frekuensi radio 9 kHz hingga 6 GHz. Memiliki phase noise sangat rendah, tracking generator, dan filter RBW hingga 1 Hz untuk validasi filter RF dan karakterisasi kanal nirkabel.",
+            quantity=1,
+            location="Ruang B-301 (Stasiun Pengukuran RF)",
+            status="in_use",
+            serial_number="TNL-TST-2020-045",
+            asset_code="ITS-DTE-TNL-2020-EQ11",
+            internal_notes="Saat ini dialokasikan untuk pengukuran riset propagasi Okumura-Hata tim Dosen.",
+            order=5,
+            published=True,
+        ),
+    ]
+    docs = [eq.model_dump() for eq in items]
+    await db.equipment.insert_many(docs)
+    print(f"  equipment: {len(docs)} lab equipment items")
 
 
 async def seed_partners() -> None:
@@ -1011,7 +1133,7 @@ async def main() -> None:
     reset = "--reset" in sys.argv
     if reset:
         for coll in ("pages", "posts", "members", "events", "activities", "projects", "publications",
-                     "partners", "practicum", "registrations", "messages", "media", "audit_log",
+                     "partners", "practicum", "equipment", "registrations", "messages", "media", "audit_log",
                      "saved_blocks", "collections_def", "collection_items", "outbox", "api_keys"):
             await db[coll].drop()
         print("Dropped app collections (users and settings preserved).")
@@ -1025,6 +1147,7 @@ async def main() -> None:
     await seed_members()
     await seed_activities()
     await seed_practicum()
+    await seed_equipment()
     await seed_partners()
     await seed_events()
     await seed_publications()

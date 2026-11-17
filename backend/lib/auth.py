@@ -49,8 +49,19 @@ PERMS: dict[str, set[str]] = {
 
 # Division scoping: when a staff user has divisions set, writes to these resources
 # require the matching division. Super Admin is never scoped.
-DIVISION_OF = {"posts": "media", "practicum": "academics", "activities": "event", "events": "event"}
-DIVISION_LABELS = {"media": "Media", "academics": "Academics", "event": "Event"}
+DIVISION_OF = {
+    "posts": "media",
+    "practicum": "academics",
+    "activities": "event",
+    "events": "event",
+    "equipment": "research",
+}
+DIVISION_LABELS = {
+    "media": "Media",
+    "academics": "Academics",
+    "event": "Event",
+    "research": "Research",
+}
 UNSCOPED_ROLES = ("super_admin",)
 
 
