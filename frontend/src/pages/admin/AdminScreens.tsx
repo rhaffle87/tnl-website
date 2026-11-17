@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Sparkles, Upload } from "lucide-react";
+import { Award, Download, Sparkles, Upload } from "lucide-react";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
 import { AdminHeader, ConfirmButton, Panel, adminError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
@@ -224,6 +224,15 @@ export function RegistrarPage() {
         onError: (err) => toast.error(adminError(err, "No registration matches this code.")),
     });
 
+    const issueCerts = useMutation({
+        mutationFn: () => apiPost<{ ok: boolean; issued: number }>("/admin/registrations/issue-certificates", { event_id: eventId }),
+        onSuccess: (res) => {
+            refresh();
+            toast.success(`Issued ${res.issued} certificate(s).`);
+        },
+        onError: (err) => toast.error(adminError(err, "Could not issue certificates.")),
+    });
+
     const items = data?.items ?? [];
     const exportUrl = `/api/admin/registrations/export${eventId ? `?event_id=${eventId}` : ""}${status ? `${eventId ? "&" : "?"}status=${status}` : ""}`;
 
@@ -233,9 +242,22 @@ export function RegistrarPage() {
                 title="Registrations"
                 help="Everyone who signed up for a programme. Accept or reject them, check people in at the door, and export the list."
                 actions={
-                    <a href={exportUrl} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="registrations-export-button">
-                        Export to spreadsheet
-                    </a>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => issueCerts.mutate()}
+                            className="tnl-btn tnl-btn-primary h-10 min-h-[40px] text-sm"
+                            disabled={!eventId || issueCerts.isPending}
+                            data-testid="issue-certificates-btn"
+                            title={!eventId ? "Select an event to issue certificates" : "Issue certificate codes for attended participants"}
+                        >
+                            <Award className="h-4 w-4" aria-hidden="true" />
+                            {issueCerts.isPending ? "Issuing…" : "Issue Certificates"}
+                        </button>
+                        <a href={exportUrl} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="registrations-export-button">
+                            Export to spreadsheet
+                        </a>
+                    </div>
                 }
                 testId="registrar-header"
             />
@@ -291,6 +313,7 @@ export function RegistrarPage() {
                                 <th className="pb-2 pr-4 font-semibold">Name</th>
                                 <th className="pb-2 pr-4 font-semibold">Event</th>
                                 <th className="pb-2 pr-4 font-semibold">Status</th>
+                                <th className="pb-2 pr-4 font-semibold">Certificate</th>
                                 <th className="pb-2 pr-4 font-semibold">Quality</th>
                                 <th className="pb-2 font-semibold">Decide</th>
                             </tr>
@@ -304,6 +327,23 @@ export function RegistrarPage() {
                                     </td>
                                     <td className="py-3 pr-4">{reg.event_title}</td>
                                     <td className="py-3 pr-4 capitalize">{reg.status}</td>
+                                    <td className="py-3 pr-4">
+                                        {reg.certificate_code ? (
+                                            <a
+                                                href={`/api/certificates/${reg.certificate_code}/pdf`}
+                                                download
+                                                className="inline-flex items-center gap-1 rounded-[6px] border px-2 py-0.5 text-xs font-mono font-semibold transition-colors hover:border-[var(--tnl-green)]"
+                                                style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-green)" }}
+                                                title="Download certificate PDF"
+                                                data-testid={`download-cert-${reg.id}`}
+                                            >
+                                                <Download className="h-3 w-3" />
+                                                {reg.certificate_code}
+                                            </a>
+                                        ) : (
+                                            <span className="text-xs" style={{ color: "var(--tnl-tan-text)" }}>—</span>
+                                        )}
+                                    </td>
                                     <td className="py-3 pr-4 text-xs">
                                         {reg.ai_score?.ai_ok ? (
                                             <span data-testid={`registration-score-${reg.id}`}>

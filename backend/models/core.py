@@ -222,6 +222,12 @@ class CheckinIn(BaseModel):
     code: str
 
 
+class IssueCertificatesIn(BaseModel):
+    event_id: str
+    statuses: list[str] = ["attended"]
+
+
+
 # ---------------------------------------------------------------- messages
 class MessagePatch(BaseModel):
     model_config = {"extra": "forbid"}

@@ -348,3 +348,29 @@ def test_revoked_key_stops_working(client):
     assert client.get("/v1/news", headers={"X-API-Key": raw}).status_code == 200
     client.delete(f"/admin/api-keys/{created['id']}")
     assert client.get("/v1/news", headers={"X-API-Key": raw}).status_code == 401
+
+
+# ---------------------------------------------------------------- certificates
+def test_certificate_issuing_and_verification(client):
+    login(client)
+    events = client.get("/admin/content/events").json().get("items", [])
+    if not events:
+        return
+    ev_id = events[0]["id"]
+    res = client.post("/admin/registrations/issue-certificates", json={"event_id": ev_id, "statuses": ["pending", "accepted", "attended"]})
+    assert res.status_code == 200
+    assert "issued" in res.json()
+
+    regs = client.get(f"/admin/registrations?event_id={ev_id}").json().get("items", [])
+    with_code = [r for r in regs if r.get("certificate_code")]
+    if with_code:
+        code = with_code[0]["certificate_code"]
+        v_res = client.get(f"/verify/{code}")
+        assert v_res.status_code == 200
+        assert v_res.json().get("valid") is True
+
+        pdf_res = client.get(f"/certificates/{code}/pdf")
+        assert pdf_res.status_code == 200
+        assert pdf_res.headers["content-type"] == "application/pdf"
+        assert pdf_res.content.startswith(b"%PDF")
+

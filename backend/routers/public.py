@@ -367,51 +367,164 @@ async def verify_certificate(code: str):
     reg = await db.registrations.find_one({"certificate_code": code.upper()})
     if not reg or reg.get("status") not in ("accepted", "attended"):
         return {"valid": False, "message": "No valid certificate found for this code."}
+    ev = await db.events.find_one({"id": reg.get("event_id")}) or {}
     return {
         "valid": True,
         "name": reg.get("data", {}).get("f_full-name") or reg.get("data", {}).get("f_name") or reg.get("email"),
-        "event_title": reg.get("event_title"),
+        "event_title": reg.get("event_title") or ev.get("title", ""),
+        "event_date": ev.get("start_date") or "",
         "status": reg.get("status"),
         "code": reg.get("certificate_code"),
-        "message": "This certificate is valid.",
+        "issued_at": reg.get("certificate_issued_at"),
+        "message": "This certificate is valid and officially issued by Telecommunication Network Laboratory ITS.",
     }
 
 
 @router.get("/certificates/{code}/pdf")
+@router.get("/public/certificates/{code}/download")
 async def certificate_pdf(code: str):
     reg = await db.registrations.find_one({"certificate_code": code.upper()})
     if not reg or reg.get("status") not in ("accepted", "attended"):
         raise HTTPException(status_code=404, detail="Certificate not found.")
     try:
+        import tempfile
+        import qrcode
         from fpdf import FPDF
     except ImportError:
-        raise HTTPException(status_code=501, detail="PDF generation needs the fpdf2 package installed.")
-    name = reg.get("data", {}).get("f_full-name") or reg.get("email", "Participant")
-    base = os.environ.get("APP_URL", "").rstrip("/")
-    pdf = FPDF(orientation="L", format="A4")
-    pdf.add_page()
-    pdf.set_draw_color(67, 89, 74)
-    pdf.set_line_width(1.2)
-    pdf.rect(12, 12, 273, 173)
-    pdf.set_font("helvetica", "B", 26)
-    pdf.set_text_color(17, 21, 24)
-    pdf.cell(0, 24, "Telecommunication Network Laboratory — ITS", align="C", new_x="LMARGIN", new_y="NEXT")
-    pdf.set_font("helvetica", "", 15)
-    pdf.set_text_color(67, 89, 74)
-    pdf.cell(0, 12, "Certificate of Participation", align="C", new_x="LMARGIN", new_y="NEXT")
-    pdf.ln(14)
-    pdf.set_font("helvetica", "B", 30)
-    pdf.set_text_color(17, 21, 24)
-    pdf.cell(0, 18, name, align="C", new_x="LMARGIN", new_y="NEXT")
-    pdf.set_font("helvetica", "", 13)
-    pdf.set_text_color(63, 66, 69)
-    pdf.cell(0, 12, f"has successfully participated in {reg.get('event_title', '')}", align="C", new_x="LMARGIN", new_y="NEXT")
-    pdf.ln(10)
-    pdf.set_font("helvetica", "", 10)
-    pdf.cell(0, 8, f"Certificate code: {reg.get('certificate_code')}  ·  Verify at {base}/verify/{reg.get('certificate_code')}",
-             align="C", new_x="LMARGIN", new_y="NEXT")
+        raise HTTPException(status_code=501, detail="PDF generation needs fpdf2 and qrcode packages installed.")
+
+    ev = await db.events.find_one({"id": reg.get("event_id")}) or {}
+    s = await get_settings()
+
+    name = reg.get("data", {}).get("f_full-name") or reg.get("data", {}).get("f_name") or reg.get("email", "Participant")
+    event_title = reg.get("event_title") or ev.get("title", "Laboratory Training & Workshop")
+    cert_code = reg.get("certificate_code", code.upper())
+    base = os.environ.get("PUBLIC_SITE_URL") or os.environ.get("APP_URL") or "http://localhost:3000"
+    base = base.rstrip("/")
+    verify_url = f"{base}/verify/{cert_code}"
+
+    # Generate QR Code into temporary file
+    qr_img = qrcode.make(verify_url)
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_qr:
+        qr_img.save(tmp_qr.name, format="PNG")
+        tmp_qr_path = tmp_qr.name
+
+    try:
+        # A4 Landscape: 297mm x 210mm
+        pdf = FPDF(orientation="L", format="A4", unit="mm")
+        pdf.set_auto_page_break(auto=False)
+        pdf.add_page()
+
+        # Outer border: Forest Green (#43594A -> 67, 89, 74)
+        pdf.set_draw_color(67, 89, 74)
+        pdf.set_line_width(2.0)
+        pdf.rect(10, 10, 277, 190)
+
+        # Inner border: Gold / Tan (#A8977B -> 168, 151, 123)
+        pdf.set_draw_color(168, 151, 123)
+        pdf.set_line_width(0.8)
+        pdf.rect(13, 13, 271, 184)
+
+        # Corner corner accents
+        pdf.rect(16, 16, 265, 178)
+
+        # Institution headers
+        pdf.set_y(22)
+        pdf.set_font("helvetica", "B", 13)
+        pdf.set_text_color(67, 89, 74)
+        pdf.cell(0, 6, "INSTITUT TEKNOLOGI SEPULUH NOPEMBER", align="C", new_x="LMARGIN", new_y="NEXT")
+
+        pdf.set_font("helvetica", "B", 10)
+        pdf.set_text_color(115, 120, 125)
+        pdf.cell(0, 5, "DEPARTEMEN TEKNIK ELEKTRO  ·  LABORATORIUM JARINGAN TELEKOMUNIKASI", align="C", new_x="LMARGIN", new_y="NEXT")
+
+        pdf.set_font("helvetica", "", 8)
+        pdf.cell(0, 4, "Gedung B Lantai 3 Ruang B-301, Kampus ITS Sukolilo, Surabaya 60111", align="C", new_x="LMARGIN", new_y="NEXT")
+
+        # Decorative line
+        pdf.set_y(40)
+        pdf.set_draw_color(168, 151, 123)
+        pdf.set_line_width(0.6)
+        pdf.line(40, 40, 257, 40)
+
+        # Title
+        pdf.set_y(46)
+        pdf.set_font("helvetica", "B", 24)
+        pdf.set_text_color(17, 21, 24)
+        pdf.cell(0, 12, "CERTIFICATE OF ACHIEVEMENT", align="C", new_x="LMARGIN", new_y="NEXT")
+
+        pdf.set_font("helvetica", "I", 11)
+        pdf.set_text_color(115, 120, 125)
+        pdf.cell(0, 6, "This is to certify that", align="C", new_x="LMARGIN", new_y="NEXT")
+
+        # Participant Name
+        pdf.set_y(70)
+        pdf.set_font("helvetica", "B", 26)
+        pdf.set_text_color(67, 89, 74)
+        pdf.cell(0, 14, name, align="C", new_x="LMARGIN", new_y="NEXT")
+
+        # Participant Statement
+        pdf.set_y(88)
+        pdf.set_font("helvetica", "", 12)
+        pdf.set_text_color(63, 66, 69)
+        pdf.cell(0, 7, "has successfully completed and attended the laboratory program:", align="C", new_x="LMARGIN", new_y="NEXT")
+
+        pdf.set_font("helvetica", "B", 16)
+        pdf.set_text_color(17, 21, 24)
+        pdf.cell(0, 10, f'"{event_title}"', align="C", new_x="LMARGIN", new_y="NEXT")
+
+        event_date = ev.get("start_date") or today_iso()
+        pdf.set_font("helvetica", "", 10)
+        pdf.set_text_color(115, 120, 125)
+        pdf.cell(0, 6, f"Organized by Telecommunication Network Laboratory on {event_date}", align="C", new_x="LMARGIN", new_y="NEXT")
+
+        # Bottom section: QR Code (Left) & Signature Block (Right)
+        qr_size = 28
+        pdf.image(tmp_qr_path, x=30, y=134, w=qr_size, h=qr_size)
+
+        pdf.set_xy(28, 164)
+        pdf.set_font("helvetica", "", 7)
+        pdf.set_text_color(115, 120, 125)
+        pdf.cell(32, 4, "Scan to verify authenticity", align="C")
+
+        # Right side: Signatures
+        pdf.set_xy(180, 130)
+        pdf.set_font("helvetica", "", 10)
+        pdf.set_text_color(63, 66, 69)
+        pdf.cell(85, 5, f"Surabaya, {event_date[:4] if len(event_date) >= 4 else '2026'}", align="C", new_x="LMARGIN", new_y="NEXT")
+
+        pdf.set_x(180)
+        pdf.set_font("helvetica", "", 10)
+        pdf.cell(85, 5, "Head of Laboratory,", align="C", new_x="LMARGIN", new_y="NEXT")
+
+        pdf.set_y(158)
+        pdf.set_x(180)
+        pdf.set_font("helvetica", "B", 11)
+        pdf.set_text_color(17, 21, 24)
+        pdf.cell(85, 5, "Dr. Ir. Achmad Affandi, DEA.", align="C", new_x="LMARGIN", new_y="NEXT")
+
+        pdf.set_x(180)
+        pdf.set_font("helvetica", "", 9)
+        pdf.set_text_color(115, 120, 125)
+        pdf.cell(85, 4, "NIP. 196404171989031002", align="C", new_x="LMARGIN", new_y="NEXT")
+
+        # Bottom footer bar with certificate code
+        pdf.set_y(184)
+        pdf.set_font("helvetica", "", 8)
+        pdf.set_text_color(115, 120, 125)
+        pdf.cell(0, 5, f"Official Certificate No: {cert_code}  ·  Verification: {verify_url}", align="C")
+
+        pdf_bytes = bytes(pdf.output())
+    finally:
+        if os.path.exists(tmp_qr_path):
+            try:
+                os.remove(tmp_qr_path)
+            except Exception:
+                pass
+
     return Response(
-        content=bytes(pdf.output()),
+        content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="certificate-{code}.pdf"'},
+        headers={"Content-Disposition": f'attachment; filename="tnl-certificate-{cert_code}.pdf"'},
     )
+

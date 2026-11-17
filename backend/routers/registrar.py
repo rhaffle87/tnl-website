@@ -15,7 +15,7 @@ from lib.db import db
 from lib.jev import score_registration, triage_message
 from lib.mailer import send_email
 from lib.serialize import jsonable
-from models.core import BulkEmailIn, CheckinIn, MessagePatch, RegistrationPatch
+from models.core import BulkEmailIn, CheckinIn, IssueCertificatesIn, MessagePatch, RegistrationPatch
 
 router = APIRouter(prefix="/admin", tags=["registrar"])
 
@@ -195,6 +195,45 @@ async def registration_qr(reg_id: str):
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return Response(content=buf.getvalue(), media_type="image/png")
+
+
+@router.post("/registrations/issue-certificates", dependencies=[Depends(require("registrations:manage"))])
+async def issue_certificates(payload: IssueCertificatesIn, request: Request):
+    """Batch issue official certificate codes for participants."""
+    event = await db.events.find_one({"id": payload.event_id})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found.")
+
+    start_date = event.get("start_date") or ""
+    year = start_date[:4] if len(start_date) >= 4 else str(datetime.now(timezone.utc).year)
+    ev_type = (event.get("type") or "evt")[:3].upper()
+
+    statuses = payload.statuses if payload.statuses else ["attended"]
+    query = {
+        "event_id": payload.event_id,
+        "status": {"$in": statuses},
+        "$or": [
+            {"certificate_code": {"$exists": False}},
+            {"certificate_code": None},
+            {"certificate_code": ""},
+        ],
+    }
+    candidates = await db.registrations.find(query).to_list(2000)
+    issued_count = 0
+    now = datetime.now(timezone.utc)
+    for reg in candidates:
+        code = f"TNL-{year}-{ev_type}-{secrets.token_hex(3).upper()}"
+        while await db.registrations.find_one({"certificate_code": code}):
+            code = f"TNL-{year}-{ev_type}-{secrets.token_hex(3).upper()}"
+        await db.registrations.update_one(
+            {"id": reg["id"]},
+            {"$set": {"certificate_code": code, "certificate_issued_at": now}},
+        )
+        issued_count += 1
+
+    await audit(request, "issue-certificates", "registrations", payload.event_id, {"issued": issued_count})
+    return {"ok": True, "issued": issued_count, "event_id": payload.event_id}
+
 
 
 # ---------------------------------------------------------------- UU PDP

@@ -42,6 +42,7 @@ services:
       SMTP_FROM: ${SMTP_FROM:-TNL Studio <noreply@its.ac.id>}
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
     volumes:
+      - ./backend:/app
       - media-data:/data/media
     ports:
       - "8001:8001"

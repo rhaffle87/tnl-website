@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { BadgeCheck, ShieldAlert } from "lucide-react";
+import { BadgeCheck, Download, ShieldAlert } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { useLocale } from "@/lib/i18n";
 import { EmptyState, Spinner } from "@/components/site/Primitives";
@@ -26,8 +26,10 @@ interface VerifyResponse {
     valid: boolean;
     name?: string;
     event_title?: string;
+    event_date?: string;
     status?: string;
     code?: string;
+    issued_at?: string;
     message: string;
 }
 
@@ -72,11 +74,28 @@ export function VerifyPage() {
                         <div className="tnl-card p-8 text-center" data-testid="verify-valid">
                             <BadgeCheck className="mx-auto h-12 w-12" style={{ color: "var(--tnl-green)" }} aria-hidden="true" />
                             <h2 className="tnl-h5 mt-4 text-[20px]">{t("certificate_valid")}</h2>
-                            <p className="mt-3 text-base font-semibold">{data.name}</p>
-                            <p className="text-sm text-[var(--tnl-body)]">{data.event_title}</p>
-                            <p className="mt-3 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
+                            <p className="mt-4 text-xl font-bold" style={{ color: "var(--tnl-green)" }}>{data.name}</p>
+                            <p className="mt-1 text-sm font-medium text-[var(--tnl-body)]">{data.event_title}</p>
+                            {data.event_date && (
+                                <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
+                                    Date: {data.event_date}
+                                </p>
+                            )}
+                            <div className="my-4 border-t border-dashed" style={{ borderColor: "var(--tnl-border)" }} />
+                            <p className="font-mono text-xs font-semibold tracking-wider" style={{ color: "var(--tnl-tan)" }}>
                                 {data.code}
                             </p>
+                            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                                <a
+                                    href={`/api/certificates/${data.code}/pdf`}
+                                    download
+                                    className="tnl-btn tnl-btn-primary inline-flex items-center gap-2"
+                                    data-testid="download-certificate-btn"
+                                >
+                                    <Download className="h-4 w-4" aria-hidden="true" />
+                                    Download PDF Certificate
+                                </a>
+                            </div>
                         </div>
                     ) : (
                         <div className="tnl-card p-8 text-center" data-testid="verify-invalid">
