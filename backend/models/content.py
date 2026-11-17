@@ -206,6 +206,7 @@ class Publication(BaseModel):
     doi: str | None = None
     abstract: str = ""
     tags: list[str] = []
+    linked_member_ids: list[str] = []
     status: str = "draft"
     needs_review: bool = False
     issues: list[dict] = []

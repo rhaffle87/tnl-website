@@ -195,6 +195,8 @@ export interface Publication {
   doi?: string | null;
   abstract: string;
   tags: string[];
+  linked_member_ids?: string[];
+  linked_members?: { id: string; name: string; role: string; division?: string | null }[];
   status: string;
   needs_review: boolean;
   issues: QualityIssue[];

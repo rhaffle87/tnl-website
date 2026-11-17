@@ -2,10 +2,11 @@
 // assistants under batch tabs grouped by division with colored role chips,
 // and a detail modal. Private fields only render when the admin enabled them.
 
-import { useMemo, useState } from "react";
-import { ExternalLink, FileText, Github, Instagram, Linkedin, Mail, Users, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { BookOpen, ExternalLink, FileText, Github, Instagram, Linkedin, Mail, Users, X } from "lucide-react";
 import { pick, useLocale } from "@/lib/i18n";
-import { useMembers } from "@/lib/hooks";
+import { useMembers, usePublications } from "@/lib/hooks";
 import { EmptyState, SectionHeading, Spinner } from "@/components/site/Primitives";
 import type { Member } from "@/lib/types";
 
@@ -156,6 +157,7 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
 function MemberModal({ member, onClose }: { member: Member; onClose: () => void }) {
     const { locale, t } = useLocale();
     const chip = roleChip(member, t as never);
+    const { data: memberPubs } = usePublications({ member_id: member.id });
     return (
         <div
             className="fixed inset-0 z-[100] flex items-center justify-center p-4"
@@ -250,6 +252,35 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                                 {t("cv")}
                             </a>
                         ) : null}
+                        {memberPubs && memberPubs.length > 0 ? (
+                            <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--tnl-border)" }} data-testid={`member-publications-${member.id}`}>
+                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                                    <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
+                                    Selected Publications at TNL ({memberPubs.length})
+                                </div>
+                                <div className="mt-2.5 space-y-2">
+                                    {memberPubs.map((pub) => (
+                                        <div key={pub.id} className="rounded-lg border p-2.5 text-xs transition-colors hover:border-[var(--tnl-green)]" style={{ borderColor: "var(--tnl-border)" }}>
+                                            <p className="font-semibold text-[var(--tnl-body)]">{pub.title}</p>
+                                            <div className="mt-1 flex flex-wrap items-center gap-2" style={{ color: "var(--tnl-tan-text)" }}>
+                                                <span>{pub.year}</span>
+                                                {pub.venue && <span>· {pub.venue}</span>}
+                                                {pub.doi && (
+                                                    <a
+                                                        href={`https://doi.org/${pub.doi}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 font-semibold text-[var(--tnl-green)] hover:underline"
+                                                    >
+                                                        DOI <ExternalLink className="h-3 w-3" />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
                         <SocialLinks member={member} />
                     </div>
                 </div>
@@ -263,8 +294,17 @@ export function MemberSections() {
     const [statusFilter, setStatusFilter] = useState<"active" | "alumni">("active");
     const { data: members, isLoading } = useMembers({ status: statusFilter });
     const [selected, setSelected] = useState<Member | null>(null);
+    const [searchParams] = useSearchParams();
+    const highlightId = searchParams.get("highlight");
 
     const list = useMemo(() => members ?? [], [members]);
+
+    useEffect(() => {
+        if (highlightId && list.length) {
+            const found = list.find((m) => m.id === highlightId);
+            if (found) setSelected(found);
+        }
+    }, [highlightId, list]);
     const head = list.find((m) => m.is_head);
     const lecturers = list.filter((m) => !m.is_head && (m.role === "lecturer" || m.role === "researcher"));
     const assistants = list.filter((m) => m.role === "assistant");

@@ -5,13 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Download, Plus, Save, X } from "lucide-react";
+import { Download, Link2, Plus, Save, X } from "lucide-react";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
 import { AdminHeader, ConfirmButton, IssueList, Panel, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
-import type { ListResponse, QualityIssue } from "@/lib/types";
+import type { ListResponse, Member, QualityIssue } from "@/lib/types";
 
-type FieldType = "text" | "textarea" | "html" | "number" | "select" | "checkbox" | "tags" | "date" | "json";
+type FieldType = "text" | "textarea" | "html" | "number" | "select" | "checkbox" | "tags" | "date" | "json" | "member_multiselect";
 
 interface FieldSpec {
     key: string;
@@ -155,6 +155,7 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
         fields: [
             { key: "title", label: "Title", type: "text" },
             { key: "authors", label: "Authors", type: "text" },
+            { key: "linked_member_ids", label: "Linked Lab Members (Co-Authors)", type: "member_multiselect", help: "Select TNL lecturers, researchers, or assistants who are co-authors." },
             { key: "venue", label: "Journal or conference", type: "text" },
             { key: "year", label: "Year", type: "number" },
             { key: "ptype", label: "Kind", type: "select", options: ["journal", "conference", "book", "other"] },
@@ -258,6 +259,21 @@ export default function ContentManager() {
     const [form, setForm] = useState<Record<string, unknown>>({});
     const [issues, setIssues] = useState<QualityIssue[]>([]);
     const [selected, setSelected] = useState<string[]>([]);
+
+    const { data: membersList } = useQuery({
+        queryKey: ["admin", "members-lookup"],
+        queryFn: () => apiGet<Member[]>("/public/members"),
+        retry: false,
+    });
+
+    const relinkMutation = useMutation({
+        mutationFn: () => apiPost<{ ok: boolean; updated: number; total_with_links: number; total: number }>("/admin/publications/relink-authors"),
+        onSuccess: (res) => {
+            invalidate();
+            toast.success(`Matched & updated ${res.updated} publication(s). Total with links: ${res.total_with_links}`);
+        },
+        onError: (err) => toast.error(adminError(err, "Could not relink authors.")),
+    });
 
     const { data, isLoading } = useQuery({
         queryKey: ["admin", "content", resource, search],
@@ -377,14 +393,27 @@ export default function ContentManager() {
                 actions={
                     <>
                         {resource === "publications" ? (
-                            <Link
-                                to="/admin/publications/import"
-                                className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm"
-                                data-testid="publications-import-link"
-                            >
-                                <Download className="h-4 w-4" aria-hidden="true" />
-                                Import from Crossref
-                            </Link>
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => relinkMutation.mutate()}
+                                    disabled={relinkMutation.isPending}
+                                    className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm"
+                                    data-testid="publications-relink-button"
+                                    title="Auto-match author names in papers with TNL members"
+                                >
+                                    <Link2 className="h-4 w-4" aria-hidden="true" />
+                                    {relinkMutation.isPending ? "Matching…" : "Re-link Authors"}
+                                </button>
+                                <Link
+                                    to="/admin/publications/import"
+                                    className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm"
+                                    data-testid="publications-import-link"
+                                >
+                                    <Download className="h-4 w-4" aria-hidden="true" />
+                                    Import from Crossref
+                                </Link>
+                            </>
                         ) : null}
                         <a
                             href={`/api/admin/content/${resource}/export/csv`}
@@ -422,7 +451,7 @@ export default function ContentManager() {
                         {grouped.map((field) => {
                             const id = `field-${field.key}`;
                             const value = form[field.key];
-                            const wide = field.type === "textarea" || field.type === "html" || field.type === "json";
+                            const wide = field.type === "textarea" || field.type === "html" || field.type === "json" || field.type === "member_multiselect";
                             return (
                                 <div key={field.key} className={wide ? "lg:col-span-2" : ""}>
                                     <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
@@ -463,6 +492,37 @@ export default function ContentManager() {
                                             />
                                             <span>{Boolean(value) ? "Yes" : "No"}</span>
                                         </label>
+                                    ) : field.type === "member_multiselect" ? (
+                                        <div id={id} className="rounded-lg border p-3" style={{ borderColor: "var(--tnl-border)" }} data-testid={`content-field-${field.key}`}>
+                                            <p className="mb-2 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
+                                                Select laboratory members who co-authored this publication:
+                                            </p>
+                                            <div className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
+                                                {(membersList ?? []).map((m) => {
+                                                    const selectedIds = Array.isArray(value) ? (value as string[]) : [];
+                                                    const checked = selectedIds.includes(m.id);
+                                                    return (
+                                                        <label key={m.id} className="flex cursor-pointer items-center gap-2.5 rounded px-2 py-1 text-xs hover:bg-[var(--tnl-surface)]">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={checked}
+                                                                onChange={(e) => {
+                                                                    const next = e.target.checked
+                                                                        ? [...selectedIds, m.id]
+                                                                        : selectedIds.filter((x) => x !== m.id);
+                                                                    setForm((f) => ({ ...f, [field.key]: next }));
+                                                                }}
+                                                                className="h-3.5 w-3.5 rounded"
+                                                            />
+                                                            <span className="font-medium">{m.name}</span>
+                                                            <span className="rounded bg-[rgba(67,89,74,0.1)] px-1.5 py-0.5 text-[10px] text-[var(--tnl-green)]">
+                                                                {m.role}{m.division ? ` · ${m.division}` : ""}
+                                                            </span>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                     ) : (
                                         <input
                                             id={id}

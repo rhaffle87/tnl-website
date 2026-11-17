@@ -1,7 +1,8 @@
 // Publications: filter by year and type, link out to DOI / publisher.
 
 import { useMemo, useState } from "react";
-import { ExternalLink, FileText } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ExternalLink, FileText, Users } from "lucide-react";
 import { usePublications } from "@/lib/hooks";
 import { useLocale } from "@/lib/i18n";
 import { EmptyState, SectionHeading, Spinner } from "@/components/site/Primitives";
@@ -101,6 +102,25 @@ export default function PublicationsPage() {
                                         <p className="mt-1.5 text-sm" style={{ color: "var(--tnl-body)" }}>
                                             {pub.authors}
                                         </p>
+                                    ) : null}
+                                    {pub.linked_members && pub.linked_members.length > 0 ? (
+                                        <div className="mt-2.5 flex flex-wrap items-center gap-1.5" data-testid={`publication-linked-members-${pub.id}`}>
+                                            <span className="text-xs font-semibold" style={{ color: "var(--tnl-tan-text)" }}>
+                                                TNL Team:
+                                            </span>
+                                            {pub.linked_members.map((m) => (
+                                                <Link
+                                                    key={m.id}
+                                                    to={`/member?highlight=${m.id}`}
+                                                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors hover:bg-[var(--tnl-green)] hover:text-white"
+                                                    style={{ background: "rgba(67, 89, 74, 0.1)", color: "var(--tnl-green)" }}
+                                                    data-testid={`pub-author-link-${pub.id}-${m.id}`}
+                                                >
+                                                    <Users className="h-3 w-3" />
+                                                    {m.name}
+                                                </Link>
+                                            ))}
+                                        </div>
                                     ) : null}
                                     {pub.venue ? (
                                         <p className="mt-0.5 text-sm italic" style={{ color: "var(--tnl-tan-text)" }}>

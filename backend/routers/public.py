@@ -191,13 +191,30 @@ async def public_projects(kind: str | None = None):
 
 
 @router.get("/public/publications", dependencies=[Depends(check_maintenance)])
-async def public_publications(year: int | None = None, ptype: str | None = None):
+async def public_publications(year: int | None = None, ptype: str | None = None, member_id: str | None = None):
     q: dict = {"status": "published"}
     if year:
         q["year"] = year
     if ptype:
         q["ptype"] = ptype
+    if member_id:
+        q["linked_member_ids"] = member_id
     docs = await db.publications.find(q).sort([("year", -1), ("created_at", -1)]).to_list(500)
+
+    # Attach member details for linked authors
+    members_map = {
+        m["id"]: {
+            "id": m["id"],
+            "name": m["name"],
+            "role": m.get("role", "assistant"),
+            "division": m.get("division"),
+        }
+        for m in await db.members.find({}, {"id": 1, "name": 1, "role": 1, "division": 1}).to_list(1000)
+    }
+    for d in docs:
+        d["linked_members"] = [
+            members_map[mid] for mid in (d.get("linked_member_ids") or []) if mid in members_map
+        ]
     return jsonable(docs)
 
 

@@ -374,3 +374,58 @@ def test_certificate_issuing_and_verification(client):
         assert pdf_res.headers["content-type"] == "application/pdf"
         assert pdf_res.content.startswith(b"%PDF")
 
+
+# ---------------------------------------------------------------- author linking
+def test_author_normalization_and_matching():
+    from routers.pubimport import author_matches_member, clean_person_name, match_authors_to_members
+
+    # 1. Title stripping
+    cleaned = clean_person_name("Prof. Dr. Ir. Achmad Affandi, DEA.")
+    assert cleaned == "achmad affandi"
+
+    cleaned_lecturer = clean_person_name("Prof. Eko Setijadi, S.T., M.T., Ph.D")
+    assert cleaned_lecturer == "eko setijadi"
+
+    # 2. Matching with full name and initial variants
+    assert author_matches_member("Achmad Affandi, Tri Rahayu", "Dr. Ir. Achmad Affandi, DEA.")
+    assert author_matches_member("A. Affandi, D. J. Suroso", "Dr. Ir. Achmad Affandi, DEA.")
+    assert author_matches_member("Affandi, A.", "Dr. Ir. Achmad Affandi, DEA.")
+    assert author_matches_member("T. Rahayu and E. Setijadi", "Tri Rahayu, S.T., M.Kom.")
+    assert author_matches_member("P. E. Setijadi", "Prof. Eko Setijadi, S.T., M.T., Ph.D")
+    assert not author_matches_member("John Doe, Jane Smith", "Dr. Ir. Achmad Affandi, DEA.")
+
+    # 3. Match authors to member list
+    members = [
+        {"id": "m1", "name": "Dr. Ir. Achmad Affandi, DEA."},
+        {"id": "m2", "name": "Tri Rahayu, S.T., M.Kom."},
+        {"id": "m3", "name": "Unrelated Member"},
+    ]
+    matched = match_authors_to_members("A. Affandi, T. Rahayu, Someone Else", members)
+    assert "m1" in matched
+    assert "m2" in matched
+    assert "m3" not in matched
+
+
+def test_publication_author_relink_and_public_relations(client):
+    login(client)
+    # Trigger relink endpoint
+    relink_res = client.post("/admin/publications/relink-authors")
+    assert relink_res.status_code == 200
+    assert relink_res.json().get("ok") is True
+
+    # Check public publications endpoint returns linked_members
+    pubs = client.get("/public/publications").json()
+    assert isinstance(pubs, list)
+    if pubs:
+        assert "linked_members" in pubs[0]
+
+    # Test member_id filtering on public publications
+    members = client.get("/public/members").json()
+    if members:
+        mid = members[0]["id"]
+        filtered = client.get(f"/public/publications?member_id={mid}").json()
+        assert isinstance(filtered, list)
+        for p in filtered:
+            assert mid in p.get("linked_member_ids", [])
+
+

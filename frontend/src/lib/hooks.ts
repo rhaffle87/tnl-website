@@ -127,10 +127,15 @@ export function useProjects(kind?: string): UseQueryResult<Project[]> {
   });
 }
 
-export function usePublications(): UseQueryResult<Publication[]> {
+export function usePublications(params?: { year?: number; ptype?: string; member_id?: string }): UseQueryResult<Publication[]> {
+  const search = new URLSearchParams();
+  if (params?.year) search.set("year", String(params.year));
+  if (params?.ptype) search.set("ptype", params.ptype);
+  if (params?.member_id) search.set("member_id", params.member_id);
+  const qs = search.toString();
   return useQuery({
-    queryKey: ["public", "publications"],
-    queryFn: () => apiGet<Publication[]>("/public/publications"),
+    queryKey: ["public", "publications", qs],
+    queryFn: () => apiGet<Publication[]>(`/public/publications${qs ? `?${qs}` : ""}`),
     retry: false,
     staleTime: STALE,
   });

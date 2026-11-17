@@ -10,6 +10,7 @@ Imported records always arrive as DRAFT so an editor confirms them before they a
 DOI already present is reported as a duplicate rather than inserted twice.
 """
 
+import re
 from datetime import datetime, timezone
 
 import httpx
@@ -28,6 +29,66 @@ CROSSREF = "https://api.crossref.org/works"
 # Crossref asks callers to identify themselves; a contact address earns the faster pool.
 MAILTO = "telconnetlab@gmail.com"
 UA = "TNL-Studio/1.0 (https://riset.its.ac.id/lab-tnl; mailto:telconnetlab@gmail.com)"
+
+TITLES = [
+    r"\bprof\b\.?", r"\bdr\b\.?", r"\bir\b\.?", r"\bdrs\b\.?", r"\bdra\b\.?",
+    r"\bdr\.techn\b\.?", r"\bph\.?d\b\.?", r"\bdea\b\.?", r"\bs\.?t\b\.?",
+    r"\bm\.?t\b\.?", r"\bs\.?kom\b\.?", r"\bm\.?kom\b\.?", r"\bb\.?eng\b\.?",
+    r"\bm\.?eng\b\.?", r"\bm\.?sc\b\.?", r"\bb\.?sc\b\.?", r"\bipm\b\.?",
+    r"\basean\s+eng\b\.?",
+]
+
+
+def clean_person_name(name: str) -> str:
+    cleaned = (name or "").strip()
+    for t in TITLES:
+        cleaned = re.sub(t, "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"[^a-zA-Z\s]", " ", cleaned)
+    return " ".join(cleaned.lower().split())
+
+
+def author_matches_member(author_text: str, member_name: str) -> bool:
+    clean_author = clean_person_name(author_text)
+    clean_member = clean_person_name(member_name)
+    if not clean_author or not clean_member:
+        return False
+
+    author_words = clean_author.split()
+    member_words = clean_member.split()
+    if not member_words:
+        return False
+
+    # Exact full name match
+    if clean_member in clean_author:
+        return True
+
+    last_name = member_words[-1]
+    first_name = member_words[0]
+    initial = first_name[0]
+
+    if last_name in author_words and len(last_name) >= 3:
+        if first_name in author_words:
+            return True
+        for i, w in enumerate(author_words):
+            if w == last_name:
+                # Check initial before or after last name
+                if i > 0 and (author_words[i - 1] == initial or initial in author_words[:i]):
+                    return True
+                if i + 1 < len(author_words) and author_words[i + 1] == initial:
+                    return True
+
+    return False
+
+
+def match_authors_to_members(authors_str: str, members: list[dict]) -> list[str]:
+    if not authors_str:
+        return []
+    matched: list[str] = []
+    for m in members:
+        if author_matches_member(authors_str, m.get("name") or ""):
+            matched.append(m["id"])
+    return matched
+
 
 # Crossref type -> the publication types this CMS uses (journal | conference | book | other).
 TYPE_MAP = {
@@ -158,6 +219,8 @@ async def import_publications(payload: ImportRequest, request: Request):
     duplicates: list[str] = []
     failed: list[str] = []
 
+    all_members = await db.members.find({}, {"id": 1, "name": 1}).to_list(1000)
+
     for doi in dois:
         if await db.publications.find_one({"doi": doi}):
             duplicates.append(doi)
@@ -177,10 +240,12 @@ async def import_publications(payload: ImportRequest, request: Request):
             failed.append(doi)
             continue
 
+        matched_member_ids = match_authors_to_members(data["authors"], all_members)
         pub = Publication(
             title=data["title"], authors=data["authors"], venue=data["venue"],
             year=data["year"], ptype=data["ptype"], doi=data["doi"],
             abstract=data["abstract"], tags=[],
+            linked_member_ids=matched_member_ids,
             status="draft",  # never auto-publish: an editor confirms every import
         ).model_dump()
         issues = run_scan("publications", pub)
@@ -190,7 +255,8 @@ async def import_publications(payload: ImportRequest, request: Request):
         pub["imported_at"] = datetime.now(timezone.utc)
         await db.publications.insert_one(pub)
         imported.append({"id": pub["id"], "title": pub["title"], "year": pub["year"],
-                         "doi": pub["doi"], "blocking_issues": len(publish_blockers(issues))})
+                         "doi": pub["doi"], "blocking_issues": len(publish_blockers(issues)),
+                         "linked_members_count": len(matched_member_ids)})
 
     await audit(request, "import", "publications", "crossref",
                 {"imported": len(imported), "duplicates": len(duplicates), "failed": len(failed)})
@@ -200,3 +266,31 @@ async def import_publications(payload: ImportRequest, request: Request):
                     + (f", {len(duplicates)} already in the library" if duplicates else "")
                     + (f", {len(failed)} could not be read" if failed else "")),
     })
+
+
+@router.post("/admin/publications/relink-authors", dependencies=[Depends(require("content:write"))])
+async def relink_publication_authors(request: Request):
+    """Re-scan all publications and automatically match authors with internal lab members."""
+    all_members = await db.members.find({}, {"id": 1, "name": 1}).to_list(1000)
+    pubs = await db.publications.find({}).to_list(5000)
+    updated_count = 0
+    total_linked = 0
+
+    for p in pubs:
+        authors_str = p.get("authors") or ""
+        matched_ids = match_authors_to_members(authors_str, all_members)
+        existing_ids = p.get("linked_member_ids") or []
+        # Update if changed or missing
+        if set(matched_ids) != set(existing_ids):
+            await db.publications.update_one(
+                {"id": p["id"]},
+                {"$set": {"linked_member_ids": matched_ids, "updated_at": datetime.now(timezone.utc)}},
+            )
+            updated_count += 1
+        if matched_ids or existing_ids:
+            total_linked += 1
+
+    await audit(request, "relink-authors", "publications", None,
+                {"updated_publications": updated_count, "total_with_links": total_linked})
+    return {"ok": True, "updated": updated_count, "total_with_links": total_linked, "total": len(pubs)}
+
