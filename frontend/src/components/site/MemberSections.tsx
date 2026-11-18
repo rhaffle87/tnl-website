@@ -85,12 +85,10 @@ function LightPlaceholder({ member, isModal }: { member: Member; isModal?: boole
 }
 
 function SocialLinks({ member }: { member: Member }) {
-    const ig = formatInstagram(member.social?.instagram);
     const links = [
         { url: member.social?.scholar, Icon: ExternalLink, label: "Google Scholar" },
         { url: member.social?.sinta, Icon: ExternalLink, label: "SINTA" },
         { url: member.social?.scopus, Icon: ExternalLink, label: "Scopus" },
-        { url: ig ? ig.url : null, Icon: Instagram, label: ig ? ig.handle : "Instagram" },
         { url: member.social?.linkedin, Icon: Linkedin, label: "LinkedIn" },
         { url: member.social?.github, Icon: Github, label: "GitHub" },
     ].filter((l) => l.url);
