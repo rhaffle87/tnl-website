@@ -116,9 +116,11 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
                                 style={{ borderColor: "rgba(168,151,123,0.35)" }}
                                 data-testid="hero-image"
                             />
-                            {pickProp(locale, props, "image_caption") ? (
+                            {pickProp(locale, props, "image_caption") &&
+                            !pickProp(locale, props, "image_caption").toLowerCase().includes("illustrative") &&
+                            !pickProp(locale, props, "image_caption").toLowerCase().includes("foto ilustrasi") ? (
                                 <figcaption
-                                    className="mt-2 text-xs italic"
+                                    className="mt-2 text-xs italic text-center"
                                     style={{ color: "#c9ccd1" }}
                                     data-testid="hero-image-caption"
                                 >
@@ -177,11 +179,11 @@ function StatsBlock() {
         <section className="border-y" style={{ background: "#111518", borderColor: "#262c33" }} data-testid="block-stats">
             <div className="tnl-container grid grid-cols-2 gap-8 py-10 lg:grid-cols-4">
                 {items.map((item) => (
-                    <div key={item.key} data-testid={`stat-${item.key}`}>
+                    <div key={item.key} className="flex flex-col items-center justify-center text-center" data-testid={`stat-${item.key}`}>
                         <div className="text-[40px] font-bold leading-none lg:text-[56px]" style={{ color: "var(--tnl-tan)" }}>
                             {isError && !data ? "—" : item.value}
                         </div>
-                        <div className="mt-2 text-sm" style={{ color: "#c8ccd0" }}>
+                        <div className="mt-2 text-sm text-center" style={{ color: "#c8ccd0" }}>
                             {item.label}
                         </div>
                     </div>

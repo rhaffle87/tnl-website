@@ -573,10 +573,7 @@ async def seed_pages(photos: dict[str, str] | None = None) -> None:
             # free of hard-coded media URLs — editors can swap any of it in the CMS.
             if b["type"] == "hero" and photos.get("hero-network-rack.jpg"):
                 props["image_url"] = photos["hero-network-rack.jpg"]
-                props["image_alt"] = ("Illustrative photo of a network equipment rack — "
-                                      "not a photo of Room B-301")
-                props["image_caption"] = "Illustrative photo — not Room B-301"
-                props["image_caption_id"] = "Foto ilustrasi — bukan Ruang B-301"
+                props["image_alt"] = "Core Telecommunication Network Infrastructure & Server Rack"
             if b["type"] == "gallery":
                 gallery_items = [
                     ("fiber-patch-panel.jpg", "Optical & Patch Bay", "Rak Patch Panel Serat Optik"),
