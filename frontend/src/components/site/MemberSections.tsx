@@ -1,960 +1,572 @@
-import React, { useEffect, useMemo, useState } from "react";
+// Member page sections: Head of Laboratory feature banner, lecturer grid,
+// assistants under batch tabs grouped by division with colored role chips,
+// and a detail modal. Private fields only render when the admin enabled them.
+
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  Mail,
-  Linkedin,
-  GraduationCap,
-  Sparkles,
-  ChevronRight,
-  ExternalLink,
-  BookOpen,
-  Filter,
-  Users,
-  Instagram,
-  UserCheck,
-  Clock,
-  X,
-} from "lucide-react";
+import { BookOpen, ExternalLink, FileText, Github, Instagram, Linkedin, Mail, Users, X } from "lucide-react";
+import { pick, useLocale } from "@/lib/i18n";
 import { useMembers, usePublications } from "@/lib/hooks";
+import { EmptyState, SectionHeading, Spinner } from "@/components/site/Primitives";
 import type { Member } from "@/lib/types";
 
-interface MemberSectionsProps {
-  onSelectMember?: (member: Member) => void;
-}
-
-const DIVISION_LABELS: Record<string, { label: string; desc: string }> = {
-  BPH: { label: "BPH", desc: "Badan Pengurus Harian — Lab Direction & Coordination" },
-  Academic: { label: "Academic", desc: "Practicum Modules, Grading & Academic Support" },
-  Research: { label: "Research", desc: "Scientific Inquiries, Papers & Testbed Development" },
-  Social: { label: "Social", desc: "Community Outreach, Social Media & Public Relations" },
-  Internal: { label: "Internal", desc: "Inventory, Server Maintenance & Room Operations" },
-  External: { label: "External", desc: "Industrial Ties, Alumni Network & External Relations" },
+const ROLE_CHIP: Record<string, { bg: string; fg: string; key: string }> = {
+    coordinator: { bg: "#43594A", fg: "#ffffff", key: "role_coordinator" },
+    head: { bg: "#7f715c", fg: "#ffffff", key: "role_head" },
+    vice: { bg: "#a8977b", fg: "#111518", key: "role_vice" },
+    staff: { bg: "#eaeaec", fg: "#3f4245", key: "role_staff" },
 };
 
-function formatInstagramHandle(raw?: string | null): { handle: string; url: string } | null {
-  if (!raw) return null;
-  const clean = raw.trim().replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/$/, "");
-  if (!clean) return null;
-  return {
-    handle: `@${clean}`,
-    url: `https://instagram.com/${clean}`,
-  };
-}
+const DIVISION_ORDER = ["BPH", "Academic", "Research", "Social", "Internal", "External"];
 
 function getInitials(name: string): string {
-  if (!name) return "TNL";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    if (!name) return "TNL";
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-const MonogramPlaceholder: React.FC<{ name: string; batch?: string; size?: "sm" | "md" | "lg" }> = ({
-  name,
-  batch = "2024",
-}) => {
-  const initials = getInitials(name);
-  return (
-    <div
-      className="w-full h-full aspect-[3/4] rounded-t-xl bg-gradient-to-b from-[#2C3E35] via-[#202C26] to-[#17221C] flex flex-col items-center justify-between p-6 relative overflow-hidden select-none border-b border-[#2C3E35]/40"
-      aria-label={`Avatar placeholder for ${name}`}
-    >
-      {/* Decorative Rings & Subtle Grid */}
-      <div className="absolute inset-0 bg-[radial-gradient(#A8977B_1px,transparent_1px)] [background-size:16px_16px] opacity-10 pointer-events-none" />
-      <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-[#A8977B]/10 blur-2xl pointer-events-none" />
-      <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-[#2C3E35] blur-xl pointer-events-none" />
-
-      {/* Top Laboratory Tag */}
-      <div className="w-full flex items-center justify-between text-[10px] font-mono tracking-wider text-[#A8977B]/80 z-10 uppercase">
-        <span className="font-semibold">TNL · B-301</span>
-        <span>{batch}</span>
-      </div>
-
-      {/* Monogram Seal */}
-      <div className="flex flex-col items-center justify-center my-auto z-10">
-        <div className="w-20 h-20 rounded-full bg-[#1F2B25] border-2 border-[#A8977B]/50 flex items-center justify-center shadow-lg relative group-hover:border-[#A8977B] transition-colors">
-          <div className="absolute inset-1 rounded-full border border-dashed border-[#A8977B]/30" />
-          <span className="text-2xl font-serif font-bold text-[#F5F2EB] tracking-wider">
-            {initials}
-          </span>
-        </div>
-      </div>
-
-      {/* Bottom Status Pill */}
-      <div className="w-full z-10 flex items-center justify-center">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#16201B]/90 border border-[#A8977B]/30 text-[10px] font-medium text-[#C2B59B]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#A8977B] animate-pulse" />
-          Batch {batch} · Photo Pending
-        </span>
-      </div>
-    </div>
-  );
-};
-
-export const MemberSections: React.FC<MemberSectionsProps> = ({ onSelectMember }) => {
-  // Always query without filtering status from the server so Lecturers/Head NEVER disappear when switching to Alumni
-  const { data: members } = useMembers();
-
-  const [assistantStatus, setAssistantStatus] = useState<"active" | "alumni">("active");
-  const [divisionFilter, setDivisionFilter] = useState<string>("all");
-  const [batchFilter, setBatchFilter] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-
-  const [searchParams] = useSearchParams();
-  const highlightId = searchParams.get("highlight");
-
-  // Auto-highlight member from query parameter if provided
-  useEffect(() => {
-    if (highlightId && members && members.length > 0) {
-      const found = members.find((m) => m.id === highlightId);
-      if (found) setSelectedMember(found);
+function roleChip(member: Member, t: (k: never) => string): { label: string; bg: string; fg: string } {
+    const pos = (member.position || "").toLowerCase();
+    let spec = ROLE_CHIP.staff;
+    if (pos.includes("coordinator") || pos.includes("koordinator")) {
+        spec = ROLE_CHIP.coordinator;
+    } else if (pos.includes("head") || pos.includes("kepala")) {
+        spec = ROLE_CHIP.head;
+    } else if (pos.includes("vice") || pos.includes("wakil")) {
+        spec = ROLE_CHIP.vice;
     }
-  }, [highlightId, members]);
+    const label = member.position_label || member.position || (spec.key ? t(spec.key as never) : "");
+    return { label, bg: spec.bg, fg: spec.fg };
+}
 
-  // 1. Head of Lab is strictly active lecturer/head
-  const headOfLab = useMemo(() => {
-    if (!members) return null;
+function formatInstagram(raw?: string | null): { handle: string; url: string } | null {
+    if (!raw) return null;
+    const clean = raw.trim().replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/$/, "");
+    if (!clean) return null;
+    return {
+        handle: `@${clean}`,
+        url: `https://instagram.com/${clean}`,
+    };
+}
+
+function LightPlaceholder({ member, isModal }: { member: Member; isModal?: boolean }) {
+    const initials = getInitials(member.name);
     return (
-      members.find(
-        (m) =>
-          (m.is_head || m.role === "head" || (m.position || "").toLowerCase().includes("head of lab")) &&
-          m.status === "active"
-      ) || null
-    );
-  }, [members]);
-
-  // 2. Lecturers & Researchers (always active, excluded head)
-  const lecturers = useMemo(() => {
-    if (!members) return [];
-    return members
-      .filter(
-        (m) =>
-          (m.role === "lecturer" || m.role === "researcher") &&
-          !m.is_head &&
-          m.id !== headOfLab?.id &&
-          m.status === "active"
-      )
-      .sort((a, b) => a.order - b.order);
-  }, [members, headOfLab]);
-
-  // 3. Assistants pool (active or alumni)
-  const allAssistants = useMemo(() => {
-    if (!members) return [];
-    return members.filter((m) => m.role === "assistant" || m.role === "alumni");
-  }, [members]);
-
-  const activeAssistants = useMemo(() => {
-    return allAssistants.filter((m) => m.status === "active");
-  }, [allAssistants]);
-
-  const alumniAssistants = useMemo(() => {
-    return allAssistants.filter((m) => m.status === "alumni");
-  }, [allAssistants]);
-
-  // Filtered assistants based on current tabs, division, and search
-  const displayedAssistants = useMemo(() => {
-    let list = assistantStatus === "active" ? activeAssistants : alumniAssistants;
-
-    if (divisionFilter !== "all") {
-      list = list.filter((m) => (m.division || "").toLowerCase() === divisionFilter.toLowerCase());
-    }
-
-    if (assistantStatus === "active" && batchFilter !== "all") {
-      list = list.filter((m) => (m.batch || "") === batchFilter);
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (m) =>
-          m.name.toLowerCase().includes(q) ||
-          (m.division && m.division.toLowerCase().includes(q)) ||
-          (m.position && m.position.toLowerCase().includes(q)) ||
-          (m.nim && m.nim.includes(q)) ||
-          (m.expertise && m.expertise.some((e) => e.toLowerCase().includes(q)))
-      );
-    }
-
-    return list.sort((a, b) => {
-      if (a.order !== b.order) return a.order - b.order;
-      if (a.batch !== b.batch) return (b.batch || "").localeCompare(a.batch || "");
-      return a.name.localeCompare(b.name);
-    });
-  }, [assistantStatus, activeAssistants, alumniAssistants, divisionFilter, batchFilter, searchQuery]);
-
-  const openModal = (m: Member) => {
-    setSelectedMember(m);
-    if (onSelectMember) onSelectMember(m);
-  };
-
-  const closeModal = () => setSelectedMember(null);
-
-  // Selected member publications
-  const { data: memberPubs } = usePublications(
-    selectedMember ? { member_id: selectedMember.id } : undefined
-  );
-
-  return (
-    <div className="space-y-16">
-      {/* ======================================================== */}
-      {/* 1. HEAD OF LABORATORY BANNER                            */}
-      {/* ======================================================== */}
-      {headOfLab && (
-        <section
-          aria-labelledby="head-of-lab-heading"
-          data-testid="head-of-lab-banner"
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1E2B25] via-[#24332C] to-[#1A2420] text-[#F5F2EB] border border-[#2C3E35] p-8 md:p-10 shadow-xl"
+        <div
+            className={`flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-[#F6F7F6] to-[#E9EDE9] text-[#2C3E35] select-none ${
+                isModal ? "p-8 min-h-[220px]" : "p-4"
+            }`}
+            aria-label={`Photo pending for ${member.name}`}
         >
-          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-[#A8977B]/10 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-1/3 -mb-20 w-64 h-64 rounded-full bg-[#2C3E35]/40 blur-2xl pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
-            {/* Portrait */}
-            <div className="relative flex-shrink-0 group">
-              <div className="w-44 h-56 md:w-52 md:h-64 rounded-xl overflow-hidden border-2 border-[#A8977B] shadow-2xl bg-[#17221C]">
-                {headOfLab.photo_url ? (
-                  <img
-                    src={headOfLab.photo_url}
-                    alt={headOfLab.photo_alt || headOfLab.name}
-                    className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                  />
-                ) : (
-                  <MonogramPlaceholder name={headOfLab.name} batch="Head" />
-                )}
-              </div>
-              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#A8977B] text-[#1E2B25] text-xs font-bold font-mono tracking-wider px-3 py-1 rounded-full shadow-md uppercase">
-                Head of Laboratory
-              </div>
+            <div
+                className={`flex items-center justify-center rounded-full bg-[#2C3E35]/10 border border-[#2C3E35]/20 font-bold text-[#2C3E35] shadow-inner ${
+                    isModal ? "h-24 w-24 text-2xl" : "h-16 w-16 text-lg"
+                }`}
+            >
+                {initials}
             </div>
+            <span className="mt-2 text-[11px] font-mono font-medium text-stone-500 tracking-wider uppercase">
+                Batch {member.batch || "2024"}
+            </span>
+            <span className="text-[10px] text-stone-400">Photo Pending</span>
+        </div>
+    );
+}
 
-            {/* Profile Info */}
-            <div className="flex-1 text-center md:text-left space-y-4">
-              <div>
-                <span className="inline-flex items-center gap-1.5 text-xs font-mono font-medium tracking-widest uppercase text-[#A8977B] bg-[#2C3E35]/60 px-3 py-1 rounded-full mb-3 border border-[#A8977B]/30">
-                  <Sparkles className="w-3.5 h-3.5" /> Department of Electrical Engineering · ITS
-                </span>
-                <h2
-                  id="head-of-lab-heading"
-                  data-testid="head-of-lab-name"
-                  className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold text-[#F5F2EB] tracking-tight leading-tight"
-                >
-                  {headOfLab.name}
-                </h2>
-                <p className="text-sm md:text-base font-sans text-[#D1C7B7] mt-1">
-                  {headOfLab.position || "Head of Laboratory"}
-                </p>
-                {headOfLab.show_nim && headOfLab.nim && (
-                  <p className="text-xs font-mono text-[#A8977B] mt-0.5">NIP: {headOfLab.nim}</p>
-                )}
-              </div>
-
-              {headOfLab.bio && (
-                <p className="text-sm md:text-base text-[#DCD6CA] leading-relaxed max-w-3xl line-clamp-3 md:line-clamp-4">
-                  {headOfLab.bio}
-                </p>
-              )}
-
-              {/* Research Expertise Chips */}
-              {headOfLab.expertise && headOfLab.expertise.length > 0 && (
-                <div className="flex flex-wrap gap-2 justify-center md:justify-start pt-1">
-                  {headOfLab.expertise.map((exp, idx) => (
-                    <span
-                      key={idx}
-                      className="text-xs font-medium px-2.5 py-1 rounded-md bg-[#2C3E35]/70 text-[#F5F2EB] border border-[#A8977B]/40"
-                    >
-                      {exp}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-3">
-                {headOfLab.email_public && (
-                  <a
-                    href={`mailto:${headOfLab.email_public}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2C3E35] hover:bg-[#395045] text-xs font-medium text-[#F5F2EB] transition-colors border border-[#A8977B]/30"
-                  >
-                    <Mail className="w-3.5 h-3.5 text-[#A8977B]" /> {headOfLab.email_public}
-                  </a>
-                )}
-                {headOfLab.social?.scholar && (
-                  <a
-                    href={headOfLab.social.scholar}
+function SocialLinks({ member }: { member: Member }) {
+    const ig = formatInstagram(member.social?.instagram);
+    const links = [
+        { url: member.social?.scholar, Icon: ExternalLink, label: "Google Scholar" },
+        { url: member.social?.sinta, Icon: ExternalLink, label: "SINTA" },
+        { url: member.social?.scopus, Icon: ExternalLink, label: "Scopus" },
+        { url: ig ? ig.url : null, Icon: Instagram, label: ig ? ig.handle : "Instagram" },
+        { url: member.social?.linkedin, Icon: Linkedin, label: "LinkedIn" },
+        { url: member.social?.github, Icon: Github, label: "GitHub" },
+    ].filter((l) => l.url);
+    if (!links.length) return null;
+    return (
+        <div className="mt-4 flex flex-wrap gap-2">
+            {links.map(({ url, Icon, label }) => (
+                <a
+                    key={label}
+                    href={url as string}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2C3E35] hover:bg-[#395045] text-xs font-medium text-[#F5F2EB] transition-colors border border-[#A8977B]/30"
-                  >
-                    <GraduationCap className="w-3.5 h-3.5 text-[#A8977B]" /> Google Scholar
-                  </a>
-                )}
-                <button
-                  type="button"
-                  onClick={() => openModal(headOfLab)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#A8977B] hover:bg-[#8F8065] text-xs font-semibold text-[#1E2B25] transition-colors shadow-sm ml-auto md:ml-0"
+                    className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-green)]"
+                    style={{ borderColor: "var(--tnl-border)" }}
+                    data-testid={`member-social-${label.toLowerCase().replace(/\s+/g, "-")}`}
                 >
-                  View Full Profile <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ======================================================== */}
-      {/* 2. LECTURERS & RESEARCHERS SECTION                      */}
-      {/* ======================================================== */}
-      <section aria-labelledby="lecturers-heading" data-testid="lecturers-section">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-[#2C3E35]/20">
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-[#A8977B] mb-1">
-              <GraduationCap className="w-4 h-4 text-[#2C3E35]" /> Faculty & Research Staff
-            </div>
-            <h2 id="lecturers-heading" className="text-2xl md:text-3xl font-serif font-bold text-[#1E2B25]">
-              Lecturers & Researchers
-            </h2>
-            <p className="text-sm text-neutral-600 mt-1 max-w-2xl">
-              Academic advisors, telecommunication network specialists, and lead investigators driving research at Room B-301.
-            </p>
-          </div>
-          <div className="mt-4 md:mt-0 text-xs font-mono text-neutral-500">
-            {lecturers.length} Faculty Members
-          </div>
+                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                    {label}
+                </a>
+            ))}
         </div>
+    );
+}
 
-        {/* 3-Column Balanced Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {lecturers.map((lecturer) => (
-            <div
-              key={lecturer.id}
-              className="group bg-white rounded-xl border border-neutral-200 overflow-hidden hover:shadow-lg hover:border-[#A8977B]/60 transition-all duration-300 flex flex-col justify-between"
-            >
-              <div>
-                {/* Photo Aspect Ratio 3:4 */}
-                <div className="relative w-full aspect-[3/4] bg-neutral-100 overflow-hidden">
-                  {lecturer.photo_url ? (
-                    <img
-                      src={lecturer.photo_url}
-                      alt={lecturer.photo_alt || lecturer.name}
-                      className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <MonogramPlaceholder name={lecturer.name} batch="Staff" />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                    <span className="text-xs text-white font-medium flex items-center gap-1">
-                      Click to view publications & bio <ExternalLink className="w-3 h-3" />
-                    </span>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-5">
-                  <div className="text-[11px] font-mono font-semibold uppercase tracking-wider text-[#A8977B] mb-1">
-                    {lecturer.position_label || lecturer.position || "Lecturer"}
-                  </div>
-                  <h3 className="font-serif font-bold text-lg text-[#1E2B25] group-hover:text-[#2C3E35] transition-colors leading-snug">
-                    {lecturer.name}
-                  </h3>
-                  {lecturer.show_nim && lecturer.nim && (
-                    <p className="text-xs font-mono text-neutral-500 mt-0.5">NIP: {lecturer.nim}</p>
-                  )}
-
-                  {lecturer.bio && (
-                    <p className="text-xs text-neutral-600 mt-2.5 line-clamp-3 leading-relaxed">
-                      {lecturer.bio}
-                    </p>
-                  )}
-
-                  {/* Expertise Chips */}
-                  {lecturer.expertise && lecturer.expertise.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3.5">
-                      {lecturer.expertise.slice(0, 3).map((exp, idx) => (
-                        <span
-                          key={idx}
-                          className="text-[11px] font-medium px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 border border-neutral-200"
-                        >
-                          {exp}
-                        </span>
-                      ))}
-                      {lecturer.expertise.length > 3 && (
-                        <span className="text-[11px] font-mono text-neutral-500 self-center">
-                          +{lecturer.expertise.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Bottom Card Footer */}
-              <div className="px-5 py-3.5 bg-neutral-50 border-t border-neutral-100 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  {lecturer.email_public && (
-                    <a
-                      href={`mailto:${lecturer.email_public}`}
-                      title={lecturer.email_public}
-                      className="text-neutral-500 hover:text-[#2C3E35] transition-colors p-1"
-                    >
-                      <Mail className="w-4 h-4" />
-                    </a>
-                  )}
-                  {lecturer.social?.scholar && (
-                    <a
-                      href={lecturer.social.scholar}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Google Scholar"
-                      className="text-neutral-500 hover:text-[#2C3E35] transition-colors p-1"
-                    >
-                      <GraduationCap className="w-4 h-4" />
-                    </a>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openModal(lecturer)}
-                  className="font-medium text-[#2C3E35] hover:text-[#A8977B] transition-colors flex items-center gap-1"
-                >
-                  Detail <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ======================================================== */}
-      {/* 3. LABORATORY ASSISTANTS (ACTIVE & ALUMNI)              */}
-      {/* ======================================================== */}
-      <section aria-labelledby="assistants-heading" data-testid="assistants-section" className="pt-4">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-[#2C3E35]/20 gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-[#A8977B] mb-1">
-              <Users className="w-4 h-4 text-[#2C3E35]" /> Laboratory Operations & Research Cadre
-            </div>
-            <h2 id="assistants-heading" className="text-2xl md:text-3xl font-serif font-bold text-[#1E2B25]">
-              Laboratory Assistants
-            </h2>
-            <p className="text-sm text-neutral-600 mt-1 max-w-2xl">
-              Undergraduate engineering students responsible for day-to-day practicum supervision, network testbeds, server infrastructure, and academic activities.
-            </p>
-          </div>
-
-          {/* Active vs Alumni Status Toggle */}
-          <div className="flex items-center p-1 bg-neutral-100 rounded-lg border border-neutral-200 self-start md:self-end">
-            <button
-              type="button"
-              data-testid="member-status-active-filter"
-              onClick={() => {
-                setAssistantStatus("active");
-                setDivisionFilter("all");
-              }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-xs font-medium transition-all ${
-                assistantStatus === "active"
-                  ? "bg-[#2C3E35] text-white shadow-sm font-semibold"
-                  : "text-neutral-600 hover:text-neutral-900"
-              }`}
-            >
-              <UserCheck className="w-3.5 h-3.5" />
-              Active Cadre ({activeAssistants.length})
-            </button>
-            <button
-              type="button"
-              data-testid="member-status-alumni-filter"
-              onClick={() => {
-                setAssistantStatus("alumni");
-                setDivisionFilter("all");
-              }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-xs font-medium transition-all ${
-                assistantStatus === "alumni"
-                  ? "bg-[#2C3E35] text-white shadow-sm font-semibold"
-                  : "text-neutral-600 hover:text-neutral-900"
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5" />
-              Alumni ({alumniAssistants.length})
-            </button>
-          </div>
-        </div>
-
-        {/* Filter Controls Bar */}
-        <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-4 mb-8 space-y-4">
-          {/* Active Batch Sub-Filter (Only shown when active is selected) */}
-          {assistantStatus === "active" && (
-            <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-neutral-200/60">
-              <span className="text-xs font-mono font-medium text-neutral-500 mr-2 flex items-center gap-1">
-                Generation:
-              </span>
-              {[
-                { key: "all", label: `All Active (${activeAssistants.length})` },
-                {
-                  key: "2023",
-                  label: `Batch 2023 · Heads & BPH (${activeAssistants.filter((a) => a.batch === "2023").length})`,
-                },
-                {
-                  key: "2024",
-                  label: `Batch 2024 · Staff (${activeAssistants.filter((a) => a.batch === "2024").length})`,
-                },
-              ].map((b) => (
-                <button
-                  key={b.key}
-                  type="button"
-                  onClick={() => setBatchFilter(b.key)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                    batchFilter === b.key
-                      ? "bg-[#A8977B] text-white font-semibold"
-                      : "bg-white text-neutral-600 border border-neutral-200 hover:border-neutral-300"
-                  }`}
-                >
-                  {b.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Division Pills & Search Input */}
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-            {/* Division Quick Filters */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setDivisionFilter("all")}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                  divisionFilter === "all"
-                    ? "bg-[#2C3E35] text-white"
-                    : "bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100"
-                }`}
-              >
-                All Divisions
-              </button>
-              {Object.keys(DIVISION_LABELS).map((div) => {
-                const count = (
-                  assistantStatus === "active" ? activeAssistants : alumniAssistants
-                ).filter((a) => (a.division || "").toLowerCase() === div.toLowerCase()).length;
-                if (count === 0 && assistantStatus === "alumni") return null;
-                return (
-                  <button
-                    key={div}
-                    type="button"
-                    onClick={() => setDivisionFilter(div)}
-                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                      divisionFilter.toLowerCase() === div.toLowerCase()
-                        ? "bg-[#2C3E35] text-white"
-                        : "bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100"
-                    }`}
-                  >
-                    {div} {count > 0 && `(${count})`}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Live Search Box */}
-            <div className="relative min-w-[220px]">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search assistant, NRP, skill..."
-                className="w-full text-xs px-3 py-1.5 pl-8 rounded-md border border-neutral-300 bg-white focus:outline-none focus:ring-1 focus:ring-[#2C3E35] focus:border-[#2C3E35]"
-              />
-              <Filter className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 text-xs"
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Assistants Cards Grid */}
-        {displayedAssistants.length === 0 ? (
-          <div className="bg-neutral-50 rounded-xl border border-dashed border-neutral-300 p-12 text-center">
-            <Users className="w-10 h-10 text-neutral-400 mx-auto mb-3" />
-            <h3 className="text-base font-medium text-neutral-800">No assistants found</h3>
-            <p className="text-xs text-neutral-500 mt-1">
-              Try resetting your division, generation filter, or search keywords.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setDivisionFilter("all");
-                setBatchFilter("all");
-                setSearchQuery("");
-              }}
-              className="mt-4 px-4 py-1.5 text-xs font-medium text-[#2C3E35] border border-[#2C3E35] rounded-md hover:bg-[#2C3E35] hover:text-white transition-colors"
-            >
-              Reset Filters
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-5">
-            {displayedAssistants.map((assistant) => {
-              const ig = formatInstagramHandle(assistant.social?.instagram);
-              const isBphOrHead =
-                assistant.division === "BPH" ||
-                (assistant.position || "").toLowerCase().includes("coordinator") ||
-                (assistant.position || "").toLowerCase().includes("head") ||
-                (assistant.position || "").toLowerCase().includes("lead");
-
-              return (
-                <div
-                  key={assistant.id}
-                  data-testid={`assistant-card-${assistant.id}`}
-                  onClick={() => openModal(assistant)}
-                  className="group bg-white rounded-xl border border-neutral-200 overflow-hidden hover:shadow-md hover:border-[#A8977B]/70 transition-all duration-300 flex flex-col justify-between cursor-pointer"
-                >
-                  <div>
-                    {/* Portrait container with 3:4 aspect ratio */}
-                    <div className="relative w-full aspect-[3/4] bg-neutral-100 overflow-hidden">
-                      {assistant.photo_url ? (
-                        <img
-                          src={assistant.photo_url}
-                          alt={assistant.photo_alt || assistant.name}
-                          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
+function HeadBanner({ member }: { member: Member }) {
+    const { locale, t } = useLocale();
+    return (
+        <section className="tnl-section" data-testid="head-of-lab-banner">
+            <div className="tnl-container">
+                <div className="tnl-hero-gradient tnl-card grid overflow-hidden p-0 lg:grid-cols-[0.38fr_0.62fr]">
+                    <div className="relative flex items-end justify-center overflow-hidden" style={{ minHeight: 280 }}>
+                        {member.photo_url ? (
+                            <img
+                                src={member.photo_url}
+                                alt={member.photo_alt || `Portrait of ${member.name}`}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                            />
+                        ) : (
+                            <LightPlaceholder member={member} isModal />
+                        )}
+                        <div
+                            className="pointer-events-none absolute inset-0"
+                            style={{ background: "linear-gradient(90deg, transparent 40%, #1c2720 100%)" }}
+                            aria-hidden="true"
                         />
-                      ) : (
-                        <MonogramPlaceholder
-                          name={assistant.name}
-                          batch={assistant.batch || "2024"}
-                        />
-                      )}
-
-                      {/* Division Pill overlay */}
-                      {assistant.division && (
-                        <div className="absolute top-2.5 left-2.5 z-10">
-                          <span
-                            className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded shadow-sm backdrop-blur-sm ${
-                              isBphOrHead
-                                ? "bg-[#1E2B25]/90 text-[#F5F2EB] border border-[#A8977B]/40"
-                                : "bg-white/95 text-neutral-800 border border-neutral-200"
-                            }`}
-                          >
-                            {assistant.division}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Batch badge */}
-                      {assistant.batch && (
-                        <div className="absolute top-2.5 right-2.5 z-10">
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/60 text-white backdrop-blur-sm">
-                            '{assistant.batch.substring(2)}
-                          </span>
-                        </div>
-                      )}
                     </div>
-
-                    {/* Meta info */}
-                    <div className="p-3.5">
-                      <h4 className="font-serif font-bold text-sm text-[#1E2B25] group-hover:text-[#2C3E35] transition-colors leading-tight line-clamp-1">
-                        {assistant.name}
-                      </h4>
-                      <p className="text-[11px] text-neutral-600 mt-1 font-sans line-clamp-1">
-                        {assistant.position_label || assistant.position || "Assistant"}
-                      </p>
-
-                      {assistant.show_nim && assistant.nim && (
-                        <p className="text-[10px] font-mono text-neutral-400 mt-0.5">
-                          NRP: {assistant.nim}
+                    <div className="p-8 sm:p-10">
+                        <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: "var(--tnl-tan)" }}>
+                            {t("head_of_lab")}
                         </p>
-                      )}
-
-                      {/* Expertise Badges */}
-                      {assistant.expertise && assistant.expertise.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2.5">
-                          {assistant.expertise.slice(0, 2).map((exp, idx) => (
-                            <span
-                              key={idx}
-                              className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600"
+                        <h2 className="tnl-h3 mt-2 text-[24px] sm:text-[30px]" style={{ color: "#ffffff" }} data-testid="head-of-lab-name">
+                            {member.name}
+                        </h2>
+                        <p className="mt-4 text-sm leading-relaxed" style={{ color: "#dfe2e5" }}>
+                            {pick(locale, member.bio, member.bio_id)}
+                        </p>
+                        {member.quote || member.quote_id ? (
+                            <blockquote
+                                className="tnl-quote mt-5 border-l-4 pl-4 text-[17px] leading-relaxed"
+                                style={{ borderColor: "var(--tnl-tan)", color: "#ffffff" }}
+                                data-testid="head-of-lab-quote"
                             >
-                              {exp}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Card Actions Footer */}
-                  <div
-                    className="px-3.5 py-2 bg-neutral-50 border-t border-neutral-100 flex items-center justify-between text-[11px]"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex items-center gap-2">
-                      {assistant.email_public && (
-                        <a
-                          href={`mailto:${assistant.email_public}`}
-                          title={assistant.email_public}
-                          className="text-neutral-400 hover:text-[#2C3E35] transition-colors"
-                        >
-                          <Mail className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                      {ig && (
-                        <a
-                          href={ig.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={ig.handle}
-                          className="text-neutral-400 hover:text-pink-600 transition-colors"
-                        >
-                          <Instagram className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                      {assistant.social?.linkedin && (
-                        <a
-                          href={assistant.social.linkedin}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title="LinkedIn"
-                          className="text-neutral-400 hover:text-blue-700 transition-colors"
-                        >
-                          <Linkedin className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openModal(assistant)}
-                      className="text-[10px] font-medium text-[#2C3E35] hover:text-[#A8977B] transition-colors"
-                    >
-                      Profile →
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* ======================================================== */}
-      {/* 4. MODAL DETAIL POPUP                                    */}
-      {/* ======================================================== */}
-      {selectedMember && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          data-testid="member-detail-modal"
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
-          onClick={closeModal}
-        >
-          <div
-            className="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl border border-neutral-200 my-8"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header / Banner */}
-            <div className="relative bg-gradient-to-r from-[#1E2B25] to-[#2C3E35] text-white p-6 md:p-8">
-              <button
-                type="button"
-                onClick={closeModal}
-                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center transition-colors text-sm"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                <div className="w-28 h-36 rounded-xl overflow-hidden border-2 border-[#A8977B] flex-shrink-0 bg-[#16201B] shadow-md">
-                  {selectedMember.photo_url ? (
-                    <img
-                      src={selectedMember.photo_url}
-                      alt={selectedMember.photo_alt || selectedMember.name}
-                      className="w-full h-full object-cover object-top"
-                    />
-                  ) : (
-                    <MonogramPlaceholder
-                      name={selectedMember.name}
-                      batch={selectedMember.batch || "2024"}
-                    />
-                  )}
-                </div>
-
-                <div className="text-center sm:text-left space-y-1.5 flex-1">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#A8977B] text-[#1E2B25] font-bold uppercase tracking-wider">
-                      {selectedMember.division || selectedMember.role}
-                    </span>
-                    {selectedMember.batch && (
-                      <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-white/20 text-white">
-                        Batch {selectedMember.batch}
-                      </span>
-                    )}
-                    <span
-                      className={`text-[11px] font-mono px-2 py-0.5 rounded ${
-                        selectedMember.status === "active"
-                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                          : "bg-neutral-500/20 text-neutral-300"
-                      }`}
-                    >
-                      {selectedMember.status === "active" ? "Active" : "Alumni"}
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl md:text-2xl font-serif font-bold text-white leading-tight pt-1">
-                    {selectedMember.name}
-                  </h3>
-                  <p className="text-sm text-[#D1C7B7]">
-                    {selectedMember.position_label || selectedMember.position || "Member"}
-                  </p>
-                  {selectedMember.show_nim && selectedMember.nim && (
-                    <p className="text-xs font-mono text-[#A8977B]">
-                      {selectedMember.role === "lecturer" ? "NIP" : "NRP"}: {selectedMember.nim}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 md:p-8 space-y-6 max-h-[60vh] overflow-y-auto">
-              {/* Bio */}
-              {selectedMember.bio && (
-                <div>
-                  <h5 className="text-xs font-mono uppercase tracking-wider text-neutral-500 font-semibold mb-2">
-                    Biography / Focus
-                  </h5>
-                  <p className="text-sm text-neutral-700 leading-relaxed">{selectedMember.bio}</p>
-                </div>
-              )}
-
-              {/* Research & Technical Expertise */}
-              {selectedMember.expertise && selectedMember.expertise.length > 0 && (
-                <div>
-                  <h5 className="text-xs font-mono uppercase tracking-wider text-neutral-500 font-semibold mb-2">
-                    Areas of Expertise
-                  </h5>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedMember.expertise.map((exp: string, idx: number) => (
-                      <span
-                        key={idx}
-                        className="text-xs px-2.5 py-1 rounded-md bg-[#2C3E35]/10 text-[#2C3E35] font-medium border border-[#2C3E35]/20"
-                      >
-                        {exp}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Selected Publications at TNL */}
-              {memberPubs && memberPubs.length > 0 && (
-                <div
-                  className="border-t pt-4"
-                  style={{ borderColor: "var(--tnl-border)" }}
-                  data-testid={`member-publications-${selectedMember.id}`}
-                >
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#2C3E35] mb-2.5">
-                    <BookOpen className="h-3.5 w-3.5 text-[#A8977B]" aria-hidden="true" />
-                    Selected Publications at TNL ({memberPubs.length})
-                  </div>
-                  <div className="space-y-2">
-                    {memberPubs.map((pub) => (
-                      <div
-                        key={pub.id}
-                        className="rounded-lg border border-neutral-200 p-3 text-xs transition-colors hover:border-[#2C3E35] bg-neutral-50"
-                      >
-                        <p className="font-semibold text-neutral-800 leading-snug">{pub.title}</p>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-neutral-500">
-                          <span>{pub.year}</span>
-                          {pub.venue && <span>· {pub.venue}</span>}
-                          {pub.doi && (
+                                “{pick(locale, member.quote, member.quote_id)}”
+                            </blockquote>
+                        ) : null}
+                        {member.email_public ? (
                             <a
-                              href={`https://doi.org/${pub.doi}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 font-semibold text-[#2C3E35] hover:underline"
+                                href={`mailto:${member.email_public}`}
+                                className="mt-5 inline-flex items-center gap-2 text-sm font-medium"
+                                style={{ color: "var(--tnl-tan)" }}
+                                data-testid="head-of-lab-email-link"
                             >
-                              DOI <ExternalLink className="h-3 w-3" />
+                                <Mail className="h-4 w-4" aria-hidden="true" />
+                                {member.email_public}
                             </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                        ) : null}
+                        <SocialLinks member={member} />
+                    </div>
                 </div>
-              )}
-
-              {/* Public Contact & Social Links */}
-              <div>
-                <h5 className="text-xs font-mono uppercase tracking-wider text-neutral-500 font-semibold mb-2">
-                  Contact & Profiles
-                </h5>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {selectedMember.email_public && (
-                    <a
-                      href={`mailto:${selectedMember.email_public}`}
-                      className="flex items-center gap-2 p-2.5 rounded-lg border border-neutral-200 hover:bg-neutral-50 text-neutral-700 transition-colors"
-                    >
-                      <Mail className="w-4 h-4 text-[#A8977B]" />
-                      <span className="truncate">{selectedMember.email_public}</span>
-                    </a>
-                  )}
-
-                  {selectedMember.social?.instagram && (
-                    <a
-                      href={formatInstagramHandle(selectedMember.social.instagram)?.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-2.5 rounded-lg border border-neutral-200 hover:bg-neutral-50 text-neutral-700 transition-colors"
-                    >
-                      <Instagram className="w-4 h-4 text-pink-600" />
-                      <span>{formatInstagramHandle(selectedMember.social.instagram)?.handle}</span>
-                    </a>
-                  )}
-
-                  {selectedMember.social?.linkedin && (
-                    <a
-                      href={selectedMember.social.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-2.5 rounded-lg border border-neutral-200 hover:bg-neutral-50 text-neutral-700 transition-colors"
-                    >
-                      <Linkedin className="w-4 h-4 text-blue-700" />
-                      <span>LinkedIn Profile</span>
-                    </a>
-                  )}
-
-                  {selectedMember.social?.scholar && (
-                    <a
-                      href={selectedMember.social.scholar}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-2.5 rounded-lg border border-neutral-200 hover:bg-neutral-50 text-neutral-700 transition-colors"
-                    >
-                      <GraduationCap className="w-4 h-4 text-[#2C3E35]" />
-                      <span>Google Scholar</span>
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              {/* Close Button */}
-              <div className="pt-4 border-t border-neutral-200 flex justify-end">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-5 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-xs font-semibold text-neutral-800 transition-colors"
-                >
-                  Close Window
-                </button>
-              </div>
             </div>
-          </div>
+        </section>
+    );
+}
+
+function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => void; testId: string }) {
+    const { locale, t } = useLocale();
+    const chip = roleChip(member, t as never);
+    return (
+        <button
+            type="button"
+            onClick={onOpen}
+            className="tnl-card tnl-card-hover flex flex-col overflow-hidden p-0 text-left transition-all duration-300 hover:shadow-md"
+            data-testid={testId}
+        >
+            <div className="relative overflow-hidden" style={{ aspectRatio: "1 / 1", background: "var(--tnl-surface)" }}>
+                {member.photo_url ? (
+                    <img
+                        src={member.photo_url}
+                        alt={member.photo_alt || `Portrait of ${member.name}`}
+                        className="h-full w-full object-cover object-top transition-transform duration-300 hover:scale-105"
+                        loading="lazy"
+                    />
+                ) : (
+                    <LightPlaceholder member={member} />
+                )}
+            </div>
+            <div className="flex flex-1 flex-col p-4">
+                <span
+                    className="mb-2 inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+                    style={{ background: chip.bg, color: chip.fg }}
+                >
+                    {chip.label}
+                </span>
+                <h3 className="text-[15px] font-bold leading-snug">{member.name}</h3>
+                {member.batch ? (
+                    <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
+                        Batch {member.batch}
+                    </p>
+                ) : member.division ? (
+                    <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
+                        {member.division}
+                    </p>
+                ) : null}
+                <span className="mt-3 text-xs font-semibold" style={{ color: "var(--tnl-green)" }}>
+                    {t("view_profile")} →
+                </span>
+            </div>
+            <span className="sr-only">{pick(locale, member.bio, member.bio_id)}</span>
+        </button>
+    );
+}
+
+function MemberModal({ member, onClose }: { member: Member; onClose: () => void }) {
+    const { locale, t } = useLocale();
+    const chip = roleChip(member, t as never);
+    const { data: memberPubs } = usePublications({ member_id: member.id });
+    return (
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="member-modal-name"
+            data-testid="member-detail-modal"
+        >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} aria-hidden="true" />
+            <div className="tnl-card relative z-10 max-h-[88vh] w-full max-w-2xl overflow-y-auto p-0 animate-pop">
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 transition-colors hover:bg-white"
+                    aria-label={t("close")}
+                    data-testid="member-modal-close-button"
+                >
+                    <X className="h-4 w-4" style={{ color: "#111518" }} />
+                </button>
+                <div className="grid sm:grid-cols-[0.4fr_0.6fr]">
+                    <div style={{ background: "var(--tnl-surface)", minHeight: 220 }}>
+                        {member.photo_url ? (
+                            <img
+                                src={member.photo_url}
+                                alt={member.photo_alt || `Portrait of ${member.name}`}
+                                className="h-full w-full object-cover object-top"
+                            />
+                        ) : (
+                            <LightPlaceholder member={member} isModal />
+                        )}
+                    </div>
+                    <div className="p-6 sm:p-8">
+                        <span
+                            className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold"
+                            style={{ background: chip.bg, color: chip.fg }}
+                        >
+                            {chip.label}
+                        </span>
+                        <h2 id="member-modal-name" className="tnl-h4 mt-3 text-[22px]">
+                            {member.name}
+                        </h2>
+                        {member.division ? (
+                            <p className="mt-1 text-sm" style={{ color: "var(--tnl-tan-text)" }}>
+                                {t("division")}: {member.division}
+                            </p>
+                        ) : null}
+                        {member.batch ? (
+                            <p className="text-sm" style={{ color: "var(--tnl-tan-text)" }}>
+                                {t("batch")}: {member.batch}
+                            </p>
+                        ) : null}
+                        {member.show_nim && member.nim ? (
+                            <p className="mt-1 text-sm font-mono text-[var(--tnl-body)]">
+                                {member.role === "lecturer" ? "NIP" : "NRP"}: {member.nim}
+                            </p>
+                        ) : null}
+                        <p className="mt-4 text-sm leading-relaxed text-[var(--tnl-body)]">{pick(locale, member.bio, member.bio_id)}</p>
+                        {member.expertise?.length ? (
+                            <div className="mt-4">
+                                <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                                    {t("expertise")}
+                                </div>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {member.expertise.map((e) => (
+                                        <span key={e} className="tnl-count-chip">
+                                            {e}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
+                        {member.email_public ? (
+                            <a
+                                href={`mailto:${member.email_public}`}
+                                className="mt-4 inline-flex items-center gap-2 text-sm font-medium"
+                                style={{ color: "var(--tnl-green)" }}
+                                data-testid="member-modal-email-link"
+                            >
+                                <Mail className="h-4 w-4" aria-hidden="true" />
+                                {member.email_public}
+                            </a>
+                        ) : null}
+                        {member.show_personal_email && member.email_personal ? (
+                            <p className="mt-2 text-sm text-[var(--tnl-body)]">{member.email_personal}</p>
+                        ) : null}
+                        {member.social?.cv_url ? (
+                            <a
+                                href={member.social.cv_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="tnl-btn tnl-btn-outline mt-5 h-10 min-h-[40px] text-sm"
+                                data-testid="member-modal-cv-link"
+                            >
+                                <FileText className="h-4 w-4" aria-hidden="true" />
+                                {t("cv")}
+                            </a>
+                        ) : null}
+                        {memberPubs && memberPubs.length > 0 ? (
+                            <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--tnl-border)" }} data-testid={`member-publications-${member.id}`}>
+                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                                    <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
+                                    Selected Publications at TNL ({memberPubs.length})
+                                </div>
+                                <div className="mt-2.5 space-y-2">
+                                    {memberPubs.map((pub) => (
+                                        <div key={pub.id} className="rounded-lg border p-2.5 text-xs transition-colors hover:border-[var(--tnl-green)]" style={{ borderColor: "var(--tnl-border)" }}>
+                                            <p className="font-semibold text-[var(--tnl-body)]">{pub.title}</p>
+                                            <div className="mt-1 flex flex-wrap items-center gap-2" style={{ color: "var(--tnl-tan-text)" }}>
+                                                <span>{pub.year}</span>
+                                                {pub.venue && <span>· {pub.venue}</span>}
+                                                {pub.doi && (
+                                                    <a
+                                                        href={`https://doi.org/${pub.doi}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 font-semibold text-[var(--tnl-green)] hover:underline"
+                                                    >
+                                                        DOI <ExternalLink className="h-3 w-3" />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
+                        <SocialLinks member={member} />
+                    </div>
+                </div>
+            </div>
         </div>
-      )}
-    </div>
-  );
-};
+    );
+}
+
+function getDivisionGridClass(count: number): string {
+    if (count === 3) return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4";
+    if (count === 4) return "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4";
+    if (count === 5) return "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4";
+    return "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4";
+}
+
+export function MemberSections() {
+    const { locale, t } = useLocale();
+    const [statusFilter, setStatusFilter] = useState<"active" | "alumni">("active");
+    // Fetch all members so that switching statusFilter for assistants never blanks out Lecturers or Head of Lab
+    const { data: members, isLoading } = useMembers();
+    const [selected, setSelected] = useState<Member | null>(null);
+    const [searchParams] = useSearchParams();
+    const highlightId = searchParams.get("highlight");
+
+    const list = useMemo(() => members ?? [], [members]);
+
+    useEffect(() => {
+        if (highlightId && list.length) {
+            const found = list.find((m) => m.id === highlightId);
+            if (found) setSelected(found);
+        }
+    }, [highlightId, list]);
+
+    // Head of Lab and Lecturers are always active
+    const head = list.find((m) => m.is_head && m.status === "active") || list.find((m) => m.is_head);
+    const lecturers = list.filter((m) => !m.is_head && (m.role === "lecturer" || m.role === "researcher") && m.status === "active");
+    
+    // Assistants pool filtered strictly by statusFilter (active or alumni)
+    const assistants = useMemo(() => {
+        return list.filter((m) => (m.role === "assistant" || m.role === "alumni") && m.status === statusFilter);
+    }, [list, statusFilter]);
+
+    // Available batches for alumni
+    const alumniBatches = useMemo(
+        () => Array.from(new Set(list.filter((m) => m.status === "alumni").map((a) => a.batch).filter(Boolean))).sort() as string[],
+        [list],
+    );
+    const [alumniBatch, setAlumniBatch] = useState<string | null>(null);
+    const activeAlumniBatch = alumniBatch && alumniBatches.includes(alumniBatch) ? alumniBatch : alumniBatches[0] ?? null;
+
+    // Filtered assistants to display based on status
+    const currentAssistants = useMemo(() => {
+        if (statusFilter === "active") {
+            return assistants;
+        }
+        if (activeAlumniBatch) {
+            return assistants.filter((a) => a.batch === activeAlumniBatch);
+        }
+        return assistants;
+    }, [assistants, statusFilter, activeAlumniBatch]);
+
+    // Group assistants by division in exact specified order, sorting 2023 (heads/BPH) before 2024 (staff)
+    const groups = useMemo(() => {
+        const out: { label: string; members: Member[] }[] = [];
+        const orderMap: Record<string, number> = { coordinator: 0, head: 1, vice: 2, staff: 3, member: 4 };
+
+        for (const div of DIVISION_ORDER) {
+            const inDiv = currentAssistants
+                .filter((m) => (m.division || "").toLowerCase() === div.toLowerCase())
+                .sort((a, b) => {
+                    const roleA = orderMap[(a.position || "").toLowerCase()] ?? 99;
+                    const roleB = orderMap[(b.position || "").toLowerCase()] ?? 99;
+                    if (roleA !== roleB) return roleA - roleB;
+                    // Batch 2023 before Batch 2024
+                    if (a.batch !== b.batch) return (a.batch || "").localeCompare(b.batch || "");
+                    return a.order - b.order;
+                });
+
+            if (inDiv.length > 0) {
+                out.push({ label: div, members: inDiv });
+            }
+        }
+
+        // Catch-all for any assistants with unknown/unassigned division
+        const remaining = currentAssistants.filter(
+            (m) => !DIVISION_ORDER.some((d) => d.toLowerCase() === (m.division || "").toLowerCase())
+        );
+        if (remaining.length > 0) {
+            out.push({ label: "Other Members", members: remaining });
+        }
+
+        return out;
+    }, [currentAssistants]);
+
+    return (
+        <>
+            {head ? <HeadBanner member={head} /> : null}
+
+            <section className="tnl-section pt-0" data-testid="lecturers-section">
+                <div className="tnl-container">
+                    <SectionHeading
+                        title={t("lecturers")}
+                        count={lecturers.length}
+                        countLabel={t("members_count")}
+                        testId="lecturers-heading"
+                    />
+                    {isLoading ? (
+                        <Spinner label={t("loading")} />
+                    ) : lecturers.length === 0 ? (
+                        <EmptyState title={t("coming_soon")} body={t("empty_members")} testId="lecturers-empty-state" />
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl">
+                            {lecturers.map((m) => (
+                                <MemberCard key={m.id} member={m} onOpen={() => setSelected(m)} testId={`lecturer-card-${m.id}`} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            <section className="tnl-section pt-0" style={{ background: "var(--tnl-surface)" }} data-testid="assistants-section">
+                <div className="tnl-container pt-[50px] md:pt-[60px]">
+                    <SectionHeading
+                        title={t("assistants")}
+                        count={currentAssistants.length}
+                        countLabel={t("members_count")}
+                        testId="assistants-heading"
+                    />
+
+                    <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+                        {/* Left: Clean batch badge / tab */}
+                        <div className="flex flex-wrap gap-2" role="tablist" aria-label={t("batch")}>
+                            {statusFilter === "active" ? (
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={true}
+                                    className="rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+                                    style={{ background: "var(--tnl-green)", color: "#fff", borderColor: "var(--tnl-green)" }}
+                                    data-testid="member-batch-2023-2024-tab"
+                                >
+                                    Batch 2023 / 2024
+                                </button>
+                            ) : (
+                                alumniBatches.map((b) => (
+                                    <button
+                                        key={b}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={activeAlumniBatch === b}
+                                        onClick={() => setAlumniBatch(b)}
+                                        className="rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+                                        style={
+                                            activeAlumniBatch === b
+                                                ? { background: "var(--tnl-green)", color: "#fff", borderColor: "var(--tnl-green)" }
+                                                : { borderColor: "var(--tnl-border)", background: "var(--card)" }
+                                        }
+                                        data-testid={`member-batch-${b.replace("/", "-")}-tab`}
+                                    >
+                                        Batch {b}
+                                    </button>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Right: Active vs Alumni toggle */}
+                        <div className="flex gap-2">
+                            {(["active", "alumni"] as const).map((s) => (
+                                <button
+                                    key={s}
+                                    type="button"
+                                    onClick={() => setStatusFilter(s)}
+                                    className="rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+                                    style={
+                                        statusFilter === s
+                                            ? { background: "var(--tnl-tan)", color: "#111518", borderColor: "var(--tnl-tan)" }
+                                            : { borderColor: "var(--tnl-border)", background: "var(--card)" }
+                                    }
+                                    data-testid={`member-status-${s}-filter`}
+                                >
+                                    {s === "active" ? t("active") : t("alumni")}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {isLoading ? (
+                        <Spinner label={t("loading")} />
+                    ) : groups.length === 0 ? (
+                        <EmptyState
+                            title={t("coming_soon")}
+                            body={t("empty_members")}
+                            testId="assistants-empty-state"
+                            icon={<Users className="h-7 w-7" style={{ color: "var(--tnl-tan-text)" }} />}
+                        />
+                    ) : (
+                        <div className="space-y-12">
+                            {groups.map((group) => (
+                                <div key={group.label} data-testid={`division-group-${group.label.toLowerCase().replace(/\s+/g, "-")}`}>
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <h3 className="text-[19px] font-bold">{group.label}</h3>
+                                        <span className="tnl-count-chip">
+                                            {group.members.length} {t("members_count")}
+                                        </span>
+                                    </div>
+                                    <div className={getDivisionGridClass(group.members.length)}>
+                                        {group.members.map((m) => (
+                                            <MemberCard key={m.id} member={m} onOpen={() => setSelected(m)} testId={`assistant-card-${m.id}`} />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {selected ? <MemberModal member={selected} onClose={() => setSelected(null)} /> : null}
+            <span className="sr-only">{locale}</span>
+        </>
+    );
+}
 
 export function MemberSectionsPlaceholder() {
-  return null;
+    return null;
 }
