@@ -1,0 +1,37 @@
+# Prometheus configuration for TNL Studio Proxmox LXC infrastructure
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: 'production'
+    cluster: 'node2-proxmox'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'node_exporter'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['100.102.105.77:9100']
+        labels:
+          instance: 'labtnl-web'
+          role: 'reverse-proxy'
+          ct_id: '102'
+      - targets: ['100.65.129.8:9100']
+        labels:
+          instance: 'labtnl-app'
+          role: 'application-backend-frontend'
+          ct_id: '103'
+      - targets: ['100.111.32.102:9100']
+        labels:
+          instance: 'labtnl-db'
+          role: 'database-mongodb'
+          ct_id: '116'
+      - targets: ['100.114.215.48:9100']
+        labels:
+          instance: 'labtnl-monitor'
+          role: 'monitoring-prometheus-grafana'
+          ct_id: '117'

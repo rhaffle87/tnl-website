@@ -1,0 +1,73 @@
+# Automated Deployment Tool from Windows to CT 103 (labtnl-app) via Tailscale
+param (
+    [string]$AppNode = "100.65.129.8",
+    [switch]$SkipFrontendBuild = $false,
+    [switch]$SkipBackendDeploy = $false
+)
+
+$ErrorActionPreference = "Stop"
+$root = (Resolve-Path "$PSScriptRoot\..\..").Path
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+
+Write-Host "==========================================================" -ForegroundColor Cyan
+Write-Host "    TNL Studio Automated Deployment over Tailscale        " -ForegroundColor Cyan
+Write-Host "==========================================================" -ForegroundColor Cyan
+Write-Host "Target Host: $AppNode"
+Write-Host "Workspace:   $root`n"
+
+# 1. Frontend Build
+$distPath = Join-Path $root "frontend\dist"
+if (-not $SkipFrontendBuild) {
+    Write-Host "[1/5] Building frontend production bundle..." -ForegroundColor Yellow
+    if (Test-Path "$root\frontend\node_modules") {
+        Push-Location "$root\frontend"
+        try {
+            npm run build
+            if ($LASTEXITCODE -ne 0) { throw "Frontend build failed with exit code $LASTEXITCODE" }
+        } finally {
+            Pop-Location
+        }
+    } else {
+        Write-Host "Local node_modules not present, pulling build from docker compose..." -ForegroundColor DarkGray
+        docker compose cp frontend:/usr/share/nginx/html "$distPath"
+    }
+} else {
+    Write-Host "[1/5] Skipping frontend build per flag." -ForegroundColor DarkGray
+}
+
+# 2. Package Frontend Dist
+if (Test-Path $distPath) {
+    Write-Host "[2/5] Packaging and deploying frontend dist..." -ForegroundColor Yellow
+    $frontendTar = "$env:TEMP\tnl-frontend-$timestamp.tar.gz"
+    tar -czf "$frontendTar" -C "$distPath" .
+    scp "$frontendTar" "root@${AppNode}:/tmp/frontend-dist.tar.gz"
+    ssh root@$AppNode "mkdir -p /opt/tnl/frontend/dist && tar -xzf /tmp/frontend-dist.tar.gz -C /opt/tnl/frontend/dist && rm -f /tmp/frontend-dist.tar.gz"
+    Remove-Item "$frontendTar" -Force -ErrorAction SilentlyContinue
+} else {
+    Write-Host "[2/5] No frontend dist found at $distPath, skipping frontend copy." -ForegroundColor Yellow
+}
+
+# 3. Package & Deploy Backend
+if (-not $SkipBackendDeploy) {
+    Write-Host "[3/5] Packaging and deploying backend source..." -ForegroundColor Yellow
+    $backendTar = "$env:TEMP\tnl-backend-$timestamp.tar.gz"
+    tar -czf "$backendTar" -C "$root\backend" --exclude="__pycache__" --exclude="*.pyc" --exclude=".pytest_cache" --exclude=".env" .
+    scp "$backendTar" "root@${AppNode}:/tmp/backend-src.tar.gz"
+    ssh root@$AppNode "tar -xzf /tmp/backend-src.tar.gz -C /opt/tnl/backend && rm -f /tmp/backend-src.tar.gz"
+    Remove-Item "$backendTar" -Force -ErrorAction SilentlyContinue
+
+    Write-Host "[4/5] Updating python dependencies & reloading services..." -ForegroundColor Yellow
+    ssh root@$AppNode "/opt/tnl/backend/venv/bin/pip install --quiet -r /opt/tnl/backend/requirements.txt && systemctl restart tnl-backend && systemctl reload nginx"
+    Start-Sleep -Seconds 3
+} else {
+    Write-Host "[3/5 & 4/5] Skipping backend deploy per flag. Reloading Nginx on CT 103..." -ForegroundColor DarkGray
+    ssh root@$AppNode "systemctl reload nginx"
+}
+
+# 5. Post-deploy Health Check
+Write-Host "`n[5/5] Running post-deploy verification..." -ForegroundColor Yellow
+& "$PSScriptRoot\health-check.ps1"
+
+Write-Host "`n==========================================================" -ForegroundColor Green
+Write-Host "   Deployment successfully executed to Proxmox LXC!       " -ForegroundColor Green
+Write-Host "==========================================================" -ForegroundColor Green
