@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none" role="img" aria-label="Indosat Ooredoo Hutchison Logo">
+  <!-- Indosat wordmark & red ooredoo dots & hutchison -->
+  <g transform="translate(10, 12)">
+    <!-- indosat in yellow/slate -->
+    <text x="0" y="24" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="22" fill="#E8B004" letter-spacing="-0.5">indosat</text>
+    <!-- Ooredoo red pill and dots -->
+    <g transform="translate(86, 6)">
+      <rect x="0" y="2" width="56" height="18" rx="9" fill="#ED1C24"/>
+      <circle cx="9" cy="11" r="3.5" fill="#FFFFFF"/>
+      <circle cx="21" cy="11" r="3.5" fill="#FFFFFF"/>
+      <circle cx="33" cy="11" r="3.5" fill="#FFFFFF"/>
+      <circle cx="45" cy="11" r="3.5" fill="#FFFFFF"/>
+    </g>
+    <!-- Hutchison -->
+    <text x="148" y="22" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="12" fill="#333333" letter-spacing="0.5">hutchison</text>
+  </g>
+  <text x="12" y="47" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="8.5" fill="#718096" letter-spacing="1">INDOSAT OOREDOO HUTCHISON</text>
+</svg>

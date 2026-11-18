@@ -325,6 +325,15 @@ ILLUSTRATIVE = [
     ("sdr-spectrum-lab.jpg",
      "https://images.unsplash.com/photo-1581092160607-ee22621dd758?crop=entropy&cs=srgb&fm=jpg&w=1200&q=80",
      "Illustrative photo of RF spectrum and electronic measurement instruments — not Room B-301"),
+    ("news-cisco-packet-tracer.jpg",
+     "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?crop=entropy&cs=srgb&fm=jpg&w=1200&q=80",
+     "Network routing hardware, servers and configuration topology"),
+    ("news-rural-telecom.jpg",
+     "https://images.unsplash.com/photo-1516110833967-0b5716ca1387?crop=entropy&cs=srgb&fm=jpg&w=1200&q=80",
+     "Rural telecommunication antenna and wireless connectivity tower"),
+    ("news-scientific-conference.jpg",
+     "https://images.unsplash.com/photo-1511578314322-379afb476865?crop=entropy&cs=srgb&fm=jpg&w=1200&q=80",
+     "Academic conference presentation hall and research symposium"),
 ]
 
 AVATAR = "/api/media-files/placeholders/avatar.svg"
@@ -341,10 +350,6 @@ HOME_BLOCKS = [
                      "Departemen Teknik Elektro, Institut Teknologi Sepuluh Nopember."),
         "primary_label": "Explore our activities", "primary_label_id": "Lihat kegiatan kami", "primary_url": "/activity",
         "secondary_label": "Join us", "secondary_label_id": "Gabung bersama kami", "secondary_url": "/activity?tab=training",
-    }},
-    {"type": "feature_tiles", "props": {
-        "tiles": [{"title": e, "title_id": i, "description": de, "description_id": di}
-                  for e, i, de, di in HERO_HIGHLIGHTS],
     }},
     {"type": "stats", "props": {"source": "live"}},
     {"type": "about", "props": {
@@ -366,24 +371,8 @@ HOME_BLOCKS = [
         "slides": [{"title": e, "title_id": i, "description": de, "description_id": di}
                    for e, i, de, di in FIELDS_OF_STUDY],
     }},
-    {"type": "quick_links", "props": {
-        "heading": "Explore the Laboratory", "heading_id": "Jelajahi Laboratorium",
-        "cards": [
-            {"title": "People & Researchers", "title_id": "Anggota & Peneliti",
-             "description": "Lecturers, researchers and the active student assistant team of the laboratory.",
-             "description_id": "Dosen, peneliti, dan tim asisten mahasiswa aktif laboratorium.", "url": "/member"},
-            {"title": "Programs & Testbeds", "title_id": "Program & Fasilitas",
-             "description": "Research testbeds, practicum modules, and hardware inventory in Room B-301.",
-             "description_id": "Testbed riset, modul praktikum, dan inventaris perangkat di Ruang B-301.", "url": "/activity"},
-            {"title": "Join Programs & Training", "title_id": "Pendaftaran & Rekrutmen",
-             "description": "Open registrations for professional training and annual assistant recruitment.",
-             "description_id": "Pendaftaran terbuka untuk pelatihan profesional dan rekrutmen asisten tahunan.", "url": "/activity?tab=training"},
-        ],
-    }},
     {"type": "gallery", "props": {
         "heading": "Inside the Laboratory", "heading_id": "Di Dalam Laboratorium B-301",
-        "note": ("Illustrative networking photography. These will be swapped with confirmed photographs of Room B-301 as they are uploaded in the CMS."),
-        "note_id": ("Foto ilustrasi perangkat dan infrastruktur jaringan. Foto ini akan diperbarui dengan dokumentasi fisik Ruang B-301."),
         "images": [],
     }},
     {"type": "news_feed", "props": {"heading": "Latest News", "heading_id": "Berita Terbaru", "count": 3}},
@@ -589,8 +578,21 @@ async def seed_pages(photos: dict[str, str] | None = None) -> None:
                 props["image_caption"] = "Illustrative photo — not Room B-301"
                 props["image_caption_id"] = "Foto ilustrasi — bukan Ruang B-301"
             if b["type"] == "gallery":
-                imgs = [{"url": photos[n], "alt": alt} for n, _, alt in ILLUSTRATIVE
-                        if n != "hero-network-rack.jpg" and photos.get(n)]
+                gallery_items = [
+                    ("fiber-patch-panel.jpg", "Optical & Patch Bay", "Rak Patch Panel Serat Optik"),
+                    ("structured-cabling.jpg", "Structured Cabling", "Kabel Terstruktur"),
+                    ("switch-ports.jpg", "Core Routing Rack", "Rak Routing Inti"),
+                    ("sdr-spectrum-lab.jpg", "SDR & RF Workbench", "Meja Kerja SDR & RF"),
+                ]
+                imgs = []
+                for n, caption, caption_id in gallery_items:
+                    if photos.get(n):
+                        imgs.append({
+                            "url": photos[n],
+                            "alt": caption,
+                            "caption": caption,
+                            "caption_id": caption_id,
+                        })
                 if not imgs:
                     continue
                 props["images"] = imgs
@@ -890,14 +892,14 @@ async def seed_equipment() -> None:
 async def seed_partners() -> None:
     await db.partners.delete_many({})
     partners = [
-        ("Telkom Indonesia", "https://www.telkom.co.id"),
-        ("Huawei ICT Academy", "https://e.huawei.com"),
-        ("ZTE Corporation", "https://www.zte.com.cn"),
-        ("Indosat Ooredoo Hutchison", "https://ioh.co.id"),
-        ("Institut Teknologi Sepuluh Nopember", "https://www.its.ac.id"),
+        ("Telkom Indonesia", "https://www.telkom.co.id", "/assets/partners/telkom.svg"),
+        ("Huawei ICT Academy", "https://e.huawei.com", "/assets/partners/huawei.svg"),
+        ("ZTE Corporation", "https://www.zte.com.cn", "/assets/partners/zte.svg"),
+        ("Indosat Ooredoo Hutchison", "https://ioh.co.id", "/assets/partners/indosat.svg"),
+        ("Institut Teknologi Sepuluh Nopember", "https://www.its.ac.id", "/assets/partners/its.svg"),
     ]
-    docs = [Partner(name=n, url=u, logo_url=None, order=i, published=True).model_dump()
-            for i, (n, u) in enumerate(partners)]
+    docs = [Partner(name=n, url=u, logo_url=logo, order=i, published=True).model_dump()
+            for i, (n, u, logo) in enumerate(partners)]
     await db.partners.insert_many(docs)
     print(f"  partners: {len(docs)} industry and academic partners")
 
@@ -1064,8 +1066,8 @@ async def seed_posts(photos: dict[str, str] | None = None) -> None:
             slug="cisco-packet-tracer-training-registration-open",
             category="Training",
             tags=["training", "Cisco Packet Tracer", "registration"],
-            cover_url=photos.get("hero-network-rack.jpg"),
-            cover_alt="Network equipment rack during training session in laboratory",
+            cover_url=photos.get("news-cisco-packet-tracer.jpg"),
+            cover_alt="Telecommunication network infrastructure and routing hardware configuration",
             excerpt=("The laboratory has opened registration for its Cisco Packet Tracer training, "
                      "aimed at strengthening practical networking skills."),
             excerpt_id=("Laboratorium membuka pendaftaran pelatihan Cisco Packet Tracer untuk memperkuat "
@@ -1093,8 +1095,8 @@ async def seed_posts(photos: dict[str, str] | None = None) -> None:
             slug="village-internet-network-sedaeng",
             category="Community Service",
             tags=["community service", "rural connectivity", "digital transformation"],
-            cover_url=photos.get("structured-cabling.jpg"),
-            cover_alt="Structured cabling and telemetry network deployment",
+            cover_url=photos.get("news-rural-telecom.jpg"),
+            cover_alt="Rural telecommunication antenna and wireless connectivity tower",
             excerpt=("Laboratory staff reported the deployment of a village internet network at the Sedaeng "
                      "village office in the journal Sewagati."),
             excerpt_id=("Sivitas laboratorium melaporkan pembangunan jaringan internet desa di Kantor Desa "
@@ -1123,8 +1125,8 @@ async def seed_posts(photos: dict[str, str] | None = None) -> None:
             slug="laboratory-research-at-isitia-2025",
             category="Research",
             tags=["research", "ISITIA", "conference"],
-            cover_url=photos.get("sdr-spectrum-lab.jpg"),
-            cover_alt="RF spectrum analyzer and wireless communication measurement instruments",
+            cover_url=photos.get("news-scientific-conference.jpg"),
+            cover_alt="Academic conference presentation hall and research symposium",
             excerpt=("Several studies involving laboratory staff were presented at the International Seminar "
                      "on Intelligent Technology and Its Applications."),
             excerpt_id=("Sejumlah penelitian yang melibatkan sivitas laboratorium dipresentasikan pada "

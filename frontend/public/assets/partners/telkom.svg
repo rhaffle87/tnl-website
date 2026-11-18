@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none" role="img" aria-label="Telkom Indonesia Logo">
+  <!-- Telkom Red Sphere / Hand Icon -->
+  <g transform="translate(10, 8)">
+    <circle cx="22" cy="22" r="21" fill="#EE2E24"/>
+    <!-- Segmented arc / wave -->
+    <path d="M12 22 A10 10 0 0 1 32 22 A10 10 0 0 0 12 22 Z" fill="#FFFFFF"/>
+    <circle cx="22" cy="22" r="5" fill="#EE2E24"/>
+    <path d="M22 6 A16 16 0 0 1 38 22" stroke="#666666" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="62" y="32" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="21" fill="#EE2E24" letter-spacing="-0.5">Telkom</text>
+  <text x="63" y="44" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="10.5" fill="#333333" letter-spacing="1.2">Indonesia</text>
+</svg>

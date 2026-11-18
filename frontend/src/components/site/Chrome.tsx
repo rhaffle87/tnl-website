@@ -118,6 +118,17 @@ export function SiteHeader() {
                 </nav>
 
                 <div className="flex items-center gap-2">
+                    <a
+                        href="https://www.its.ac.id"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hidden h-10 items-center gap-1.5 rounded-[6px] border px-3 text-xs font-bold tracking-wider transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-green)] xl:flex"
+                        style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-tan-text)" }}
+                        data-testid="header-its-logo-link"
+                    >
+                        <span>ITS</span>
+                        <span className="text-[10px] font-medium opacity-80">Surabaya</span>
+                    </a>
                     <button
                         type="button"
                         onClick={() => setLocale(locale === "en" ? "id" : "en")}
@@ -146,17 +157,6 @@ export function SiteHeader() {
                     >
                         {t("join_us")}
                     </Link>
-                    <a
-                        href="https://www.its.ac.id"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hidden h-10 items-center gap-1.5 rounded-[6px] border px-3 text-xs font-bold tracking-wider transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-green)] xl:flex"
-                        style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-tan-text)" }}
-                        data-testid="header-its-logo-link"
-                    >
-                        <span>ITS</span>
-                        <span className="text-[10px] font-medium opacity-80">Surabaya</span>
-                    </a>
                     <button
                         type="button"
                         onClick={() => setMobileOpen((v) => !v)}

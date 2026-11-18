@@ -596,14 +596,24 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                             const category = getCategory(p.name);
                             const content = (
                                 <>
-                                    {p.logo_url ? (
-                                        <img src={p.logo_url} alt={`${p.name} logo`} className="h-10 w-auto object-contain" loading="lazy" />
-                                    ) : (
-                                        <span className="text-center text-[15px] font-bold tracking-tight">{p.name}</span>
-                                    )}
+                                    <div className="flex h-12 w-full items-center justify-center">
+                                        {p.logo_url ? (
+                                            <img
+                                                src={p.logo_url}
+                                                alt={`${p.name} logo`}
+                                                className="max-h-10 max-w-[130px] object-contain transition-all duration-300 filter grayscale contrast-125 opacity-70 group-hover:grayscale-0 group-hover:opacity-100 group-hover:contrast-100"
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <span className="text-center text-[15px] font-bold tracking-tight">{p.name}</span>
+                                        )}
+                                    </div>
+                                    <span className="mt-2 text-center text-xs font-bold leading-tight line-clamp-1">
+                                        {p.name.replace("Institut Teknologi Sepuluh Nopember", "ITS Surabaya")}
+                                    </span>
                                     <span
-                                        className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-center"
-                                        style={{ color: "var(--tnl-tan-text)" }}
+                                        className="mt-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                                        style={{ background: "color-mix(in srgb, var(--tnl-tan) 18%, transparent)", color: "var(--tnl-tan-text)" }}
                                     >
                                         {category}
                                     </span>
@@ -615,7 +625,7 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                                     href={p.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="tnl-card tnl-card-hover flex h-28 flex-col items-center justify-center p-4"
+                                    className="tnl-card tnl-card-hover group flex min-h-[120px] flex-col items-center justify-between p-4 transition-all duration-200"
                                     data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
                                 >
                                     {content}
@@ -623,7 +633,7 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                             ) : (
                                 <div
                                     key={p.id}
-                                    className="tnl-card flex h-28 flex-col items-center justify-center p-4"
+                                    className="tnl-card group flex min-h-[120px] flex-col items-center justify-between p-4"
                                     data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
                                 >
                                     {content}
@@ -770,7 +780,7 @@ function ImageBlock({ props }: { props: Record<string, unknown> }) {
 
 function GalleryBlock({ props }: { props: Record<string, unknown> }) {
     const { locale } = useLocale();
-    const images = Array.isArray(props.images) ? (props.images as { url: string; alt: string; caption?: string }[]) : [];
+    const images = Array.isArray(props.images) ? (props.images as { url: string; alt: string; caption?: string; caption_id?: string }[]) : [];
     const [lightbox, setLightbox] = useState<number | null>(null);
     if (!images.length) return null;
 
@@ -788,35 +798,38 @@ function GalleryBlock({ props }: { props: Record<string, unknown> }) {
                     <SectionHeading title={pickProp(locale, props, "heading")} testId="gallery-heading" />
                 ) : null}
                 <div className={`grid gap-5 ${gridCols}`}>
-                    {images.map((img, i) => (
-                        <button
-                            key={i}
-                            type="button"
-                            onClick={() => setLightbox(i)}
-                            className="group relative overflow-hidden rounded-[18px] border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-left"
-                            style={{ borderColor: "var(--tnl-border)" }}
-                            data-testid={`gallery-item-${i}`}
-                        >
-                            <img
-                                src={img.url}
-                                alt={img.alt}
-                                className="h-60 w-full object-cover transition-transform duration-500 group-hover:scale-105 sm:h-64"
-                                loading="lazy"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90 transition-opacity group-hover:opacity-100" />
-                            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
-                                <span className="text-sm font-semibold text-white drop-shadow-sm line-clamp-2">
-                                    {img.caption || img.alt}
-                                </span>
-                            </div>
-                        </button>
-                    ))}
+                    {images.map((img, i) => {
+                        const label = pick(locale, img.caption || img.alt, img.caption_id || img.alt);
+                        return (
+                            <button
+                                key={i}
+                                type="button"
+                                onClick={() => setLightbox(i)}
+                                className="group relative overflow-hidden rounded-[18px] border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-left"
+                                style={{ borderColor: "var(--tnl-border)" }}
+                                data-testid={`gallery-item-${i}`}
+                            >
+                                <img
+                                    src={img.url}
+                                    alt={label}
+                                    className="h-64 w-full object-cover transition-transform duration-500 group-hover:scale-105 sm:h-72"
+                                    loading="lazy"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 transition-opacity group-hover:opacity-95" />
+                                
+                                {/* Clean Pill Badge on Bottom Left */}
+                                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-2">
+                                    <span className="inline-flex items-center rounded-full bg-black/60 px-3 py-1.5 text-xs font-bold tracking-wide text-white backdrop-blur-md border border-white/20 shadow-sm">
+                                        {label}
+                                    </span>
+                                    <span className="text-[11px] font-medium text-white/70 opacity-0 transition-opacity group-hover:opacity-100 hidden sm:inline-block">
+                                        {locale === "id" ? "Klik perbesar" : "Click to view"}
+                                    </span>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
-                {pickProp(locale, props, "note") ? (
-                    <p className="mt-4 text-xs italic text-[var(--tnl-muted)] text-center sm:text-left" data-testid="gallery-note">
-                        {pickProp(locale, props, "note")}
-                    </p>
-                ) : null}
             </div>
             {lightbox !== null ? (
                 <div
@@ -828,12 +841,12 @@ function GalleryBlock({ props }: { props: Record<string, unknown> }) {
                 >
                     <img
                         src={images[lightbox].url}
-                        alt={images[lightbox].alt}
+                        alt={pick(locale, images[lightbox].caption || images[lightbox].alt, images[lightbox].caption_id || images[lightbox].alt)}
                         className="max-h-[80vh] max-w-full rounded-[15px] object-contain shadow-2xl"
                     />
-                    <p className="mt-3 text-sm text-white/90 text-center max-w-xl">
-                        {images[lightbox].caption || images[lightbox].alt}
-                    </p>
+                    <div className="mt-4 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-sm text-white border border-white/20 backdrop-blur-md">
+                        {pick(locale, images[lightbox].caption || images[lightbox].alt, images[lightbox].caption_id || images[lightbox].alt)}
+                    </div>
                 </div>
             ) : null}
         </section>
