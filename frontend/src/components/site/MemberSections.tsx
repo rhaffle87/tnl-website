@@ -10,14 +10,8 @@ import { useMembers, usePublications } from "@/lib/hooks";
 import { EmptyState, SectionHeading, Spinner } from "@/components/site/Primitives";
 import type { Member } from "@/lib/types";
 
-const ROLE_CHIP: Record<string, { bg: string; fg: string; key: string }> = {
-    coordinator: { bg: "#43594A", fg: "#ffffff", key: "role_coordinator" },
-    head: { bg: "#7f715c", fg: "#ffffff", key: "role_head" },
-    vice: { bg: "#a8977b", fg: "#111518", key: "role_vice" },
-    staff: { bg: "#eaeaec", fg: "#3f4245", key: "role_staff" },
-};
-
-const DIVISION_ORDER = ["BPH", "Academic", "Research", "Social", "Internal", "External"];
+const ACTIVE_DIVISIONS = ["BPH", "Academic", "Research", "Social", "Internal", "External"];
+const ALUMNI_DIVISIONS = ["Coordinator", "Academics", "Event", "Media", "Research"];
 
 function getInitials(name: string): string {
     if (!name) return "TNL";
@@ -28,16 +22,32 @@ function getInitials(name: string): string {
 
 function roleChip(member: Member, t: (k: never) => string): { label: string; bg: string; fg: string } {
     const pos = (member.position || "").toLowerCase();
-    let spec = ROLE_CHIP.staff;
-    if (pos.includes("coordinator") || pos.includes("koordinator")) {
-        spec = ROLE_CHIP.coordinator;
-    } else if (pos.includes("head") || pos.includes("kepala")) {
-        spec = ROLE_CHIP.head;
-    } else if (pos.includes("vice") || pos.includes("wakil")) {
-        spec = ROLE_CHIP.vice;
+    const label = member.position_label || member.position || (member.role === "assistant" ? "Assistant" : "");
+    const div = member.division || "";
+
+    // BPH or Coordinator (board)
+    if (
+        pos.includes("coordinator") ||
+        pos.includes("koordinator") ||
+        div === "BPH" ||
+        div === "Coordinator"
+    ) {
+        return { label, bg: "#3B5243", fg: "#ffffff" };
     }
-    const label = member.position_label || member.position || (spec.key ? t(spec.key as never) : "");
-    return { label, bg: spec.bg, fg: spec.fg };
+
+    // Division heads, co-heads, leads, vices
+    if (
+        pos.includes("head") ||
+        pos.includes("lead") ||
+        pos.includes("vice") ||
+        pos.includes("kepala") ||
+        pos.includes("wakil")
+    ) {
+        return { label, bg: "#8C7A5B", fg: "#ffffff" };
+    }
+
+    // Default staff / member
+    return { label, bg: "#F3F4F6", fg: "#374151" };
 }
 
 function formatInstagram(raw?: string | null): { handle: string; url: string } | null {
@@ -55,7 +65,7 @@ function LightPlaceholder({ member, isModal }: { member: Member; isModal?: boole
     return (
         <div
             className={`flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-[#F6F7F6] to-[#E9EDE9] text-[#2C3E35] select-none ${
-                isModal ? "p-8 min-h-[220px]" : "p-4"
+                isModal ? "p-8 min-h-[260px]" : "p-4"
             }`}
             aria-label={`Photo pending for ${member.name}`}
         >
@@ -66,7 +76,7 @@ function LightPlaceholder({ member, isModal }: { member: Member; isModal?: boole
             >
                 {initials}
             </div>
-            <span className="mt-2 text-[11px] font-mono font-medium text-stone-500 tracking-wider uppercase">
+            <span className="mt-2.5 text-[11px] font-mono font-medium text-stone-500 tracking-wider uppercase">
                 Batch {member.batch || "2024"}
             </span>
             <span className="text-[10px] text-stone-400">Photo Pending</span>
@@ -105,60 +115,65 @@ function SocialLinks({ member }: { member: Member }) {
     );
 }
 
-function HeadBanner({ member }: { member: Member }) {
+function HeadBanner({ member, onOpen }: { member: Member; onOpen: () => void }) {
     const { locale, t } = useLocale();
     return (
         <section className="tnl-section" data-testid="head-of-lab-banner">
             <div className="tnl-container">
-                <div className="tnl-hero-gradient tnl-card grid overflow-hidden p-0 lg:grid-cols-[0.38fr_0.62fr]">
-                    <div className="relative flex items-end justify-center overflow-hidden" style={{ minHeight: 280 }}>
-                        {member.photo_url ? (
-                            <img
-                                src={member.photo_url}
-                                alt={member.photo_alt || `Portrait of ${member.name}`}
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                            />
-                        ) : (
-                            <LightPlaceholder member={member} isModal />
-                        )}
-                        <div
-                            className="pointer-events-none absolute inset-0"
-                            style={{ background: "linear-gradient(90deg, transparent 40%, #1c2720 100%)" }}
-                            aria-hidden="true"
-                        />
-                    </div>
-                    <div className="p-8 sm:p-10">
-                        <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: "var(--tnl-tan)" }}>
-                            {t("head_of_lab")}
-                        </p>
-                        <h2 className="tnl-h3 mt-2 text-[24px] sm:text-[30px]" style={{ color: "#ffffff" }} data-testid="head-of-lab-name">
-                            {member.name}
-                        </h2>
-                        <p className="mt-4 text-sm leading-relaxed" style={{ color: "#dfe2e5" }}>
-                            {pick(locale, member.bio, member.bio_id)}
-                        </p>
-                        {member.quote || member.quote_id ? (
-                            <blockquote
-                                className="tnl-quote mt-5 border-l-4 pl-4 text-[17px] leading-relaxed"
-                                style={{ borderColor: "var(--tnl-tan)", color: "#ffffff" }}
-                                data-testid="head-of-lab-quote"
-                            >
-                                “{pick(locale, member.quote, member.quote_id)}”
-                            </blockquote>
-                        ) : null}
-                        {member.email_public ? (
-                            <a
-                                href={`mailto:${member.email_public}`}
-                                className="mt-5 inline-flex items-center gap-2 text-sm font-medium"
-                                style={{ color: "var(--tnl-tan)" }}
-                                data-testid="head-of-lab-email-link"
-                            >
-                                <Mail className="h-4 w-4" aria-hidden="true" />
-                                {member.email_public}
-                            </a>
-                        ) : null}
-                        <SocialLinks member={member} />
+                <div className="tnl-hero-gradient tnl-card rounded-2xl overflow-hidden p-6 md:p-8 shadow-xl border border-white/10">
+                    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-8 items-center">
+                        <div className="w-full max-w-[260px] mx-auto md:mx-0 aspect-[3/4] rounded-xl overflow-hidden shadow-lg border border-white/15 bg-[#17221C]">
+                            {member.photo_url ? (
+                                <img
+                                    src={member.photo_url}
+                                    alt={member.photo_alt || `Portrait of ${member.name}`}
+                                    className="h-full w-full object-cover object-top"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <LightPlaceholder member={member} isModal />
+                            )}
+                        </div>
+                        <div className="flex flex-col justify-center text-[#F5F2EB]">
+                            <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: "var(--tnl-tan)" }}>
+                                {t("head_of_lab")}
+                            </p>
+                            <h2 className="tnl-h3 mt-1.5 text-[24px] sm:text-[30px]" style={{ color: "#ffffff" }} data-testid="head-of-lab-name">
+                                {member.name}
+                            </h2>
+                            <p className="mt-3 text-sm leading-relaxed" style={{ color: "#dfe2e5" }}>
+                                {pick(locale, member.bio, member.bio_id)}
+                            </p>
+                            {member.quote || member.quote_id ? (
+                                <blockquote
+                                    className="tnl-quote mt-4 border-l-4 pl-4 text-[15px] sm:text-[16px] leading-relaxed italic"
+                                    style={{ borderColor: "var(--tnl-tan)", color: "#ffffff" }}
+                                    data-testid="head-of-lab-quote"
+                                >
+                                    “{pick(locale, member.quote, member.quote_id)}”
+                                </blockquote>
+                            ) : null}
+                            <div className="mt-5 flex flex-wrap items-center gap-4 pt-3 border-t border-white/10">
+                                {member.email_public ? (
+                                    <a
+                                        href={`mailto:${member.email_public}`}
+                                        className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
+                                        style={{ color: "var(--tnl-tan)" }}
+                                        data-testid="head-of-lab-email-link"
+                                    >
+                                        <Mail className="h-4 w-4" aria-hidden="true" />
+                                        {member.email_public}
+                                    </a>
+                                ) : null}
+                                <button
+                                    type="button"
+                                    onClick={onOpen}
+                                    className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg bg-[var(--tnl-tan)] text-[#111518] hover:bg-white transition-colors shadow-sm"
+                                >
+                                    View full profile & publications →
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -176,7 +191,7 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
             className="tnl-card tnl-card-hover flex flex-col overflow-hidden p-0 text-left transition-all duration-300 hover:shadow-md"
             data-testid={testId}
         >
-            <div className="relative overflow-hidden" style={{ aspectRatio: "1 / 1", background: "var(--tnl-surface)" }}>
+            <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#E5E7EB]">
                 {member.photo_url ? (
                     <img
                         src={member.photo_url}
@@ -218,6 +233,8 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
     const { locale, t } = useLocale();
     const chip = roleChip(member, t as never);
     const { data: memberPubs } = usePublications({ member_id: member.id });
+    const ig = formatInstagram(member.social?.instagram);
+
     return (
         <div
             className="fixed inset-0 z-[100] flex items-center justify-center p-4"
@@ -231,14 +248,14 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 transition-colors hover:bg-white"
+                    className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 transition-colors hover:bg-white shadow"
                     aria-label={t("close")}
                     data-testid="member-modal-close-button"
                 >
                     <X className="h-4 w-4" style={{ color: "#111518" }} />
                 </button>
                 <div className="grid sm:grid-cols-[0.4fr_0.6fr]">
-                    <div style={{ background: "var(--tnl-surface)", minHeight: 220 }}>
+                    <div className="aspect-[3/4] sm:aspect-auto w-full bg-[#E5E7EB] overflow-hidden" style={{ minHeight: 240 }}>
                         {member.photo_url ? (
                             <img
                                 src={member.photo_url}
@@ -260,7 +277,7 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                             {member.name}
                         </h2>
                         {member.division ? (
-                            <p className="mt-1 text-sm" style={{ color: "var(--tnl-tan-text)" }}>
+                            <p className="mt-1 text-sm font-medium" style={{ color: "var(--tnl-tan-text)" }}>
                                 {t("division")}: {member.division}
                             </p>
                         ) : null}
@@ -274,7 +291,9 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                                 {member.role === "lecturer" ? "NIP" : "NRP"}: {member.nim}
                             </p>
                         ) : null}
-                        <p className="mt-4 text-sm leading-relaxed text-[var(--tnl-body)]">{pick(locale, member.bio, member.bio_id)}</p>
+                        <p className="mt-4 text-sm leading-relaxed text-[var(--tnl-body)]">
+                            {pick(locale, member.bio, member.bio_id)}
+                        </p>
                         {member.expertise?.length ? (
                             <div className="mt-4">
                                 <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
@@ -289,17 +308,30 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                                 </div>
                             </div>
                         ) : null}
-                        {member.email_public ? (
-                            <a
-                                href={`mailto:${member.email_public}`}
-                                className="mt-4 inline-flex items-center gap-2 text-sm font-medium"
-                                style={{ color: "var(--tnl-green)" }}
-                                data-testid="member-modal-email-link"
-                            >
-                                <Mail className="h-4 w-4" aria-hidden="true" />
-                                {member.email_public}
-                            </a>
-                        ) : null}
+                        <div className="mt-4 flex flex-col gap-2">
+                            {member.email_public ? (
+                                <a
+                                    href={`mailto:${member.email_public}`}
+                                    className="inline-flex items-center gap-2 text-sm font-medium"
+                                    style={{ color: "var(--tnl-green)" }}
+                                    data-testid="member-modal-email-link"
+                                >
+                                    <Mail className="h-4 w-4" aria-hidden="true" />
+                                    {member.email_public}
+                                </a>
+                            ) : null}
+                            {ig ? (
+                                <a
+                                    href={ig.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 text-sm font-medium text-pink-700 hover:underline"
+                                >
+                                    <Instagram className="h-4 w-4" aria-hidden="true" />
+                                    {ig.handle}
+                                </a>
+                            ) : null}
+                        </div>
                         {member.show_personal_email && member.email_personal ? (
                             <p className="mt-2 text-sm text-[var(--tnl-body)]">{member.email_personal}</p>
                         ) : null}
@@ -352,17 +384,10 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
     );
 }
 
-function getDivisionGridClass(count: number): string {
-    if (count === 3) return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4";
-    if (count === 4) return "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4";
-    if (count === 5) return "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4";
-    return "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4";
-}
-
 export function MemberSections() {
     const { locale, t } = useLocale();
     const [statusFilter, setStatusFilter] = useState<"active" | "alumni">("active");
-    // Fetch all members so that switching statusFilter for assistants never blanks out Lecturers or Head of Lab
+    // Fetch all members so switching to alumni never removes lecturers or Head of Lab
     const { data: members, isLoading } = useMembers();
     const [selected, setSelected] = useState<Member | null>(null);
     const [searchParams] = useSearchParams();
@@ -380,8 +405,8 @@ export function MemberSections() {
     // Head of Lab and Lecturers are always active
     const head = list.find((m) => m.is_head && m.status === "active") || list.find((m) => m.is_head);
     const lecturers = list.filter((m) => !m.is_head && (m.role === "lecturer" || m.role === "researcher") && m.status === "active");
-    
-    // Assistants pool filtered strictly by statusFilter (active or alumni)
+
+    // Assistants filtered strictly by statusFilter
     const assistants = useMemo(() => {
         return list.filter((m) => (m.role === "assistant" || m.role === "alumni") && m.status === statusFilter);
     }, [list, statusFilter]);
@@ -394,7 +419,7 @@ export function MemberSections() {
     const [alumniBatch, setAlumniBatch] = useState<string | null>(null);
     const activeAlumniBatch = alumniBatch && alumniBatches.includes(alumniBatch) ? alumniBatch : alumniBatches[0] ?? null;
 
-    // Filtered assistants to display based on status
+    // Filtered assistants based on active vs alumni batch selection
     const currentAssistants = useMemo(() => {
         if (statusFilter === "active") {
             return assistants;
@@ -405,12 +430,13 @@ export function MemberSections() {
         return assistants;
     }, [assistants, statusFilter, activeAlumniBatch]);
 
-    // Group assistants by division in exact specified order, sorting 2023 (heads/BPH) before 2024 (staff)
+    // Group assistants by division with consistent 5-column grid
     const groups = useMemo(() => {
         const out: { label: string; members: Member[] }[] = [];
         const orderMap: Record<string, number> = { coordinator: 0, head: 1, vice: 2, staff: 3, member: 4 };
+        const divisions = statusFilter === "active" ? ACTIVE_DIVISIONS : ALUMNI_DIVISIONS;
 
-        for (const div of DIVISION_ORDER) {
+        for (const div of divisions) {
             const inDiv = currentAssistants
                 .filter((m) => (m.division || "").toLowerCase() === div.toLowerCase())
                 .sort((a, b) => {
@@ -427,20 +453,20 @@ export function MemberSections() {
             }
         }
 
-        // Catch-all for any assistants with unknown/unassigned division
+        // Remaining members if any
         const remaining = currentAssistants.filter(
-            (m) => !DIVISION_ORDER.some((d) => d.toLowerCase() === (m.division || "").toLowerCase())
+            (m) => !divisions.some((d) => d.toLowerCase() === (m.division || "").toLowerCase())
         );
         if (remaining.length > 0) {
             out.push({ label: "Other Members", members: remaining });
         }
 
         return out;
-    }, [currentAssistants]);
+    }, [currentAssistants, statusFilter]);
 
     return (
         <>
-            {head ? <HeadBanner member={head} /> : null}
+            {head ? <HeadBanner member={head} onOpen={() => setSelected(head)} /> : null}
 
             <section className="tnl-section pt-0" data-testid="lecturers-section">
                 <div className="tnl-container">
@@ -549,7 +575,8 @@ export function MemberSections() {
                                             {group.members.length} {t("members_count")}
                                         </span>
                                     </div>
-                                    <div className={getDivisionGridClass(group.members.length)}>
+                                    {/* Consistent 5-column grid for ALL divisions */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                         {group.members.map((m) => (
                                             <MemberCard key={m.id} member={m} onOpen={() => setSelected(m)} testId={`assistant-card-${m.id}`} />
                                         ))}

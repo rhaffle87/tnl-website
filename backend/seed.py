@@ -309,21 +309,24 @@ ACTIVE_ASSISTANTS_2026 = [
     ("Nailah Puteri Maharani", "5048241018", "2024", None, "staff", "External Staff", "External", "nailahputeri02@gmail.com", "nailahputerii"),
 ]
 
-# Alumni Assistant Roster (Batch 2022 - 12 members)
+# Alumni Assistant Roster (Batch 2022 - 10 members, all with real portraits)
 # (name, photo_file, position, position_label, division)
 ALUMNI_ASSISTANTS_2022 = [
-    ("Muhammad Rifqi Firmansyah", "4.png", "coordinator", "Ex-Coordinator", "BPH"),
-    ("Naufal Dzaki Imtiyaz", "5.png", "coordinator", "Ex-Coordinator", "BPH"),
-    ("Siti Aisyah", "6.png", "coordinator", "Ex-Secretary", "BPH"),
-    ("Azzahrah Nabilla", "7.png", "coordinator", "Ex-Treasurer", "BPH"),
-    ("Shinta Alya Ramadhani", "8.png", "head", "Ex-Head of Academics", "Academic"),
-    ("Rafifudin Achmad", "9.png", "vice", "Ex-Academics", "Academic"),
-    ("M. Zikri Alfarizi", "10.png", "head", "Ex-Head of Event", "Social"),
-    ("Salma Salsabila", "11.png", "vice", "Ex-Event", "Social"),
-    ("Alifia Nabila", "12.png", "head", "Ex-Head of Media", "External"),
-    ("Farah Aulia", None, "staff", "Ex-Media", "External"),
-    ("Dimas Pratama", "13.png", "head", "Ex-Head of Research", "Research"),
-    ("M. Fadhil", None, "staff", "Ex-Research", "Research"),
+    # Coordinator (4 members)
+    ("Muhammad Rifqi Firmansyah", "4.png", "coordinator", "Coordinator — Lead", "Coordinator"),
+    ("Haykal Ramadhan", "5.png", "coordinator", "Coordinator — Vice", "Coordinator"),
+    ("Nurul Alya Fithri", "6.png", "coordinator", "Secretary", "Coordinator"),
+    ("Najwa Uma Fadhilah", "7.png", "coordinator", "Treasurer", "Coordinator"),
+    # Academics (2 members)
+    ("Karissa Maheswari Sasikirana", "8.png", "head", "Academics — Lead", "Academics"),
+    ("Krisnanda Khairul Kusumawardana", "9.png", "vice", "Academics — Vice", "Academics"),
+    # Event (2 members)
+    ("Safinatun Najah", "11.png", "head", "Event — Lead", "Event"),
+    ("Fikri Fajar Fawwaz", "10.png", "vice", "Event — Vice", "Event"),
+    # Media (1 member)
+    ("Tine Joeana", "12.png", "head", "Media — Lead", "Media"),
+    # Research (1 member)
+    ("Juan Farrel Aryasatya", "13.png", "head", "Research — Lead", "Research"),
 ]
 
 ASSISTANT_BATCH = "2026"
