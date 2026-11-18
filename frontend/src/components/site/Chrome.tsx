@@ -67,17 +67,19 @@ export function SiteHeader() {
             data-testid="site-header"
         >
             <div className="tnl-container flex h-[72px] items-center justify-between gap-4">
-                <Link to="/" className="flex items-center gap-3" data-testid="header-logo-link">
+                <Link to="/" className="flex shrink-0 items-center gap-3" data-testid="header-logo-link">
                     <LogoMark short={short} />
                     <span className="hidden flex-col leading-tight sm:flex">
-                        <span className="text-[15px] font-bold tracking-tight">{title}</span>
-                        <span className="text-xs" style={{ color: "var(--tnl-tan-text)" }}>
-                            {t("footer_institution").split(",")[0]}
+                        <span className="text-[14px] xl:text-[15px] font-bold tracking-tight whitespace-nowrap">
+                            {locale === "id" ? "Laboratorium Jaringan Telekomunikasi" : "Telecommunication Network Lab"}
+                        </span>
+                        <span className="text-[11px] font-medium tracking-normal whitespace-nowrap" style={{ color: "var(--tnl-tan-text)" }}>
+                            {locale === "id" ? "Departemen Teknik Elektro · ITS" : "Electrical Engineering · ITS"}
                         </span>
                     </span>
                 </Link>
 
-                <nav className="hidden items-center gap-1 lg:flex" aria-label="Main navigation">
+                <nav className="hidden items-center gap-1 xl:gap-2 lg:flex" aria-label="Main navigation">
                     {NAV.map((item) => {
                         const active = location.pathname === item.to;
                         const children = "children" in item ? item.children : undefined;
@@ -86,7 +88,7 @@ export function SiteHeader() {
                                 <Link
                                     to={item.to}
                                     className={cn(
-                                        "flex items-center gap-1 rounded-[6px] px-3 py-2 text-[15px] font-medium transition-colors",
+                                        "flex items-center gap-1 rounded-[6px] px-2.5 py-2 text-[14px] xl:text-[15px] font-medium transition-colors whitespace-nowrap",
                                         active ? "text-[var(--tnl-green)]" : "hover:text-[var(--tnl-green)]",
                                     )}
                                     style={active ? { color: "var(--tnl-green)" } : undefined}
@@ -117,18 +119,7 @@ export function SiteHeader() {
                     })}
                 </nav>
 
-                <div className="flex items-center gap-2">
-                    <a
-                        href="https://www.its.ac.id"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hidden h-10 items-center gap-1.5 rounded-[6px] border px-3 text-xs font-bold tracking-wider transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-green)] xl:flex"
-                        style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-tan-text)" }}
-                        data-testid="header-its-logo-link"
-                    >
-                        <span>ITS</span>
-                        <span className="text-[10px] font-medium opacity-80">Surabaya</span>
-                    </a>
+                <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                     <button
                         type="button"
                         onClick={() => setLocale(locale === "en" ? "id" : "en")}
@@ -152,7 +143,7 @@ export function SiteHeader() {
                     </button>
                     <Link
                         to="/activity?tab=training"
-                        className="tnl-btn tnl-btn-primary hidden h-10 min-h-[40px] text-sm sm:inline-flex"
+                        className="tnl-btn tnl-btn-primary hidden h-10 min-h-[40px] shrink-0 whitespace-nowrap px-4 py-2 text-sm sm:inline-flex"
                         data-testid="header-join-us-button"
                     >
                         {t("join_us")}

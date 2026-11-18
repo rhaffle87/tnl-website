@@ -596,12 +596,12 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                             const category = getCategory(p.name);
                             const content = (
                                 <>
-                                    <div className="flex h-12 w-full items-center justify-center">
+                                    <div className="flex h-12 w-full items-center justify-center p-1">
                                         {p.logo_url ? (
                                             <img
                                                 src={p.logo_url}
                                                 alt={`${p.name} logo`}
-                                                className="max-h-10 max-w-[130px] object-contain transition-all duration-300 filter grayscale contrast-125 opacity-70 group-hover:grayscale-0 group-hover:opacity-100 group-hover:contrast-100"
+                                                className="h-10 max-w-[150px] w-auto object-contain transition-transform duration-200 group-hover:scale-105"
                                                 loading="lazy"
                                             />
                                         ) : (
