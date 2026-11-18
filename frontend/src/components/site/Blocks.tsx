@@ -6,6 +6,8 @@ import { Link } from "react-router-dom";
 import {
     Activity as ActivityIcon,
     ArrowRight,
+    Building2,
+    CheckCircle2,
     ChevronLeft,
     ChevronRight,
     Download,
@@ -15,6 +17,8 @@ import {
     Minus,
     Plus,
     Radio,
+    Server,
+    Target,
     Users,
     Wrench,
 } from "lucide-react";
@@ -191,28 +195,74 @@ function StatsBlock() {
 function AboutBlock({ props }: { props: Record<string, unknown> }) {
     const { locale } = useLocale();
     const list = tiles(props, "tiles");
+    const aboutIcons = [Target, Server, Radio, Building2];
+
     return (
         <section className="tnl-section" data-testid="block-about">
             <div className="tnl-container">
                 <SectionHeading title={pickProp(locale, props, "heading")} testId="about-heading" />
-                <div className="grid gap-10 lg:grid-cols-[1fr_1fr]">
-                    <p className="text-base leading-[1.75] text-[var(--tnl-body)]" data-testid="about-body">
-                        {pickProp(locale, props, "body")}
-                    </p>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        {list.map((tile, i) => {
-                            const Icon = ICONS[i % ICONS.length];
-                            return (
-                                <div key={tile.name ?? i} className="tnl-card tnl-card-hover p-5" data-testid={`about-tile-${i}`}>
-                                    <div
-                                        className="mb-3 flex h-11 w-11 items-center justify-center rounded-[10px]"
-                                        style={{ background: "color-mix(in srgb, var(--tnl-green) 12%, transparent)" }}
-                                        aria-hidden="true"
-                                    >
-                                        <Icon className="h-5 w-5" style={{ color: "var(--tnl-green)" }} />
+                <div className="grid items-start gap-10 lg:grid-cols-2">
+                    <div className="flex flex-col justify-between space-y-6">
+                        <p className="text-base leading-[1.8] text-[var(--tnl-body)] sm:text-lg" data-testid="about-body">
+                            {pickProp(locale, props, "body")}
+                        </p>
+                        <div
+                            className="flex flex-col gap-3 rounded-[18px] border p-5 sm:flex-row sm:items-center sm:justify-between"
+                            style={{ borderColor: "var(--tnl-border)", background: "var(--tnl-surface)" }}
+                        >
+                            <div className="flex items-center gap-3">
+                                <div
+                                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
+                                    style={{ background: "color-mix(in srgb, var(--tnl-green) 12%, transparent)" }}
+                                    aria-hidden="true"
+                                >
+                                    <MapPin className="h-5 w-5" style={{ color: "var(--tnl-green)" }} />
+                                </div>
+                                <div>
+                                    <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                                        {locale === "id" ? "Lokasi Fasilitas" : "Lab Location"}
                                     </div>
-                                    <h3 className="text-[17px] font-bold">{pick(locale, tile.name, tile.name_id)}</h3>
-                                    <p className="mt-1.5 text-sm text-[var(--tnl-body)]">
+                                    <div className="text-sm font-semibold">Gedung B Lt. 3, Ruang B-301</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 border-t pt-2 text-xs font-medium text-[var(--tnl-muted)] sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                                <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: "var(--tnl-green)" }} />
+                                <span>{locale === "id" ? "Departemen Teknik Elektro ITS" : "Dept. of Electrical Engineering"}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-1">
+                        {list.map((tile, i) => {
+                            const Icon = aboutIcons[i % aboutIcons.length];
+                            return (
+                                <div
+                                    key={tile.name ?? tile.title ?? i}
+                                    className="tnl-card tnl-card-hover border-l-4 p-6"
+                                    style={{ borderLeftColor: i % 2 === 0 ? "var(--tnl-green)" : "var(--tnl-tan)" }}
+                                    data-testid={`about-tile-${i}`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div
+                                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px]"
+                                            style={{
+                                                background:
+                                                    i % 2 === 0
+                                                        ? "color-mix(in srgb, var(--tnl-green) 12%, transparent)"
+                                                        : "color-mix(in srgb, var(--tnl-tan) 15%, transparent)",
+                                            }}
+                                            aria-hidden="true"
+                                        >
+                                            <Icon
+                                                className="h-5 w-5"
+                                                style={{ color: i % 2 === 0 ? "var(--tnl-green)" : "var(--tnl-tan-text)" }}
+                                            />
+                                        </div>
+                                        <h3 className="text-[18px] font-bold">
+                                            {pick(locale, tile.title ?? tile.name, tile.title_id ?? tile.name_id)}
+                                        </h3>
+                                    </div>
+                                    <p className="mt-3 text-sm leading-relaxed text-[var(--tnl-body)]">
                                         {pick(locale, tile.description, tile.description_id)}
                                     </p>
                                 </div>
@@ -378,26 +428,30 @@ function CarouselBlock({ props }: { props: Record<string, unknown> }) {
 function QuickLinksBlock({ props }: { props: Record<string, unknown> }) {
     const { locale, t } = useLocale();
     const cards = tiles(props, "cards");
+    const heading = pickProp(locale, props, "heading");
     return (
         <section className="tnl-section" data-testid="block-quick-links">
-            <div className="tnl-container grid gap-5 md:grid-cols-3">
-                {cards.map((card, i) => (
-                    <Link
-                        key={i}
-                        to={card.url ?? "/"}
-                        className="tnl-card tnl-card-hover group flex flex-col p-7"
-                        data-testid={`quick-link-card-${i}`}
-                    >
-                        <h3 className="text-[21px] font-bold">{pick(locale, card.title, card.title_id)}</h3>
-                        <p className="mt-2 flex-1 text-sm text-[var(--tnl-body)]">{pick(locale, card.description, card.description_id)}</p>
-                        <span
-                            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold transition-transform group-hover:translate-x-1"
-                            style={{ color: "var(--tnl-green)" }}
+            <div className="tnl-container">
+                {heading ? <SectionHeading title={heading} testId="quick-links-heading" /> : null}
+                <div className="grid gap-5 md:grid-cols-3">
+                    {cards.map((card, i) => (
+                        <Link
+                            key={i}
+                            to={card.url ?? "/"}
+                            className="tnl-card tnl-card-hover group flex flex-col p-7"
+                            data-testid={`quick-link-card-${i}`}
                         >
-                            {t("read_more")} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                        </span>
-                    </Link>
-                ))}
+                            <h3 className="text-[21px] font-bold">{pick(locale, card.title, card.title_id)}</h3>
+                            <p className="mt-2 flex-1 text-sm text-[var(--tnl-body)]">{pick(locale, card.description, card.description_id)}</p>
+                            <span
+                                className="mt-5 inline-flex items-center gap-2 text-sm font-semibold transition-transform group-hover:translate-x-1"
+                                style={{ color: "var(--tnl-green)" }}
+                            >
+                                {t("read_more")} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                            </span>
+                        </Link>
+                    ))}
+                </div>
             </div>
         </section>
     );
@@ -522,6 +576,14 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
     const { locale, t } = useLocale();
     const { data: partners, isLoading } = usePartners();
     const list = partners ?? [];
+
+    const getCategory = (name: string) => {
+        const lower = name.toLowerCase();
+        if (lower.includes("institut") || lower.includes("its")) return locale === "id" ? "Afiliasi Akademik" : "Academic Host";
+        if (lower.includes("huawei") || lower.includes("zte")) return locale === "id" ? "Partner Teknologi" : "Technology Partner";
+        return locale === "id" ? "Operator Telekomunikasi" : "Telco Operator";
+    };
+
     return (
         <section className="tnl-section" style={{ background: "var(--tnl-surface)" }} data-testid="block-partners">
             <div className="tnl-container">
@@ -529,12 +591,23 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                 {!isLoading && list.length === 0 ? (
                     <EmptyState title={t("coming_soon")} body={t("coming_soon_body")} testId="partners-empty-state" />
                 ) : (
-                    <div className="flex flex-wrap items-center gap-4">
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                         {list.map((p) => {
-                            const content = p.logo_url ? (
-                                <img src={p.logo_url} alt={`${p.name} logo`} className="h-10 w-auto object-contain" loading="lazy" />
-                            ) : (
-                                <span className="text-[17px] font-bold tracking-tight">{p.name}</span>
+                            const category = getCategory(p.name);
+                            const content = (
+                                <>
+                                    {p.logo_url ? (
+                                        <img src={p.logo_url} alt={`${p.name} logo`} className="h-10 w-auto object-contain" loading="lazy" />
+                                    ) : (
+                                        <span className="text-center text-[15px] font-bold tracking-tight">{p.name}</span>
+                                    )}
+                                    <span
+                                        className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-center"
+                                        style={{ color: "var(--tnl-tan-text)" }}
+                                    >
+                                        {category}
+                                    </span>
+                                </>
                             );
                             return p.url ? (
                                 <a
@@ -542,7 +615,7 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                                     href={p.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="tnl-card tnl-card-hover flex h-20 min-w-[180px] flex-1 items-center justify-center px-6"
+                                    className="tnl-card tnl-card-hover flex h-28 flex-col items-center justify-center p-4"
                                     data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
                                 >
                                     {content}
@@ -550,7 +623,7 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                             ) : (
                                 <div
                                     key={p.id}
-                                    className="tnl-card flex h-20 min-w-[180px] flex-1 items-center justify-center px-6"
+                                    className="tnl-card flex h-28 flex-col items-center justify-center p-4"
                                     data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
                                 >
                                     {content}
@@ -697,43 +770,70 @@ function ImageBlock({ props }: { props: Record<string, unknown> }) {
 
 function GalleryBlock({ props }: { props: Record<string, unknown> }) {
     const { locale } = useLocale();
-    const images = Array.isArray(props.images) ? (props.images as { url: string; alt: string }[]) : [];
+    const images = Array.isArray(props.images) ? (props.images as { url: string; alt: string; caption?: string }[]) : [];
     const [lightbox, setLightbox] = useState<number | null>(null);
     if (!images.length) return null;
+
+    const gridCols =
+        images.length === 4
+            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2"
+            : images.length % 3 === 0
+              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+              : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2";
+
     return (
         <section className="tnl-section" data-testid="block-gallery">
             <div className="tnl-container">
                 {pickProp(locale, props, "heading") ? (
                     <SectionHeading title={pickProp(locale, props, "heading")} testId="gallery-heading" />
                 ) : null}
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className={`grid gap-5 ${gridCols}`}>
                     {images.map((img, i) => (
                         <button
                             key={i}
                             type="button"
                             onClick={() => setLightbox(i)}
-                            className="overflow-hidden rounded-[15px] transition-transform hover:-translate-y-1"
+                            className="group relative overflow-hidden rounded-[18px] border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-left"
+                            style={{ borderColor: "var(--tnl-border)" }}
                             data-testid={`gallery-item-${i}`}
                         >
-                            <img src={img.url} alt={img.alt} className="h-52 w-full object-cover" loading="lazy" />
+                            <img
+                                src={img.url}
+                                alt={img.alt}
+                                className="h-60 w-full object-cover transition-transform duration-500 group-hover:scale-105 sm:h-64"
+                                loading="lazy"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90 transition-opacity group-hover:opacity-100" />
+                            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
+                                <span className="text-sm font-semibold text-white drop-shadow-sm line-clamp-2">
+                                    {img.caption || img.alt}
+                                </span>
+                            </div>
                         </button>
                     ))}
                 </div>
                 {pickProp(locale, props, "note") ? (
-                    <p className="mt-3 text-xs italic text-[var(--tnl-muted)]" data-testid="gallery-note">
+                    <p className="mt-4 text-xs italic text-[var(--tnl-muted)] text-center sm:text-left" data-testid="gallery-note">
                         {pickProp(locale, props, "note")}
                     </p>
                 ) : null}
             </div>
             {lightbox !== null ? (
                 <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4"
+                    className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 p-4"
                     role="dialog"
                     aria-modal="true"
                     onClick={() => setLightbox(null)}
                     data-testid="gallery-lightbox"
                 >
-                    <img src={images[lightbox].url} alt={images[lightbox].alt} className="max-h-[85vh] max-w-full rounded-[15px]" />
+                    <img
+                        src={images[lightbox].url}
+                        alt={images[lightbox].alt}
+                        className="max-h-[80vh] max-w-full rounded-[15px] object-contain shadow-2xl"
+                    />
+                    <p className="mt-3 text-sm text-white/90 text-center max-w-xl">
+                        {images[lightbox].caption || images[lightbox].alt}
+                    </p>
                 </div>
             ) : null}
         </section>

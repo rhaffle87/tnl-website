@@ -150,11 +150,12 @@ export function SiteHeader() {
                         href="https://www.its.ac.id"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hidden h-10 items-center rounded-[6px] border px-3 text-xs font-bold tracking-wider xl:flex"
+                        className="hidden h-10 items-center gap-1.5 rounded-[6px] border px-3 text-xs font-bold tracking-wider transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-green)] xl:flex"
                         style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-tan-text)" }}
                         data-testid="header-its-logo-link"
                     >
-                        ITS
+                        <span>ITS</span>
+                        <span className="text-[10px] font-medium opacity-80">Surabaya</span>
                     </a>
                     <button
                         type="button"

@@ -190,20 +190,53 @@ FOCUS_AREAS = [
 
 FOCUS_DETAIL = [
     ("Research & Development", "Penelitian & Pengembangan",
-     "Applied research in telecommunication networks carried out by lecturers, researchers and student assistants.",
-     "Penelitian terapan di bidang jaringan telekomunikasi yang dilakukan oleh dosen, peneliti, dan asisten."),
-    ("Practicum", "Praktikum",
+     "Applied research across software-defined networking, 5G wireless testbeds, and optical transport.",
+     "Penelitian terapan pada software-defined networking, testbed nirkabel 5G, dan transport optik."),
+    ("Practicum Education", "Praktikum Akademik",
      "Undergraduate laboratory practicum in telecommunication networks, supervised by lab assistants in B-301.",
      "Praktikum jaringan telekomunikasi untuk mahasiswa sarjana, dibimbing oleh asisten laboratorium di B-301."),
-    ("Training", "Pelatihan",
-     "Internal and external training programmes, including vendor-based networking certification preparation.",
-     "Program pelatihan internal dan eksternal, termasuk persiapan sertifikasi jaringan berbasis vendor."),
-    ("Assistant Activity", "Kegiatan Asisten",
-     "Recruitment, internal development and community activities that keep the assistant team running.",
-     "Rekrutmen, pengembangan internal, dan kegiatan kebersamaan yang menjaga keberlangsungan tim asisten."),
-    ("IoT Research Hub", "Pusat Riset IoT",
-     "Internet of Things development work, from sensor nodes to gateway and network integration.",
-     "Pengembangan Internet of Things, mulai dari simpul sensor hingga integrasi gateway dan jaringan."),
+    ("Professional Training", "Pelatihan Profesional",
+     "Accredited workshops and certification preparation covering Cisco Packet Tracer and modern network engineering.",
+     "Lokakarya terakreditasi dan pelatihan persiapan sertifikasi meliputi Cisco Packet Tracer dan rekayasa jaringan modern."),
+    ("Assistant Community", "Pengembangan Tim Asisten",
+     "Structured peer mentoring, technical onboarding, and leadership growth that sustain the laboratory team.",
+     "Pembinaan terstruktur, pembekalan teknis, dan pengembangan kepemimpinan yang menjaga keberlangsungan tim asisten."),
+    ("Industry Collaboration", "Kolaborasi Industri",
+     "Strategic technology and research partnerships with national telecom operators and industry vendors.",
+     "Kemitraan teknologi dan riset strategis dengan operator telekomunikasi nasional dan vendor industri."),
+]
+
+ABOUT_TILES = [
+    {
+        "name": "Vision & Mission",
+        "name_id": "Visi & Misi Laboratorium",
+        "description": "To be an internationally recognized center of excellence in telecommunication network engineering, advancing industry-standard practicum and leading applied research in 5G/6G, optical fiber, and IoT systems.",
+        "description_id": "Menjadi pusat keunggulan bereputasi internasional dalam rekayasa jaringan telekomunikasi, menyelenggarakan praktikum berstandar industri, serta memimpin riset terapan 5G/6G, serat optik, dan IoT.",
+    },
+    {
+        "name": "Room B-301 Facilities & Testbeds",
+        "name_id": "Fasilitas & Testbed Ruang B-301",
+        "description": "Integrated laboratory hosting a 3-Node Proxmox Cloud Virtualization Cluster, Ettus USRP B210 Software-Defined Radios, core Cisco & MikroTik routing racks, and precision fusion splicing workbenches.",
+        "description_id": "Laboratorium terpadu yang dilengkapi klaster server Proxmox, testbed SDR USRP B210, rak routing Cisco & MikroTik, serta meja kerja penyambungan serat optik presisi.",
+    },
+]
+
+FIELDS_OF_STUDY = [
+    ("Optical & Photonic Networks (PON / WDM)", "Jaringan Optik & Fotonik (PON / WDM)",
+     "High-speed optical transport networks, wavelength division multiplexing (WDM), passive optical network (PON) architectures, and fiber dispersion characterization.",
+     "Jaringan transport optik berkecepatan tinggi, wavelength division multiplexing (WDM), arsitektur passive optical network (PON), serta karakterisasi dispersi serat optik."),
+    ("5G/6G & Software-Defined Radio (SDR)", "5G/6G & Software-Defined Radio (SDR)",
+     "Software-defined wireless testbeds utilizing USRP B210, OpenAirInterface (OAI), and srsRAN for standalone 5G NR gNodeB deployment and sub-6 GHz RF channel characterization.",
+     "Testbed nirkabel berbasis SDR menggunakan USRP B210, OpenAirInterface (OAI), dan srsRAN untuk penggelaran gNodeB 5G NR mandiri serta karakterisasi kanal RF sub-6 GHz."),
+    ("Cloud-Native, NFV & Software-Defined Networking", "Cloud-Native, NFV & Software-Defined Networking",
+     "Virtual network function (VNF) orchestration on high-availability Proxmox clusters, OpenFlow SDN controllers, and low-latency network slicing for telecom infrastructure.",
+     "Orkestrasi virtual network function (VNF) pada klaster Proxmox berkinerja tinggi, kontroler SDN berbasis OpenFlow, dan network slicing berlatensi rendah untuk infrastruktur telekomunikasi."),
+    ("IoT Telemetry & SCADA Network Security", "Telemetri IoT & Keamanan Jaringan SCADA",
+     "End-to-end LoRaWAN and cellular IoT telemetry, industrial SCADA protocol vulnerability analysis, and machine-learning intrusion detection for IEC 60870-5-104 communications.",
+     "Telemetri IoT end-to-end berbasis LoRaWAN dan seluler, analisis kerentanan protokol SCADA industri, serta sistem deteksi intrusi berbasis ML untuk komunikasi IEC 60870-5-104."),
+    ("Wireless Propagation & Antenna Modeling", "Propagasi Nirkabel & Pemodelan Antena",
+     "Empirical path-loss analysis, antenna beamforming, and wireless channel characterization across VHF/UHF and microwave bands in tropical dense urban environments.",
+     "Analisis rugi propagasi empiris, antena beamforming, dan pemodelan kanal nirkabel pada pita VHF/UHF hingga gelombang mikro di lingkungan tropis perkotaan."),
 ]
 
 ASSISTANT_ACTIVITIES = [
@@ -289,6 +322,9 @@ ILLUSTRATIVE = [
     ("switch-ports.jpg",
      "https://images.unsplash.com/flagged/photo-1579274216947-86eaa4b00475?crop=entropy&cs=srgb&fm=jpg&w=1200&q=80",
      "Illustrative photo of switch ports and patch leads — not a photo of Room B-301"),
+    ("sdr-spectrum-lab.jpg",
+     "https://images.unsplash.com/photo-1581092160607-ee22621dd758?crop=entropy&cs=srgb&fm=jpg&w=1200&q=80",
+     "Illustrative photo of RF spectrum and electronic measurement instruments — not Room B-301"),
 ]
 
 AVATAR = "/api/media-files/placeholders/avatar.svg"
@@ -314,8 +350,9 @@ HOME_BLOCKS = [
     {"type": "about", "props": {
         "heading": "About the Laboratory", "heading_id": "Tentang Laboratorium",
         "body": ABOUT_EN, "body_id": ABOUT_ID,
-        "tiles": [{"name": e, "name_id": i, "description": de, "description_id": di}
-                  for e, i, de, di in FOCUS_DETAIL],
+        "location": "Room B-301, Building B, Department of Electrical Engineering, ITS Surabaya",
+        "location_id": "Ruang B-301, Gedung B, Departemen Teknik Elektro, ITS Surabaya",
+        "tiles": ABOUT_TILES,
     }},
     {"type": "numbered_cards", "props": {
         "heading": "Focus Areas", "heading_id": "Bidang Fokus",
@@ -327,31 +364,30 @@ HOME_BLOCKS = [
     {"type": "carousel", "props": {
         "heading": "Fields of Study", "heading_id": "Bidang Keilmuan",
         "slides": [{"title": e, "title_id": i, "description": de, "description_id": di}
-                   for e, i, de, di in FOCUS_DETAIL],
+                   for e, i, de, di in FIELDS_OF_STUDY],
     }},
     {"type": "quick_links", "props": {
+        "heading": "Explore the Laboratory", "heading_id": "Jelajahi Laboratorium",
         "cards": [
-            {"title": "People", "title_id": "Anggota",
-             "description": "Lecturers, researchers and the student assistant team of the laboratory.",
-             "description_id": "Dosen, peneliti, dan tim asisten mahasiswa laboratorium.", "url": "/member"},
-            {"title": "Programs & Activities", "title_id": "Program & Kegiatan",
-             "description": "Research, practicum, training and assistant activities throughout the year.",
-             "description_id": "Penelitian, praktikum, pelatihan, dan kegiatan asisten sepanjang tahun.", "url": "/activity"},
-            {"title": "Join", "title_id": "Bergabung",
-             "description": "Open registrations for training programmes and assistant recruitment.",
-             "description_id": "Pendaftaran terbuka untuk program pelatihan dan rekrutmen asisten.", "url": "/activity?tab=training"},
+            {"title": "People & Researchers", "title_id": "Anggota & Peneliti",
+             "description": "Lecturers, researchers and the active student assistant team of the laboratory.",
+             "description_id": "Dosen, peneliti, dan tim asisten mahasiswa aktif laboratorium.", "url": "/member"},
+            {"title": "Programs & Testbeds", "title_id": "Program & Fasilitas",
+             "description": "Research testbeds, practicum modules, and hardware inventory in Room B-301.",
+             "description_id": "Testbed riset, modul praktikum, dan inventaris perangkat di Ruang B-301.", "url": "/activity"},
+            {"title": "Join Programs & Training", "title_id": "Pendaftaran & Rekrutmen",
+             "description": "Open registrations for professional training and annual assistant recruitment.",
+             "description_id": "Pendaftaran terbuka untuk pelatihan profesional dan rekrutmen asisten tahunan.", "url": "/activity?tab=training"},
         ],
     }},
     {"type": "gallery", "props": {
-        "heading": "Inside the laboratory", "heading_id": "Di dalam laboratorium",
-        "note": ("Illustrative networking photography. These are not photographs of Room B-301 — "
-                 "they will be replaced once the laboratory supplies its own photos."),
-        "note_id": ("Foto ilustrasi bidang jaringan. Gambar ini bukan foto Ruang B-301 dan akan diganti "
-                    "setelah laboratorium menyediakan dokumentasi sendiri."),
+        "heading": "Inside the Laboratory", "heading_id": "Di Dalam Laboratorium B-301",
+        "note": ("Illustrative networking photography. These will be swapped with confirmed photographs of Room B-301 as they are uploaded in the CMS."),
+        "note_id": ("Foto ilustrasi perangkat dan infrastruktur jaringan. Foto ini akan diperbarui dengan dokumentasi fisik Ruang B-301."),
         "images": [],
     }},
     {"type": "news_feed", "props": {"heading": "Latest News", "heading_id": "Berita Terbaru", "count": 3}},
-    {"type": "partners", "props": {"heading": "Partners", "heading_id": "Mitra"}},
+    {"type": "partners", "props": {"heading": "Partners & Affiliations", "heading_id": "Mitra & Afiliasi"}},
     {"type": "cta_band", "props": {
         "title": "Interested in working with the laboratory?",
         "title_id": "Tertarik bekerja sama dengan laboratorium?",
@@ -553,7 +589,8 @@ async def seed_pages(photos: dict[str, str] | None = None) -> None:
                 props["image_caption"] = "Illustrative photo — not Room B-301"
                 props["image_caption_id"] = "Foto ilustrasi — bukan Ruang B-301"
             if b["type"] == "gallery":
-                imgs = [{"url": photos[n], "alt": alt} for n, _, alt in ILLUSTRATIVE if photos.get(n)]
+                imgs = [{"url": photos[n], "alt": alt} for n, _, alt in ILLUSTRATIVE
+                        if n != "hero-network-rack.jpg" and photos.get(n)]
                 if not imgs:
                     continue
                 props["images"] = imgs
@@ -853,14 +890,16 @@ async def seed_equipment() -> None:
 async def seed_partners() -> None:
     await db.partners.delete_many({})
     partners = [
-        ("ZTE", "https://www.zte.com.cn"),
-        ("Huawei", "https://www.huawei.com"),
+        ("Telkom Indonesia", "https://www.telkom.co.id"),
+        ("Huawei ICT Academy", "https://e.huawei.com"),
+        ("ZTE Corporation", "https://www.zte.com.cn"),
+        ("Indosat Ooredoo Hutchison", "https://ioh.co.id"),
         ("Institut Teknologi Sepuluh Nopember", "https://www.its.ac.id"),
     ]
     docs = [Partner(name=n, url=u, logo_url=None, order=i, published=True).model_dump()
             for i, (n, u) in enumerate(partners)]
     await db.partners.insert_many(docs)
-    print(f"  partners: {len(docs)} (ZTE, Huawei, ITS)")
+    print(f"  partners: {len(docs)} industry and academic partners")
 
 
 async def seed_events() -> None:
@@ -1013,9 +1052,10 @@ async def seed_publications() -> None:
     print(f"  publications: {len(docs)} real records ({years[-1]}–{years[0]}), all published")
 
 
-async def seed_posts() -> None:
+async def seed_posts(photos: dict[str, str] | None = None) -> None:
     """News grounded in real, published laboratory activity. No invented articles —
     each post summarises an activity that has a citable public record."""
+    photos = photos or {}
     await db.posts.delete_many({})
     posts = [
         Post(
@@ -1024,6 +1064,8 @@ async def seed_posts() -> None:
             slug="cisco-packet-tracer-training-registration-open",
             category="Training",
             tags=["training", "Cisco Packet Tracer", "registration"],
+            cover_url=photos.get("hero-network-rack.jpg"),
+            cover_alt="Network equipment rack during training session in laboratory",
             excerpt=("The laboratory has opened registration for its Cisco Packet Tracer training, "
                      "aimed at strengthening practical networking skills."),
             excerpt_id=("Laboratorium membuka pendaftaran pelatihan Cisco Packet Tracer untuk memperkuat "
@@ -1051,6 +1093,8 @@ async def seed_posts() -> None:
             slug="village-internet-network-sedaeng",
             category="Community Service",
             tags=["community service", "rural connectivity", "digital transformation"],
+            cover_url=photos.get("structured-cabling.jpg"),
+            cover_alt="Structured cabling and telemetry network deployment",
             excerpt=("Laboratory staff reported the deployment of a village internet network at the Sedaeng "
                      "village office in the journal Sewagati."),
             excerpt_id=("Sivitas laboratorium melaporkan pembangunan jaringan internet desa di Kantor Desa "
@@ -1079,6 +1123,8 @@ async def seed_posts() -> None:
             slug="laboratory-research-at-isitia-2025",
             category="Research",
             tags=["research", "ISITIA", "conference"],
+            cover_url=photos.get("sdr-spectrum-lab.jpg"),
+            cover_alt="RF spectrum analyzer and wireless communication measurement instruments",
             excerpt=("Several studies involving laboratory staff were presented at the International Seminar "
                      "on Intelligent Technology and Its Applications."),
             excerpt_id=("Sejumlah penelitian yang melibatkan sivitas laboratorium dipresentasikan pada "
@@ -1151,7 +1197,7 @@ async def main() -> None:
     await seed_partners()
     await seed_events()
     await seed_publications()
-    await seed_posts()
+    await seed_posts(photos)
     await seed_unverified_drafts()
     await ensure_indexes()
     print("\nSeed complete.")
