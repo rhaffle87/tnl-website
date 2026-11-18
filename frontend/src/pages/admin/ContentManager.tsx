@@ -63,7 +63,7 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             { key: "role", label: "Kind of member", type: "select", options: ["lecturer", "researcher", "assistant"] },
             { key: "position", label: "Position", type: "select", options: ["coordinator", "head", "vice", "staff", "member"] },
             { key: "position_label", label: "Position as written", type: "text", help: "For example “Head of Practicum”." },
-            { key: "division", label: "Division", type: "text" },
+            { key: "division", label: "Division", type: "select", options: ["BPH", "Academic", "Research", "Social", "Internal", "External"] },
             { key: "batch", label: "Batch", type: "text", help: "For example 2026/2027. Assistants only." },
             ...BILINGUAL("bio", "Short biography", "textarea"),
             ...BILINGUAL("quote", "Quote", "textarea", "Shown on the Head of Laboratory banner."),

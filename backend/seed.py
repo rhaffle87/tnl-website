@@ -24,7 +24,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 from lib.auth import hash_password  # noqa: E402
 from lib.db import db, ensure_indexes  # noqa: E402
 from models.content import (  # noqa: E402
-    Activity, Equipment, Event, Member, Partner, Post, PracticumModule, PracticumResource, PracticumShift, Project, Publication,
+    Activity, Equipment, Event, Member, MemberSocial, Partner, Post, PracticumModule, PracticumResource, PracticumShift, Project, Publication,
 )
 from models.core import SettingsDoc, ThemeTokens  # noqa: E402
 
@@ -266,42 +266,67 @@ ASSISTANT_ACTIVITIES = [
      "Pelatihan yang dibuka untuk mahasiswa di luar laboratorium, dibawakan oleh asisten dan dosen TNL."),
 ]
 
-DIVISIONS = ["Research & Development", "Practicum", "Training", "Media & Information", "Human Resource"]
-# The real 2025/2026 assistant roster, transcribed from the laboratory's own member page
-# (riset.its.ac.id/lab-tnl/member) together with each member's published portrait.
-# (name, photo file, position, position label, division)
-# position drives grouping and ordering on the Member page: coordinator → head → vice → staff.
-ASSISTANTS = [
-    # Senior assistants — board
-    ("Muhammad Rifqi Firmansyah", "4.png", "coordinator", "Coordinator — Lead", None),
-    ("Haykal Ramadhan", "5.png", "coordinator", "Coordinator — Vice", None),
-    ("Nurul Alya Fithri", "6.png", "coordinator", "Secretary", None),
-    ("Najwa Uma Fadhilah", "7.png", "coordinator", "Treasurer", None),
-    # Senior assistants — division leads and vices
-    ("Karissa Maheswari Sasikirana", "8.png", "head", "Academics — Lead", "Academics"),
-    ("Krisnanda Khairul Kusumawardana", "9.png", "vice", "Academics — Vice", "Academics"),
-    ("Safinatun Najah", "11.png", "head", "Event — Lead", "Event"),
-    ("Fikri Fajar Fawwaz", "10.png", "vice", "Event — Vice", "Event"),
-    ("Tine Joeana", "12.png", "head", "Media — Lead", "Media"),
-    ("Juan Farrel Aryasatya", "13.png", "head", "Research — Lead", "Research"),
-    # Junior assistants — staff
-    ("Rafli Alif Ihza Hartono", "14.png", "staff", "Academics — Staff", "Academics"),
-    ("Steffano Asian Budi Setyo", "15.png", "staff", "Academics — Staff", "Academics"),
-    ("Muhammad Zidan Hifzhurrahman", "16.png", "staff", "Academics — Staff", "Academics"),
-    ("Nathanael Tumpal Sianturi", "17.png", "staff", "Academics — Staff", "Academics"),
-    ("Roy Wiranata", "18.png", "staff", "Event — Staff", "Event"),
-    ("Sarah Sofhi Susanty", "19.png", "staff", "Event — Staff", "Event"),
-    ("Lidya Melisa Ardeori Remindauw", "melisa.png", "staff", "Event — Staff", "Event"),
-    ("Muhammad Rizqy Fadhlurrahman", "20.png", "staff", "Media — Staff", "Media"),
-    ("Bulan Nurhaliza", "21.png", "staff", "Media — Staff", "Media"),
-    ("Janice Kayleen Eliana Sembiring Brahmana", "22.png", "staff", "Media — Staff", "Media"),
-    ("Dhika Wahyu Arfian Putra", "23.png", "staff", "Research — Staff", "Research"),
-    ("Rafi Adin Maulvi Nazir Ahmad", "24.png", "staff", "Research — Staff", "Research"),
-    ("Raihan Muzhaffar Athallah", "25.png", "staff", "Research — Staff", "Research"),
-    ("Widya Firdausi Ahla Samariansyah", "26.png", "staff", "Research — Staff", "Research"),
+DIVISIONS = ["BPH", "Academic", "Research", "Social", "Internal", "External"]
+
+# Active 2026 Assistant Roster (25 members: Batch 2023 & Batch 2024)
+# (name, nrp, batch, photo_file, position, position_label, division, email, ig)
+ACTIVE_ASSISTANTS_2026 = [
+    # BPH (3 members, Batch 2023)
+    ("Dhika Wahyu Arfian Putra", "5048231005", "2023", "23.png", "coordinator", "Laboratory Coordinator", "BPH", "dhikawahyuarfianputra@gmail.com", "dhikaw__"),
+    ("Muhammad Rizqi Fadhlurrahman", "5048231009", "2023", "20.png", "coordinator", "Vice Coordinator", "BPH", "fhl.041231@gmail.com", "rizqifadlu"),
+    ("Widya Firdausi Ahla Samariansyah", "5048231059", "2023", "26.png", "coordinator", "Secretary & Treasurer", "BPH", "widyasamariansyah@gmail.com", "widyassf"),
+
+    # Academic Division (5 members: 3 Batch 2023, 2 Batch 2024)
+    ("Steffano Asian Budi Setyo", "5048231022", "2023", "15.png", "head", "Head of Academic", "Academic", "steffano.asianbudisetyo@gmail.com", "steffanobudisetyo"),
+    ("Rafli Alif Ihza Hartono", "5048231003", "2023", "14.png", "head", "Co-Head of Academic", "Academic", "raflihartono87@gmail.com", "rhaffle87"),
+    ("Nathanael Tumpal Sianturi", "5048231066", "2023", "17.png", "head", "Co-Head of Academic", "Academic", "natumpal2004@gmail.com", "nathanaell_ts"),
+    ("Darel Christianto Oktavian", "5048241037", "2024", None, "staff", "Academic Staff", "Academic", "doktavian425@gmail.com", "dareloktvn"),
+    ("Muhammad Izzul Wafa", "5048241013", "2024", None, "staff", "Academic Staff", "Academic", "muhamaizzul@gmail.com", "zzlwafaa"),
+
+    # Research Division (4 members: 2 Batch 2023, 2 Batch 2024)
+    ("Rafi Adin Maulvi Nazir Ahmad", "5048231011", "2023", "24.png", "head", "Head of Research", "Research", "rafiadin28@gmail.com", "rafiadin28"),
+    ("Raihan Muzhaffar Athallah", "5048231031", "2023", "25.png", "head", "Co-Head of Research", "Research", "raihanmuzhaffar18@gmail.com", "rhnma.13"),
+    ("Nindita Putri Aisyah", "5048241003", "2024", None, "staff", "Research Staff", "Research", "ninditaaisyah@gmail.com", "ninditaaptr_"),
+    ("Zein Aditya Pasha", "5048241035", "2024", None, "staff", "Research Staff", "Research", "adityapashaaaa@gmail.com", "zeynnnaditt"),
+
+    # Social Division (5 members: 2 Batch 2023, 3 Batch 2024)
+    ("Muhammad Zidan Hifzhurrahman", "5038231007", "2023", "16.png", "head", "Head of Social", "Social", "zidanplatr@gmail.com", "mz_hifzhurrahman"),
+    ("Roy Wiranata", "5048231051", "2023", "18.png", "head", "Co-Head of Social", "Social", "roywira8@gmail.com", "roywira8"),
+    ("Kreshna Kamaludin Kusnadi", "5048241029", "2024", None, "staff", "Social Staff", "Social", "kreshna.kusnadi@gmail.com", "kreshnakus"),
+    ("Annisa Fathinatuzzahra", "5048241030", "2024", None, "staff", "Social Staff", "Social", "annisaftzhr@gmail.com", "annisaafath"),
+    ("Nouval Ramadhan", "5048241012", "2024", None, "staff", "Social Staff", "Social", "nouvalrmdhn1@gmail.com", "nouval.ramadhan"),
+
+    # Internal Division (4 members: 2 Batch 2023, 2 Batch 2024)
+    ("Lidya Melisa Ardeori Remindauw", "5048231002", "2023", "melisa.png", "head", "Head of Internal", "Internal", "lidya.melisa12@gmail.com", "lidya_melisa12"),
+    ("Sarah Sofhi Susanty", "5048231075", "2023", "19.png", "head", "Co-Head of Internal", "Internal", "sarahssusanty@gmail.com", "sarahssnty"),
+    ("Ida Ayu Sayla Nadia Putri", "5048241009", "2024", None, "staff", "Internal Staff", "Internal", "idaayusaylanadiaputri@gmail.com", "idaayusayla"),
+    ("Ryan Raditya Bagaskara", "5048241027", "2024", None, "staff", "Internal Staff", "Internal", "rbagaskara70@gmail.com", "radityarb"),
+
+    # External Division (4 members: 2 Batch 2023, 2 Batch 2024)
+    ("Bulan Nurhaliza", "5048231073", "2023", "21.png", "head", "Head of External", "External", "bulannurh@gmail.com", "bulannhz"),
+    ("Janice Kayleen Eliana", "5048231070", "2023", "22.png", "head", "Co-Head of External", "External", "janicekayleen@gmail.com", "janiceliana"),
+    ("Adelia Zahrasanti Bintoro", "5048241028", "2024", None, "staff", "External Staff", "External", "zahrasanti.adelia@gmail.com", "adeliiazahraa"),
+    ("Nailah Puteri Maharani", "5048241018", "2024", None, "staff", "External Staff", "External", "nailahputeri02@gmail.com", "nailahputerii"),
 ]
 
-ASSISTANT_BATCH = "2025/2026"
+# Alumni Assistant Roster (Batch 2022 - 12 members)
+# (name, photo_file, position, position_label, division)
+ALUMNI_ASSISTANTS_2022 = [
+    ("Muhammad Rifqi Firmansyah", "4.png", "coordinator", "Ex-Coordinator", "BPH"),
+    ("Naufal Dzaki Imtiyaz", "5.png", "coordinator", "Ex-Coordinator", "BPH"),
+    ("Siti Aisyah", "6.png", "coordinator", "Ex-Secretary", "BPH"),
+    ("Azzahrah Nabilla", "7.png", "coordinator", "Ex-Treasurer", "BPH"),
+    ("Shinta Alya Ramadhani", "8.png", "head", "Ex-Head of Academics", "Academic"),
+    ("Rafifudin Achmad", "9.png", "vice", "Ex-Academics", "Academic"),
+    ("M. Zikri Alfarizi", "10.png", "head", "Ex-Head of Event", "Social"),
+    ("Salma Salsabila", "11.png", "vice", "Ex-Event", "Social"),
+    ("Alifia Nabila", "12.png", "head", "Ex-Head of Media", "External"),
+    ("Farah Aulia", None, "staff", "Ex-Media", "External"),
+    ("Dimas Pratama", "13.png", "head", "Ex-Head of Research", "Research"),
+    ("M. Fadhil", None, "staff", "Ex-Research", "Research"),
+]
+
+ASSISTANT_BATCH = "2026"
 
 # Source of the real member portraits and of the lab's published copy.
 LAB_SITE_UPLOADS = "https://riset.its.ac.id/lab-tnl/wp-content/uploads/2025/11"
@@ -697,22 +722,45 @@ async def seed_members() -> None:
         m["position_label"] = position_label
         members.append(m)
 
-    # The real 2025/2026 assistant roster, with each member's published portrait.
-    # Social fields stay EMPTY — the lab site publishes none, so none are invented.
+    # Active 2026 Assistant team (25 members: Batch 2023 & Batch 2024)
     order = 10
-    for name, photo_file, position, label, division in ASSISTANTS:
-        photo = await _store_remote_image(
-            f"{LAB_SITE_UPLOADS}/{photo_file}", f"members/{photo_file}",
-            f"Portrait of {name}, {label}", "members",
-        )
+    for name, nrp, batch, photo_file, position, label, division, email, ig in ACTIVE_ASSISTANTS_2026:
+        photo = None
+        if photo_file:
+            photo = await _store_remote_image(
+                f"{LAB_SITE_UPLOADS}/{photo_file}", f"members/{photo_file}",
+                f"Portrait of {name}, {label}", "members",
+            )
+        social = MemberSocial(instagram=f"https://instagram.com/{ig.lstrip('@')}") if ig else MemberSocial()
         members.append(Member(
             name=name, role="assistant", position=position, division=division,
-            batch=ASSISTANT_BATCH,
-            bio=f"{label} of the Telecommunication Network Laboratory assistant team, {ASSISTANT_BATCH}.",
-            bio_id=f"{label} tim asisten Laboratorium Jaringan Telekomunikasi, {ASSISTANT_BATCH}.",
-            photo_url=photo or AVATAR,
-            photo_alt=f"Portrait of {name}, {label}" if photo else f"Portrait placeholder for {name}",
-            expertise=[], order=order, status="active", published=True,
+            batch=batch, nim=nrp, show_nim=True, email_public=email,
+            social=social,
+            bio=f"{label} ({division}) of the Telecommunication Network Laboratory assistant team.",
+            bio_id=f"{label} ({division}) tim asisten Laboratorium Jaringan Telekomunikasi.",
+            photo_url=photo if photo else None,
+            photo_alt=f"Portrait of {name}, {label}" if photo else None,
+            expertise=[division, f"Batch {batch}"], order=order, status="active", published=True,
+        ).model_dump())
+        members[-1]["position_label"] = label
+        order += 1
+
+    # Alumni Assistant team (Batch 2022 - 12 members)
+    for name, photo_file, position, label, division in ALUMNI_ASSISTANTS_2022:
+        photo = None
+        if photo_file:
+            photo = await _store_remote_image(
+                f"{LAB_SITE_UPLOADS}/{photo_file}", f"members/{photo_file}",
+                f"Portrait of {name}, {label}", "members",
+            )
+        members.append(Member(
+            name=name, role="assistant", position=position, division=division,
+            batch="2022",
+            bio=f"{label} ({division}) of the Telecommunication Network Laboratory (Batch 2022).",
+            bio_id=f"{label} ({division}) Laboratorium Jaringan Telekomunikasi (Angkatan 2022).",
+            photo_url=photo if photo else None,
+            photo_alt=f"Portrait of {name}, {label}" if photo else None,
+            expertise=[division, "Batch 2022", "Alumni"], order=order, status="alumni", published=True,
         ).model_dump())
         members[-1]["position_label"] = label
         order += 1
@@ -720,9 +768,11 @@ async def seed_members() -> None:
     for m in members:
         m.setdefault("position_label", m.get("position"))
     await db.members.insert_many(members)
-    with_photo = sum(1 for m in members if m["photo_url"] != AVATAR)
-    print(f"  members: 1 head + {len(LECTURERS)} lecturers + {len(ASSISTANTS)} real assistants "
-          f"({ASSISTANT_BATCH}) — {with_photo}/{len(members)} with their real portrait")
+    active_assistants = sum(1 for m in members if m["role"] == "assistant" and m["status"] == "active")
+    alumni_assistants = sum(1 for m in members if m["role"] == "assistant" and m["status"] == "alumni")
+    with_photo = sum(1 for m in members if m["photo_url"])
+    print(f"  members: 1 head + {len(LECTURERS)} lecturers + {active_assistants} active assistants "
+          f"+ {alumni_assistants} alumni assistants — {with_photo}/{len(members)} with photos")
 
 
 async def seed_activities() -> None:
