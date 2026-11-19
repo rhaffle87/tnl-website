@@ -72,11 +72,11 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
                 <div className="animate-fade-up">
                     {badge ? (
                         <span
-                            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold tracking-wider"
+                            className="tnl-eyebrow inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-bold tracking-wider"
                             style={{ background: "rgba(168,151,123,0.18)", color: "var(--tnl-tan)" }}
                             data-testid="hero-badge"
                         >
-                            <MapPin className="h-4 w-4" aria-hidden="true" />
+                            <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
                             {badge}
                         </span>
                     ) : null}
@@ -152,7 +152,7 @@ function InnerHeroBlock({ props }: { props: Record<string, unknown> }) {
         <section className="tnl-hero-gradient" data-testid="block-inner-hero">
             <div className="tnl-container py-14 lg:py-20">
                 {eyebrow ? (
-                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: "var(--tnl-tan)" }} data-testid="inner-hero-eyebrow">
+                    <p className="tnl-eyebrow mb-3 font-bold" style={{ color: "var(--tnl-tan)" }} data-testid="inner-hero-eyebrow">
                         {eyebrow}
                     </p>
                 ) : null}

@@ -1,17 +1,17 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource/poppins/400.css";
-@import "@fontsource/poppins/500.css";
-@import "@fontsource/poppins/600.css";
-@import "@fontsource/poppins/700.css";
+@import "@fontsource-variable/geist/index.css";
+@import "@fontsource-variable/jetbrains-mono/index.css";
+@import "@fontsource-variable/lora/index.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    --font-sans: 'Geist Variable', system-ui, sans-serif;
     --font-heading: var(--font-sans);
-    --font-sans: 'Poppins', sans-serif;
-    --font-quote: Georgia, 'Times New Roman', serif;
+    --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+    --font-quote: 'Lora Variable', Georgia, serif;
 
     /* Semantic GSM Design Tokens */
     --color-gsm-primary: var(--gsm-primary);
@@ -161,7 +161,7 @@
     /* TNL brand backward compatibility mappings */
     --tnl-black: var(--gsm-obsidian);
     --tnl-tan: var(--gsm-accent);
-    --tnl-tan-text: #7f715c;
+    --tnl-tan-text: #6E604B;
     --tnl-green: var(--gsm-primary);
     --tnl-green-hover: #18221c;
     --tnl-surface: var(--gsm-bg-page);
@@ -301,23 +301,41 @@
   .tnl-section { padding-block: 50px; }
   @media (min-width: 768px) { .tnl-section { padding-block: var(--tnl-section-spacing); } }
 
+  .tnl-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--tnl-tan-text);
+  }
+
   .tnl-card {
     border-radius: var(--tnl-radius-card);
     background: var(--card);
     border: 1px solid var(--tnl-border);
-    box-shadow: 0 20px 80px rgba(193, 199, 212, 0.25);
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+    box-shadow: 0 1px 2px rgba(17, 22, 19, 0.04);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
   }
-  .dark .tnl-card { box-shadow: 0 20px 80px rgba(0, 0, 0, 0.45); }
-  .tnl-card-hover:hover { transform: translateY(-4px); box-shadow: 0 24px 90px rgba(193, 199, 212, 0.4); }
-  .dark .tnl-card-hover:hover { box-shadow: 0 24px 90px rgba(0, 0, 0, 0.6); }
+  .tnl-card-hover:hover {
+    transform: translateY(-2px);
+    border-color: var(--tnl-tan);
+  }
+  .dark .tnl-card {
+    box-shadow: none;
+  }
 
   .tnl-hero-gradient {
-    background-image: linear-gradient(135deg, #111518 0%, #1c2720 48%, #43594A 100%);
+    background-color: var(--gsm-obsidian);
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      radial-gradient(80% 90% at 85% 40%, #2E4235 0%, transparent 70%);
+    background-size: 56px 56px, 56px 56px, 100% 100%;
   }
   .tnl-hero-title {
     font-size: 35px;
     line-height: 1.2;
+    letter-spacing: -0.03em;
   }
   @media (min-width: 768px) { .tnl-hero-title { font-size: 40px; } }
   @media (min-width: 1024px) { .tnl-hero-title { font-size: 60px; line-height: 1.12; } }

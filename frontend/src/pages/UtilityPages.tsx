@@ -93,7 +93,7 @@ export function VerifyPage() {
         <div data-testid="verify-page">
             <section className="tnl-hero-gradient">
                 <div className="tnl-container py-14 lg:py-16 text-center">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-white/10 text-[var(--tnl-tan,#C4B393)] border border-white/15 mb-3">
+                    <span className="tnl-eyebrow inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-white/10 border border-white/15 mb-3" style={{ color: "var(--tnl-tan,#C4B393)" }}>
                         <ShieldCheck className="h-3.5 w-3.5" />
                         {locale === "id" ? "Portal Verifikasi Resmi" : "Official Verification Portal"}
                     </span>

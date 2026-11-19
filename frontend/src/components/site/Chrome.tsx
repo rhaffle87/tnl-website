@@ -18,7 +18,7 @@ import {
     X,
 } from "lucide-react";
 import { useLocale, pick } from "@/lib/i18n";
-import { useSettings } from "@/lib/hooks";
+import { useEvents, useSettings } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 import type { SiteSettings } from "@/lib/types";
 
@@ -602,7 +602,7 @@ export function SiteFooter({
                     {/* Monumental Typographic Watermark with Slow Fade-in & Ambient Glow */}
                     <WatermarkSection />
                     {/* Utility & Legal Bar (3-part balanced layout ala s4ras) */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4 border-t border-white/10 py-5 text-xs text-[#9FA8A2]">
+                    <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4 border-t border-white/10 py-5 pb-20 md:pb-5 text-xs text-[#9FA8A2]">
                         <p className="md:text-left" data-testid="footer-institution-line">
                             © {new Date().getFullYear()} Departemen Teknik Elektro, ITS Surabaya.
                         </p>
@@ -695,5 +695,84 @@ export function AnnouncementPopup() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export function MobileRegistrationBar() {
+    const location = useLocation();
+    const { locale } = useLocale();
+    const { data: events } = useEvents();
+    const [dismissed, setDismissed] = useState(() => {
+        try {
+            return sessionStorage.getItem("tnl-dismiss-reg-bar") === "true";
+        } catch {
+            return false;
+        }
+    });
+
+    if (
+        dismissed ||
+        location.pathname === "/open-house" ||
+        location.pathname.startsWith("/admin")
+    ) {
+        return null;
+    }
+
+    const list = events ?? [];
+    const openHouse = list.find((e) => e.slug === "open-house-tnl" && e.status === "published");
+    const activeEvent = openHouse || list.find((e) => e.status === "published");
+
+    if (!activeEvent) return null;
+
+    const eventTitle = pick(locale, activeEvent.title, activeEvent.title_id) || "Open House TNL";
+    const targetUrl = activeEvent.slug === "open-house-tnl" ? "/open-house" : "/activity?tab=events";
+
+    const handleDismiss = () => {
+        setDismissed(true);
+        try {
+            sessionStorage.setItem("tnl-dismiss-reg-bar", "true");
+        } catch {}
+    };
+
+    return (
+        <aside
+            aria-label="Informasi Pendaftaran Kegiatan"
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-white/15 bg-[#111613]/95 backdrop-blur-md px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-2xl md:hidden animate-fade-up"
+            data-testid="mobile-registration-bar"
+        >
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col min-w-0 pr-1">
+                    <span className="tnl-eyebrow text-[10px] text-[var(--tnl-tan,#C4B393)] flex items-center gap-1.5 font-bold">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        {locale === "id" ? "Pendaftaran Dibuka" : "Registration Open"}
+                    </span>
+                    <p className="truncate text-xs font-semibold text-white mt-0.5">
+                        {eventTitle}
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <Link
+                        to={targetUrl}
+                        className="inline-flex h-9 min-h-[36px] items-center justify-center rounded-lg px-3.5 text-xs font-bold transition-transform active:scale-95 shadow-sm"
+                        style={{
+                            background: "var(--tnl-tan, #A8977B)",
+                            color: "#111613",
+                        }}
+                        data-testid="mobile-reg-cta-button"
+                    >
+                        {locale === "id" ? "Daftar →" : "Register →"}
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={handleDismiss}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                        aria-label="Tutup bar pendaftaran"
+                        data-testid="mobile-reg-close-button"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+            </div>
+        </aside>
     );
 }

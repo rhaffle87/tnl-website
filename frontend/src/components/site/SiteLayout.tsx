@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { AnnouncementPopup, SiteCollaborationBand, SiteFooter, SiteHeader } from "@/components/site/Chrome";
+import { AnnouncementPopup, MobileRegistrationBar, SiteCollaborationBand, SiteFooter, SiteHeader } from "@/components/site/Chrome";
 import { LOCALE_STORAGE_KEY, LocaleContext, STRINGS, useLocale, type Locale, type StringKey } from "@/lib/i18n";
 import { useSettings } from "@/lib/hooks";
 
@@ -49,6 +49,12 @@ const ROUTE_META: Record<string, { titleId: string; titleEn: string; descId: str
         titleEn: "Contact & Location — Telecommunication Network Laboratory ITS",
         descId: "Hubungi Laboratorium Jaringan Telekomunikasi ITS. Ruang B-301 Gedung B Lantai 3 Teknik Elektro ITS Surabaya.",
         descEn: "Contact Telecommunication Network Laboratory ITS. Room B-301, 3rd Floor Electrical Engineering Building, ITS Surabaya.",
+    },
+    "/verify": {
+        titleId: "Verifikasi e-Sertifikat — Laboratorium Jaringan Telekomunikasi ITS",
+        titleEn: "Verify e-Certificate — Telecommunication Network Laboratory ITS",
+        descId: "Sistem validasi keaslian sertifikat kegiatan, pelatihan, dan praktikum resmi dari Laboratorium Jaringan Telekomunikasi ITS.",
+        descEn: "Authenticity validation system for official activity, training, and practicum certificates issued by Telecommunication Network Laboratory ITS.",
     },
     "/terms": {
         titleId: "Syarat & Ketentuan — Laboratorium Jaringan Telekomunikasi ITS",
@@ -264,6 +270,7 @@ export default function SiteLayout() {
             {isHome ? <SiteCollaborationBand /> : null}
             <SiteFooter />
             <AnnouncementPopup />
+            <MobileRegistrationBar />
         </div>
     );
 }
