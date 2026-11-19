@@ -60,6 +60,7 @@ function num(props: Record<string, unknown>, key: string, fallback: number): num
 function HeroBlock({ props }: { props: Record<string, unknown> }) {
     const { locale, t } = useLocale();
     const badge = str(props, "badge");
+    const [imgError, setImgError] = useState(false);
     return (
         <section className="tnl-hero-gradient relative overflow-hidden" data-testid="block-hero">
             <div
@@ -106,7 +107,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
                     </div>
                 </div>
                 <div className="hidden lg:flex lg:justify-center">
-                    {str(props, "image_url") ? (
+                    {!imgError && str(props, "image_url") ? (
                         <figure className="w-full max-w-md" data-testid="hero-image-figure">
                             <img
                                 src={str(props, "image_url")}
@@ -116,6 +117,15 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
                                 className="h-64 w-full rounded-[28px] border object-cover"
                                 style={{ borderColor: "rgba(168,151,123,0.35)" }}
                                 data-testid="hero-image"
+                                onError={(e) => {
+                                    const target = e.currentTarget;
+                                    if (!target.dataset.retried) {
+                                        target.dataset.retried = "true";
+                                        target.src = target.src + (target.src.includes("?") ? "&" : "?") + "retry=" + Date.now();
+                                    } else {
+                                        setImgError(true);
+                                    }
+                                }}
                             />
                             {pickProp(locale, props, "image_caption") &&
                             !pickProp(locale, props, "image_caption").toLowerCase().includes("illustrative") &&
@@ -131,7 +141,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
                         </figure>
                     ) : (
                         <div
-                            className="flex h-64 w-64 items-center justify-center rounded-[28px] border text-7xl font-bold"
+                            className="flex h-64 w-64 items-center justify-center rounded-[28px] border text-7xl font-bold shadow-2xl"
                             style={{ borderColor: "rgba(168,151,123,0.35)", background: "rgba(255,255,255,0.04)", color: "var(--tnl-tan)" }}
                             aria-hidden="true"
                         >
@@ -788,7 +798,7 @@ function GalleryBlock({ props }: { props: Record<string, unknown> }) {
                                 key={i}
                                 type="button"
                                 onClick={() => setLightbox(i)}
-                                className="group relative overflow-hidden rounded-[18px] border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-left"
+                                className="group relative overflow-hidden rounded-[18px] border bg-[#141C17] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-left"
                                 style={{ borderColor: "var(--tnl-border)" }}
                                 data-testid={`gallery-item-${i}`}
                             >
@@ -797,6 +807,15 @@ function GalleryBlock({ props }: { props: Record<string, unknown> }) {
                                     alt={label}
                                     className="h-64 w-full object-cover transition-transform duration-500 group-hover:scale-105 sm:h-72"
                                     loading="lazy"
+                                    onError={(e) => {
+                                        const target = e.currentTarget;
+                                        if (!target.dataset.retried) {
+                                            target.dataset.retried = "true";
+                                            target.src = target.src + (target.src.includes("?") ? "&" : "?") + "retry=" + Date.now();
+                                        } else {
+                                            target.style.display = "none";
+                                        }
+                                    }}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 transition-opacity group-hover:opacity-95" />
                                 

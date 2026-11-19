@@ -389,7 +389,7 @@ function WatermarkSection() {
         <div
             ref={watermarkRef}
             aria-hidden="true"
-            className="relative pointer-events-none select-none overflow-hidden pt-8 pb-0 -mb-2 md:-mb-4"
+            className="relative pointer-events-none select-none pt-6 pb-3 md:pb-4"
         >
             {/* Subtle Backlight Lighting (Ambient Glow) */}
             <div
@@ -419,7 +419,7 @@ function WatermarkSection() {
                     "motion-reduce:opacity-100 motion-reduce:translate-y-0 motion-reduce:scale-100 motion-reduce:transition-none"
                 )}
             >
-                <p className="w-full whitespace-nowrap text-center text-[clamp(3.75rem,13.8vw,13.5rem)] font-black leading-[0.82] tracking-[-0.05em] select-none [mask-image:linear-gradient(to_bottom,rgba(0,0,0,1)_0%,rgba(0,0,0,0.88)_45%,rgba(0,0,0,0.22)_82%,transparent_100%)]">
+                <p className="w-full whitespace-nowrap text-center text-[clamp(3.75rem,13.8vw,13.5rem)] font-black leading-[0.96] tracking-[-0.05em] select-none [mask-image:linear-gradient(to_bottom,rgba(0,0,0,1)_0%,rgba(0,0,0,0.88)_42%,rgba(0,0,0,0.22)_76%,transparent_94%)]">
                     <span className="bg-gradient-to-b from-[#7EA88B] via-[#43634E]/80 to-[#111613]/0 bg-clip-text text-transparent">
                         LAB TNL
                     </span>
@@ -463,13 +463,13 @@ export function SiteFooter({
         (settings as any)?.instagram_handle ||
         (settings?.social?.instagram
             ? "@" + settings.social.instagram.trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/$/, "").replace(/^@/, "")
-            : "@tnllab_its") ||
-        "@tnllab_its";
+            : "@tnlab_its") ||
+        "@tnlab_its";
 
     const igUrl =
         (settings as any)?.instagram_url ||
         settings?.social?.instagram ||
-        "https://www.instagram.com/tnllab_its/";
+        "https://www.instagram.com/tnlab_its/";
 
     const siteName =
         (settings as any)?.site_name?.[lang] ||

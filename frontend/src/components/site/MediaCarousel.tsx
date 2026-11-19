@@ -12,7 +12,7 @@ export function FadeCarousel({
     images,
     aspectRatio = "aspect-video",
     className,
-    intervalMs = 3500,
+    intervalMs = 3000,
     onImageClick,
     showControls = true,
 }: {

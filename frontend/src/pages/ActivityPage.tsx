@@ -104,10 +104,22 @@ function EventCard({ event }: { event: LabEvent }) {
                         ? t("reg_past")
                         : "";
 
+    const eventTypeLabel = useMemo(() => {
+        const raw = (event.type || "").toLowerCase();
+        if (locale === "id") {
+            if (raw === "training") return "PELATIHAN";
+            if (raw === "recruitment") return "REKRUTMEN";
+            if (raw === "open_house") return "OPEN HOUSE";
+            if (raw === "workshop") return "WORKSHOP";
+            return raw.toUpperCase();
+        }
+        return raw.toUpperCase();
+    }, [event.type, locale]);
+
     return (
         <article className="tnl-card overflow-hidden p-0" data-testid={`event-card-${event.slug}`}>
             <div className="tnl-hero-gradient flex flex-wrap items-center gap-3 px-6 py-4">
-                <TypeBadge label={event.type} testId={`event-type-badge-${event.slug}`} />
+                <TypeBadge label={eventTypeLabel} testId={`event-type-badge-${event.slug}`} />
                 <StatusBadge status={status} label={statusLabel} testId={`event-status-badge-${event.slug}`} />
                 {event.slug === "open-house-tnl" ? (
                     <span className="rounded-full bg-[#A8977B] px-3 py-1 text-xs font-black tracking-wide text-[#111613]">
@@ -173,7 +185,7 @@ function EventCard({ event }: { event: LabEvent }) {
                                 <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
                                 {t("location")}
                             </div>
-                            <div className="mt-1 text-sm font-medium">{event.location ?? "—"}</div>
+                            <div className="mt-1 text-sm font-medium">{pick(locale, event.location, event.location_id) || "—"}</div>
                         </div>
                     </div>
 
@@ -189,8 +201,12 @@ function EventCard({ event }: { event: LabEvent }) {
                                             {String(i + 1).padStart(2, "0")}
                                         </span>
                                         <span>
-                                            <span className="font-semibold">{m.title}</span>
-                                            {m.detail ? <span className="block text-[var(--tnl-body)]">{m.detail}</span> : null}
+                                            <span className="font-semibold">{pick(locale, m.title, m.title_id)}</span>
+                                            {(m.detail || m.detail_id) ? (
+                                                <span className="block text-[var(--tnl-body)]">
+                                                    {pick(locale, m.detail, m.detail_id)}
+                                                </span>
+                                            ) : null}
                                             {m.date ? (
                                                 <span className="block text-xs" style={{ color: "var(--tnl-tan-text)" }}>
                                                     {formatDate(m.date, locale)}
@@ -297,9 +313,26 @@ function EventCard({ event }: { event: LabEvent }) {
 function ActivityRow({ activity, index }: { activity: Activity; index: number }) {
     const { locale, t } = useLocale();
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-    const images = activity.images ?? [];
     const chip = CATEGORY_CHIP[activity.category] ?? CATEGORY_CHIP.internal;
     const flip = index % 2 === 1;
+
+    const activityImages: CarouselImage[] = useMemo(() => {
+        const list: CarouselImage[] = [];
+        if (activity.cover_image) {
+            list.push({ url: activity.cover_image, alt: pick(locale, activity.title, activity.title_id) });
+        }
+        (activity.gallery_images ?? []).forEach((u, i) => {
+            if (!list.some((item) => item.url === u)) {
+                list.push({ url: u, alt: `${pick(locale, activity.title, activity.title_id)} ${i + 1}` });
+            }
+        });
+        (activity.images ?? []).forEach((img, i) => {
+            if (!list.some((item) => item.url === img.url)) {
+                list.push({ url: img.url, alt: img.alt || `${pick(locale, activity.title, activity.title_id)} ${i + 1}` });
+            }
+        });
+        return list;
+    }, [activity, locale]);
 
     return (
         <article
@@ -337,17 +370,17 @@ function ActivityRow({ activity, index }: { activity: Activity; index: number })
 
             <div className={flip ? "lg:order-1" : ""}>
                 <div className="tnl-card relative overflow-hidden p-0" style={{ minHeight: 240 }}>
-                    {images.length ? (
+                    {activityImages.length ? (
                         <>
                             <FadeCarousel
-                                images={images}
+                                images={activityImages}
                                 aspectRatio="aspect-video"
                                 className="h-64 w-full"
                                 onImageClick={(idx) => setLightboxIndex(idx)}
                             />
                             {lightboxIndex !== null ? (
                                 <ImageLightboxModal
-                                    images={images}
+                                    images={activityImages}
                                     initialIndex={lightboxIndex}
                                     onClose={() => setLightboxIndex(null)}
                                 />

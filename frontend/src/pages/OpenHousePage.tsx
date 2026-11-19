@@ -71,7 +71,7 @@ export default function OpenHousePage() {
         }
 
         if (!igFile) {
-            toast.error("Wajib mengunggah bukti follow Instagram @tnllab_its.");
+            toast.error("Wajib mengunggah bukti follow Instagram @tnlab_its.");
             return;
         }
 
@@ -86,7 +86,7 @@ export default function OpenHousePage() {
         formData.append("f_nrp-nomor-registrasi-pokok", cleanNrp);
         formData.append("f_angkatan", batch);
         formData.append("f_mengapa-kamu-tertarik-untuk-ikut-open-house-tnl", motivation.trim());
-        formData.append("f_bukti-follow-instagram-tnllab-its", igFile);
+        formData.append("f_bukti-follow-instagram-tnlab-its", igFile);
 
         try {
             await submitRegistration.mutateAsync(formData);
@@ -330,7 +330,7 @@ export default function OpenHousePage() {
                                         htmlFor={igFileId}
                                         className="block text-sm font-semibold tracking-wide"
                                     >
-                                        5. Bukti Follow Instagram @tnllab_its <span className="text-red-500">*</span>
+                                        5. Bukti Follow Instagram @tnlab_its <span className="text-red-500">*</span>
                                     </label>
 
                                     {/* Direct Instagram Link Note */}
@@ -339,12 +339,12 @@ export default function OpenHousePage() {
                                         <span>
                                             Follow akun resmi kami di{" "}
                                             <a
-                                                href="https://www.instagram.com/tnllab_its/"
+                                                href="https://www.instagram.com/tnlab_its/"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="font-bold underline text-pink-600 dark:text-pink-400 hover:text-pink-700"
                                             >
-                                                @tnllab_its
+                                                @tnlab_its
                                             </a>{" "}
                                             lalu unggah tangkapan layar (screenshot) profilmu yang sedang follow.
                                         </span>

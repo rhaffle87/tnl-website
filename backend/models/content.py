@@ -95,7 +95,9 @@ class Post(BaseModel):
 
 class EventModule(BaseModel):
     title: str
+    title_id: str | None = None
     detail: str | None = None
+    detail_id: str | None = None
     date: str | None = None
 
 
@@ -140,6 +142,7 @@ class Event(BaseModel):
     capacity: int = 0  # 0 = unlimited
     price: int = 0  # IDR, 0 = free
     location: str | None = None
+    location_id: str | None = None
     modules: list[EventModule] = []
     contacts: list[EventContact] = []
     form_fields: list[FormField] = []

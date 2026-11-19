@@ -85,7 +85,9 @@ export interface Post {
 
 export interface EventModule {
   title: string;
+  title_id?: string | null;
   detail?: string | null;
+  detail_id?: string | null;
   date?: string | null;
 }
 
@@ -129,6 +131,7 @@ export interface LabEvent {
   capacity: number;
   price: number;
   location?: string | null;
+  location_id?: string | null;
   modules: EventModule[];
   contacts: EventContact[];
   form_fields: FormField[];

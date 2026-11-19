@@ -24,7 +24,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 from lib.auth import hash_password  # noqa: E402
 from lib.db import db, ensure_indexes  # noqa: E402
 from models.content import (  # noqa: E402
-    Activity, Equipment, Event, Member, MemberSocial, Partner, Post, PracticumModule, PracticumResource, PracticumShift, Project, Publication,
+    Activity, Equipment, Event, MediaItem, Member, MemberSocial, Partner, Post, PracticumModule, PracticumResource, PracticumShift, Project, Publication,
 )
 from models.core import SettingsDoc, ThemeTokens  # noqa: E402
 
@@ -535,7 +535,7 @@ async def seed_settings() -> None:
         "room": "B-301",
         "maps_url": "https://www.google.com/maps/search/?api=1&query=Gedung+B+Teknik+Elektro+ITS+Surabaya",
     }
-    doc["social"] = {"instagram": "https://www.instagram.com/tnllab_its",
+    doc["social"] = {"instagram": "https://www.instagram.com/tnlab_its",
                      "youtube": None, "linkedin": None, "github": None}
     doc["seo"] = {
         "title_template": "{title} — Telecommunication Network Laboratory ITS",
@@ -791,11 +791,12 @@ async def seed_activities() -> None:
     ]
     for i, (title, title_id, category, desc, desc_id) in enumerate(ASSISTANT_ACTIVITIES):
         cover, gallery = activity_media[i % len(activity_media)]
+        media_items = [MediaItem(url=cover, alt=title)] + [MediaItem(url=u, alt=title) for u in gallery if u != cover]
         docs.append(Activity(
             title=title, title_id=title_id, category=category,
             description=desc, description_id=desc_id,
             cover_image=cover, gallery_images=gallery,
-            images=[], order=i, published=True,
+            images=media_items, order=i, published=True,
         ).model_dump())
     await db.activities.insert_many(docs)
     print(f"  activities: {len(docs)} assistant activities with media")
@@ -1014,18 +1015,36 @@ async def seed_events() -> None:
                         "Laboratorium Jaringan Telekomunikasi. Peserta membangun dan menguji topologi switching "
                         "dan routing secara simulasi sebelum menerapkannya pada perangkat laboratorium di Ruang "
                         "B-301."),
+        cover_image="/api/media-files/illustrative/news-cisco-packet-tracer.jpg",
+        poster_urls=["/api/media-files/illustrative/news-cisco-packet-tracer.jpg"],
+        gallery_images=[
+            "/api/media-files/illustrative/news-cisco-packet-tracer.jpg",
+            "/api/media-files/illustrative/switch-ports.jpg",
+            "/api/media-files/illustrative/structured-cabling.jpg",
+        ],
         start_date=str(today + timedelta(days=21)),
         end_date=str(today + timedelta(days=22)),
         reg_open_date=str(today - timedelta(days=3)),
         reg_close_date=str(today + timedelta(days=14)),
         capacity=40, price=0,
         location="Room B-301, Building B, Department of Electrical Engineering, ITS",
+        location_id="Ruang B-301, Gedung B, Departemen Teknik Elektro, ITS Surabaya",
         modules=[
-            {"title": "Introduction to Packet Tracer", "detail": "Workspace, device types and building a first topology.", "date": None},
-            {"title": "Switching and VLAN", "detail": "Segmenting a network with VLANs and configuring trunk links.", "date": None},
-            {"title": "Routing between networks", "detail": "Static routing and a dynamic routing protocol.", "date": None},
-            {"title": "Network services", "detail": "DHCP, DNS and address translation in simulation.", "date": None},
-            {"title": "Assessment", "detail": "A guided build-and-verify exercise closing the training.", "date": None},
+            {"title": "Introduction to Packet Tracer", "title_id": "Pengenalan Cisco Packet Tracer",
+             "detail": "Workspace, device types and building a first topology.",
+             "detail_id": "Pengenalan antarmuka kerja, perangkat jaringan, dan perancangan topologi dasar.", "date": None},
+            {"title": "Switching and VLAN", "title_id": "Konfigurasi Switching & VLAN",
+             "detail": "Segmenting a network with VLANs and configuring trunk links.",
+             "detail_id": "Segmentasi jaringan berbasis VLAN dan konfigurasi port trunking 802.1Q.", "date": None},
+            {"title": "Routing between networks", "title_id": "Routing Antar-Jaringan",
+             "detail": "Static routing and a dynamic routing protocol.",
+             "detail_id": "Konfigurasi routing statis dan protokol routing dinamis OSPF.", "date": None},
+            {"title": "Network services", "title_id": "Layanan Jaringan (DHCP & DNS)",
+             "detail": "DHCP, DNS and address translation in simulation.",
+             "detail_id": "Penggelaran server DHCP, DNS, dan Network Address Translation (NAT).", "date": None},
+            {"title": "Assessment", "title_id": "Uji Kompetensi & Verifikasi",
+             "detail": "A guided build-and-verify exercise closing the training.",
+             "detail_id": "Evaluasi praktikum langsung dan verifikasi konektivitas end-to-end.", "date": None},
         ],
         contacts=[{"name": "Training Division, TNL", "phone": None, "email": "telconnetlab@gmail.com"}],
         form_fields=[
@@ -1057,16 +1076,30 @@ async def seed_events() -> None:
                      "administrative screening, an interview, and a technical assessment on networking fundamentals."),
         description_id=("Rekrutmen asisten baru Laboratorium Jaringan Telekomunikasi. Seleksi meliputi penyaringan "
                         "administrasi, wawancara, dan penilaian teknis mengenai dasar-dasar jaringan."),
+        cover_image="/api/media-files/illustrative/news-scientific-conference.jpg",
+        poster_urls=["/api/media-files/illustrative/news-scientific-conference.jpg"],
+        gallery_images=[
+            "/api/media-files/illustrative/news-scientific-conference.jpg",
+            "/api/media-files/illustrative/hero-network-rack.jpg",
+            "/api/media-files/illustrative/fiber-patch-panel.jpg",
+        ],
         start_date=str(today + timedelta(days=60)),
         end_date=str(today + timedelta(days=75)),
         reg_open_date=str(today + timedelta(days=30)),
         reg_close_date=str(today + timedelta(days=55)),
         capacity=0, price=0,
         location="Room B-301, Building B, Department of Electrical Engineering, ITS",
+        location_id="Ruang B-301, Gedung B, Departemen Teknik Elektro, ITS Surabaya",
         modules=[
-            {"title": "Administrative screening", "detail": "Submission of academic records and a statement of interest.", "date": None},
-            {"title": "Interview", "detail": "A conversation with the coordinator and division heads.", "date": None},
-            {"title": "Technical assessment", "detail": "Networking fundamentals and laboratory practice.", "date": None},
+            {"title": "Administrative screening", "title_id": "Penyaringan Administratif",
+             "detail": "Submission of academic records and a statement of interest.",
+             "detail_id": "Pengumpulan berkas transkrip nilai, CV, dan surat motivasi.", "date": None},
+            {"title": "Interview", "title_id": "Wawancara Komprehensif",
+             "detail": "A conversation with the coordinator and division heads.",
+             "detail_id": "Sesi wawancara tatap muka bersama koordinator lab dan perwakilan divisi.", "date": None},
+            {"title": "Technical assessment", "title_id": "Uji Teknis & Troubleshooting",
+             "detail": "Networking fundamentals and laboratory practice.",
+             "detail_id": "Uji keterampilan praktis jaringan dan pemecahan masalah perangkat di B-301.", "date": None},
         ],
         contacts=[{"name": "Human Resource Division, TNL", "phone": None, "email": "telconnetlab@gmail.com"}],
         form_fields=[
@@ -1119,7 +1152,7 @@ async def seed_events() -> None:
             {"type": "nim", "label": "NRP (Nomor Registrasi Pokok)", "required": True, "options": []},
             {"type": "select", "label": "Angkatan", "required": True, "options": ["2023", "2024", "2025", "2026"]},
             {"type": "textarea", "label": "Mengapa kamu tertarik untuk ikut Open House TNL?", "required": True, "options": []},
-            {"type": "file", "label": "Bukti Follow Instagram @tnllab_its", "required": True, "options": []},
+            {"type": "file", "label": "Bukti Follow Instagram @tnlab_its", "required": True, "options": []},
         ],
         spreadsheet_webhook_url=os.environ.get("OPEN_HOUSE_SHEET_WEBHOOK_URL"),
         status="published",
