@@ -588,7 +588,60 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
         return locale === "id" ? "Operator Telekomunikasi" : "Telco Operator";
     };
 
-    const marqueeList = list.length > 0 ? [...list, ...list, ...list, ...list] : [];
+    const renderPartner = (p: (typeof list)[0], keySuffix: string | number) => {
+        const category = getCategory(p.name);
+        const content = (
+            <div className="flex flex-col items-center justify-center shrink-0 w-auto px-2 transition-transform duration-300 hover:scale-105">
+                <div className="flex h-16 md:h-20 w-auto items-center justify-center p-1">
+                    {p.logo_url ? (
+                        <img
+                            src={p.logo_url}
+                            alt={`${p.name} logo`}
+                            className="h-16 md:h-20 w-auto max-w-[190px] md:max-w-[230px] object-contain opacity-85 transition-opacity duration-200 hover:opacity-100"
+                            loading="lazy"
+                        />
+                    ) : (
+                        <span className="text-center text-sm md:text-base font-bold tracking-tight text-[#111613] dark:text-white whitespace-nowrap">
+                            {p.name}
+                        </span>
+                    )}
+                </div>
+                <span className="mt-2 text-center text-xs font-semibold text-[var(--tnl-body)] dark:text-[#B8C0BA] whitespace-nowrap">
+                    {p.name.replace("Institut Teknologi Sepuluh Nopember", "ITS Surabaya")}
+                </span>
+                <span
+                    className="mt-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
+                    style={{
+                        background: "color-mix(in srgb, var(--tnl-tan) 18%, transparent)",
+                        color: "var(--tnl-tan-text)",
+                    }}
+                >
+                    {category}
+                </span>
+            </div>
+        );
+
+        return p.url ? (
+            <a
+                key={`${p.id}-${keySuffix}`}
+                href={p.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B393] shrink-0"
+                data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
+            >
+                {content}
+            </a>
+        ) : (
+            <div
+                key={`${p.id}-${keySuffix}`}
+                className="shrink-0"
+                data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
+            >
+                {content}
+            </div>
+        );
+    };
 
     return (
         <section className="tnl-section overflow-hidden" style={{ background: "var(--tnl-surface)" }} data-testid="block-partners">
@@ -597,60 +650,16 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                 {!isLoading && list.length === 0 ? (
                     <EmptyState title={t("coming_soon")} body={t("coming_soon_body")} testId="partners-empty-state" />
                 ) : (
-                    <div className="group relative mt-6 w-full overflow-hidden py-4 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
-                        <div className="flex w-max items-center gap-10 md:gap-16 animate-marquee group-hover:[animation-play-state:paused] motion-reduce:animate-none">
-                            {marqueeList.map((p, idx) => {
-                                const category = getCategory(p.name);
-                                const content = (
-                                    <div className="flex flex-col items-center justify-center transition-transform duration-300 hover:scale-105">
-                                        <div className="flex h-14 md:h-16 w-36 md:w-48 items-center justify-center p-1">
-                                            {p.logo_url ? (
-                                                <img
-                                                    src={p.logo_url}
-                                                    alt={`${p.name} logo`}
-                                                    className="h-11 md:h-14 w-auto max-w-[130px] md:max-w-[160px] object-contain opacity-85 transition-opacity duration-200 hover:opacity-100"
-                                                    loading="lazy"
-                                                />
-                                            ) : (
-                                                <span className="text-center text-sm md:text-base font-bold tracking-tight text-[#111613] dark:text-white">
-                                                    {p.name}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <span className="mt-2 text-center text-xs font-semibold text-[var(--tnl-body)] dark:text-[#B8C0BA] line-clamp-1 max-w-[150px]">
-                                            {p.name.replace("Institut Teknologi Sepuluh Nopember", "ITS Surabaya")}
-                                        </span>
-                                        <span
-                                            className="mt-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                                            style={{
-                                                background: "color-mix(in srgb, var(--tnl-tan) 18%, transparent)",
-                                                color: "var(--tnl-tan-text)",
-                                            }}
-                                        >
-                                            {category}
-                                        </span>
-                                    </div>
-                                );
-                                return p.url ? (
-                                    <a
-                                        key={`${p.id}-${idx}`}
-                                        href={p.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B393]"
-                                        data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
-                                    >
-                                        {content}
-                                    </a>
-                                ) : (
-                                    <div
-                                        key={`${p.id}-${idx}`}
-                                        data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
-                                    >
-                                        {content}
-                                    </div>
-                                );
-                            })}
+                    <div className="group relative mt-6 w-full overflow-hidden py-4 [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
+                        <div className="flex w-max items-center animate-marquee group-hover:[animation-play-state:paused] motion-reduce:[animation-play-state:paused]">
+                            <div className="flex items-center gap-6 sm:gap-8 md:gap-10 pr-6 sm:pr-8 md:pr-10">
+                                {list.map((p, idx) => renderPartner(p, `track1-${idx}`))}
+                                {list.map((p, idx) => renderPartner(p, `track1-dup-${idx}`))}
+                            </div>
+                            <div className="flex items-center gap-6 sm:gap-8 md:gap-10 pr-6 sm:pr-8 md:pr-10" aria-hidden="true">
+                                {list.map((p, idx) => renderPartner(p, `track2-${idx}`))}
+                                {list.map((p, idx) => renderPartner(p, `track2-dup-${idx}`))}
+                            </div>
                         </div>
                     </div>
                 )}

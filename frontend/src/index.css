@@ -87,7 +87,7 @@
     --animate-hero-float: hero-float 6s ease-in-out infinite;
     --animate-signal-pulse-1: signal-pulse-1 4.5s cubic-bezier(0.2, 0.8, 0.4, 1) infinite;
     --animate-signal-pulse-2: signal-pulse-2 4.5s cubic-bezier(0.2, 0.8, 0.4, 1) 1.8s infinite;
-    --animate-marquee: marquee 30s linear infinite;
+    --animate-marquee: marquee 60s linear infinite;
 }
 
 @keyframes hero-float {
