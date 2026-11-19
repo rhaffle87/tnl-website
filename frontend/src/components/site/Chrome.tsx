@@ -2,7 +2,7 @@
 // mark; black four-column footer fed by the single Settings record; dismissible
 // announcement popup. Everything renders without a backend (static preview safe).
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
     ArrowUp,
@@ -234,6 +234,11 @@ export interface FooterProps {
     showCollaborationBand?: boolean;
 }
 
+export interface CollaborationBandProps {
+    lang?: "en" | "id";
+    show?: boolean;
+}
+
 const FOOTER_COPY = {
     en: {
         badge: "ROOM B-301 · SURABAYA",
@@ -305,10 +310,133 @@ const FOOTER_COPY = {
     },
 } as const;
 
+export function SiteCollaborationBand({ lang: propLang, show = true }: CollaborationBandProps) {
+    const { locale } = useLocale();
+    const lang = propLang ?? (locale === "id" ? "id" : "en");
+    const t = FOOTER_COPY[lang];
+
+    if (!show) return null;
+
+    const focusRing =
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B393] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111613]";
+
+    return (
+        <section
+            className="w-full bg-[#F7F7F5] py-12 dark:bg-[#0D110F] md:py-16 transition-colors duration-200"
+            data-testid="section-collaboration-cta"
+        >
+            <div className="tnl-container max-w-7xl px-6 lg:px-8">
+                <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#223027] via-[#1C2821] to-[#141C17] p-8 shadow-xl md:p-10">
+                    <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                        <div className="max-w-2xl space-y-2">
+                            <span className="inline-flex items-center gap-2 rounded-full border border-[#C4B393]/30 bg-[#111613]/60 px-3 py-1 text-[11px] font-semibold tracking-widest text-[#C4B393]">
+                                {t.badge}
+                            </span>
+                            <h2 className="text-2xl font-bold tracking-tight text-[#F4F4F0] md:text-3xl">
+                                {t.ctaTitle}
+                            </h2>
+                            <p className="text-sm leading-relaxed text-[#D1D5DB] md:text-base">
+                                {t.ctaDesc}
+                            </p>
+                        </div>
+                        <div className="flex shrink-0 flex-wrap items-center gap-3">
+                            <Link
+                                to="/contact"
+                                className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-[#A8977B] px-6 py-3 text-sm font-semibold text-[#111613] transition-colors hover:bg-[#C2B091] ${focusRing}`}
+                                data-testid="footer-collab-cta-button"
+                            >
+                                <span>{t.ctaBtn}</span>
+                                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function WatermarkSection() {
+    const watermarkRef = useRef<HTMLDivElement>(null);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const el = watermarkRef.current;
+        if (!el) return;
+
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setIsVisible(true);
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0.15 }
+        );
+
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <div
+            ref={watermarkRef}
+            aria-hidden="true"
+            className="relative pointer-events-none select-none overflow-hidden border-t border-white/10 pt-10 pb-4"
+        >
+            {/* Subtle Backlight Lighting (Ambient Glow) */}
+            <div
+                className={cn(
+                    "pointer-events-none absolute inset-x-0 bottom-0 h-48 sm:h-64 transition-opacity duration-[2000ms] delay-200 ease-out",
+                    isVisible ? "opacity-100" : "opacity-0",
+                    "motion-reduce:opacity-100 motion-reduce:transition-none"
+                )}
+            >
+                {/* 1. Forest Green Ambient Glow */}
+                <div
+                    className="absolute inset-0 blur-2xl"
+                    style={{
+                        background:
+                            "radial-gradient(ellipse 65% 75% at 50% 85%, rgba(67, 89, 74, 0.38) 0%, rgba(34, 48, 39, 0.18) 45%, transparent 75%)",
+                    }}
+                />
+                {/* 2. Warm Gold Accent Core */}
+                <div
+                    className="absolute inset-0 blur-3xl"
+                    style={{
+                        background:
+                            "radial-gradient(ellipse 35% 50% at 50% 95%, rgba(196, 179, 147, 0.16) 0%, transparent 70%)",
+                    }}
+                />
+            </div>
+
+            {/* Monumental Watermark Text with Gradient Mask & Slow Fade-in */}
+            <div
+                className={cn(
+                    "relative z-10 transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+                    isVisible
+                        ? "opacity-100 translate-y-0 scale-100"
+                        : "opacity-0 translate-y-4 scale-[0.985]",
+                    "motion-reduce:opacity-100 motion-reduce:translate-y-0 motion-reduce:scale-100 motion-reduce:transition-none"
+                )}
+            >
+                <p className="whitespace-nowrap text-center text-[clamp(3.25rem,12vw,9.5rem)] font-black leading-[0.86] tracking-[-0.04em] bg-gradient-to-b from-white/30 via-white/12 to-white/[0.02] bg-clip-text text-transparent [mask-image:linear-gradient(to_bottom,rgba(0,0,0,1)_15%,rgba(0,0,0,0.45)_65%,transparent_100%)]">
+                    LAB TNL<span className="bg-gradient-to-b from-[#C4B393]/55 via-[#C4B393]/25 to-transparent bg-clip-text text-transparent">.</span>ITS
+                </p>
+            </div>
+        </div>
+    );
+}
+
 export function SiteFooter({
     lang: propLang,
     settings: propSettings,
-    showCollaborationBand = true,
+    showCollaborationBand = false,
 }: FooterProps = {}) {
     const { locale } = useLocale();
     const { data: fetchedSettings } = useSettings();
@@ -357,204 +485,170 @@ export function SiteFooter({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B393] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111613]";
 
     return (
-        <footer
-            className="mt-auto relative overflow-hidden border-t border-white/10 bg-[#111613] text-[#F4F4F0]"
-            data-testid="site-footer"
-        >
-            <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-[#223027]/45 via-[#18221C]/20 to-transparent"
-            />
-            <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-                {showCollaborationBand && (
-                    <div className="border-b border-white/10 py-12 md:py-16">
-                        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#223027] via-[#1C2821] to-[#141C17] p-8 shadow-xl md:p-10">
-                            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-                                <div className="max-w-2xl space-y-2">
-                                    <span className="inline-flex items-center gap-2 rounded-full border border-[#C4B393]/30 bg-[#111613]/60 px-3 py-1 text-[11px] font-semibold tracking-widest text-[#C4B393]">
-                                        {t.badge}
-                                    </span>
-                                    <h2 className="text-2xl font-bold tracking-tight text-[#F4F4F0] md:text-3xl">
-                                        {t.ctaTitle}
-                                    </h2>
-                                    <p className="text-sm leading-relaxed text-[#D1D5DB] md:text-base">
-                                        {t.ctaDesc}
-                                    </p>
-                                </div>
-                                <div className="flex shrink-0 flex-wrap items-center gap-3">
-                                    <Link
-                                        to="/contact"
-                                        className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-[#A8977B] px-6 py-3 text-sm font-semibold text-[#111613] transition-colors hover:bg-[#C2B091] ${focusRing}`}
-                                        data-testid="footer-collab-cta-button"
-                                    >
-                                        <span>{t.ctaBtn}</span>
-                                        <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                <div className="grid grid-cols-1 gap-10 py-12 lg:grid-cols-12 lg:gap-0 lg:py-16">
-                    {/* Left Column: 5 cols */}
-                    <div className="flex flex-col justify-between space-y-6 lg:col-span-5 lg:border-r lg:border-white/10 lg:pr-12">
-                        <div className="space-y-4">
-                            <Link
-                                to="/"
-                                className={`inline-flex min-h-[44px] items-center gap-3 rounded-lg py-1 ${focusRing}`}
-                            >
-                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#223027] text-xs font-extrabold tracking-wider text-[#F4F4F0]">
-                                    {settings?.short_name ?? "TNL"}
-                                </span>
-                                <div>
-                                    <span className="block text-base font-bold leading-snug text-[#F4F4F0]">
-                                        {siteName}
-                                    </span>
-                                    <span className="block text-xs font-medium text-[#C4B393]">
-                                        labtnl.site · ITS Surabaya
-                                    </span>
-                                </div>
-                            </Link>
-                            <p className="max-w-md text-sm leading-relaxed text-[#B8C0BA]">
-                                {t.labShortDesc}
-                            </p>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-3">
-                            <a
-                                href={igUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label={`Instagram ${igHandle}`}
-                                className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] px-3.5 text-sm font-medium text-[#D1D5DB] transition-colors hover:border-[#C4B393]/50 hover:text-[#F4F4F0] ${focusRing}`}
-                                data-testid="footer-instagram-link"
-                            >
-                                <Instagram className="h-4 w-4 text-[#C4B393]" aria-hidden="true" />
-                                <span>{igHandle}</span>
-                            </a>
-                            <Link
-                                to="/verify"
-                                className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] px-3.5 text-sm font-medium text-[#D1D5DB] transition-colors hover:border-[#C4B393]/50 hover:text-[#F4F4F0] ${focusRing}`}
-                                data-testid="footer-verify-link"
-                            >
-                                <ShieldCheck className="h-4 w-4 text-[#C4B393]" aria-hidden="true" />
-                                <span>{t.verifyBadge}</span>
-                            </Link>
-                        </div>
-                    </div>
-
-                    {/* Right Columns: 7 cols (3 sub-columns) */}
-                    <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 lg:col-span-7 lg:pl-12">
-                        {/* 1. Explore */}
-                        <nav aria-label={t.exploreTitle} className="space-y-2">
-                            <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
-                                {t.exploreTitle}
-                            </h3>
-                            <ul className="space-y-0.5">
-                                {t.navLinks.map((item) => (
-                                    <li key={item.to}>
-                                        <Link
-                                            to={item.to}
-                                            className={`inline-flex min-h-[44px] items-center text-sm text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
-                                            data-testid={`footer-${item.to === "/" ? "home" : item.to.replace("/", "")}-link`}
-                                        >
-                                            {item.label}
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </nav>
-
-                        {/* 2. Lab & Resources */}
-                        <nav aria-label={t.resourcesTitle} className="space-y-2">
-                            <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
-                                {t.resourcesTitle}
-                            </h3>
-                            <ul className="space-y-0.5">
-                                {t.resourceLinks.map((item) => (
-                                    <li key={item.to}>
-                                        <Link
-                                            to={item.to}
-                                            className={`inline-flex min-h-[44px] items-center text-sm text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
-                                        >
-                                            {item.label}
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </nav>
-
-                        {/* 3. Location & Desk */}
-                        <div className="flex flex-col justify-between space-y-6">
-                            <div className="space-y-3">
-                                <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
-                                    {t.contactTitle}
-                                </h3>
-                                <div className="space-y-2 text-sm text-[#D1D5DB]">
-                                    <div className="flex items-start gap-2.5 leading-relaxed">
-                                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
-                                        <span data-testid="footer-address">{address}</span>
-                                    </div>
-                                    <a
-                                        href={`mailto:${email}`}
-                                        className={`inline-flex min-h-[44px] items-center gap-2.5 break-all text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
-                                        data-testid="footer-email-link"
-                                    >
-                                        <Mail className="h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
-                                        <span>{email}</span>
-                                    </a>
-                                </div>
-                            </div>
-                            <div>
-                                <button
-                                    type="button"
-                                    onClick={scrollToTop}
-                                    className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] px-3.5 text-xs font-semibold uppercase tracking-wider text-[#F4F4F0] transition-colors hover:border-[#C4B393]/60 hover:bg-[#223027] ${focusRing}`}
-                                    data-testid="footer-back-to-top-button"
-                                >
-                                    <span>{t.backToTop}</span>
-                                    <ArrowUp className="h-3.5 w-3.5 text-[#C4B393]" aria-hidden="true" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Monumental Typographic Watermark */}
+        <>
+            {showCollaborationBand && <SiteCollaborationBand lang={lang} />}
+            <footer
+                className="mt-auto relative overflow-hidden border-t border-white/10 bg-[#111613] text-[#F4F4F0]"
+                data-testid="site-footer"
+            >
                 <div
                     aria-hidden="true"
-                    className="pointer-events-none select-none overflow-hidden border-t border-white/10 pb-2 pt-6"
-                >
-                    <p className="whitespace-nowrap text-center text-[clamp(3.25rem,12vw,9.5rem)] font-black leading-[0.86] tracking-[-0.04em] text-white/[0.05]">
-                        LAB TNL<span className="text-[#C4B393]/20">.</span>ITS
-                    </p>
-                </div>
+                    className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-[#223027]/45 via-[#18221C]/20 to-transparent"
+                />
+                <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+                    <div className="grid grid-cols-1 gap-10 py-12 lg:grid-cols-12 lg:gap-0 lg:py-16">
+                        {/* Left Column: 5 cols */}
+                        <div className="flex flex-col justify-between space-y-6 lg:col-span-5 lg:border-r lg:border-white/10 lg:pr-12">
+                            <div className="space-y-4">
+                                <Link
+                                    to="/"
+                                    className={`inline-flex min-h-[44px] items-center gap-3 rounded-lg py-1 ${focusRing}`}
+                                >
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#223027] text-xs font-extrabold tracking-wider text-[#F4F4F0]">
+                                        {settings?.short_name ?? "TNL"}
+                                    </span>
+                                    <div>
+                                        <span className="block text-base font-bold leading-snug text-[#F4F4F0]">
+                                            {siteName}
+                                        </span>
+                                        <span className="block text-xs font-medium text-[#C4B393]">
+                                            labtnl.site · ITS Surabaya
+                                        </span>
+                                    </div>
+                                </Link>
+                                <p className="max-w-md text-sm leading-relaxed text-[#B8C0BA]">
+                                    {t.labShortDesc}
+                                </p>
+                            </div>
 
-                {/* Utility & Legal Bar */}
-                <div className="flex flex-col gap-3 border-t border-white/10 py-5 text-xs text-[#B8C0BA] sm:flex-row sm:items-center sm:justify-between">
-                    <p data-testid="footer-institution-line">
-                        © {new Date().getFullYear()} {copyrightText}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-6">
-                        <Link
-                            to="/terms"
-                            className={`inline-flex min-h-[44px] items-center text-[#B8C0BA] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
-                            data-testid="footer-terms-link"
-                        >
-                            {t.terms}
-                        </Link>
-                        <Link
-                            to="/privacy"
-                            className={`inline-flex min-h-[44px] items-center text-[#B8C0BA] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
-                            data-testid="footer-privacy-link"
-                        >
-                            {t.privacy}
-                        </Link>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <a
+                                    href={igUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`Instagram ${igHandle}`}
+                                    className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] px-3.5 text-sm font-medium text-[#D1D5DB] transition-colors hover:border-[#C4B393]/50 hover:text-[#F4F4F0] ${focusRing}`}
+                                    data-testid="footer-instagram-link"
+                                >
+                                    <Instagram className="h-4 w-4 text-[#C4B393]" aria-hidden="true" />
+                                    <span>{igHandle}</span>
+                                </a>
+                                <Link
+                                    to="/verify"
+                                    className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] px-3.5 text-sm font-medium text-[#D1D5DB] transition-colors hover:border-[#C4B393]/50 hover:text-[#F4F4F0] ${focusRing}`}
+                                    data-testid="footer-verify-link"
+                                >
+                                    <ShieldCheck className="h-4 w-4 text-[#C4B393]" aria-hidden="true" />
+                                    <span>{t.verifyBadge}</span>
+                                </Link>
+                            </div>
+                        </div>
+
+                        {/* Right Columns: 7 cols (3 sub-columns with generous contact width) */}
+                        <div className="grid grid-cols-1 gap-8 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.1fr)_minmax(0,1.35fr)] lg:col-span-7 lg:pl-12">
+                            {/* 1. Explore */}
+                            <nav aria-label={t.exploreTitle} className="space-y-2">
+                                <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
+                                    {t.exploreTitle}
+                                </h3>
+                                <ul className="space-y-0.5">
+                                    {t.navLinks.map((item) => (
+                                        <li key={item.to}>
+                                            <Link
+                                                to={item.to}
+                                                className={`inline-flex min-h-[44px] items-center text-sm text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                                data-testid={`footer-${item.to === "/" ? "home" : item.to.replace("/", "")}-link`}
+                                            >
+                                                {item.label}
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </nav>
+
+                            {/* 2. Lab & Resources */}
+                            <nav aria-label={t.resourcesTitle} className="space-y-2">
+                                <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
+                                    {t.resourcesTitle}
+                                </h3>
+                                <ul className="space-y-0.5">
+                                    {t.resourceLinks.map((item) => (
+                                        <li key={item.to}>
+                                            <Link
+                                                to={item.to}
+                                                className={`inline-flex min-h-[44px] items-center text-sm text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                            >
+                                                {item.label}
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </nav>
+
+                            {/* 3. Location & Desk */}
+                            <div className="flex flex-col justify-between space-y-6">
+                                <div className="space-y-3">
+                                    <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
+                                        {t.contactTitle}
+                                    </h3>
+                                    <div className="space-y-2 text-sm text-[#D1D5DB]">
+                                        <div className="flex items-start gap-2.5 leading-relaxed">
+                                            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
+                                            <span data-testid="footer-address">{address}</span>
+                                        </div>
+                                        <a
+                                            href={`mailto:${email}`}
+                                            className={`inline-flex min-h-[44px] items-center gap-2.5 whitespace-nowrap text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                            data-testid="footer-email-link"
+                                        >
+                                            <Mail className="h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
+                                            <span>{email}</span>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div>
+                                    <button
+                                        type="button"
+                                        onClick={scrollToTop}
+                                        className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] px-3.5 text-xs font-semibold uppercase tracking-wider text-[#F4F4F0] transition-colors hover:border-[#C4B393]/60 hover:bg-[#223027] ${focusRing}`}
+                                        data-testid="footer-back-to-top-button"
+                                    >
+                                        <span>{t.backToTop}</span>
+                                        <ArrowUp className="h-3.5 w-3.5 text-[#C4B393]" aria-hidden="true" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Monumental Typographic Watermark with Slow Fade-in & Ambient Glow */}
+                    <WatermarkSection />
+
+                    {/* Utility & Legal Bar */}
+                    <div className="flex flex-col gap-3 border-t border-white/10 py-5 text-xs text-[#B8C0BA] sm:flex-row sm:items-center sm:justify-between">
+                        <p data-testid="footer-institution-line">
+                            © {new Date().getFullYear()} {copyrightText}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-6">
+                            <Link
+                                to="/terms"
+                                className={`inline-flex min-h-[44px] items-center text-[#B8C0BA] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                data-testid="footer-terms-link"
+                            >
+                                {t.terms}
+                            </Link>
+                            <Link
+                                to="/privacy"
+                                className={`inline-flex min-h-[44px] items-center text-[#B8C0BA] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                data-testid="footer-privacy-link"
+                            >
+                                {t.privacy}
+                            </Link>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </footer>
+            </footer>
+        </>
     );
 }
 

@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { AnnouncementPopup, SiteFooter, SiteHeader } from "@/components/site/Chrome";
+import { AnnouncementPopup, SiteCollaborationBand, SiteFooter, SiteHeader } from "@/components/site/Chrome";
 import { LOCALE_STORAGE_KEY, LocaleContext, STRINGS, type Locale, type StringKey } from "@/lib/i18n";
 import { useSettings } from "@/lib/hooks";
 
@@ -131,6 +131,7 @@ export default function SiteLayout() {
             <main className="flex-1">
                 <Outlet />
             </main>
+            <SiteCollaborationBand />
             <SiteFooter />
             <AnnouncementPopup />
         </div>
