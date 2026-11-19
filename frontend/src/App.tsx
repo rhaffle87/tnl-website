@@ -7,6 +7,7 @@ import ActivityPage from "@/pages/ActivityPage";
 import NewsPage, { NewsArticlePage } from "@/pages/NewsPage";
 import PublicationsPage from "@/pages/PublicationsPage";
 import ContactPage from "@/pages/ContactPage";
+import OpenHousePage from "@/pages/OpenHousePage";
 import { DynamicCmsPage, NotFoundPage, PrivacyPage, TermsPage, VerifyPage } from "@/pages/UtilityPages";
 import AdminLogin, { AdminInviteAccept } from "@/pages/admin/AdminLogin";
 import AdminLayout from "@/pages/admin/AdminLayout";
@@ -67,6 +68,7 @@ export default function App() {
                     <Route path="/" element={<Home />} />
                     <Route path="/member" element={<MemberPage />} />
                     <Route path="/activity" element={<ActivityPage />} />
+                    <Route path="/open-house" element={<OpenHousePage />} />
                     <Route path="/news" element={<NewsPage />} />
                     <Route path="/news/:slug" element={<NewsArticlePage />} />
                     <Route path="/publications" element={<PublicationsPage />} />

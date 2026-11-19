@@ -117,7 +117,10 @@ export interface LabEvent {
   type: string;
   description: string;
   description_id: string;
+  cover_image?: string | null;
   poster_urls: string[];
+  gallery_images?: string[];
+  spreadsheet_webhook_url?: string | null;
   documentation: MediaItemRef[];
   start_date?: string | null;
   end_date?: string | null;
@@ -146,6 +149,8 @@ export interface Activity {
   category: string;
   description: string;
   description_id: string;
+  cover_image?: string | null;
+  gallery_images?: string[];
   date?: string | null;
   images: MediaItemRef[];
   order: number;
@@ -243,6 +248,8 @@ export interface PracticumModule {
   name_id?: string | null;
   description: string;
   description_id: string;
+  cover_image?: string | null;
+  gallery_images?: string[];
   semester?: string | null;
   resources?: PracticumResource[];
   shifts?: PracticumShift[];
@@ -263,6 +270,7 @@ export interface Equipment {
   specs_id?: string | null;
   photo_url?: string | null;
   photo_alt?: string | null;
+  gallery_images?: string[];
   quantity: number;
   location: string;
   status: "available" | "in_use" | "maintenance" | string;

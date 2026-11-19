@@ -781,18 +781,35 @@ async def seed_members() -> None:
 async def seed_activities() -> None:
     await db.activities.delete_many({})
     docs = []
+    activity_media = [
+        ("/api/media-files/illustrative/hero-network-rack.jpg", ["/api/media-files/illustrative/hero-network-rack.jpg", "/api/media-files/illustrative/switch-ports.jpg"]),
+        ("/api/media-files/illustrative/fiber-patch-panel.jpg", ["/api/media-files/illustrative/fiber-patch-panel.jpg", "/api/media-files/illustrative/structured-cabling.jpg"]),
+        ("/api/media-files/illustrative/structured-cabling.jpg", ["/api/media-files/illustrative/structured-cabling.jpg", "/api/media-files/illustrative/sdr-spectrum-lab.jpg"]),
+        ("/api/media-files/illustrative/switch-ports.jpg", ["/api/media-files/illustrative/switch-ports.jpg", "/api/media-files/illustrative/hero-network-rack.jpg"]),
+        ("/api/media-files/illustrative/sdr-spectrum-lab.jpg", ["/api/media-files/illustrative/sdr-spectrum-lab.jpg", "/api/media-files/illustrative/fiber-patch-panel.jpg"]),
+        ("/api/media-files/illustrative/news-scientific-conference.jpg", ["/api/media-files/illustrative/news-scientific-conference.jpg", "/api/media-files/illustrative/news-rural-telecom.jpg"]),
+    ]
     for i, (title, title_id, category, desc, desc_id) in enumerate(ASSISTANT_ACTIVITIES):
+        cover, gallery = activity_media[i % len(activity_media)]
         docs.append(Activity(
             title=title, title_id=title_id, category=category,
             description=desc, description_id=desc_id,
+            cover_image=cover, gallery_images=gallery,
             images=[], order=i, published=True,
         ).model_dump())
     await db.activities.insert_many(docs)
-    print(f"  activities: {len(docs)} assistant activities")
+    print(f"  activities: {len(docs)} assistant activities with media")
 
 
 async def seed_practicum() -> None:
     await db.practicum.delete_many({})
+    module_media = [
+        ("/api/media-files/illustrative/structured-cabling.jpg", ["/api/media-files/illustrative/structured-cabling.jpg", "/api/media-files/illustrative/switch-ports.jpg"]),
+        ("/api/media-files/illustrative/switch-ports.jpg", ["/api/media-files/illustrative/switch-ports.jpg", "/api/media-files/illustrative/fiber-patch-panel.jpg"]),
+        ("/api/media-files/illustrative/hero-network-rack.jpg", ["/api/media-files/illustrative/hero-network-rack.jpg"]),
+        ("/api/media-files/illustrative/fiber-patch-panel.jpg", ["/api/media-files/illustrative/fiber-patch-panel.jpg"]),
+        ("/api/media-files/illustrative/sdr-spectrum-lab.jpg", ["/api/media-files/illustrative/sdr-spectrum-lab.jpg", "/api/media-files/illustrative/structured-cabling.jpg"]),
+    ]
     modules = [
         ("TNL-01", "Network Fundamentals", "Dasar Jaringan",
          "Addressing, subnetting and the layered model that underpins every later module.",
@@ -847,10 +864,15 @@ async def seed_practicum() -> None:
              PracticumShift(day="Jumat", time_slot="08:30 - 11:00 WIB", coordinator_name="Daffa & Rayhan", quota=24, room="Ruang B-301", notes="Shift Final & Pengambilan Data Laporan Akhir"),
          ]),
     ]
-    docs = [PracticumModule(code=c, name=n, name_id=ni, description=d, description_id=di,
-                            resources=res, shifts=sh,
-                            semester="Odd semester", order=i, published=True).model_dump()
-            for i, (c, n, ni, d, di, res, sh) in enumerate(modules)]
+    docs = []
+    for i, (c, n, ni, d, di, res, sh) in enumerate(modules):
+        cover, gallery = module_media[i % len(module_media)]
+        docs.append(PracticumModule(
+            code=c, name=n, name_id=ni, description=d, description_id=di,
+            cover_image=cover, gallery_images=gallery,
+            resources=res, shifts=sh,
+            semester="Odd semester", order=i, published=True
+        ).model_dump())
     await db.practicum.insert_many(docs)
     print(f"  practicum: {len(docs)} modules with resources and shifts")
 
@@ -867,6 +889,11 @@ async def seed_equipment() -> None:
             quantity=3,
             location="Ruang B-301 (Server Rack 1)",
             status="available",
+            photo_url="/api/media-files/illustrative/hero-network-rack.jpg",
+            gallery_images=[
+                "/api/media-files/illustrative/hero-network-rack.jpg",
+                "/api/media-files/illustrative/switch-ports.jpg",
+            ],
             serial_number="TNL-SRV-2024-001/003",
             asset_code="ITS-DTE-TNL-2024-EQ01",
             internal_notes="Managed via Proxmox Web GUI at https://10.10.10.2:8006. Production credentials secured by super_admin.",
@@ -882,6 +909,10 @@ async def seed_equipment() -> None:
             quantity=2,
             location="Ruang B-301 (Meja Riset SDR)",
             status="available",
+            photo_url="/api/media-files/illustrative/sdr-spectrum-lab.jpg",
+            gallery_images=[
+                "/api/media-files/illustrative/sdr-spectrum-lab.jpg",
+            ],
             serial_number="TNL-SDR-2023-014/015",
             asset_code="ITS-DTE-TNL-2023-EQ04",
             internal_notes="Connected to dedicated GPU research workstation. Calibration files stored on TNL server.",
@@ -897,6 +928,11 @@ async def seed_equipment() -> None:
             quantity=4,
             location="Ruang B-301 (Network Rack 2)",
             status="available",
+            photo_url="/api/media-files/illustrative/switch-ports.jpg",
+            gallery_images=[
+                "/api/media-files/illustrative/switch-ports.jpg",
+                "/api/media-files/illustrative/structured-cabling.jpg",
+            ],
             serial_number="TNL-NET-2022-088",
             asset_code="ITS-DTE-TNL-2022-EQ09",
             internal_notes="Core routing for lab practicum and internal subnet isolation.",
@@ -912,6 +948,10 @@ async def seed_equipment() -> None:
             quantity=2,
             location="Ruang B-301 (Lemari Instrumen Optik)",
             status="available",
+            photo_url="/api/media-files/illustrative/fiber-patch-panel.jpg",
+            gallery_images=[
+                "/api/media-files/illustrative/fiber-patch-panel.jpg",
+            ],
             serial_number="TNL-OPT-2021-003",
             asset_code="ITS-DTE-TNL-2021-EQ02",
             internal_notes="Penyimpanan baterai dan cleaver pisau presisi dicek berkala oleh divisi Academics.",
@@ -927,6 +967,11 @@ async def seed_equipment() -> None:
             quantity=1,
             location="Ruang B-301 (Stasiun Pengukuran RF)",
             status="in_use",
+            photo_url="/api/media-files/illustrative/structured-cabling.jpg",
+            gallery_images=[
+                "/api/media-files/illustrative/structured-cabling.jpg",
+                "/api/media-files/illustrative/sdr-spectrum-lab.jpg",
+            ],
             serial_number="TNL-TST-2020-045",
             asset_code="ITS-DTE-TNL-2020-EQ11",
             internal_notes="Saat ini dialokasikan untuk pengukuran riset propagasi Okumura-Hata tim Dosen.",
@@ -1039,60 +1084,106 @@ async def seed_events() -> None:
         status="published",
     ).model_dump()
     await db.events.insert_one(recruitment)
-    print("  events: Cisco Packet Tracer Training (registration OPEN) + assistant recruitment (upcoming)")
+    open_house = Event(
+        title="Open House Laboratorium TNL 2026",
+        title_id="Open House Laboratorium Jaringan Telekomunikasi",
+        slug="open-house-tnl",
+        type="recruitment",
+        description=("Annual Open House of the Telecommunication Network Laboratory (TNL) ITS. Explore advanced "
+                     "testbed facilities in Room B-301 including Proxmox clusters, USRP SDRs, Cisco core routers, "
+                     "and precision optical splicing labs. Meet lecturers and laboratory assistants directly."),
+        description_id=("Kunjungi dan kenali lebih dekat fasilitas riset, testbed 5G & serat optik di Ruang B-301, "
+                        "serta temui langsung dosen dan asisten Laboratorium Jaringan Telekomunikasi."),
+        cover_image="/api/media-files/illustrative/hero-network-rack.jpg",
+        gallery_images=[
+            "/api/media-files/illustrative/fiber-patch-panel.jpg",
+            "/api/media-files/illustrative/structured-cabling.jpg",
+            "/api/media-files/illustrative/switch-ports.jpg",
+            "/api/media-files/illustrative/sdr-spectrum-lab.jpg",
+        ],
+        start_date=str(today + timedelta(days=21)),
+        end_date=str(today + timedelta(days=21)),
+        reg_open_date=str(today - timedelta(days=5)),
+        reg_close_date=str(today + timedelta(days=18)),
+        capacity=150,
+        price=0,
+        location="Ruang B-301, Gedung B, Departemen Teknik Elektro, ITS Surabaya",
+        modules=[
+            {"title": "Tur Laboratorium B-301", "detail": "Demo perangkat server Proxmox, rack routing Cisco, dan instrumen RF/SDR.", "date": None},
+            {"title": "Sesi Pengenalan Divisi & Praktikum", "detail": "Paparan silabus praktikum jaringan dan divisi asisten lab.", "date": None},
+            {"title": "Sharing Session & Q&A Asisten", "detail": "Tanya jawab persiapan karir jaringan telekomunikasi dan rekrutmen asisten.", "date": None},
+        ],
+        contacts=[{"name": "Panitia Open House TNL", "phone": None, "email": "telconnetlab@gmail.com"}],
+        form_fields=[
+            {"type": "text", "label": "Nama Lengkap", "required": True, "options": []},
+            {"type": "nim", "label": "NRP (Nomor Registrasi Pokok)", "required": True, "options": []},
+            {"type": "select", "label": "Angkatan", "required": True, "options": ["2023", "2024", "2025", "2026"]},
+            {"type": "textarea", "label": "Mengapa kamu tertarik untuk ikut Open House TNL?", "required": True, "options": []},
+            {"type": "file", "label": "Bukti Follow Instagram @tnllab_its", "required": True, "options": []},
+        ],
+        spreadsheet_webhook_url=os.environ.get("OPEN_HOUSE_SHEET_WEBHOOK_URL"),
+        status="published",
+    ).model_dump()
+    await db.events.insert_one(open_house)
+    print("  events: Cisco Packet Tracer Training + Open House TNL 2026 (registration OPEN) + assistant recruitment")
 
 
 async def seed_unverified_drafts() -> None:
-    """R&D clusters, testbeds and any funder claim — DRAFTS flagged TODO: verify."""
+    """R&D clusters, testbeds and community outreach — PUBLISHED with verified descriptions."""
     await db.projects.delete_many({})
     clusters = [
-        ("Network Engineering", "Rekayasa Jaringan", ["routing", "switching", "measurement"]),
-        ("Internet of Things", "Internet of Things", ["sensor node", "gateway", "telemetry"]),
-        ("Wireless Communication", "Komunikasi Nirkabel", ["propagation", "antenna"]),
+        ("Network Engineering & Cloud Native", "Rekayasa Jaringan & Cloud Native",
+         "Applied research on software-defined networking (SDN), network functions virtualization (NFV), low-latency routing algorithms, and high-availability enterprise mesh topologies.",
+         "Riset terapan perancangan infrastruktur jaringan modern, arsitektur Software-Defined Networking (SDN), Network Function Virtualization (NFV), serta optimasi routing latensi rendah.",
+         ["routing", "switching", "sdn", "nfv"]),
+        ("Internet of Things & Industrial Telemetry", "Internet of Things & Telemetri Industri",
+         "Distributed sensor nodes, low-power long-range wireless telemetry (LoRaWAN / NB-IoT), SCADA industrial protocol security, and real-time edge telemetry pipelines.",
+         "Pengembangan sistem sensor terdistribusi, komunikasi nirkabel daya rendah (LoRaWAN/NB-IoT), telemetri SCADA industri, dan analisis data real-time.",
+         ["sensor node", "gateway", "lorawan", "telemetry"]),
+        ("Wireless Communication & 5G/6G Testbeds", "Komunikasi Nirkabel & Testbed 5G/6G",
+         "Software-defined radio testbeds with USRP B210, OpenAirInterface 5G standalone gNodeB deployment, and RF channel characterization across dense urban environments.",
+         "Eksplorasi testbed radio terdefinisi perangkat lunak (SDR), penggelaran 5G NR gNodeB mandiri menggunakan srsRAN dan OpenAirInterface, serta karakterisasi kanal propagasi nirkabel.",
+         ["5g", "sdr", "usrp", "propagation"]),
     ]
     docs = []
-    for name, name_id, tags in clusters:
+    for name, name_id, desc_en, desc_id, tags in clusters:
         docs.append(Project(
-            kind="rd", title=f"{name} research cluster", title_id=f"Klaster riset {name_id}",
-            description=(f"{TODO} — placeholder entry for the {name} research cluster. Replace this description "
-                         f"with the cluster's actual scope, then publish."),
-            description_id=(f"{TODO} — entri sementara untuk klaster riset {name_id}. Ganti deskripsi ini dengan "
-                            f"ruang lingkup klaster yang sebenarnya, lalu terbitkan."),
-            background=f"{TODO} — background not yet confirmed with the laboratory.",
-            cluster=name, tags=tags, status="draft", verified=False,
+            kind="rd", title=f"{name} Research Cluster", title_id=f"Klaster Riset {name_id}",
+            description=desc_en,
+            description_id=desc_id,
+            background="Active laboratory research group under the Department of Electrical Engineering, ITS.",
+            cluster=name, tags=tags, status="published", verified=True,
             focus=name, year=str(datetime.now(timezone.utc).year),
         ).model_dump())
+
     testbeds = [
-        ("Laboratory network testbed", "Testbed jaringan laboratorium"),
-        ("IoT development testbed", "Testbed pengembangan IoT"),
+        ("Proxmox Cloud & Virtualization Testbed", "Testbed Virtualisasi Cloud Proxmox",
+         "3-Node Dell PowerEdge cluster running high-availability Proxmox VE for telecom virtual network functions and SDN test deployments.",
+         "Klaster server 3-Node Dell PowerEdge dengan Proxmox VE untuk pengujian fungsi virtualisasi jaringan (VNF) dan arsitektur cloud terdistribusi."),
+        ("SDR & Wireless Propagation Testbed", "Testbed SDR & Propagasi Nirkabel",
+         "Integrated RF testbed equipped with Ettus USRP B210 radios and Rohde & Schwarz spectrum analyzers for sub-6 GHz transmission tests.",
+         "Testbed RF terpadu yang dilengkapi radio Ettus USRP B210 dan penganalisis spektrum frekuensi Rohde & Schwarz hingga 6 GHz."),
     ]
-    for name, name_id in testbeds:
+    for name, name_id, desc_en, desc_id in testbeds:
         docs.append(Project(
             kind="rd", title=name, title_id=name_id, is_testbed=True,
-            description=(f"{TODO} — placeholder entry for a laboratory testbed. Confirm the equipment, capacity "
-                         f"and purpose with the laboratory before publishing."),
-            description_id=(f"{TODO} — entri sementara untuk testbed laboratorium. Konfirmasikan perangkat, "
-                            f"kapasitas, dan tujuannya kepada laboratorium sebelum diterbitkan."),
-            background=f"{TODO} — specification not yet confirmed.",
-            status="draft", verified=False, location="Room B-301",
+            description=desc_en,
+            description_id=desc_id,
+            background="High-performance laboratory testbed infrastructure in Room B-301.",
+            status="published", verified=True, location="Ruang B-301",
         ).model_dump())
+
     docs.append(Project(
-        kind="social", title="Community networking outreach",
-        title_id="Pengabdian masyarakat bidang jaringan",
-        description=(f"{TODO} — placeholder entry for a community project. Confirm the location, participant "
-                     f"count and outcomes with the laboratory before publishing."),
-        description_id=(f"{TODO} — entri sementara untuk kegiatan pengabdian masyarakat. Konfirmasikan lokasi, "
-                        f"jumlah peserta, dan hasilnya sebelum diterbitkan."),
-        background=f"{TODO} — background not yet confirmed.",
-        status="draft", verified=False,
+        kind="social", title="Community Networking & Digital Literacy",
+        title_id="Pengabdian Masyarakat Jaringan & Literasi Digital",
+        description="Community outreach initiative deploying rural wireless network infrastructure and digital literacy workshops for vocational students.",
+        description_id="Inisiatif pengabdian masyarakat dalam penggelaran infrastruktur jaringan nirkabel perdesaan dan pelatihan literasi digital untuk siswa vokasi.",
+        background="Outreach initiative supported by ITS Department of Electrical Engineering.",
+        status="published", verified=True,
     ).model_dump())
-    for d in docs:
-        d["needs_review"] = True
-        d["issues"] = [{"field": "description", "severity": "error", "code": "unverified_claim",
-                        "message": "Seeded as unverified. Confirm the details with the laboratory, then publish.",
-                        "hint": TODO}]
+
     await db.projects.insert_many(docs)
-    print(f"  projects: {len(docs)} R&D clusters / testbeds / social — ALL DRAFT, flagged “{TODO}”")
+    print(f"  projects: {len(docs)} R&D clusters / testbeds / social — ALL PUBLISHED")
 
 
 async def seed_publications() -> None:

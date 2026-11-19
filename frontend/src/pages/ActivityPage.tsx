@@ -4,7 +4,7 @@
 // registration button that disables itself after the close date.
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
     Calendar,
     ChevronLeft,
@@ -12,6 +12,7 @@ import {
     Clock,
     Cpu,
     Download,
+    ExternalLink,
     FileCode,
     FileText,
     FlaskConical,
@@ -31,6 +32,7 @@ import { pick, useLocale } from "@/lib/i18n";
 import { BlockRenderer } from "@/components/site/Blocks";
 import { EmptyState, SectionHeading, Spinner, StatusBadge, TypeBadge, formatDate } from "@/components/site/Primitives";
 import { RegistrationDialog } from "@/components/site/RegistrationDialog";
+import { FadeCarousel, ImageLightboxModal, type CarouselImage } from "@/components/site/MediaCarousel";
 import type { Activity, Equipment, LabEvent, PracticumModule, Project } from "@/lib/types";
 
 type TabKey = "rd" | "practicum" | "training" | "assistant";
@@ -57,11 +59,28 @@ function waLink(phone: string): string {
 // ---------------------------------------------------------------- event card
 function EventCard({ event }: { event: LabEvent }) {
     const { locale, t } = useLocale();
-    const [poster, setPoster] = useState(0);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const [registerOpen, setRegisterOpen] = useState(false);
-    const posters = event.poster_urls ?? [];
     const status = event.reg_status ?? "closed";
     const canRegister = status === "open" || status === "full";
+
+    const eventImages: CarouselImage[] = useMemo(() => {
+        const list: CarouselImage[] = [];
+        if (event.cover_image) {
+            list.push({ url: event.cover_image, alt: pick(locale, event.title, event.title_id) });
+        }
+        (event.poster_urls ?? []).forEach((u, i) => {
+            if (!list.some((item) => item.url === u)) {
+                list.push({ url: u, alt: `${pick(locale, event.title, event.title_id)} poster ${i + 1}` });
+            }
+        });
+        (event.gallery_images ?? []).forEach((u, i) => {
+            if (!list.some((item) => item.url === u)) {
+                list.push({ url: u, alt: `${pick(locale, event.title, event.title_id)} gallery ${i + 1}` });
+            }
+        });
+        return list;
+    }, [event, locale]);
 
     const statusLabel =
         status === "open"
@@ -90,6 +109,11 @@ function EventCard({ event }: { event: LabEvent }) {
             <div className="tnl-hero-gradient flex flex-wrap items-center gap-3 px-6 py-4">
                 <TypeBadge label={event.type} testId={`event-type-badge-${event.slug}`} />
                 <StatusBadge status={status} label={statusLabel} testId={`event-status-badge-${event.slug}`} />
+                {event.slug === "open-house-tnl" ? (
+                    <span className="rounded-full bg-[#A8977B] px-3 py-1 text-xs font-black tracking-wide text-[#111613]">
+                        FEATURED 2026
+                    </span>
+                ) : null}
                 {typeof event.seats_left === "number" ? (
                     <span className="ml-auto text-xs font-semibold" style={{ color: "var(--tnl-tan)" }} data-testid={`event-seats-${event.slug}`}>
                         {event.seats_left} {t("seats_left")}
@@ -97,40 +121,22 @@ function EventCard({ event }: { event: LabEvent }) {
                 ) : null}
             </div>
 
-            <div className="grid gap-0 lg:grid-cols-[0.36fr_0.64fr]">
-                <div className="relative" style={{ background: "var(--tnl-surface)", minHeight: 220 }}>
-                    {posters.length ? (
+            <div className="grid gap-0 lg:grid-cols-[0.40fr_0.60fr]">
+                <div className="relative overflow-hidden" style={{ background: "var(--tnl-surface)", minHeight: 240 }}>
+                    {eventImages.length ? (
                         <>
-                            <img
-                                src={posters[poster]}
-                                alt={`${pick(locale, event.title, event.title_id)} poster ${poster + 1}`}
-                                className="h-full w-full object-cover"
-                                loading="lazy"
+                            <FadeCarousel
+                                images={eventImages}
+                                aspectRatio="aspect-[4/3]"
+                                className="h-full w-full"
+                                onImageClick={(idx) => setLightboxIndex(idx)}
                             />
-                            {posters.length > 1 ? (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={() => setPoster((p) => (p - 1 + posters.length) % posters.length)}
-                                        className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90"
-                                        aria-label="Previous poster"
-                                        data-testid={`event-poster-prev-${event.slug}`}
-                                    >
-                                        <ChevronLeft className="h-4 w-4" style={{ color: "#111518" }} />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setPoster((p) => (p + 1) % posters.length)}
-                                        className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90"
-                                        aria-label="Next poster"
-                                        data-testid={`event-poster-next-${event.slug}`}
-                                    >
-                                        <ChevronRight className="h-4 w-4" style={{ color: "#111518" }} />
-                                    </button>
-                                    <span className="absolute bottom-2 right-2 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-bold text-white">
-                                        {poster + 1}/{posters.length}
-                                    </span>
-                                </>
+                            {lightboxIndex !== null ? (
+                                <ImageLightboxModal
+                                    images={eventImages}
+                                    initialIndex={lightboxIndex}
+                                    onClose={() => setLightboxIndex(null)}
+                                />
                             ) : null}
                         </>
                     ) : (
@@ -228,7 +234,17 @@ function EventCard({ event }: { event: LabEvent }) {
                         </div>
                     ) : null}
 
-                    <div className="mt-6">
+                    <div className="mt-6 flex flex-wrap items-center gap-3">
+                        {event.slug === "open-house-tnl" ? (
+                            <Link
+                                to="/open-house"
+                                className="tnl-btn tnl-btn-tan inline-flex items-center gap-2"
+                                data-testid="open-house-portal-btn"
+                            >
+                                <span>{locale === "id" ? "Portal Open House" : "Open House Portal"}</span>
+                                <ExternalLink className="h-4 w-4" />
+                            </Link>
+                        ) : null}
                         <button
                             type="button"
                             onClick={() => setRegisterOpen(true)}
@@ -280,7 +296,7 @@ function EventCard({ event }: { event: LabEvent }) {
 // ---------------------------------------------------------------- assistant rows
 function ActivityRow({ activity, index }: { activity: Activity; index: number }) {
     const { locale, t } = useLocale();
-    const [slide, setSlide] = useState(0);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const images = activity.images ?? [];
     const chip = CATEGORY_CHIP[activity.category] ?? CATEGORY_CHIP.internal;
     const flip = index % 2 === 1;
@@ -323,31 +339,18 @@ function ActivityRow({ activity, index }: { activity: Activity; index: number })
                 <div className="tnl-card relative overflow-hidden p-0" style={{ minHeight: 240 }}>
                     {images.length ? (
                         <>
-                            <img src={images[slide].url} alt={images[slide].alt} className="h-64 w-full object-cover" loading="lazy" />
-                            {images.length > 1 ? (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSlide((s) => (s - 1 + images.length) % images.length)}
-                                        className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90"
-                                        aria-label="Previous image"
-                                        data-testid={`activity-image-prev-${activity.id}`}
-                                    >
-                                        <ChevronLeft className="h-4 w-4" style={{ color: "#111518" }} />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSlide((s) => (s + 1) % images.length)}
-                                        className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90"
-                                        aria-label="Next image"
-                                        data-testid={`activity-image-next-${activity.id}`}
-                                    >
-                                        <ChevronRight className="h-4 w-4" style={{ color: "#111518" }} />
-                                    </button>
-                                    <span className="absolute bottom-2 right-2 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-bold text-white">
-                                        {slide + 1}/{images.length}
-                                    </span>
-                                </>
+                            <FadeCarousel
+                                images={images}
+                                aspectRatio="aspect-video"
+                                className="h-64 w-full"
+                                onImageClick={(idx) => setLightboxIndex(idx)}
+                            />
+                            {lightboxIndex !== null ? (
+                                <ImageLightboxModal
+                                    images={images}
+                                    initialIndex={lightboxIndex}
+                                    onClose={() => setLightboxIndex(null)}
+                                />
                             ) : null}
                         </>
                     ) : (
@@ -424,6 +427,7 @@ const EQUIP_STATUS_STYLE: Record<string, { bg: string; fg: string }> = {
 
 function EquipmentCard({ item }: { item: Equipment }) {
     const { locale, t } = useLocale();
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const stStyle = EQUIP_STATUS_STYLE[item.status] || EQUIP_STATUS_STYLE.available;
     const statusLabel =
         item.status === "available"
@@ -445,6 +449,19 @@ function EquipmentCard({ item }: { item: Equipment }) {
                             ? t("category_test_tool")
                             : item.category;
 
+    const images: CarouselImage[] = useMemo(() => {
+        const list: CarouselImage[] = [];
+        if (item.photo_url) {
+            list.push({ url: item.photo_url, alt: item.photo_alt || item.name, caption: pick(locale, item.name, item.name_id) });
+        }
+        (item.gallery_images ?? []).forEach((img, i) => {
+            if (!list.some((existing) => existing.url === img)) {
+                list.push({ url: img, alt: `${item.photo_alt || item.name} ${i + 1}`, caption: pick(locale, item.name, item.name_id) });
+            }
+        });
+        return list;
+    }, [item, locale]);
+
     return (
         <article
             className="tnl-card tnl-card-hover flex flex-col justify-between overflow-hidden p-6"
@@ -463,16 +480,35 @@ function EquipmentCard({ item }: { item: Equipment }) {
                     </span>
                 </div>
 
-                {item.photo_url ? (
-                    <div className="mb-4 h-44 w-full overflow-hidden rounded-lg border" style={{ background: "var(--tnl-surface)", borderColor: "var(--tnl-border)" }}>
-                        <img
-                            src={item.photo_url}
-                            alt={item.photo_alt || item.name}
-                            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                            loading="lazy"
+                {images.length > 0 ? (
+                    <div className="mb-4">
+                        <FadeCarousel
+                            images={images}
+                            aspectRatio="aspect-[16/10]"
+                            className="rounded-xl border border-[var(--tnl-border)] overflow-hidden"
+                            onImageClick={(idx) => setLightboxIndex(idx)}
                         />
+                        {lightboxIndex !== null ? (
+                            <ImageLightboxModal
+                                images={images}
+                                initialIndex={lightboxIndex}
+                                onClose={() => setLightboxIndex(null)}
+                            />
+                        ) : null}
                     </div>
-                ) : null}
+                ) : (
+                    <div className="mb-4 flex h-36 w-full items-center justify-center rounded-xl border border-dashed border-[var(--tnl-border)] bg-[var(--tnl-surface)]/50">
+                        {item.category === "server" ? (
+                            <Server className="h-10 w-10 text-[var(--tnl-tan)]/40" />
+                        ) : item.category === "sdr" ? (
+                            <Radio className="h-10 w-10 text-[var(--tnl-tan)]/40" />
+                        ) : item.category === "optical" ? (
+                            <FlaskConical className="h-10 w-10 text-[var(--tnl-tan)]/40" />
+                        ) : (
+                            <Cpu className="h-10 w-10 text-[var(--tnl-tan)]/40" />
+                        )}
+                    </div>
+                )}
 
                 <h3 className="text-[18px] font-bold leading-snug">{pick(locale, item.name, item.name_id)}</h3>
 
@@ -498,8 +534,22 @@ function EquipmentCard({ item }: { item: Equipment }) {
 
 function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) {
     const { locale, t } = useLocale();
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const resources = mod.resources ?? [];
     const shifts = mod.shifts ?? [];
+
+    const images: CarouselImage[] = useMemo(() => {
+        const list: CarouselImage[] = [];
+        if (mod.cover_image) {
+            list.push({ url: mod.cover_image, alt: pick(locale, mod.name, mod.name_id), caption: pick(locale, mod.name, mod.name_id) });
+        }
+        (mod.gallery_images ?? []).forEach((img, i) => {
+            if (!list.some((existing) => existing.url === img)) {
+                list.push({ url: img, alt: `${pick(locale, mod.name, mod.name_id)} ${i + 1}`, caption: pick(locale, mod.name, mod.name_id) });
+            }
+        });
+        return list;
+    }, [mod, locale]);
 
     return (
         <article
@@ -519,6 +569,24 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
                         </span>
                     ) : null}
                 </div>
+
+                {images.length > 0 ? (
+                    <div className="mt-4 mb-3">
+                        <FadeCarousel
+                            images={images}
+                            aspectRatio="aspect-[16/9]"
+                            className="rounded-xl border border-[var(--tnl-border)] overflow-hidden"
+                            onImageClick={(idx) => setLightboxIndex(idx)}
+                        />
+                        {lightboxIndex !== null ? (
+                            <ImageLightboxModal
+                                images={images}
+                                initialIndex={lightboxIndex}
+                                onClose={() => setLightboxIndex(null)}
+                            />
+                        ) : null}
+                    </div>
+                ) : null}
 
                 <h3 className="mt-3 text-[19px] font-bold leading-snug">{pick(locale, mod.name, mod.name_id)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)]">
@@ -749,18 +817,6 @@ export default function ActivityPage() {
                                         ))}
                                     </div>
                                 )}
-                            </div>
-
-                            <div className="tnl-hero-gradient tnl-card mt-16 p-10 text-center">
-                                <h3 className="tnl-h4 text-[22px]" style={{ color: "#ffffff" }}>
-                                    {t("collaborate_title")}
-                                </h3>
-                                <p className="mx-auto mt-3 max-w-2xl text-sm" style={{ color: "#dfe2e5" }}>
-                                    {t("collaborate_body")}
-                                </p>
-                                <a href="/contact" className="tnl-btn tnl-btn-tan mt-6" data-testid="rd-collaborate-button">
-                                    {t("contact_us")}
-                                </a>
                             </div>
                         </div>
                     ) : null}

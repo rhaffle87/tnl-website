@@ -1,7 +1,7 @@
 // Shared data hooks over the typed fetch layer. Every public page reads through
 // these, so a failed fetch degrades to an empty region rather than a blank page.
 
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { useMutation, useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { apiGet } from "@/lib/api";
 import type {
   Activity,
@@ -179,5 +179,28 @@ export function useMe(): UseQueryResult<AuthUser> {
     queryFn: () => apiGet<AuthUser>("/auth/me"),
     retry: false,
     staleTime: 30_000,
+  });
+}
+
+export function useSubmitRegistration(eventIdOrSlug: string) {
+  return useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch(`/api/registrations/${eventIdOrSlug}`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const detail = (data as { detail?: unknown })?.detail;
+        if (typeof detail === "string") throw new Error(detail);
+        if (detail && typeof detail === "object") {
+          const d = detail as { message?: string; missing?: string[]; errors?: string[] };
+          const list = [...(d.missing ?? []).map((m) => `${m}: field wajib`), ...(d.errors ?? [])];
+          throw new Error(list.join(". ") || d.message || "Pendaftaran gagal.");
+        }
+        throw new Error("Pendaftaran gagal.");
+      }
+      return data;
+    },
   });
 }

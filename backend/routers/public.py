@@ -166,7 +166,7 @@ async def public_events(type: str | None = None, include_past: bool = True):
 
 @router.get("/public/events/{slug}", dependencies=[Depends(check_maintenance)])
 async def public_event(slug: str):
-    ev = await db.events.find_one({"slug": slug, "status": "published"})
+    ev = await db.events.find_one({"$or": [{"slug": slug}, {"id": slug}], "status": "published"})
     if not ev:
         raise HTTPException(status_code=404, detail="Event not found.")
     return jsonable((await with_seats([ev], today_iso()))[0])
@@ -283,11 +283,68 @@ def _store_upload(data: bytes, filename: str, prefix: str) -> str:
 ALLOWED_UPLOAD_EXT = (".pdf", ".jpg", ".jpeg", ".png", ".webp", ".doc", ".docx", ".zip")
 
 
+async def _sync_registration_to_sheet(reg_id: str, webhook_url: str, ev: dict, reg: dict):
+    from datetime import timedelta
+    try:
+        data = reg.get("data") or {}
+        wib = reg.get("created_at") or datetime.now(timezone.utc)
+        if hasattr(wib, "astimezone"):
+            wib_str = wib.astimezone(timezone(timedelta(hours=7))).strftime("%Y-%m-%d %H:%M:%S WIB")
+        else:
+            wib_str = str(wib)
+
+        full_name = next((v for k, v in data.items() if ("nama" in k or "name" in k) and isinstance(v, str)), "")
+        nrp = reg.get("nim") or next((v for k, v in data.items() if ("nrp" in k or "nim" in k) and isinstance(v, str)), "")
+        batch = next((v for k, v in data.items() if ("angkatan" in k or "batch" in k) and isinstance(v, str)), "")
+        motivation = next((v for k, v in data.items() if ("motivasi" in k or "alasan" in k or "motivation" in k) and isinstance(v, str)), "")
+
+        ig_proof = ""
+        for k, v in data.items():
+            if isinstance(v, dict) and ("ig" in k or "instagram" in k or "proof" in k or "bukti" in k):
+                ig_proof = v.get("absolute_url") or v.get("url") or ""
+            elif isinstance(v, str) and ("ig" in k or "instagram" in k) and (v.startswith("http") or v.startswith("/api/")):
+                ig_proof = v
+
+        payload = {
+            "timestamp": wib_str,
+            "event_id": ev.get("id"),
+            "event_slug": ev.get("slug") or "open-house-tnl",
+            "event_title": ev.get("title", ""),
+            "full_name": full_name or reg.get("email", ""),
+            "nrp": nrp,
+            "batch": batch,
+            "motivation": motivation,
+            "ig_proof_url": ig_proof,
+            "email": reg.get("email", ""),
+            "registration_id": reg_id,
+        }
+
+        async with httpx.AsyncClient(timeout=10) as hc:
+            r = await hc.post(webhook_url, json=payload)
+            if r.status_code in (200, 201, 302):
+                await db.registrations.update_one(
+                    {"id": reg_id},
+                    {"$set": {"sheet_synced": True, "sheet_sync_error": None, "sheet_synced_at": datetime.now(timezone.utc)}}
+                )
+            else:
+                await db.registrations.update_one(
+                    {"id": reg_id},
+                    {"$set": {"sheet_synced": False, "sheet_sync_error": f"HTTP {r.status_code}: {r.text[:200]}"}}
+                )
+    except Exception as exc:
+        await db.registrations.update_one(
+            {"id": reg_id},
+            {"$set": {"sheet_synced": False, "sheet_sync_error": str(exc)}}
+        )
+
+
 @router.post("/registrations/{event_id}")
 async def submit_registration(event_id: str, request: Request):
-    ev = await db.events.find_one({"id": event_id, "status": "published"})
+    ev = await db.events.find_one({"$or": [{"id": event_id}, {"slug": event_id}], "status": "published"})
     if not ev:
         raise HTTPException(status_code=404, detail="Event not found.")
+    actual_event_id = ev["id"]
+
     today = today_iso()
     st = event_reg_status(ev, today)
     if st["reg_status"] not in ("open", "full"):
@@ -321,7 +378,7 @@ async def submit_registration(event_id: str, request: Request):
             ctrl_val = data.get(field_key(f["show_if_field"]))
             if ctrl_val != f.get("show_if_value"):
                 continue
-        raw = form.get(key)
+        raw = form.get(key) or form.get(f.get("name") or "")
         if ftype == "file":
             up = raw if isinstance(raw, UploadFile) else None
             if up is not None and up.filename:
@@ -332,7 +389,10 @@ async def submit_registration(event_id: str, request: Request):
                 if not up.filename.lower().endswith(ALLOWED_UPLOAD_EXT):
                     errors.append(f"{label}: file type not allowed.")
                     continue
-                data[key] = {"url": _store_upload(content, up.filename, "reg"), "name": up.filename}
+                rel_url = _store_upload(content, up.filename, "reg")
+                pub_url = (os.environ.get("PUBLIC_SITE_URL") or "https://labtnl.site").rstrip("/")
+                abs_url = f"{pub_url}{rel_url}" if rel_url.startswith("/") else rel_url
+                data[key] = {"url": rel_url, "absolute_url": abs_url, "name": up.filename}
             elif f.get("required"):
                 missing.append(label)
             continue
@@ -345,8 +405,13 @@ async def submit_registration(event_id: str, request: Request):
             errors.append(f"{label}: please enter a valid email address.")
         if ftype == "tel" and len(re.sub(r"\D", "", text)) < 8:
             errors.append(f"{label}: please enter a valid phone/WhatsApp number.")
-        if ftype == "nim" and len(text) < 5:
-            errors.append(f"{label}: NIM/NRP looks too short.")
+        if (ftype == "nim" or "nrp" in key or "nim" in key) and text:
+            clean_digits = re.sub(r"\D", "", text)
+            if len(clean_digits) < 7:
+                errors.append(f"{label}: NIM/NRP tidak valid (minimal 7 digit angka).")
+        if ("motivation" in key or "motivasi" in key or "alasan" in key) and text:
+            if len(text.strip()) < 15:
+                errors.append(f"{label}: minimal 15 karakter.")
         data[key] = text
 
     if missing or errors:
@@ -357,27 +422,35 @@ async def submit_registration(event_id: str, request: Request):
 
     email = next((v for k, v in data.items() if isinstance(v, str) and EMAIL_OK.match(v)), "")
     nim = next((v for k, v in data.items() if isinstance(v, str) and ("nim" in k or "nrp" in k)), "")
-    if email and await db.registrations.find_one({"event_id": event_id, "email": email.lower()}):
+    if not email and nim:
+        clean_nim = re.sub(r"\D", "", nim)
+        email = f"{clean_nim}@student.its.ac.id"
+
+    if email and await db.registrations.find_one({"event_id": actual_event_id, "email": email.lower()}):
         raise HTTPException(status_code=409, detail="This email has already registered for this event.")
-    if nim and await db.registrations.find_one({"event_id": event_id, "nim": nim}):
+    if nim and await db.registrations.find_one({"event_id": actual_event_id, "nim": nim}):
         raise HTTPException(status_code=409, detail="This NIM/NRP has already registered for this event.")
 
-    # Spam quota is spent only on a genuine, fully valid submission — a visitor who
-    # mistypes a field is not locked out, while bots posting valid-looking payloads are.
     rate_limit(f"reg:{client_ip(request)}", 8, 3600)
 
     cap = ev.get("capacity") or 0
     used = await db.registrations.count_documents(
-        {"event_id": event_id, "status": {"$in": ["pending", "accepted", "attended"]}})
+        {"event_id": actual_event_id, "status": {"$in": ["pending", "accepted", "attended"]}})
     status = "waitlisted" if (cap and used >= cap) else "pending"
 
     reg = {
-        "id": str(uuid.uuid4()), "event_id": event_id, "event_title": ev.get("title", ""),
+        "id": str(uuid.uuid4()), "event_id": actual_event_id, "event_title": ev.get("title", ""),
         "data": data, "email": email.lower(), "nim": nim, "status": status,
         "consent": True, "certificate_code": None, "notes": "",
+        "sheet_synced": False, "sheet_sync_error": None,
         "created_at": datetime.now(timezone.utc),
     }
     await db.registrations.insert_one(reg)
+
+    webhook_url = ev.get("spreadsheet_webhook_url") or os.environ.get("OPEN_HOUSE_SHEET_WEBHOOK_URL")
+    if webhook_url:
+        import asyncio
+        asyncio.create_task(_sync_registration_to_sheet(reg["id"], webhook_url, ev, reg))
 
     name = next((v for v in data.values() if isinstance(v, str) and 2 < len(v) < 80), email)
     state = {"pending": "received and pending review", "waitlisted": "placed on the waiting list"}[status]

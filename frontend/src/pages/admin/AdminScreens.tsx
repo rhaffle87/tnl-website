@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Award, Download, Sparkles, Upload } from "lucide-react";
+import { Award, Download, FileSpreadsheet, RefreshCw, Sparkles, Upload } from "lucide-react";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
 import { AdminHeader, ConfirmButton, Panel, adminError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
@@ -233,16 +233,37 @@ export function RegistrarPage() {
         onError: (err) => toast.error(adminError(err, "Could not issue certificates.")),
     });
 
+    const syncSheet = useMutation({
+        mutationFn: () => apiPost<{ synced: number; failed: number; total: number }>("/admin/registrations/sync-sheet", { event_id: eventId || undefined, force: true }),
+        onSuccess: (res) => {
+            refresh();
+            toast.success(`Synced ${res.synced} registration(s) to Google Sheets.`);
+        },
+        onError: (err) => toast.error(adminError(err, "Spreadsheet sync failed. Verify webhook URL.")),
+    });
+
     const items = data?.items ?? [];
-    const exportUrl = `/api/admin/registrations/export${eventId ? `?event_id=${eventId}` : ""}${status ? `${eventId ? "&" : "?"}status=${status}` : ""}`;
+    const exportCsvUrl = `/api/admin/registrations/export${eventId ? `?event_id=${eventId}` : ""}${status ? `${eventId ? "&" : "?"}status=${status}` : ""}`;
+    const exportExcelUrl = `/api/admin/registrations/export-excel${eventId ? `?event_id=${eventId}` : ""}${status ? `${eventId ? "&" : "?"}status=${status}` : ""}`;
 
     return (
         <div data-testid="registrar-page">
             <AdminHeader
                 title="Registrations"
-                help="Everyone who signed up for a programme. Accept or reject them, check people in at the door, and export the list."
+                help="Everyone who signed up for a programme. Accept or reject them, check people in at the door, sync to Google Sheets, and export the list."
                 actions={
                     <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => syncSheet.mutate()}
+                            className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm"
+                            disabled={syncSheet.isPending}
+                            data-testid="sync-sheet-btn"
+                            title="Force sync unsynced or all registrations to configured Google Spreadsheet Webhook"
+                        >
+                            <RefreshCw className={`h-4 w-4 ${syncSheet.isPending ? "animate-spin" : ""}`} aria-hidden="true" />
+                            {syncSheet.isPending ? "Syncing…" : "Sync Sheets"}
+                        </button>
                         <button
                             type="button"
                             onClick={() => issueCerts.mutate()}
@@ -254,8 +275,13 @@ export function RegistrarPage() {
                             <Award className="h-4 w-4" aria-hidden="true" />
                             {issueCerts.isPending ? "Issuing…" : "Issue Certificates"}
                         </button>
-                        <a href={exportUrl} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="registrations-export-button">
-                            Export to spreadsheet
+                        <a href={exportExcelUrl} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="registrations-export-excel-button">
+                            <FileSpreadsheet className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                            Export Excel (.xlsx)
+                        </a>
+                        <a href={exportCsvUrl} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="registrations-export-button">
+                            <Download className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                            CSV
                         </a>
                     </div>
                 }

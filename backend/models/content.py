@@ -125,11 +125,14 @@ class Event(BaseModel):
     title: str
     title_id: str | None = None
     slug: str | None = None
-    type: str = "training"  # training | recruitment | workshop | practicum | social
+    type: str = "training"  # training | recruitment | workshop | practicum | social | open_house
     description: str = ""
     description_id: str = ""
+    cover_image: str | None = None
     poster_urls: list[str] = []
+    gallery_images: list[str] = []
     documentation: list[MediaItem] = []
+    spreadsheet_webhook_url: str | None = None
     start_date: str | None = None  # YYYY-MM-DD
     end_date: str | None = None
     reg_open_date: str | None = None
@@ -155,8 +158,10 @@ class Activity(BaseModel):
     category: str = "internal"  # social | internal | academic
     description: str = ""
     description_id: str = ""
+    cover_image: str | None = None
     date: str | None = None
     images: list[MediaItem] = []
+    gallery_images: list[str] = []
     order: int = 0
     published: bool = True
     needs_review: bool = False
@@ -255,6 +260,8 @@ class PracticumModule(BaseModel):
     name_id: str | None = None
     description: str = ""
     description_id: str = ""
+    cover_image: str | None = None
+    gallery_images: list[str] = []
     semester: str | None = None
     resources: list[PracticumResource] = []
     shifts: list[PracticumShift] = []
@@ -276,6 +283,7 @@ class Equipment(BaseModel):
     specs_id: str | None = None
     photo_url: str | None = None
     photo_alt: str | None = None
+    gallery_images: list[str] = []
     quantity: int = 1
     location: str = "Ruang B-301"
     status: str = "available"  # available | in_use | maintenance

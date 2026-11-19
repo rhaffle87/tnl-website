@@ -164,6 +164,97 @@ async def export_registrations(event_id: str | None = None, status: str | None =
                     headers={"Content-Disposition": 'attachment; filename="tnl-registrations.csv"'})
 
 
+@router.get("/registrations/export-excel", dependencies=[Depends(require("registrations:read"))])
+async def export_registrations_excel(event_id: str | None = None, status: str | None = None):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
+    query: dict = {}
+    if event_id:
+        query["event_id"] = event_id
+    if status in STATUSES:
+        query["status"] = status
+    regs = await db.registrations.find(query).sort("created_at", 1).to_list(5000)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Pendaftaran TNL"
+
+    header_fill = PatternFill(start_color="223027", end_color="223027", fill_type="solid")
+    header_font = Font(name="Arial", size=11, bold=True, color="F4F4F0")
+    header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    keys: list[str] = []
+    for r in regs:
+        for k in (r.get("data") or {}):
+            if k not in keys:
+                keys.append(k)
+
+    headers = ["No", "Waktu Daftar", "Event", "Status", "Email", "NRP / NIM", "Status Sync Sheet"] + \
+              [k.replace("f_", "").replace("-", " ").title() for k in keys]
+    ws.append(headers)
+
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_align
+
+    for idx, r in enumerate(regs, 1):
+        when = r.get("created_at")
+        when_str = when.strftime("%Y-%m-%d %H:%M:%S") if hasattr(when, "strftime") else str(when)
+        sync_st = "Synced" if r.get("sheet_synced") else (r.get("sheet_sync_error") or "Unsynced")
+        row = [idx, when_str, r.get("event_title", ""), r.get("status", ""), r.get("email", ""),
+               r.get("nim", ""), sync_st]
+        for k in keys:
+            v = (r.get("data") or {}).get(k, "")
+            if isinstance(v, dict):
+                row.append(v.get("absolute_url") or v.get("url") or v.get("name") or "")
+            else:
+                row.append(str(v))
+        ws.append(row)
+
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or '')) for cell in col)
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = min(max(max_len + 3, 12), 45)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return Response(
+        content=buf.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="data-pendaftaran-labtnl.xlsx"'}
+    )
+
+
+@router.post("/registrations/sync-sheet", dependencies=[Depends(require("registrations:manage"))])
+async def sync_sheet_all(payload: dict = None, request: Request = None):
+    event_id = (payload or {}).get("event_id")
+    q: dict = {"sheet_synced": {"$ne": True}}
+    if event_id:
+        q["event_id"] = event_id
+    unsynced = await db.registrations.find(q).to_list(100)
+    synced_count = 0
+    errors = []
+    import os
+    from routers.public import _sync_registration_to_sheet
+    for reg in unsynced:
+        ev = await db.events.find_one({"id": reg.get("event_id")}) or {}
+        wh = ev.get("spreadsheet_webhook_url") or os.environ.get("OPEN_HOUSE_SHEET_WEBHOOK_URL")
+        if not wh:
+            continue
+        await _sync_registration_to_sheet(reg["id"], wh, ev, reg)
+        updated = await db.registrations.find_one({"id": reg["id"]})
+        if updated and updated.get("sheet_synced"):
+            synced_count += 1
+        elif updated and updated.get("sheet_sync_error"):
+            errors.append(f"{reg.get('email')}: {updated.get('sheet_sync_error')}")
+    await audit(request, "sync_sheet", "registrations", f"count={synced_count}")
+    return {"ok": True, "synced_count": synced_count, "remaining": len(unsynced) - synced_count, "errors": errors}
+
+
 @router.post("/registrations/checkin", dependencies=[Depends(require("registrations:manage"))])
 async def checkin(payload: CheckinIn, request: Request):
     """QR check-in: the QR encodes the registration id or certificate code."""
