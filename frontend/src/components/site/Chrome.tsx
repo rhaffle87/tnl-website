@@ -408,7 +408,7 @@ function WatermarkSection() {
                     className="absolute inset-0 blur-3xl"
                     style={{
                         background:
-                            "radial-gradient(ellipse 70% 65% at 50% 65%, rgba(93, 138, 107, 0.28) 0%, rgba(67, 89, 74, 0.12) 45%, transparent 75%)",
+                            "radial-gradient(ellipse 85% 75% at 50% 62%, rgba(93, 138, 107, 0.30) 0%, rgba(67, 89, 74, 0.14) 48%, transparent 78%)",
                     }}
                 />
             </div>
@@ -424,8 +424,8 @@ function WatermarkSection() {
                 )}
             >
                 <svg
-                    viewBox="0 0 1200 175"
-                    className="w-full h-auto block select-none"
+                    viewBox="0 0 980 225"
+                    className="w-full h-auto block select-none overflow-visible"
                     aria-hidden="true"
                 >
                     <defs>
@@ -441,12 +441,15 @@ function WatermarkSection() {
                         </linearGradient>
                     </defs>
                     <text
-                        x="50%"
-                        y="142"
+                        x="490"
+                        y="182"
                         textAnchor="middle"
+                        textLength="964"
+                        lengthAdjust="spacing"
                         fontWeight="900"
-                        fontSize="168"
+                        fontSize="196"
                         letterSpacing="-6"
+                        transform="translate(0, -10) scale(1, 1.12)"
                         fill="url(#tnlWatermarkGrad)"
                         className="font-sans"
                     >
@@ -602,10 +605,14 @@ export function SiteFooter({
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Monumental Typographic Watermark with Slow Fade-in & Ambient Glow */}
+                {/* Monumental Typographic Watermark with Slow Fade-in & Ambient Glow (Edge-to-Edge Container) */}
+                <div className="w-full max-w-[92rem] mx-auto px-4 sm:px-8 pt-4 pb-2">
                     <WatermarkSection />
+                </div>
 
+                <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
                     {/* Utility & Legal Bar (3-part balanced layout ala s4ras) */}
                     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4 border-t border-white/10 py-5 text-xs text-[#9FA8A2]">
                         <p className="md:text-left" data-testid="footer-institution-line">
