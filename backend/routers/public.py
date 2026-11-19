@@ -297,7 +297,7 @@ async def _sync_registration_to_sheet(reg_id: str, webhook_url: str, ev: dict, r
         full_name = next((v for k, v in data.items() if ("nama" in k or "name" in k) and isinstance(v, str)), "")
         nrp = reg.get("nim") or next((v for k, v in data.items() if ("nrp" in k or "nim" in k) and isinstance(v, str)), "")
         batch = next((v for k, v in data.items() if ("angkatan" in k or "batch" in k) and isinstance(v, str)), "")
-        motivation = next((v for k, v in data.items() if ("motivasi" in k or "alasan" in k or "motivation" in k) and isinstance(v, str)), "")
+        motivation = next((v for k, v in data.items() if ("motivasi" in k or "alasan" in k or "motivation" in k or "tertarik" in k) and isinstance(v, str)), "")
 
         ig_proof = ""
         for k, v in data.items():
@@ -320,7 +320,7 @@ async def _sync_registration_to_sheet(reg_id: str, webhook_url: str, ev: dict, r
             "registration_id": reg_id,
         }
 
-        async with httpx.AsyncClient(timeout=10) as hc:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=15.0) as hc:
             r = await hc.post(webhook_url, json=payload)
             if r.status_code in (200, 201, 302):
                 await db.registrations.update_one(

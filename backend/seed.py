@@ -1159,7 +1159,10 @@ async def seed_events() -> None:
             {"type": "textarea", "label": "Mengapa kamu tertarik untuk ikut Open House TNL?", "required": True, "options": []},
             {"type": "file", "label": "Bukti Follow Instagram @tnlab_its", "required": True, "options": []},
         ],
-        spreadsheet_webhook_url=os.environ.get("OPEN_HOUSE_SHEET_WEBHOOK_URL"),
+        spreadsheet_webhook_url=os.environ.get(
+            "OPEN_HOUSE_SHEET_WEBHOOK_URL",
+            "https://script.google.com/macros/s/AKfycbxk9BXmKlRiX5lGcU7f90J3foXBIk04yZ-BLpPAHpPE3Y2k8BQzTzZ8hEgeZ8l6VaCE/exec"
+        ),
         status="published",
     ).model_dump()
     await db.events.insert_one(open_house)
