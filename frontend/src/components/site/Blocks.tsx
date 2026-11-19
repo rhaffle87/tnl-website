@@ -1,7 +1,7 @@
 // Block renderer: every public page is a list of blocks authored in TNL Studio.
 // Each block type here matches an entry in the admin's block library.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
     Activity as ActivityIcon,
@@ -207,7 +207,7 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                 <SectionHeading title={pickProp(locale, props, "heading")} testId="about-heading" />
                 <div className="grid items-start gap-10 lg:grid-cols-2">
                     <div className="flex flex-col justify-between space-y-6">
-                        <p className="text-base leading-[1.8] text-[var(--tnl-body)] sm:text-lg" data-testid="about-body">
+                        <p className="text-base leading-[1.8] text-[var(--tnl-body)] sm:text-lg text-justify [hyphens:auto]" data-testid="about-body">
                             {pickProp(locale, props, "body")}
                         </p>
                         <div
@@ -467,10 +467,39 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
     const count = num(props, "count", 3);
     const showFilters = props.show_filters === true;
     const [category, setCategory] = useState("");
-    const [search, setSearch] = useState("");
-    const { data, isLoading } = usePosts({ limit: count, category: category || undefined, q: search || undefined });
+    const [searchInput, setSearchInput] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchInput.trim());
+        }, 250);
+        return () => clearTimeout(timer);
+    }, [searchInput]);
+
+    const { data, isLoading, isFetching } = usePosts({
+        limit: count,
+        category: category || undefined,
+        q: debouncedSearch || undefined,
+    });
     const posts = data?.items ?? [];
-    const categories = Array.from(new Set(posts.map((p) => p.category))).filter(Boolean);
+
+    const [masterCategories, setMasterCategories] = useState<string[]>([]);
+    useEffect(() => {
+        if (data?.categories && data.categories.length > 0) {
+            setMasterCategories(data.categories);
+        } else if (posts.length > 0) {
+            setMasterCategories((prev) => {
+                const current = Array.from(new Set(posts.map((p) => p.category))).filter(Boolean);
+                const merged = Array.from(new Set([...prev, ...current]));
+                return merged.length > prev.length ? merged : prev;
+            });
+        }
+    }, [data?.categories, posts]);
+
+    const categories = masterCategories.length > 0
+        ? masterCategories
+        : Array.from(new Set(posts.map((p) => p.category))).filter(Boolean);
 
     return (
         <section className="tnl-section" data-testid="block-news-feed">
@@ -483,8 +512,8 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                     <div className="mb-8 flex flex-col gap-3 sm:flex-row">
                         <input
                             type="search"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
                             placeholder={t("search_news")}
                             className="tnl-field sm:max-w-sm"
                             aria-label={t("search_news")}
@@ -527,7 +556,7 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                 {!isLoading && posts.length === 0 ? (
                     <EmptyState title={t("coming_soon")} body={t("empty_news")} testId="news-empty-state" />
                 ) : (
-                    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                    <div className={`grid gap-5 md:grid-cols-2 lg:grid-cols-3 ${isFetching && !isLoading ? "opacity-80 transition-opacity" : "transition-opacity"}`}>
                         {posts.map((post) => (
                             <Link
                                 key={post.id}
@@ -755,7 +784,7 @@ function RichTextBlock({ props }: { props: Record<string, unknown> }) {
         <section className="tnl-section" data-testid="block-rich-text">
             <div className="tnl-container">
                 {/* Sanitized server-side by lib/sanitize.py before storage. */}
-                <div className="tnl-prose max-w-3xl" dangerouslySetInnerHTML={{ __html: html }} />
+                <div className="tnl-prose max-w-3xl text-justify [hyphens:auto]" dangerouslySetInnerHTML={{ __html: html }} />
             </div>
         </section>
     );

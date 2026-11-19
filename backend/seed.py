@@ -24,7 +24,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 from lib.auth import hash_password  # noqa: E402
 from lib.db import db, ensure_indexes  # noqa: E402
 from models.content import (  # noqa: E402
-    Activity, Equipment, Event, MediaItem, Member, MemberSocial, Partner, Post, PracticumModule, PracticumResource, PracticumShift, Project, Publication,
+    Activity, Equipment, Event, MediaItem, Member, MemberProject, MemberSocial, Partner, Post, PracticumModule, PracticumResource, PracticumShift, Project, Publication,
 )
 from models.core import SettingsDoc, ThemeTokens  # noqa: E402
 
@@ -72,6 +72,72 @@ LECTURERS = [
     ("Dr.techn. Prasetiyono Hari Mukti, S.T., M.T.", "prasetiyono@its.ac.id", "Lecturer Researcher",
      ["Internet of Things", "Antenna and propagation"], "4-1.png"),
 ]
+
+AFFANDI_PROJECTS = [
+    MemberProject(
+        title="Perancangan Intrusion Detection System (IDS) Berbasis Machine Learning pada Trafik SCADA Protokol IEC 60870-5-104",
+        year="2024-2025",
+        funding="Hibah Riset Terapan ITS / DIKTI",
+        description="Pengembangan arsitektur deteksi anomali komunikasi telemetri dan kendali tenaga listrik menggunakan dataset trafik berlabel IEC104-IDS.",
+    ),
+    MemberProject(
+        title="Studi Propagasi Kanal Nirkabel VHF/UHF Model Okumura-Hata untuk Komunikasi Maritim",
+        year="2023-2024",
+        funding="Penelitian Fundamental ITS",
+        description="Analisis dampak elevasi antena dan kondisi clutter wilayah pesisir guna optimalisasi jangkauan transmisi data telekomunikasi.",
+    ),
+    MemberProject(
+        title="Pengembangan Prototipe Gateway Akustik Bawah Air untuk Jaringan Sensor Bawah Laut (UASN)",
+        year="2022-2023",
+        funding="Riset Unggulan Laboratorium TNL",
+        description="Integrasi modul komunikasi akustik nirkabel dengan mikrokontroler hemat daya untuk telemetri kualitas perairan laut.",
+    ),
+]
+
+LECTURER_PROJECTS = {
+    "Prof. Eko Setijadi, S.T., M.T., Ph.D": [
+        MemberProject(
+            title="Rancang Bangun Antena Phased Array Reconfigurable Beamforming untuk Jaringan 5G/6G Millimeter-Wave",
+            year="2024-2025",
+            funding="Hibah Riset Kolaborasi Internasional / BOPTN ITS",
+            description="Pengembangan elemen antena mikrostrip multi-beam gain tinggi dengan efisiensi radiasi superior pada pita frekuensi 28 GHz.",
+        ),
+        MemberProject(
+            title="Karakterisasi Kanal Propagasi dan Pengurangan Multipath Fading pada Komunikasi Antar-Wahana (V2X)",
+            year="2023-2024",
+            funding="Penelitian Terapan Keunggulan Perguruan Tinggi",
+            description="Pengukuran empiris dan pemodelan matematis lintasan sinyal nirkabel ultra-low latency untuk sistem transportasi cerdas.",
+        ),
+    ],
+    "Sri Rahayu, S.T., M.Kom.": [
+        MemberProject(
+            title="Optimasi Quality of Service (QoS) dan Rekayasa Trafik Jaringan Kampus ITS Berbasis SDN",
+            year="2024-2025",
+            funding="Riset Terapan Departemen Teknik Elektro ITS",
+            description="Implementasi kontrol terpusat OpenFlow untuk dynamic bandwidth allocation dan perutean adaptif saat beban puncak jaringan akademik.",
+        ),
+        MemberProject(
+            title="Analisis Ketahanan Arsitektur Jaringan Cloud Terdistribusi terhadap Serangan DDoS Skala Besar",
+            year="2023-2024",
+            funding="Hibah Penelitian Pemula ITS",
+            description="Evaluasi performa packet-filtering dan load balancing cerdas pada lingkungan server virtualisasi berbasis OpenStack.",
+        ),
+    ],
+    "Dr.techn. Prasetiyono Hari Mukti, S.T., M.T.": [
+        MemberProject(
+            title="Pengembangan Jaringan Sensor Cerdas Berbasis LoRaWAN untuk Telemetri Pertanian Presisi dan Mitigasi Bencana",
+            year="2024-2025",
+            funding="Hibah Riset Inovasi & Hilirisasi ITS",
+            description="Penerapan node sensor konsumsi daya mikro dengan jangkauan transmisi non-line-of-sight hingga 10 km untuk pemantauan parameter tanah real-time.",
+        ),
+        MemberProject(
+            title="Perancangan Komunikasi Mesin-ke-Mesin (M2M) Hemat Energi pada Sistem Meter Air Cerdas Terdistribusi",
+            year="2023-2024",
+            funding="Kerjasama Riset Industri",
+            description="Desain protokol sleep-wake adaptif pada transceiver sub-GHz guna memperpanjang masa operasional baterai perangkat IoT lapangan.",
+        ),
+    ],
+}
 
 # Published scholarly output involving laboratory staff. Every entry below is a real,
 # citable record; anything the laboratory still needs to confirm is seeded as a draft instead.
@@ -705,6 +771,7 @@ async def seed_members() -> None:
         photo_alt="Portrait of Dr. Ir. Achmad Affandi, DEA., Head of Laboratory",
         expertise=["Wireless communications", "ICT infrastructure", "IT service management",
                    "Telecommunication networks"],
+        projects=AFFANDI_PROJECTS,
         order=0, status="active", published=True,
     ).model_dump())
     members[-1]["name"] = "Dr. Ir. Achmad Affandi, DEA."
@@ -722,7 +789,9 @@ async def seed_members() -> None:
                     "Institut Teknologi Sepuluh Nopember."),
             photo_url=photo or AVATAR,
             photo_alt=f"Portrait of {full_name}" if photo else f"Portrait placeholder for {full_name}",
-            expertise=expertise, order=i, status="active", published=True,
+            expertise=expertise,
+            projects=LECTURER_PROJECTS.get(full_name, []),
+            order=i, status="active", published=True,
         ).model_dump()
         m["position_label"] = position_label
         members.append(m)

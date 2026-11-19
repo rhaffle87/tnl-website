@@ -99,6 +99,7 @@ export default function App() {
                         <Route path="/contact" element={<ContactPage />} />
                         <Route path="/terms" element={<TermsPage />} />
                         <Route path="/privacy" element={<PrivacyPage />} />
+                        <Route path="/verify" element={<VerifyPage />} />
                         <Route path="/verify/:code" element={<VerifyPage />} />
                         <Route path="/p/:slug" element={<DynamicCmsPage />} />
                         <Route path="*" element={<NotFoundPage />} />

@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { BookOpen, ExternalLink, FileText, Github, Instagram, Linkedin, Mail, Users, X } from "lucide-react";
+import { BookOpen, Briefcase, ExternalLink, FileText, Github, Instagram, Linkedin, Mail, Users, X } from "lucide-react";
 import { pick, useLocale } from "@/lib/i18n";
 import { useMembers, usePublications } from "@/lib/hooks";
 import { EmptyState, SectionHeading, Spinner } from "@/components/site/Primitives";
@@ -218,6 +218,28 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
                         {member.division}
                     </p>
                 ) : null}
+                {member.projects && member.projects.length > 0 ? (
+                    <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: "var(--tnl-tan-text)" }}>
+                        <Briefcase className="h-3 w-3" aria-hidden="true" />
+                        {member.projects.length} {locale === "id" ? "Proyek Riset" : "Projects"}
+                    </span>
+                ) : null}
+                {member.social?.linkedin ? (
+                    <div className="mt-2">
+                        <a
+                            href={member.social.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-[#0A66C2] hover:underline"
+                            aria-label={`${member.name} LinkedIn`}
+                            data-testid={`member-card-linkedin-${member.id}`}
+                        >
+                            <Linkedin className="h-3 w-3 shrink-0" aria-hidden="true" />
+                            <span>LinkedIn</span>
+                        </a>
+                    </div>
+                ) : null}
                 <span className="mt-3 text-xs font-semibold" style={{ color: "var(--tnl-green)" }}>
                     {t("view_profile")} →
                 </span>
@@ -318,6 +340,18 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                                     {member.email_public}
                                 </a>
                             ) : null}
+                            {member.social?.linkedin ? (
+                                <a
+                                    href={member.social.linkedin}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 text-sm font-medium text-[#0A66C2] hover:underline"
+                                    data-testid="member-modal-linkedin-link"
+                                >
+                                    <Linkedin className="h-4 w-4" aria-hidden="true" />
+                                    LinkedIn Profile
+                                </a>
+                            ) : null}
                             {ig ? (
                                 <a
                                     href={ig.url}
@@ -369,6 +403,47 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                                                     </a>
                                                 )}
                                             </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
+                        {member.projects && member.projects.length > 0 ? (
+                            <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--tnl-border)" }} data-testid={`member-projects-${member.id}`}>
+                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                                    <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
+                                    {locale === "id" ? "Proyek Penelitian & Hibah" : "Research Projects & Grants"} ({member.projects.length})
+                                </div>
+                                <div className="mt-2.5 space-y-2.5">
+                                    {member.projects.map((proj, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="rounded-lg border p-3 text-xs transition-colors hover:border-[var(--tnl-green)]"
+                                            style={{ borderColor: "var(--tnl-border)" }}
+                                            data-testid={`member-project-item-${idx}`}
+                                        >
+                                            <div className="flex items-start justify-between gap-2">
+                                                <p className="font-semibold text-[var(--tnl-body)]">{proj.title}</p>
+                                                {proj.year ? (
+                                                    <span className="shrink-0 font-mono text-[10px] text-[var(--tnl-tan-text)]">{proj.year}</span>
+                                                ) : null}
+                                            </div>
+                                            {proj.funding ? (
+                                                <span
+                                                    className="mt-1.5 inline-block rounded px-2 py-0.5 text-[10px] font-semibold"
+                                                    style={{
+                                                        background: "color-mix(in srgb, var(--tnl-tan) 18%, transparent)",
+                                                        color: "var(--tnl-tan-text)",
+                                                    }}
+                                                >
+                                                    {proj.funding}
+                                                </span>
+                                            ) : null}
+                                            {proj.description ? (
+                                                <p className="mt-2 text-xs text-[var(--tnl-body)] opacity-90 leading-relaxed">
+                                                    {proj.description}
+                                                </p>
+                                            ) : null}
                                         </div>
                                     ))}
                                 </div>

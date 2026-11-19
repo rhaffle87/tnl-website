@@ -12,6 +12,17 @@ export interface MemberSocial {
   cv_url?: string | null;
 }
 
+export interface MemberProject {
+  title: string;
+  title_id?: string | null;
+  year?: string | null;
+  role?: string | null;
+  role_id?: string | null;
+  funding?: string | null;
+  description?: string | null;
+  description_id?: string | null;
+}
+
 export interface Member {
   id: string;
   name: string;
@@ -33,6 +44,7 @@ export interface Member {
   photo_alt?: string | null;
   expertise: string[];
   social: MemberSocial;
+  projects?: MemberProject[];
   is_head: boolean;
   quote?: string | null;
   quote_id?: string | null;
@@ -577,6 +589,7 @@ export interface FigmaImportTokensResult {
 export interface ListResponse<T> {
   items: T[];
   total?: number;
+  categories?: string[];
 }
 
 export interface ReviewQueueItem {

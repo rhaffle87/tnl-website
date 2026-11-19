@@ -80,6 +80,7 @@ export function usePosts(params?: {
     queryFn: () => apiGet<ListResponse<Post>>(`/public/posts${qs ? `?${qs}` : ""}`),
     retry: false,
     staleTime: STALE,
+    placeholderData: (previousData) => previousData,
   });
 }
 

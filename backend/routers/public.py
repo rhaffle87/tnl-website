@@ -140,7 +140,8 @@ async def public_posts(category: str | None = None, q: str | None = None, tag: s
     docs = await db.posts.find(query).sort("published_at", -1).skip(offset).limit(min(limit, 50)).to_list(50)
     brief = [{k: d.get(k) for k in ("id", "slug", "title", "title_id", "excerpt", "excerpt_id", "category",
                                     "tags", "cover_url", "cover_alt", "published_at", "author")} for d in docs]
-    return {"items": jsonable(brief), "total": total}
+    all_categories = await db.posts.distinct("category", {"status": "published"})
+    return {"items": jsonable(brief), "total": total, "categories": [c for c in all_categories if c]}
 
 
 @router.get("/public/posts/{slug}", dependencies=[Depends(check_maintenance)])

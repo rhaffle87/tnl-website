@@ -30,6 +30,16 @@ class MemberSocial(BaseModel):
     cv_url: str | None = None
 
 
+class MemberProject(BaseModel):
+    title: str
+    title_id: str | None = None
+    year: str | None = None
+    role: str | None = None
+    role_id: str | None = None
+    description: str | None = None
+    description_id: str | None = None
+
+
 class Member(BaseModel):
     model_config = {"extra": "forbid"}
     id: str = Field(default_factory=_uuid)
@@ -51,6 +61,7 @@ class Member(BaseModel):
     photo_alt: str | None = None
     expertise: list[str] = []
     social: MemberSocial = Field(default_factory=MemberSocial)
+    projects: list[MemberProject] = []
     is_head: bool = False
     quote: str | None = None
     quote_id: str | None = None
