@@ -42,6 +42,7 @@ backend/.env
 frontend/.env
 *token.json*
 *credentials.json*
+scripts/tunnel/*.json
 
 # Logs and debug files
 npm-debug.log*

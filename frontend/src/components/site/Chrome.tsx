@@ -4,10 +4,24 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Globe, Instagram, Mail, MapPin, Menu, Moon, Sun, X } from "lucide-react";
+import {
+    ArrowUp,
+    ArrowUpRight,
+    ChevronDown,
+    Globe,
+    Instagram,
+    Mail,
+    MapPin,
+    Menu,
+    Moon,
+    ShieldCheck,
+    Sun,
+    X,
+} from "lucide-react";
 import { useLocale, pick } from "@/lib/i18n";
 import { useSettings } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
+import type { SiteSettings } from "@/lib/types";
 
 const NAV = [
     { key: "nav_home", to: "/" },
@@ -207,105 +221,335 @@ export function SiteHeader() {
     );
 }
 
-export function SiteFooter() {
-    const { t, locale } = useLocale();
-    const { data: settings } = useSettings();
-    const contact = settings?.contact;
-    const focus = settings?.focus_areas ?? [];
+export interface FooterProps {
+    lang?: "en" | "id";
+    settings?: (Partial<SiteSettings> & {
+        site_name?: { en?: string; id?: string };
+        contact_email?: string;
+        contact_address?: { en?: string; id?: string };
+        instagram_handle?: string;
+        instagram_url?: string;
+        copyright?: { en?: string; id?: string };
+    }) | null;
+    showCollaborationBand?: boolean;
+}
+
+const FOOTER_COPY = {
+    en: {
+        badge: "ROOM B-301 · SURABAYA",
+        ctaTitle: "Interested in collaborating with Laboratory TNL?",
+        ctaDesc:
+            "We welcome joint research, industrial testbed partnerships, certified training, and academic initiatives at Institut Teknologi Sepuluh Nopember.",
+        ctaBtn: "Collaborate with us",
+        labName: "Telecommunication Network Laboratory",
+        labShortDesc:
+            "Teaching, research, and network engineering innovation under the Department of Electrical Engineering, ITS Surabaya.",
+        exploreTitle: "EXPLORE",
+        resourcesTitle: "LAB & RESOURCES",
+        contactTitle: "LOCATION & DESK",
+        verifyBadge: "Verify e-Certificate",
+        backToTop: "Back to top",
+        rights:
+            "Department of Electrical Engineering, Institut Teknologi Sepuluh Nopember, Surabaya. All rights reserved.",
+        terms: "Terms of Use",
+        privacy: "Privacy Policy",
+        navLinks: [
+            { label: "Home", to: "/" },
+            { label: "Member", to: "/member" },
+            { label: "Activity", to: "/activity" },
+            { label: "News", to: "/news" },
+            { label: "Publications", to: "/publications" },
+            { label: "Contact", to: "/contact" },
+        ],
+        resourceLinks: [
+            { label: "Research & Testbeds", to: "/activity?tab=research" },
+            { label: "Practicum & Shifts", to: "/activity?tab=practicum" },
+            { label: "Training & Recruitment", to: "/activity?tab=events" },
+            { label: "Lab Equipment (B-301)", to: "/activity?tab=research#equipment" },
+            { label: "Verify Certificate", to: "/verify" },
+        ],
+    },
+    id: {
+        badge: "RUANG B-301 · SURABAYA",
+        ctaTitle: "Tertarik berkolaborasi dengan Laboratorium TNL?",
+        ctaDesc:
+            "Kami terbuka untuk riset bersama, kemitraan testbed industri, pelatihan tersertifikasi, dan inisiatif akademik di Institut Teknologi Sepuluh Nopember.",
+        ctaBtn: "Kolaborasi Riset",
+        labName: "Laboratorium Jaringan Telekomunikasi",
+        labShortDesc:
+            "Pendidikan, penelitian, dan inovasi rekayasa jaringan di bawah Departemen Teknik Elektro, ITS Surabaya.",
+        exploreTitle: "JELAJAHI",
+        resourcesTitle: "LAB & SUMBER DAYA",
+        contactTitle: "LOKASI & KONTAK",
+        verifyBadge: "Verifikasi e-Sertifikat",
+        backToTop: "Kembali ke atas",
+        rights:
+            "Departemen Teknik Elektro, Institut Teknologi Sepuluh Nopember, Surabaya. Hak cipta dilindungi.",
+        terms: "Ketentuan Penggunaan",
+        privacy: "Kebijakan Privasi",
+        navLinks: [
+            { label: "Beranda", to: "/" },
+            { label: "Anggota", to: "/member" },
+            { label: "Kegiatan", to: "/activity" },
+            { label: "Berita", to: "/news" },
+            { label: "Publikasi", to: "/publications" },
+            { label: "Kontak", to: "/contact" },
+        ],
+        resourceLinks: [
+            { label: "Riset & Testbed", to: "/activity?tab=research" },
+            { label: "Praktikum & Shift", to: "/activity?tab=practicum" },
+            { label: "Pelatihan & Rekrutmen", to: "/activity?tab=events" },
+            { label: "Perangkat Lab (B-301)", to: "/activity?tab=research#equipment" },
+            { label: "Verifikasi Sertifikat", to: "/verify" },
+        ],
+    },
+} as const;
+
+export function SiteFooter({
+    lang: propLang,
+    settings: propSettings,
+    showCollaborationBand = true,
+}: FooterProps = {}) {
+    const { locale } = useLocale();
+    const { data: fetchedSettings } = useSettings();
+    const lang = propLang ?? (locale === "id" ? "id" : "en");
+    const settings = propSettings !== undefined ? propSettings : fetchedSettings;
+    const t = FOOTER_COPY[lang];
+
+    const email =
+        (settings as any)?.contact_email ||
+        settings?.contact?.email ||
+        "telconnetlab@gmail.com";
+
+    const address =
+        (settings as any)?.contact_address?.[lang] ||
+        (settings?.contact?.address || settings?.contact?.address_id
+            ? pick(lang, settings.contact.address, settings.contact.address_id)
+            : lang === "id"
+            ? "Gedung B, Ruang B-301, Departemen Teknik Elektro, ITS, Surabaya"
+            : "Building B, Room B-301, Dept. of Electrical Engineering, ITS, Surabaya");
+
+    const igHandle =
+        (settings as any)?.instagram_handle ||
+        (settings?.social?.instagram
+            ? "@" + settings.social.instagram.trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/$/, "").replace(/^@/, "")
+            : "@tnllab_its") ||
+        "@tnllab_its";
+
+    const igUrl =
+        (settings as any)?.instagram_url ||
+        settings?.social?.instagram ||
+        "https://www.instagram.com/tnllab_its/";
+
+    const siteName =
+        (settings as any)?.site_name?.[lang] ||
+        (settings?.site_title ? pick(lang, settings.site_title, settings.site_title_id) : t.labName);
+
+    const copyrightText =
+        (settings as any)?.copyright?.[lang] ||
+        t.rights;
+
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const focusRing =
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B393] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111613]";
 
     return (
-        <footer className="mt-auto" style={{ background: "#111518", color: "#ffffff" }} data-testid="site-footer">
-            <div className="tnl-container grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4">
-                <div>
-                    <div className="mb-4 flex items-center gap-3">
-                        <LogoMark short={settings?.short_name ?? "TNL"} />
-                        <span className="text-[15px] font-bold">{settings ? pick(locale, settings.site_title, settings.site_title_id) : "TNL"}</span>
+        <footer
+            className="mt-auto relative overflow-hidden border-t border-white/10 bg-[#111613] text-[#F4F4F0]"
+            data-testid="site-footer"
+        >
+            <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-[#223027]/45 via-[#18221C]/20 to-transparent"
+            />
+            <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+                {showCollaborationBand && (
+                    <div className="border-b border-white/10 py-12 md:py-16">
+                        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#223027] via-[#1C2821] to-[#141C17] p-8 shadow-xl md:p-10">
+                            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                                <div className="max-w-2xl space-y-2">
+                                    <span className="inline-flex items-center gap-2 rounded-full border border-[#C4B393]/30 bg-[#111613]/60 px-3 py-1 text-[11px] font-semibold tracking-widest text-[#C4B393]">
+                                        {t.badge}
+                                    </span>
+                                    <h2 className="text-2xl font-bold tracking-tight text-[#F4F4F0] md:text-3xl">
+                                        {t.ctaTitle}
+                                    </h2>
+                                    <p className="text-sm leading-relaxed text-[#D1D5DB] md:text-base">
+                                        {t.ctaDesc}
+                                    </p>
+                                </div>
+                                <div className="flex shrink-0 flex-wrap items-center gap-3">
+                                    <Link
+                                        to="/contact"
+                                        className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-[#A8977B] px-6 py-3 text-sm font-semibold text-[#111613] transition-colors hover:bg-[#C2B091] ${focusRing}`}
+                                        data-testid="footer-collab-cta-button"
+                                    >
+                                        <span>{t.ctaBtn}</span>
+                                        <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <p className="text-sm leading-relaxed" style={{ color: "#c8ccd0" }}>
-                        {settings?.seo?.default_description ??
-                            "Telecommunication Network Laboratory, Department of Electrical Engineering, ITS Surabaya."}
-                    </p>
-                    {settings?.social?.instagram ? (
-                        <a
-                            href={settings.social.instagram}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-4 inline-flex items-center gap-2 text-sm transition-colors"
-                            style={{ color: "var(--tnl-tan)" }}
-                            data-testid="footer-instagram-link"
-                        >
-                            <Instagram className="h-4 w-4" aria-hidden="true" />
-                            @tnllab_its
-                        </a>
-                    ) : null}
-                </div>
+                )}
 
-                <div>
-                    <h3 className="mb-4 text-sm font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan)" }}>
-                        {t("footer_navigate")}
-                    </h3>
-                    <ul className="space-y-2.5 text-sm">
-                        {NAV.map((item) => (
-                            <li key={item.key}>
-                                <Link
-                                    to={item.to}
-                                    className="transition-colors hover:text-[var(--tnl-tan)]"
-                                    data-testid={`footer-${item.key.replace("nav_", "")}-link`}
+                <div className="grid grid-cols-1 gap-10 py-12 lg:grid-cols-12 lg:gap-0 lg:py-16">
+                    {/* Left Column: 5 cols */}
+                    <div className="flex flex-col justify-between space-y-6 lg:col-span-5 lg:border-r lg:border-white/10 lg:pr-12">
+                        <div className="space-y-4">
+                            <Link
+                                to="/"
+                                className={`inline-flex min-h-[44px] items-center gap-3 rounded-lg py-1 ${focusRing}`}
+                            >
+                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#223027] text-xs font-extrabold tracking-wider text-[#F4F4F0]">
+                                    {settings?.short_name ?? "TNL"}
+                                </span>
+                                <div>
+                                    <span className="block text-base font-bold leading-snug text-[#F4F4F0]">
+                                        {siteName}
+                                    </span>
+                                    <span className="block text-xs font-medium text-[#C4B393]">
+                                        labtnl.site · ITS Surabaya
+                                    </span>
+                                </div>
+                            </Link>
+                            <p className="max-w-md text-sm leading-relaxed text-[#B8C0BA]">
+                                {t.labShortDesc}
+                            </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3">
+                            <a
+                                href={igUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`Instagram ${igHandle}`}
+                                className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] px-3.5 text-sm font-medium text-[#D1D5DB] transition-colors hover:border-[#C4B393]/50 hover:text-[#F4F4F0] ${focusRing}`}
+                                data-testid="footer-instagram-link"
+                            >
+                                <Instagram className="h-4 w-4 text-[#C4B393]" aria-hidden="true" />
+                                <span>{igHandle}</span>
+                            </a>
+                            <Link
+                                to="/verify"
+                                className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] px-3.5 text-sm font-medium text-[#D1D5DB] transition-colors hover:border-[#C4B393]/50 hover:text-[#F4F4F0] ${focusRing}`}
+                                data-testid="footer-verify-link"
+                            >
+                                <ShieldCheck className="h-4 w-4 text-[#C4B393]" aria-hidden="true" />
+                                <span>{t.verifyBadge}</span>
+                            </Link>
+                        </div>
+                    </div>
+
+                    {/* Right Columns: 7 cols (3 sub-columns) */}
+                    <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 lg:col-span-7 lg:pl-12">
+                        {/* 1. Explore */}
+                        <nav aria-label={t.exploreTitle} className="space-y-2">
+                            <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
+                                {t.exploreTitle}
+                            </h3>
+                            <ul className="space-y-0.5">
+                                {t.navLinks.map((item) => (
+                                    <li key={item.to}>
+                                        <Link
+                                            to={item.to}
+                                            className={`inline-flex min-h-[44px] items-center text-sm text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                            data-testid={`footer-${item.to === "/" ? "home" : item.to.replace("/", "")}-link`}
+                                        >
+                                            {item.label}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
+
+                        {/* 2. Lab & Resources */}
+                        <nav aria-label={t.resourcesTitle} className="space-y-2">
+                            <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
+                                {t.resourcesTitle}
+                            </h3>
+                            <ul className="space-y-0.5">
+                                {t.resourceLinks.map((item) => (
+                                    <li key={item.to}>
+                                        <Link
+                                            to={item.to}
+                                            className={`inline-flex min-h-[44px] items-center text-sm text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                        >
+                                            {item.label}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
+
+                        {/* 3. Location & Desk */}
+                        <div className="flex flex-col justify-between space-y-6">
+                            <div className="space-y-3">
+                                <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
+                                    {t.contactTitle}
+                                </h3>
+                                <div className="space-y-2 text-sm text-[#D1D5DB]">
+                                    <div className="flex items-start gap-2.5 leading-relaxed">
+                                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
+                                        <span data-testid="footer-address">{address}</span>
+                                    </div>
+                                    <a
+                                        href={`mailto:${email}`}
+                                        className={`inline-flex min-h-[44px] items-center gap-2.5 break-all text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                        data-testid="footer-email-link"
+                                    >
+                                        <Mail className="h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
+                                        <span>{email}</span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div>
+                                <button
+                                    type="button"
+                                    onClick={scrollToTop}
+                                    className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] px-3.5 text-xs font-semibold uppercase tracking-wider text-[#F4F4F0] transition-colors hover:border-[#C4B393]/60 hover:bg-[#223027] ${focusRing}`}
+                                    data-testid="footer-back-to-top-button"
                                 >
-                                    {t(item.key)}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
+                                    <span>{t.backToTop}</span>
+                                    <ArrowUp className="h-3.5 w-3.5 text-[#C4B393]" aria-hidden="true" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div>
-                    <h3 className="mb-4 text-sm font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan)" }}>
-                        {t("footer_research")}
-                    </h3>
-                    <ul className="space-y-2.5 text-sm" style={{ color: "#c8ccd0" }}>
-                        {focus.length ? (
-                            focus.map((f) => <li key={f.name}>{pick(locale, f.name, f.name_id)}</li>)
-                        ) : (
-                            <li>{t("coming_soon")}</li>
-                        )}
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 className="mb-4 text-sm font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan)" }}>
-                        {t("footer_contact")}
-                    </h3>
-                    <ul className="space-y-3 text-sm" style={{ color: "#c8ccd0" }}>
-                        {contact?.address || contact?.address_id ? (
-                            <li className="flex gap-2">
-                                <MapPin className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--tnl-tan)" }} aria-hidden="true" />
-                                <span data-testid="footer-address">{pick(locale, contact.address, contact.address_id)}</span>
-                            </li>
-                        ) : null}
-                        {contact?.email ? (
-                            <li className="flex gap-2">
-                                <Mail className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--tnl-tan)" }} aria-hidden="true" />
-                                <a href={`mailto:${contact.email}`} className="hover:text-[var(--tnl-tan)]" data-testid="footer-email-link">
-                                    {contact.email}
-                                </a>
-                            </li>
-                        ) : null}
-                    </ul>
-                </div>
-            </div>
-
-            <div className="border-t" style={{ borderColor: "#262c33" }}>
-                <div className="tnl-container flex flex-col items-center justify-between gap-3 py-6 text-xs sm:flex-row" style={{ color: "#7f715c" }}>
-                    <p data-testid="footer-institution-line">
-                        © {new Date().getFullYear()} {t("footer_institution")}. {t("all_rights")}
+                {/* Monumental Typographic Watermark */}
+                <div
+                    aria-hidden="true"
+                    className="pointer-events-none select-none overflow-hidden border-t border-white/10 pb-2 pt-6"
+                >
+                    <p className="whitespace-nowrap text-center text-[clamp(3.25rem,12vw,9.5rem)] font-black leading-[0.86] tracking-[-0.04em] text-white/[0.05]">
+                        LAB TNL<span className="text-[#C4B393]/20">.</span>ITS
                     </p>
-                    <div className="flex items-center gap-4">
-                        <Link to="/terms" className="hover:text-[var(--tnl-tan)]" data-testid="footer-terms-link">
-                            {t("terms")}
+                </div>
+
+                {/* Utility & Legal Bar */}
+                <div className="flex flex-col gap-3 border-t border-white/10 py-5 text-xs text-[#B8C0BA] sm:flex-row sm:items-center sm:justify-between">
+                    <p data-testid="footer-institution-line">
+                        © {new Date().getFullYear()} {copyrightText}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-6">
+                        <Link
+                            to="/terms"
+                            className={`inline-flex min-h-[44px] items-center text-[#B8C0BA] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                            data-testid="footer-terms-link"
+                        >
+                            {t.terms}
                         </Link>
-                        <Link to="/privacy" className="hover:text-[var(--tnl-tan)]" data-testid="footer-privacy-link">
-                            {t("privacy")}
+                        <Link
+                            to="/privacy"
+                            className={`inline-flex min-h-[44px] items-center text-[#B8C0BA] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                            data-testid="footer-privacy-link"
+                        >
+                            {t.privacy}
                         </Link>
                     </div>
                 </div>

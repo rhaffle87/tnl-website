@@ -1,0 +1,11 @@
+tunnel: 53798da4-8b22-49e3-893b-0a85053942fc
+credentials-file: /etc/cloudflared/53798da4-8b22-49e3-893b-0a85053942fc.json
+
+ingress:
+  - hostname: labtnl.site
+    service: http://127.0.0.1:80
+  - hostname: www.labtnl.site
+    service: http://127.0.0.1:80
+  - hostname: grafana.labtnl.site
+    service: http://100.114.215.48:3000
+  - service: http_status:404

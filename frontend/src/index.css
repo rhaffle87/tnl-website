@@ -265,8 +265,8 @@
   .tnl-btn:disabled { opacity: 0.55; cursor: not-allowed; }
   .tnl-btn-primary { background: var(--tnl-green); color: #ffffff; }
   .tnl-btn-primary:hover:not(:disabled) { background: var(--tnl-green-hover); transform: translateY(-1px); }
-  .tnl-btn-tan { background: var(--tnl-tan); color: var(--tnl-black); }
-  .tnl-btn-tan:hover:not(:disabled) { background: #96866c; transform: translateY(-1px); }
+  .tnl-btn-tan { background: var(--tnl-tan); color: #111613; }
+  .tnl-btn-tan:hover:not(:disabled) { background: #c2b091; color: #111613; transform: translateY(-1px); }
   .tnl-btn-outline { border: 1px solid var(--tnl-border); background: transparent; color: var(--foreground); }
   .tnl-btn-outline:hover:not(:disabled) { border-color: var(--tnl-green); color: var(--tnl-green); }
   .tnl-btn-ghost-light { border: 1px solid rgba(255,255,255,0.35); background: transparent; color: #ffffff; }

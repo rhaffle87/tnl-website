@@ -90,7 +90,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
                     <div className="mt-8 flex flex-wrap gap-3">
                         <Link
                             to={str(props, "primary_url", "/activity")}
-                            className="tnl-btn tnl-btn-tan"
+                            className="tnl-btn tnl-btn-tan text-[#111613]"
                             data-testid="hero-primary-cta-button"
                         >
                             {pickProp(locale, props, "primary_label") || t("see_all")}
@@ -650,30 +650,10 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
 }
 
 // ---------------------------------------------------------------- CTA band
-function CtaBandBlock({ props }: { props: Record<string, unknown> }) {
-    const { locale } = useLocale();
-    return (
-        <section className="tnl-section" data-testid="block-cta-band">
-            <div className="tnl-container">
-                <div className="tnl-hero-gradient tnl-card overflow-hidden p-10 text-center sm:p-14">
-                    <h2 className="tnl-h2 text-[26px] sm:text-[35px]" style={{ color: "#ffffff" }}>
-                        {pickProp(locale, props, "title")}
-                    </h2>
-                    <p className="mx-auto mt-4 max-w-2xl text-base" style={{ color: "#dfe2e5" }}>
-                        {pickProp(locale, props, "body")}
-                    </p>
-                    <Link
-                        to={str(props, "button_url", "/contact")}
-                        className="tnl-btn tnl-btn-tan mt-8"
-                        data-testid="cta-band-button"
-                    >
-                        {pickProp(locale, props, "button_label")}
-                        <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    </Link>
-                </div>
-            </div>
-        </section>
-    );
+// Disabled standalone rendering: CTA band is now integrated directly into SiteFooter
+// to prevent duplicate stacked CTA bands and ensure consistent dark canvas rhythm.
+function CtaBandBlock(_props?: { props?: Record<string, unknown> }) {
+    return null;
 }
 
 // ---------------------------------------------------------------- contact panel + map
