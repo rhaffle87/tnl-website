@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 from lib.auth import audit, require
 from lib.db import db
 from lib.serialize import jsonable
-from lib.storage import delete_object, local_path, put_object, safe_name
+from lib.storage import MEDIA_DIR, delete_object, local_path, put_object, safe_name
 
 router = APIRouter(tags=["media"])
 
@@ -231,7 +231,7 @@ async def delete_media(media_id: str, request: Request):
     return {"ok": True}
 
 
-@router.get("/media-files/{path:path}")
+@router.api_route("/media-files/{path:path}", methods=["GET", "HEAD"])
 async def serve_media(path: str):
     """Serve locally stored media. Path traversal is strictly rejected before touching disk."""
     if ".." in path or path.startswith("/") or "\\" in path:
