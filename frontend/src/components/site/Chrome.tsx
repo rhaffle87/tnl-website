@@ -389,7 +389,7 @@ function WatermarkSection() {
         <div
             ref={watermarkRef}
             aria-hidden="true"
-            className="relative pointer-events-none select-none overflow-hidden border-t border-white/10 pt-10 pb-4"
+            className="relative pointer-events-none select-none overflow-hidden pt-8 pb-0 -mb-2 md:-mb-4"
         >
             {/* Subtle Backlight Lighting (Ambient Glow) */}
             <div
@@ -399,36 +399,36 @@ function WatermarkSection() {
                     "motion-reduce:opacity-100 motion-reduce:transition-none"
                 )}
             >
-                {/* 1. Forest Green Ambient Glow */}
-                <div
-                    className="absolute inset-0 blur-2xl"
-                    style={{
-                        background:
-                            "radial-gradient(ellipse 65% 75% at 50% 85%, rgba(67, 89, 74, 0.38) 0%, rgba(34, 48, 39, 0.18) 45%, transparent 75%)",
-                    }}
-                />
-                {/* 2. Warm Gold Accent Core */}
+                {/* Forest Green & Warm Gold Ambient Glow */}
                 <div
                     className="absolute inset-0 blur-3xl"
                     style={{
                         background:
-                            "radial-gradient(ellipse 35% 50% at 50% 95%, rgba(196, 179, 147, 0.16) 0%, transparent 70%)",
+                            "radial-gradient(ellipse 70% 65% at 50% 65%, rgba(93, 138, 107, 0.24) 0%, rgba(67, 89, 74, 0.10) 45%, transparent 72%)",
                     }}
                 />
             </div>
 
-            {/* Monumental Watermark Text with Gradient Mask & Slow Fade-in */}
+            {/* Monumental Watermark Text with Full-Width Gradient & Slow Fade-in */}
             <div
                 className={cn(
                     "relative z-10 transition-all duration-[1600ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
                     isVisible
                         ? "opacity-100 translate-y-0 scale-100"
-                        : "opacity-0 translate-y-4 scale-[0.985]",
+                        : "opacity-0 translate-y-6 scale-[0.99]",
                     "motion-reduce:opacity-100 motion-reduce:translate-y-0 motion-reduce:scale-100 motion-reduce:transition-none"
                 )}
             >
-                <p className="whitespace-nowrap text-center text-[clamp(3.25rem,12vw,9.5rem)] font-black leading-[0.86] tracking-[-0.04em] bg-gradient-to-b from-white/30 via-white/12 to-white/[0.02] bg-clip-text text-transparent [mask-image:linear-gradient(to_bottom,rgba(0,0,0,1)_15%,rgba(0,0,0,0.45)_65%,transparent_100%)]">
-                    LAB TNL<span className="bg-gradient-to-b from-[#C4B393]/55 via-[#C4B393]/25 to-transparent bg-clip-text text-transparent">.</span>ITS
+                <p className="w-full whitespace-nowrap text-center text-[clamp(3.75rem,13.8vw,13.5rem)] font-black leading-[0.82] tracking-[-0.05em] select-none [mask-image:linear-gradient(to_bottom,rgba(0,0,0,1)_0%,rgba(0,0,0,0.88)_45%,rgba(0,0,0,0.22)_82%,transparent_100%)]">
+                    <span className="bg-gradient-to-b from-[#7EA88B] via-[#43634E]/80 to-[#111613]/0 bg-clip-text text-transparent">
+                        LAB TNL
+                    </span>
+                    <span className="bg-gradient-to-b from-[#D6C39F] via-[#A8977B]/75 to-transparent bg-clip-text text-transparent">
+                        .
+                    </span>
+                    <span className="bg-gradient-to-b from-[#7EA88B] via-[#43634E]/80 to-[#111613]/0 bg-clip-text text-transparent">
+                        ITS
+                    </span>
                 </p>
             </div>
         </div>
@@ -490,17 +490,17 @@ export function SiteFooter({
         <>
             {showCollaborationBand && <SiteCollaborationBand lang={lang} />}
             <footer
-                className="mt-auto relative overflow-hidden border-t border-white/10 bg-[#111613] text-[#F4F4F0]"
+                className="mt-auto relative overflow-hidden border-t border-white/10 bg-[#0C100E] text-[#F4F4F0]"
                 data-testid="site-footer"
             >
                 <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-[#223027]/45 via-[#18221C]/20 to-transparent"
+                    className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-[#223027]/35 via-[#18221C]/15 to-transparent"
                 />
                 <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="grid grid-cols-1 gap-10 py-12 lg:grid-cols-12 lg:gap-0 lg:py-16">
                         {/* Left Column: 5 cols */}
-                        <div className="flex flex-col justify-between space-y-6 lg:col-span-5 lg:border-r lg:border-white/10 lg:pr-12">
+                        <div className="flex flex-col justify-between space-y-6 lg:col-span-5 lg:border-r lg:border-white/[0.08] lg:pr-12">
                             <div className="space-y-4">
                                 <Link
                                     to="/"
@@ -546,8 +546,8 @@ export function SiteFooter({
                             </div>
                         </div>
 
-                        {/* Right Columns: 7 cols (3 sub-columns with generous contact width) */}
-                        <div className="grid grid-cols-1 gap-8 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.1fr)_minmax(0,1.35fr)] lg:col-span-7 lg:pl-12">
+                        {/* Right Columns: 7 cols (3 sub-columns with clean vertical borders ala s4ras) */}
+                        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 lg:col-span-7 lg:pl-12">
                             {/* 1. Explore */}
                             <nav aria-label={t.exploreTitle} className="space-y-2">
                                 <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
@@ -569,7 +569,7 @@ export function SiteFooter({
                             </nav>
 
                             {/* 2. Lab & Resources */}
-                            <nav aria-label={t.resourcesTitle} className="space-y-2">
+                            <nav aria-label={t.resourcesTitle} className="space-y-2 sm:border-l sm:border-white/[0.07] sm:pl-7">
                                 <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
                                     {t.resourcesTitle}
                                 </h3>
@@ -588,36 +588,23 @@ export function SiteFooter({
                             </nav>
 
                             {/* 3. Location & Desk */}
-                            <div className="flex flex-col justify-between space-y-6">
-                                <div className="space-y-3">
-                                    <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
-                                        {t.contactTitle}
-                                    </h3>
-                                    <div className="space-y-2 text-sm text-[#D1D5DB]">
-                                        <div className="flex items-start gap-2.5 leading-relaxed">
-                                            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
-                                            <span data-testid="footer-address">{address}</span>
-                                        </div>
-                                        <a
-                                            href={`mailto:${email}`}
-                                            className={`inline-flex min-h-[44px] items-center gap-2.5 whitespace-nowrap text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
-                                            data-testid="footer-email-link"
-                                        >
-                                            <Mail className="h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
-                                            <span>{email}</span>
-                                        </a>
+                            <div className="space-y-3 sm:border-l sm:border-white/[0.07] sm:pl-7">
+                                <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
+                                    {t.contactTitle}
+                                </h3>
+                                <div className="space-y-2 text-sm text-[#D1D5DB]">
+                                    <div className="flex items-start gap-2.5 leading-relaxed">
+                                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
+                                        <span data-testid="footer-address">{address}</span>
                                     </div>
-                                </div>
-                                <div>
-                                    <button
-                                        type="button"
-                                        onClick={scrollToTop}
-                                        className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] px-3.5 text-xs font-semibold uppercase tracking-wider text-[#F4F4F0] transition-colors hover:border-[#C4B393]/60 hover:bg-[#223027] ${focusRing}`}
-                                        data-testid="footer-back-to-top-button"
+                                    <a
+                                        href={`mailto:${email}`}
+                                        className={`inline-flex min-h-[44px] items-center gap-2.5 text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                        data-testid="footer-email-link"
                                     >
-                                        <span>{t.backToTop}</span>
-                                        <ArrowUp className="h-3.5 w-3.5 text-[#C4B393]" aria-hidden="true" />
-                                    </button>
+                                        <Mail className="h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
+                                        <span>{email}</span>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -626,26 +613,38 @@ export function SiteFooter({
                     {/* Monumental Typographic Watermark with Slow Fade-in & Ambient Glow */}
                     <WatermarkSection />
 
-                    {/* Utility & Legal Bar */}
-                    <div className="flex flex-col gap-3 border-t border-white/10 py-5 text-xs text-[#B8C0BA] sm:flex-row sm:items-center sm:justify-between">
-                        <p data-testid="footer-institution-line">
-                            © {new Date().getFullYear()} {copyrightText}
+                    {/* Utility & Legal Bar (3-part balanced layout ala s4ras) */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4 border-t border-white/10 py-5 text-xs text-[#9FA8A2]">
+                        <p className="md:text-left" data-testid="footer-institution-line">
+                            © {new Date().getFullYear()} Departemen Teknik Elektro, ITS Surabaya.
                         </p>
-                        <div className="flex flex-wrap items-center gap-6">
+                        <div className="flex items-center gap-4 md:justify-center">
                             <Link
                                 to="/terms"
-                                className={`inline-flex min-h-[44px] items-center text-[#B8C0BA] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                className={`text-[#9FA8A2] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
                                 data-testid="footer-terms-link"
                             >
                                 {t.terms}
                             </Link>
+                            <span aria-hidden="true" className="text-white/20">·</span>
                             <Link
                                 to="/privacy"
-                                className={`inline-flex min-h-[44px] items-center text-[#B8C0BA] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                className={`text-[#9FA8A2] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
                                 data-testid="footer-privacy-link"
                             >
                                 {t.privacy}
                             </Link>
+                        </div>
+                        <div className="flex md:justify-end">
+                            <button
+                                type="button"
+                                onClick={scrollToTop}
+                                className={`inline-flex items-center gap-1.5 text-xs font-medium text-[#C4B393] hover:text-[#F4F4F0] transition-colors ${focusRing}`}
+                                data-testid="footer-back-to-top-button"
+                            >
+                                <span>{lang === "id" ? "Kembali ke atas" : "Back to top"}</span>
+                                <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+                            </button>
                         </div>
                     </div>
                 </div>
