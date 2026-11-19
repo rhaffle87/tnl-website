@@ -324,7 +324,7 @@ export function SiteCollaborationBand({ lang: propLang, show = true }: Collabora
     if (!show) return null;
 
     const focusRing =
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B393] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111613]";
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gsm-accent-glow,#C4B393)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111613]";
 
     return (
         <section
@@ -430,9 +430,9 @@ function WatermarkSection() {
                 >
                     <defs>
                         <linearGradient id="tnlWatermarkGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#7EA88B" stopOpacity="0.95" />
-                            <stop offset="55%" stopColor="#43634E" stopOpacity="0.55" />
-                            <stop offset="93%" stopColor="#111613" stopOpacity="0" />
+                            <stop offset="0%" stopColor="var(--gsm-emerald, #7EA88B)" stopOpacity="0.95" />
+                            <stop offset="55%" stopColor="var(--gsm-primary, #43634E)" stopOpacity="0.55" />
+                            <stop offset="93%" stopColor="var(--gsm-obsidian, #111613)" stopOpacity="0" />
                         </linearGradient>
                     </defs>
                     <text
@@ -496,7 +496,7 @@ export function SiteFooter({
     };
 
     const focusRing =
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B393] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111613]";
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gsm-accent-glow,#C4B393)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111613]";
 
     return (
         <>

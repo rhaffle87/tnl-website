@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Award, Download, FileSpreadsheet, RefreshCw, Sparkles, Upload } from "lucide-react";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
@@ -582,20 +583,57 @@ export function ThemePage() {
         color_body: "Body text",
     };
 
+    const gsmKeys: { key: keyof ThemeTokens; label: string; desc: string; fallback: string }[] = [
+        { key: "primary_color", label: "GSM Deep Forest (Primary)", desc: "Brand identity, hero gradient, navbar accent, dark borders", fallback: "#223027" },
+        { key: "emerald_color", label: "GSM Emerald Glow", desc: "Digital pulse, active badges, status indicators, energy highlights", fallback: "#5D8A6B" },
+        { key: "obsidian_color", label: "GSM Obsidian Dark", desc: "Dark mode background, hero background, maximum depth", fallback: "#0C100E" },
+        { key: "accent_color", label: "GSM Warm Sand (Accent)", desc: "Golden-tan accent, call-to-action button, brand elegance", fallback: "#A8977B" },
+        { key: "accent_hover_color", label: "GSM Accent Hover Tan", desc: "Interactive button hover, active states, luminous glow", fallback: "#C2B091" },
+    ];
+
+    const resetToGsmStandard = () => {
+        setDraft({
+            ...tokens,
+            primary_color: "#223027",
+            emerald_color: "#5D8A6B",
+            obsidian_color: "#0C100E",
+            accent_color: "#A8977B",
+            accent_hover_color: "#C2B091",
+            gsm_edition_label: "GSM Kabinet Keberlanjutan 2026",
+            color_black: "#0C100E",
+            color_tan: "#A8977B",
+            color_tan_text: "#C4B393",
+            color_green: "#223027",
+            color_green_hover: "#2F4236",
+            color_surface: "#FAF7F2",
+            color_border: "rgba(34, 48, 39, 0.12)",
+            color_body: "#1E2521",
+        });
+        toast.info("Preset baku GSM Kabinet Keberlanjutan dimuat ke draf. Klik 'Save draft' lalu 'Publish theme' untuk menerapkan.");
+    };
+
+    const activePrimary = tokens.primary_color || "#223027";
+    const activeEmerald = tokens.emerald_color || "#5D8A6B";
+    const activeObsidian = tokens.obsidian_color || "#0C100E";
+    const activeAccent = tokens.accent_color || "#A8977B";
+
     return (
-        <div data-testid="theme-page">
+        <div data-testid="theme-page" className="space-y-6">
             <AdminHeader
-                title="Colours & theme"
-                help="Change the look of the whole site. Nothing goes live until you click “Publish theme”."
+                title="Colours & theme (GSM)"
+                help="Standarisasi identitas visual GSM Laboratorium Jaringan Telekomunikasi. Pengaturan ini menjamin konsistensi lintas kepengurusan."
                 actions={
                     <>
-                        <button type="button" onClick={() => reset.mutate()} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="theme-reset-button">
-                            Reset to TNL default
+                        <button type="button" onClick={resetToGsmStandard} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-xs font-semibold" data-testid="theme-reset-gsm-button">
+                            Reset Baku GSM TNL
                         </button>
-                        <button type="button" onClick={() => save.mutate()} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="theme-save-draft-button">
+                        <button type="button" onClick={() => reset.mutate()} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-xs" data-testid="theme-reset-button">
+                            Reset ke Nilai DB
+                        </button>
+                        <button type="button" onClick={() => save.mutate()} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-xs" data-testid="theme-save-draft-button">
                             Save draft
                         </button>
-                        <button type="button" onClick={() => publish.mutate()} className="tnl-btn tnl-btn-primary h-10 min-h-[40px] text-sm" data-testid="theme-publish-button">
+                        <button type="button" onClick={() => publish.mutate()} className="tnl-btn tnl-btn-primary h-10 min-h-[40px] text-xs" data-testid="theme-publish-button">
                             Publish theme
                         </button>
                     </>
@@ -603,51 +641,196 @@ export function ThemePage() {
                 testId="theme-header"
             />
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <Panel>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Edisi Panduan Standar Grafis (GSM)</h2>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Label kepengurusan atau manual identitas visual yang sedang aktif di website labtnl.site.
+                        </p>
+                    </div>
+                    <div className="w-full sm:w-80">
+                        <input
+                            type="text"
+                            className="tnl-field text-sm"
+                            value={tokens.gsm_edition_label ?? "GSM Kabinet Keberlanjutan 2026"}
+                            onChange={(e) => setDraft({ ...tokens, gsm_edition_label: e.target.value })}
+                            placeholder="cth: GSM Kabinet Keberlanjutan 2026"
+                            aria-label="GSM Edition Label"
+                        />
+                    </div>
+                </div>
+            </Panel>
+
+            <div className="grid gap-6 lg:grid-cols-2">
                 <Panel>
-                    <h2 className="tnl-h5 text-[18px]">Colours</h2>
-                    <div className="mt-4 space-y-3">
-                        {colorKeys.map((key) => (
-                            <div key={key} className="flex items-center gap-3">
-                                <input
-                                    type="color"
-                                    value={String(tokens[key])}
-                                    onChange={(e) => setDraft({ ...tokens, [key]: e.target.value })}
-                                    className="h-10 w-14 shrink-0 cursor-pointer rounded border"
-                                    style={{ borderColor: "var(--tnl-border)" }}
-                                    aria-label={LABELS[key]}
-                                    data-testid={`theme-color-${key}`}
-                                />
-                                <div className="min-w-0 flex-1">
-                                    <label className="block text-sm font-medium">{LABELS[key]}</label>
-                                    <span className="text-xs font-mono" style={{ color: "var(--tnl-tan-text)" }}>{String(tokens[key])}</span>
+                    <div className="border-b pb-3 mb-4 border-gray-200 dark:border-white/10">
+                        <h2 className="tnl-h5 text-[18px]">Token Inti GSM (Cross-Period)</h2>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            5 warna pokok yang mengontrol identitas hero, navbar, logo watermark, tombol CTA, dan aksen gelombang.
+                        </p>
+                    </div>
+                    <div className="space-y-3.5">
+                        {gsmKeys.map(({ key, label, desc, fallback }) => {
+                            const val = String(tokens[key] || fallback);
+                            return (
+                                <div key={key} className="flex items-center gap-3 rounded-lg border p-2.5 border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02]">
+                                    <input
+                                        type="color"
+                                        value={val}
+                                        onChange={(e) => setDraft({ ...tokens, [key]: e.target.value })}
+                                        className="h-10 w-14 shrink-0 cursor-pointer rounded border border-gray-300 dark:border-white/20 bg-transparent"
+                                        aria-label={label}
+                                        data-testid={`theme-gsm-${key}`}
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <label className="block text-sm font-semibold">{label}</label>
+                                            <span className="font-mono text-xs uppercase px-1.5 py-0.5 rounded bg-gray-200 dark:bg-white/10 text-gray-800 dark:text-gray-200">{val}</span>
+                                        </div>
+                                        <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">{desc}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
+                    </div>
+
+                    <div className="border-t pt-4 mt-6 border-gray-200 dark:border-white/10">
+                        <h3 className="text-sm font-bold mb-3 text-gray-700 dark:text-gray-300">Warna Pendukung & Kompatibilitas</h3>
+                        <div className="space-y-2">
+                            {colorKeys.map((key) => (
+                                <div key={key} className="flex items-center gap-3">
+                                    <input
+                                        type="color"
+                                        value={String(tokens[key])}
+                                        onChange={(e) => setDraft({ ...tokens, [key]: e.target.value })}
+                                        className="h-8 w-12 shrink-0 cursor-pointer rounded border border-gray-200 dark:border-white/10"
+                                        aria-label={LABELS[key]}
+                                        data-testid={`theme-color-${key}`}
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <span className="text-xs font-medium">{LABELS[key]}</span>
+                                        <span className="ml-2 text-[11px] font-mono text-gray-400">{String(tokens[key])}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </Panel>
 
-                <Panel>
-                    <h2 className="tnl-h5 text-[18px]">Readability check</h2>
-                    <p className="mt-1 text-sm text-[var(--tnl-body)]">
-                        Every pair below must pass before the theme can go live. Save the draft to refresh these numbers.
-                    </p>
-                    <ul className="mt-4 space-y-2" data-testid="theme-contrast-list">
-                        {(data?.contrast ?? []).map((check) => (
-                            <li
-                                key={check.label}
-                                className="flex items-center justify-between gap-3 rounded-[8px] border px-4 py-2.5 text-sm"
-                                style={{ borderColor: check.passes ? "var(--tnl-border)" : "#fecaca" }}
-                                data-testid={`theme-contrast-${check.passes ? "pass" : "fail"}`}
+                <div className="space-y-6">
+                    <Panel>
+                        <h2 className="tnl-h5 text-[18px]">Pratinjau Langsung (Side-by-Side)</h2>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Simulasi komponen publik di Light Mode dan Dark Mode dengan token yang dipilih.
+                        </p>
+
+                        <div className="grid gap-3.5 mt-4 sm:grid-cols-2">
+                            <div
+                                className="rounded-xl p-4 border transition-colors shadow-sm"
+                                style={{
+                                    backgroundColor: tokens.color_surface || "#FAF7F2",
+                                    color: tokens.color_body || "#1E2521",
+                                    borderColor: "rgba(34, 48, 39, 0.15)",
+                                }}
                             >
-                                <span>{check.label}</span>
-                                <span className="font-semibold" style={{ color: check.passes ? "#2e7d32" : "#b91c1c" }}>
-                                    {check.ratio} {check.passes ? "OK" : `needs ${check.required}`}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </Panel>
+                                <div className="flex items-center justify-between pb-2 border-b border-gray-300/60">
+                                    <span className="text-[11px] font-bold tracking-wider uppercase text-gray-600">Light Mode</span>
+                                    <span
+                                        className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                        style={{ backgroundColor: activeEmerald, color: "#FFFFFF" }}
+                                    >
+                                        Live Pulse
+                                    </span>
+                                </div>
+                                <h3 className="text-sm font-extrabold mt-2.5" style={{ color: activePrimary }}>
+                                    Laboratorium TNL ITS
+                                </h3>
+                                <p className="text-xs mt-1 text-gray-600 line-clamp-2">
+                                    Pusat keunggulan riset jaringan telekomunikasi & transmisi data generasi masa depan.
+                                </p>
+                                <div className="mt-3.5 flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        className="px-3 py-1.5 rounded-md text-xs font-bold shadow-sm"
+                                        style={{ backgroundColor: activePrimary, color: "#FFFFFF" }}
+                                    >
+                                        Eksplorasi Riset
+                                    </button>
+                                    <span
+                                        className="text-[11px] font-semibold underline underline-offset-2"
+                                        style={{ color: activeAccent }}
+                                    >
+                                        Lihat Silabus
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div
+                                className="rounded-xl p-4 border transition-colors shadow-sm"
+                                style={{
+                                    backgroundColor: activeObsidian,
+                                    color: "#E5EDE7",
+                                    borderColor: "rgba(93, 138, 107, 0.25)",
+                                }}
+                            >
+                                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                                    <span className="text-[11px] font-bold tracking-wider uppercase text-gray-400">Dark Mode</span>
+                                    <span
+                                        className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                        style={{ backgroundColor: "rgba(93, 138, 107, 0.2)", color: activeEmerald, border: `1px solid ${activeEmerald}40` }}
+                                    >
+                                        Active Node
+                                    </span>
+                                </div>
+                                <h3 className="text-sm font-extrabold mt-2.5 text-white">
+                                    Laboratorium TNL ITS
+                                </h3>
+                                <p className="text-xs mt-1 text-gray-400 line-clamp-2">
+                                    Pusat keunggulan riset jaringan telekomunikasi & transmisi data generasi masa depan.
+                                </p>
+                                <div className="mt-3.5 flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        className="px-3 py-1.5 rounded-md text-xs font-bold shadow-sm"
+                                        style={{ backgroundColor: activeAccent, color: activeObsidian }}
+                                    >
+                                        Daftar Praktikum
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="px-2.5 py-1.5 rounded-md text-xs font-medium border"
+                                        style={{ borderColor: activeEmerald, color: activeEmerald }}
+                                    >
+                                        Silabus
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </Panel>
+
+                    <Panel>
+                        <h2 className="tnl-h5 text-[18px]">Uji Kontras & Aksesibilitas (WCAG 2.1 AA)</h2>
+                        <p className="mt-1 text-sm text-[var(--tnl-body)]">
+                            Setiap pasangan warna wajib memenuhi rasio kontras minimum sebelum tema dapat dipublikasikan ke publik.
+                        </p>
+                        <ul className="mt-4 space-y-2" data-testid="theme-contrast-list">
+                            {(data?.contrast ?? []).map((check) => (
+                                <li
+                                    key={check.label}
+                                    className="flex items-center justify-between gap-3 rounded-[8px] border px-4 py-2.5 text-sm"
+                                    style={{ borderColor: check.passes ? "var(--tnl-border)" : "#fecaca" }}
+                                    data-testid={`theme-contrast-${check.passes ? "pass" : "fail"}`}
+                                >
+                                    <span className="font-medium text-xs sm:text-sm">{check.label}</span>
+                                    <span className="font-semibold text-xs shrink-0" style={{ color: check.passes ? "#2e7d32" : "#b91c1c" }}>
+                                        {check.ratio} {check.passes ? "✓ Lulus" : `✕ Butuh ${check.required}`}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </Panel>
+                </div>
             </div>
         </div>
     );
@@ -772,6 +955,39 @@ export function SettingsPage() {
                             <input type="checkbox" className="h-5 w-5" checked={Boolean(current.maintenance_mode)} onChange={(e) => set({ maintenance_mode: e.target.checked })} data-testid="settings-maintenance" />
                             Maintenance mode — visitors see a notice instead of the site
                         </label>
+                    </div>
+                </Panel>
+
+                <Panel>
+                    <h2 className="tnl-h5 text-[18px]">Visual Identity & GSM Standards</h2>
+                    <div className="mt-3 space-y-3">
+                        <div className="rounded-lg border p-3 border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02]">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Edisi GSM Aktif:</span>
+                                <span className="px-2 py-0.5 rounded text-xs font-bold bg-[#5D8A6B] text-white">
+                                    {current.theme_tokens?.gsm_edition_label || "GSM Kabinet Keberlanjutan 2026"}
+                                </span>
+                            </div>
+                            <div className="mt-3 flex items-center gap-2">
+                                <span className="text-[11px] text-gray-500">Palet Baku:</span>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[#223027]" title="Primary Deep Forest (#223027)" />
+                                    <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[#5D8A6B]" title="Emerald Glow (#5D8A6B)" />
+                                    <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[#0C100E]" title="Obsidian Dark (#0C100E)" />
+                                    <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[#A8977B]" title="Accent Warm Sand (#A8977B)" />
+                                </div>
+                            </div>
+                            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                Pengaturan token warna global, kontras aksesibilitas WCAG, dan pratinjau live mode terang/gelap dikelola secara terpusat di halaman Tema.
+                            </p>
+                        </div>
+                        <Link
+                            to="/admin/theme"
+                            className="tnl-btn tnl-btn-outline inline-flex items-center justify-center w-full h-10 min-h-[40px] text-xs font-semibold"
+                            data-testid="settings-goto-theme-button"
+                        >
+                            Kelola Tema & Token Warna GSM →
+                        </Link>
                     </div>
                 </Panel>
             </div>

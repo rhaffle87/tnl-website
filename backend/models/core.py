@@ -111,6 +111,13 @@ class ThemeTokens(BaseModel):
     radius_card: int = 15
     radius_button: int = 6
     section_spacing: int = 60
+    # Semantic GSM tokens for cross-period sustainability
+    primary_color: str = "#223027"
+    emerald_color: str = "#5D8A6B"
+    obsidian_color: str = "#0C100E"
+    accent_color: str = "#A8977B"
+    accent_hover_color: str = "#C2B091"
+    gsm_edition_label: str = "GSM Kabinet Keberlanjutan 2026"
 
 
 class ThemeState(BaseModel):
@@ -136,6 +143,7 @@ class SettingsDoc(BaseModel):
     maintenance_mode: bool = False
     announcement: Announcement = Field(default_factory=Announcement)
     theme: ThemeState = Field(default_factory=ThemeState)
+    theme_tokens: ThemeTokens = Field(default_factory=ThemeTokens)
     retention_days: int = 90  # UU PDP registrant data retention
     updated_at: datetime = Field(default_factory=now_utc)
 
@@ -157,6 +165,7 @@ class SettingsUpdate(BaseModel):
     analytics_snippet: str | None = None
     maintenance_mode: bool | None = None
     announcement: Announcement | None = None
+    theme_tokens: ThemeTokens | None = None
     retention_days: int | None = None
 
 

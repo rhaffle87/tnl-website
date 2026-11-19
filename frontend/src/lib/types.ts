@@ -367,6 +367,13 @@ export interface ThemeTokens {
   radius_card: number;
   radius_button: number;
   section_spacing: number;
+  // Semantic GSM tokens for cross-period sustainability
+  primary_color?: string;
+  emerald_color?: string;
+  obsidian_color?: string;
+  accent_color?: string;
+  accent_hover_color?: string;
+  gsm_edition_label?: string;
 }
 
 export interface SiteSettings {
@@ -385,6 +392,7 @@ export interface SiteSettings {
   analytics_snippet: string;
   maintenance_mode: boolean;
   announcement: AnnouncementSettings;
+  theme_tokens?: ThemeTokens;
   retention_days: number;
   updated_at: string;
   server_today?: string;

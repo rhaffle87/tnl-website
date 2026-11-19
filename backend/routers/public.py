@@ -19,6 +19,7 @@ from lib.mailer import send_email
 from lib.quality import EMAIL_OK
 from lib.serialize import jsonable
 from lib.settings import get_settings
+from models.core import ThemeTokens
 
 router = APIRouter(tags=["public"])
 
@@ -71,7 +72,9 @@ async def with_seats(evs: list[dict], today: str) -> list[dict]:
 @router.get("/public/settings", dependencies=[Depends(check_maintenance)])
 async def public_settings():
     s = await get_settings()
+    published_theme = (s.get("theme") or {}).get("published") or s.get("theme_tokens") or ThemeTokens().model_dump()
     s.pop("theme", None)
+    s["theme_tokens"] = published_theme
     s["server_today"] = today_iso()
     return jsonable(s)
 

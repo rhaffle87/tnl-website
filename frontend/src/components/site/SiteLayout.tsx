@@ -220,6 +220,7 @@ function MaintenanceNotice() {
 
 export default function SiteLayout() {
     useHeadTags();
+    const { data: settings } = useSettings();
     const location = useLocation();
     const isHome = location.pathname === "/";
 
@@ -238,6 +239,20 @@ export default function SiteLayout() {
         const meta = document.querySelector('meta[name="color-scheme"]');
         if (meta) meta.setAttribute("content", stored ? (stored === "dark" ? "dark" : "light") : "light dark");
     }, []);
+
+    useEffect(() => {
+        if (!settings?.theme_tokens) return;
+        const t = settings.theme_tokens;
+        const root = document.documentElement;
+        if (t.primary_color) root.style.setProperty("--gsm-primary", t.primary_color);
+        if (t.emerald_color) root.style.setProperty("--gsm-emerald", t.emerald_color);
+        if (t.obsidian_color) root.style.setProperty("--gsm-obsidian", t.obsidian_color);
+        if (t.accent_color) root.style.setProperty("--gsm-accent", t.accent_color);
+        if (t.accent_hover_color) root.style.setProperty("--gsm-accent-hover", t.accent_hover_color);
+        try {
+            localStorage.setItem("tnl-theme-tokens", JSON.stringify(t));
+        } catch {}
+    }, [settings?.theme_tokens]);
 
     return (
         <div className="flex min-h-svh flex-col" style={{ background: "var(--background)" }}>

@@ -276,13 +276,21 @@ def contrast_ratio(a: str, b: str) -> float:
 
 def theme_contrast_report(t: dict) -> list[dict]:
     """AA checks that matter for this palette; publishing is blocked while any fails."""
+    primary = t.get("primary_color") or t.get("color_green") or "#223027"
+    accent = t.get("accent_color") or t.get("color_tan") or "#A8977B"
+    obsidian = t.get("obsidian_color") or t.get("color_black") or "#0C100E"
+    emerald = t.get("emerald_color") or "#5D8A6B"
+    accent_ink = "#111613"
+
     checks = [
         ("Body text on page surface", t.get("color_body"), t.get("color_surface"), 4.5),
-        ("Primary action (dark green) on white", t.get("color_green"), "#ffffff", 4.5),
+        ("Primary action on white", primary, "#ffffff", 4.5),
         ("Small tan text on white", t.get("color_tan_text"), "#ffffff", 4.5),
-        ("White text on black header", "#ffffff", t.get("color_black"), 4.5),
-        ("Tan accent on black", t.get("color_tan"), t.get("color_black"), 3.0),
-        ("White text on dark green button", "#ffffff", t.get("color_green"), 4.5),
+        ("White text on obsidian canvas", "#ffffff", obsidian, 4.5),
+        ("Accent text on button (WCAG AA)", accent_ink, accent, 4.5),
+        ("Accent on dark canvas", accent, obsidian, 3.0),
+        ("Emerald accent on dark canvas", emerald, obsidian, 3.0),
+        ("White text on primary button", "#ffffff", primary, 4.5),
     ]
     out = []
     for label, fg, bg, need in checks:
@@ -323,7 +331,7 @@ async def publish_theme(request: Request):
             "message": "This theme cannot be published: some color pairs are too low-contrast to read (WCAG AA).",
             "failing": failing,
         })
-    await db.settings.update_one({"id": "settings"}, {"$set": {"theme.published": draft}}, upsert=True)
+    await db.settings.update_one({"id": "settings"}, {"$set": {"theme.published": draft, "theme_tokens": draft}}, upsert=True)
     await audit(request, "publish", "theme", "published")
     return {"published": draft, "contrast": report}
 

@@ -13,6 +13,23 @@
     --font-sans: 'Poppins', sans-serif;
     --font-quote: Georgia, 'Times New Roman', serif;
 
+    /* Semantic GSM Design Tokens */
+    --color-gsm-primary: var(--gsm-primary);
+    --color-gsm-primary-soft: var(--gsm-primary-soft);
+    --color-gsm-emerald: var(--gsm-emerald);
+    --color-gsm-obsidian: var(--gsm-obsidian);
+    --color-gsm-accent: var(--gsm-accent);
+    --color-gsm-accent-hover: var(--gsm-accent-hover);
+    --color-gsm-accent-ink: var(--gsm-accent-ink);
+    --color-gsm-accent-glow: var(--gsm-accent-glow);
+    --color-gsm-bg-page: var(--gsm-bg-page);
+    --color-gsm-bg-surface: var(--gsm-bg-surface);
+    --color-gsm-bg-elevated: var(--gsm-bg-elevated);
+    --color-gsm-text-primary: var(--gsm-text-primary);
+    --color-gsm-text-secondary: var(--gsm-text-secondary);
+    --color-gsm-text-muted: var(--gsm-text-muted);
+    --color-gsm-border-hairline: var(--gsm-border-hairline);
+
     /* TNL brand tokens — overridable at runtime by the admin theme editor */
     --color-ink: var(--tnl-black);
     --color-tan: var(--tnl-tan);
@@ -122,84 +139,128 @@
         color-scheme: light;
     }
 
-    /* TNL brand — black, tan, dark green */
-    --tnl-black: #111518;
-    --tnl-tan: #a8977b;
-    --tnl-tan-text: #7f715c;
-    --tnl-green: #43594A;
-    --tnl-green-hover: #35483b;
-    --tnl-surface: #f4f4f5;
-    --tnl-border: #eaeaec;
-    --tnl-body: #3f4245;
-    --tnl-radius-card: 15px;
-    --tnl-radius-button: 6px;
-    --tnl-section-spacing: 60px;
+    /* Semantic GSM Design Tokens (Brand Core - Light Mode) */
+    --gsm-primary: #223027;
+    --gsm-primary-soft: rgba(34, 48, 39, 0.08);
+    --gsm-emerald: #5D8A6B;
+    --gsm-obsidian: #0C100E;
+    --gsm-accent: #A8977B;
+    --gsm-accent-hover: #C2B091;
+    --gsm-accent-ink: #111613;
+    --gsm-accent-glow: #C4B393;
 
-    --background: #ffffff;
-    --foreground: #111518;
-    --card: #ffffff;
-    --card-foreground: #111518;
-    --popover: #ffffff;
-    --popover-foreground: #111518;
-    --primary: #43594A;
+    /* Semantic GSM Design Tokens (Surfaces & Typography - Light Mode) */
+    --gsm-bg-page: #F7F7F5;
+    --gsm-bg-surface: #FFFFFF;
+    --gsm-bg-elevated: #F0F1EE;
+    --gsm-text-primary: #111613;
+    --gsm-text-secondary: #3F4A43;
+    --gsm-text-muted: #667069;
+    --gsm-border-hairline: rgba(17, 22, 19, 0.08);
+
+    /* TNL brand backward compatibility mappings */
+    --tnl-black: var(--gsm-obsidian);
+    --tnl-tan: var(--gsm-accent);
+    --tnl-tan-text: #7f715c;
+    --tnl-green: var(--gsm-primary);
+    --tnl-green-hover: #18221c;
+    --tnl-surface: var(--gsm-bg-page);
+    --tnl-border: var(--gsm-border-hairline);
+    --tnl-body: var(--gsm-text-secondary);
+    --tnl-radius-card: 16px;
+    --tnl-radius-button: 10px;
+    --tnl-section-spacing: 64px;
+
+    --background: var(--gsm-bg-surface);
+    --foreground: var(--gsm-text-primary);
+    --card: var(--gsm-bg-surface);
+    --card-foreground: var(--gsm-text-primary);
+    --popover: var(--gsm-bg-surface);
+    --popover-foreground: var(--gsm-text-primary);
+    --primary: var(--gsm-primary);
     --primary-foreground: #ffffff;
-    --secondary: #f4f4f5;
-    --secondary-foreground: #111518;
-    --muted: #f4f4f5;
-    --muted-foreground: #3f4245;
-    --accent: #f4f4f5;
-    --accent-foreground: #111518;
+    --secondary: var(--gsm-bg-elevated);
+    --secondary-foreground: var(--gsm-text-primary);
+    --muted: var(--gsm-bg-elevated);
+    --muted-foreground: var(--gsm-text-muted);
+    --accent: var(--gsm-bg-elevated);
+    --accent-foreground: var(--gsm-text-primary);
     --destructive: #b91c1c;
-    --border: #eaeaec;
-    --input: #eaeaec;
-    --ring: #43594A;
-    --chart-1: #43594A;
-    --chart-2: #a8977b;
-    --chart-3: #7f715c;
-    --chart-4: #111518;
+    --border: var(--gsm-border-hairline);
+    --input: var(--gsm-border-hairline);
+    --ring: var(--gsm-accent);
+    --chart-1: #223027;
+    --chart-2: #A8977B;
+    --chart-3: #5D8A6B;
+    --chart-4: #0C100E;
     --chart-5: #9aa3a8;
     --radius: 0.625rem;
-    --sidebar: #111518;
+    --sidebar: #0C100E;
     --sidebar-foreground: #ffffff;
-    --sidebar-primary: #43594A;
+    --sidebar-primary: #223027;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #1c2228;
+    --sidebar-accent: #18221c;
     --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: #262c33;
-    --sidebar-ring: #a8977b;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-ring: #A8977B;
 }
 
 .dark {
-    --tnl-surface: #16191c;
-    --tnl-border: #2a3036;
-    --tnl-body: #c8ccd0;
+    /* Semantic GSM Design Tokens (Brand Core - Dark Mode) */
+    --gsm-primary: #2E4235;
+    --gsm-primary-soft: rgba(46, 66, 53, 0.22);
+    --gsm-emerald: #7EA88B;
+    --gsm-obsidian: #111613;
+    --gsm-accent: #C4B393;
+    --gsm-accent-hover: #D6C39F;
+    --gsm-accent-ink: #111613;
+    --gsm-accent-glow: #C4B393;
 
-    --background: #0d1013;
-    --foreground: #f4f4f5;
-    --card: #16191c;
-    --card-foreground: #f4f4f5;
-    --popover: #16191c;
-    --popover-foreground: #f4f4f5;
-    --primary: #a8977b;
-    --primary-foreground: #111518;
-    --secondary: #1c2228;
-    --secondary-foreground: #f4f4f5;
-    --muted: #1c2228;
-    --muted-foreground: #a4acb2;
-    --accent: #1c2228;
-    --accent-foreground: #f4f4f5;
+    /* Semantic GSM Design Tokens (Surfaces & Typography - Dark Mode) */
+    --gsm-bg-page: #0C100E;
+    --gsm-bg-surface: #141C17;
+    --gsm-bg-elevated: #1C2821;
+    --gsm-text-primary: #F4F4F0;
+    --gsm-text-secondary: #D1D5DB;
+    --gsm-text-muted: #9FA8A2;
+    --gsm-border-hairline: rgba(255, 255, 255, 0.08);
+
+    /* TNL brand backward compatibility mappings */
+    --tnl-black: #0C100E;
+    --tnl-tan: var(--gsm-accent);
+    --tnl-tan-text: #D6C39F;
+    --tnl-green: var(--gsm-primary);
+    --tnl-green-hover: #3a5242;
+    --tnl-surface: var(--gsm-bg-surface);
+    --tnl-border: var(--gsm-border-hairline);
+    --tnl-body: var(--gsm-text-secondary);
+
+    --background: var(--gsm-bg-page);
+    --foreground: var(--gsm-text-primary);
+    --card: var(--gsm-bg-surface);
+    --card-foreground: var(--gsm-text-primary);
+    --popover: var(--gsm-bg-surface);
+    --popover-foreground: var(--gsm-text-primary);
+    --primary: var(--gsm-accent);
+    --primary-foreground: #111613;
+    --secondary: var(--gsm-bg-elevated);
+    --secondary-foreground: var(--gsm-text-primary);
+    --muted: var(--gsm-bg-elevated);
+    --muted-foreground: var(--gsm-text-muted);
+    --accent: var(--gsm-bg-elevated);
+    --accent-foreground: var(--gsm-text-primary);
     --destructive: #f87171;
-    --border: #2a3036;
-    --input: #2a3036;
-    --ring: #a8977b;
-    --sidebar: #0d1013;
-    --sidebar-foreground: #f4f4f5;
-    --sidebar-primary: #43594A;
+    --border: var(--gsm-border-hairline);
+    --input: var(--gsm-border-hairline);
+    --ring: var(--gsm-accent);
+    --sidebar: #0C100E;
+    --sidebar-foreground: #F4F4F0;
+    --sidebar-primary: #2E4235;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #1c2228;
-    --sidebar-accent-foreground: #f4f4f5;
-    --sidebar-border: #2a3036;
-    --sidebar-ring: #a8977b;
+    --sidebar-accent: #1C2821;
+    --sidebar-accent-foreground: #F4F4F0;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-ring: #C4B393;
 }
 
 @layer base {
