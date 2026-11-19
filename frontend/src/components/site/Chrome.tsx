@@ -423,17 +423,36 @@ function WatermarkSection() {
                     "motion-reduce:opacity-100 motion-reduce:translate-y-0 motion-reduce:scale-100 motion-reduce:transition-none"
                 )}
             >
-                <p className="w-full text-center text-[clamp(4.25rem,16.5vw,16.5rem)] font-black leading-[0.94] tracking-[-0.045em] select-none [mask-image:linear-gradient(to_bottom,rgba(0,0,0,1)_0%,rgba(0,0,0,0.85)_40%,rgba(0,0,0,0.22)_76%,transparent_95%)]">
-                    <span className="bg-gradient-to-b from-[#7EA88B] via-[#43634E]/80 to-transparent bg-clip-text text-transparent">
-                        LAB TNL
-                    </span>
-                    <span className="bg-gradient-to-b from-[#D6C39F] via-[#A8977B]/75 to-transparent bg-clip-text text-transparent">
-                        .
-                    </span>
-                    <span className="bg-gradient-to-b from-[#7EA88B] via-[#43634E]/80 to-transparent bg-clip-text text-transparent">
-                        ITS
-                    </span>
-                </p>
+                <svg
+                    viewBox="0 0 1200 175"
+                    className="w-full h-auto block select-none"
+                    aria-hidden="true"
+                >
+                    <defs>
+                        <linearGradient id="tnlWatermarkGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#7EA88B" stopOpacity="0.95" />
+                            <stop offset="55%" stopColor="#43634E" stopOpacity="0.55" />
+                            <stop offset="92%" stopColor="#111613" stopOpacity="0" />
+                        </linearGradient>
+                        <linearGradient id="tnlDotGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#D6C39F" stopOpacity="0.95" />
+                            <stop offset="65%" stopColor="#A8977B" stopOpacity="0.45" />
+                            <stop offset="95%" stopColor="#111613" stopOpacity="0" />
+                        </linearGradient>
+                    </defs>
+                    <text
+                        x="50%"
+                        y="142"
+                        textAnchor="middle"
+                        fontWeight="900"
+                        fontSize="168"
+                        letterSpacing="-6"
+                        fill="url(#tnlWatermarkGrad)"
+                        className="font-sans"
+                    >
+                        LAB TNL<tspan fill="url(#tnlDotGrad)">.</tspan>ITS
+                    </text>
+                </svg>
             </div>
         </div>
     );
@@ -495,9 +514,9 @@ export function SiteFooter({
                 />
                 <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
                     {/* 4-column balanced flat grid with even spacing & subtle dividers */}
-                    <div className="grid grid-cols-1 gap-8 py-10 sm:grid-cols-2 lg:grid-cols-[minmax(180px,0.85fr)_1fr_1fr_1.15fr] lg:gap-0 lg:divide-x lg:divide-white/[0.08] lg:py-12">
+                    <div className="grid grid-cols-1 gap-8 py-10 sm:grid-cols-2 lg:grid-cols-[0.95fr_1fr_1fr_1.15fr] lg:gap-0 lg:divide-x lg:divide-white/[0.08]">
                         {/* Column 1: Logo & Instagram */}
-                        <div className="flex flex-col items-start justify-center gap-5 lg:items-center lg:pr-8">
+                        <div className="flex flex-col items-start justify-center gap-4 lg:items-center lg:pr-8">
                             <Link
                                 to="/"
                                 className={`inline-block rounded-2xl transition-transform hover:scale-[1.02] ${focusRing}`}
