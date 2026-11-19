@@ -381,8 +381,8 @@ async def submit_registration(event_id: str, request: Request):
                 continue
         raw = form.get(key) or form.get(f.get("name") or "")
         if ftype == "file":
-            up = raw if isinstance(raw, UploadFile) else None
-            if up is not None and up.filename:
+            up = raw if (hasattr(raw, "filename") and hasattr(raw, "read")) else None
+            if up is not None and getattr(up, "filename", ""):
                 content = await up.read()
                 if len(content) > 5 * 1024 * 1024:
                     errors.append(f"{label}: file must be under 5 MB.")
