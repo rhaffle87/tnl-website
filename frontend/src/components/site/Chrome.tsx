@@ -329,7 +329,7 @@ export function SiteCollaborationBand({ lang: propLang, show = true }: Collabora
 
     return (
         <section
-            className="w-full bg-[#F7F7F5] py-12 dark:bg-[#0D110F] md:py-16 transition-colors duration-200"
+            className="w-full border-t border-black/[0.06] bg-[#F7F7F5] pt-14 pb-16 dark:border-white/[0.06] dark:bg-[#0D110F] transition-colors duration-200"
             data-testid="section-collaboration-cta"
         >
             <div className="tnl-container max-w-7xl px-6 lg:px-8">

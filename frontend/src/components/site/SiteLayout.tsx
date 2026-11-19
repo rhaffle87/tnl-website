@@ -114,6 +114,7 @@ function MaintenanceNotice() {
 export default function SiteLayout() {
     useHeadTags();
     const location = useLocation();
+    const isHome = location.pathname === "/";
 
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
@@ -138,7 +139,7 @@ export default function SiteLayout() {
             <main className="flex-1">
                 <Outlet />
             </main>
-            <SiteCollaborationBand />
+            {isHome ? <SiteCollaborationBand /> : null}
             <SiteFooter />
             <AnnouncementPopup />
         </div>
