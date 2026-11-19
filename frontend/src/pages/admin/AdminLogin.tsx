@@ -179,14 +179,14 @@ export function AdminInviteAccept() {
                     <label htmlFor="invite-password" className="mb-1.5 block text-sm font-medium">
                         New password
                     </label>
-                    <input id="invite-password" name="password" type="password" className="tnl-field" required minLength={8} data-testid="invite-password-input" />
+                    <input id="invite-password" name="password" type="password" autoComplete="new-password" className="tnl-field" required minLength={8} data-testid="invite-password-input" />
                     <p className="mt-1 text-xs text-[var(--tnl-body)]">At least 8 characters.</p>
                 </div>
                 <div>
                     <label htmlFor="invite-confirm" className="mb-1.5 block text-sm font-medium">
                         Repeat password
                     </label>
-                    <input id="invite-confirm" name="confirm" type="password" className="tnl-field" required minLength={8} data-testid="invite-confirm-input" />
+                    <input id="invite-confirm" name="confirm" type="password" autoComplete="new-password" className="tnl-field" required minLength={8} data-testid="invite-confirm-input" />
                 </div>
                 <button type="submit" className="tnl-btn tnl-btn-primary w-full" disabled={busy} data-testid="invite-submit-button">
                     {busy ? "Saving…" : "Set password and sign in"}

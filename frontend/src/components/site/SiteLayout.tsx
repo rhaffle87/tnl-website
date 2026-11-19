@@ -121,7 +121,14 @@ export default function SiteLayout() {
 
     useEffect(() => {
         const stored = localStorage.getItem("tnl-theme");
-        if (stored === "dark") document.documentElement.classList.add("dark");
+        const isDark = stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (isDark) {
+            document.documentElement.classList.add("dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+        }
+        const meta = document.querySelector('meta[name="color-scheme"]');
+        if (meta) meta.setAttribute("content", stored ? (stored === "dark" ? "dark" : "light") : "light dark");
     }, []);
 
     return (

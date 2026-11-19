@@ -112,6 +112,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
                                 src={str(props, "image_url")}
                                 alt={str(props, "image_alt")}
                                 loading="eager"
+                                fetchPriority="high"
                                 className="h-64 w-full rounded-[28px] border object-cover"
                                 style={{ borderColor: "rgba(168,151,123,0.35)" }}
                                 data-testid="hero-image"

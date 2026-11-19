@@ -91,6 +91,15 @@
 }
 
 :root {
+    color-scheme: light dark;
+
+    &:has(> head > meta[name="color-scheme"][content="dark"]) {
+        color-scheme: dark;
+    }
+    &:has(> head > meta[name="color-scheme"][content="light"]) {
+        color-scheme: light;
+    }
+
     /* TNL brand — black, tan, dark green */
     --tnl-black: #111518;
     --tnl-tan: #a8977b;

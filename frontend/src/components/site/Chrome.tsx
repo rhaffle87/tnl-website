@@ -68,6 +68,8 @@ export function SiteHeader() {
         const next = !dark;
         setDark(next);
         document.documentElement.classList.toggle("dark", next);
+        const meta = document.querySelector('meta[name="color-scheme"]');
+        if (meta) meta.setAttribute("content", next ? "dark" : "light");
         localStorage.setItem("tnl-theme", next ? "dark" : "light");
     };
 

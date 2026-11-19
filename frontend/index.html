@@ -8,6 +8,21 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      try {
+        const stored = localStorage.getItem("tnl-theme");
+        if (stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+          document.documentElement.classList.add("dark");
+          const meta = document.querySelector('meta[name="color-scheme"]');
+          if (meta) meta.content = "dark";
+        } else if (stored === "light") {
+          document.documentElement.classList.remove("dark");
+          const meta = document.querySelector('meta[name="color-scheme"]');
+          if (meta) meta.content = "light";
+        }
+      } catch (e) {}
+    </script>
     <title>Telecommunication Network Laboratory — ITS Surabaya</title>
     <meta
       name="description"
