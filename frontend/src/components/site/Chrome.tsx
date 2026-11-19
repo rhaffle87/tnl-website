@@ -424,36 +424,30 @@ function WatermarkSection() {
                 )}
             >
                 <svg
-                    viewBox="0 0 980 225"
-                    className="w-full h-auto block select-none overflow-visible"
+                    viewBox="0 0 760 190"
+                    className="block h-auto w-full select-none"
                     aria-hidden="true"
                 >
                     <defs>
                         <linearGradient id="tnlWatermarkGrad" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor="#7EA88B" stopOpacity="0.95" />
                             <stop offset="55%" stopColor="#43634E" stopOpacity="0.55" />
-                            <stop offset="92%" stopColor="#111613" stopOpacity="0" />
-                        </linearGradient>
-                        <linearGradient id="tnlDotGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#D6C39F" stopOpacity="0.95" />
-                            <stop offset="65%" stopColor="#A8977B" stopOpacity="0.45" />
-                            <stop offset="95%" stopColor="#111613" stopOpacity="0" />
+                            <stop offset="93%" stopColor="#111613" stopOpacity="0" />
                         </linearGradient>
                     </defs>
                     <text
-                        x="490"
-                        y="182"
+                        x="380"
+                        y="158"
                         textAnchor="middle"
-                        textLength="964"
+                        textLength="756"
                         lengthAdjust="spacing"
                         fontWeight="900"
-                        fontSize="196"
-                        letterSpacing="-6"
-                        transform="translate(0, -10) scale(1, 1.12)"
+                        fontSize="178"
+                        letterSpacing="-4"
                         fill="url(#tnlWatermarkGrad)"
                         className="font-sans"
                     >
-                        LAB TNL<tspan fill="url(#tnlDotGrad)">.</tspan>ITS
+                        LAB TNL
                     </text>
                 </svg>
             </div>
@@ -605,14 +599,8 @@ export function SiteFooter({
                             </div>
                         </div>
                     </div>
-                </div>
-
-                {/* Monumental Typographic Watermark with Slow Fade-in & Ambient Glow (Edge-to-Edge Container) */}
-                <div className="w-full max-w-[92rem] mx-auto px-4 sm:px-8 pt-4 pb-2">
+                    {/* Monumental Typographic Watermark with Slow Fade-in & Ambient Glow */}
                     <WatermarkSection />
-                </div>
-
-                <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
                     {/* Utility & Legal Bar (3-part balanced layout ala s4ras) */}
                     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4 border-t border-white/10 py-5 text-xs text-[#9FA8A2]">
                         <p className="md:text-left" data-testid="footer-institution-line">
