@@ -61,6 +61,12 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("category", ASCENDING)], name="category"),
         IndexModel([("needs_review", ASCENDING)], name="needs_review"),
     ],
+    "equipment": [
+        IndexModel([("id", ASCENDING)], name="id", unique=True),
+        IndexModel([("published", ASCENDING), ("order", ASCENDING)], name="published_order"),
+        IndexModel([("category", ASCENDING)], name="category"),
+        IndexModel([("needs_review", ASCENDING)], name="needs_review"),
+    ],
     "projects": [
         IndexModel([("id", ASCENDING)], name="id", unique=True),
         IndexModel([("status", ASCENDING), ("kind", ASCENDING)], name="status_kind"),

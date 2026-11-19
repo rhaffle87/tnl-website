@@ -439,12 +439,14 @@ async def submit_registration(event_id: str, request: Request):
         {"event_id": actual_event_id, "status": {"$in": ["pending", "accepted", "attended"]}})
     status = "waitlisted" if (cap and used >= cap) else "pending"
 
+    now_utc = datetime.now(timezone.utc)
     reg = {
         "id": str(uuid.uuid4()), "event_id": actual_event_id, "event_title": ev.get("title", ""),
         "data": data, "email": email.lower(), "nim": nim, "status": status,
-        "consent": True, "certificate_code": None, "notes": "",
+        "consent": True, "consent_timestamp": now_utc.isoformat(), "consent_policy_version": "2026.1",
+        "certificate_code": None, "notes": "",
         "sheet_synced": False, "sheet_sync_error": None,
-        "created_at": datetime.now(timezone.utc),
+        "created_at": now_utc,
     }
     await db.registrations.insert_one(reg)
 

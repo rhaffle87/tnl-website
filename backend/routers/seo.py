@@ -16,11 +16,11 @@ def site_base() -> str:
     return (os.environ.get("PUBLIC_SITE_URL") or os.environ.get("APP_URL") or "").rstrip("/")
 
 
-@router.get("/sitemap.xml")
+@router.api_route("/sitemap.xml", methods=["GET", "HEAD"])
 async def sitemap():
     base = site_base()
     urls: list[tuple[str, str | None]] = [
-        ("/", None), ("/member", None), ("/activity", None), ("/news", None),
+        ("/", None), ("/member", None), ("/activity", None), ("/open-house", None), ("/news", None),
         ("/contact", None), ("/publications", None), ("/terms", None), ("/privacy", None),
     ]
     for post in await db.posts.find({"status": "published"}, {"slug": 1, "published_at": 1}).to_list(1000):
@@ -46,7 +46,7 @@ async def sitemap():
     return Response(content="\n".join(body), media_type="application/xml")
 
 
-@router.get("/robots.txt")
+@router.api_route("/robots.txt", methods=["GET", "HEAD"])
 async def robots():
     base = site_base()
     s = await get_settings()
@@ -55,7 +55,7 @@ async def robots():
         lines.append("Disallow: /")
     else:
         lines += ["Disallow: /admin", "Disallow: /api/admin", "Allow: /"]
-    lines.append(f"Sitemap: {base}/api/sitemap.xml")
+    lines.append(f"Sitemap: {base}/sitemap.xml")
     return Response(content="\n".join(lines) + "\n", media_type="text/plain")
 
 

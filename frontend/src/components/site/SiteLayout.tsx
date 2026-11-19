@@ -4,18 +4,85 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AnnouncementPopup, SiteCollaborationBand, SiteFooter, SiteHeader } from "@/components/site/Chrome";
-import { LOCALE_STORAGE_KEY, LocaleContext, STRINGS, type Locale, type StringKey } from "@/lib/i18n";
+import { LOCALE_STORAGE_KEY, LocaleContext, STRINGS, useLocale, type Locale, type StringKey } from "@/lib/i18n";
 import { useSettings } from "@/lib/hooks";
+
+const ROUTE_META: Record<string, { titleId: string; titleEn: string; descId: string; descEn: string }> = {
+    "/": {
+        titleId: "Laboratorium Jaringan Telekomunikasi — Institut Teknologi Sepuluh Nopember",
+        titleEn: "Telecommunication Network Laboratory — Institut Teknologi Sepuluh Nopember",
+        descId: "Laboratorium Jaringan Telekomunikasi (TNL) Departemen Teknik Elektro FTEIC ITS Surabaya. Riset, praktikum, pelatihan, dan inovasi jaringan modern.",
+        descEn: "Telecommunication Network Laboratory (TNL), Department of Electrical Engineering, ITS Surabaya. Research, practicum, and network engineering.",
+    },
+    "/member": {
+        titleId: "Tim & Peneliti — Laboratorium Jaringan Telekomunikasi ITS",
+        titleEn: "People & Researchers — Telecommunication Network Laboratory ITS",
+        descId: "Profil dosen pembina, asisten laboratorium, dan alumni Laboratorium Jaringan Telekomunikasi Teknik Elektro ITS Surabaya.",
+        descEn: "Faculty advisors, laboratory assistants, and alumni of the Telecommunication Network Laboratory, ITS Surabaya.",
+    },
+    "/activity": {
+        titleId: "Aktivitas & Fasilitas — Laboratorium Jaringan Telekomunikasi ITS",
+        titleEn: "Activities & Facilities — Telecommunication Network Laboratory ITS",
+        descId: "Kegiatan riset, praktikum jaringan telekomunikasi, fasilitas testbed B-301, dan sertifikasi industri di Lab TNL ITS.",
+        descEn: "Research activities, network engineering practicum, B-301 testbed facilities, and industrial certifications.",
+    },
+    "/open-house": {
+        titleId: "Pendaftaran Open House TNL 2026 — Laboratorium Jaringan Telekomunikasi ITS",
+        titleEn: "TNL Open House 2026 Registration — Telecommunication Network Laboratory ITS",
+        descId: "Pendaftaran Open House Laboratorium Jaringan Telekomunikasi ITS. Eksplorasi fasilitas testbed, riset telekomunikasi, dan konsultasi asisten lab.",
+        descEn: "Register for TNL Open House 2026. Explore laboratory testbed facilities, research initiatives, and talk with lab assistants.",
+    },
+    "/news": {
+        titleId: "Berita & Pengumuman — Laboratorium Jaringan Telekomunikasi ITS",
+        titleEn: "News & Announcements — Telecommunication Network Laboratory ITS",
+        descId: "Kabar terbaru seputar riset, pengumuman praktikum, open recruitment asisten, dan prestasi Lab TNL ITS.",
+        descEn: "Latest updates on telecommunications research, practicum schedules, recruitment, and lab achievements.",
+    },
+    "/publications": {
+        titleId: "Publikasi Ilmiah — Laboratorium Jaringan Telekomunikasi ITS",
+        titleEn: "Scientific Publications — Telecommunication Network Laboratory ITS",
+        descId: "Daftar publikasi jurnal, prosiding konferensi internasional IEEE/Scopus oleh peneliti Lab TNL ITS.",
+        descEn: "Academic journals, IEEE conference proceedings, and research papers from TNL researchers.",
+    },
+    "/contact": {
+        titleId: "Kontak & Lokasi — Laboratorium Jaringan Telekomunikasi ITS",
+        titleEn: "Contact & Location — Telecommunication Network Laboratory ITS",
+        descId: "Hubungi Laboratorium Jaringan Telekomunikasi ITS. Ruang B-301 Gedung B Lantai 3 Teknik Elektro ITS Surabaya.",
+        descEn: "Contact Telecommunication Network Laboratory ITS. Room B-301, 3rd Floor Electrical Engineering Building, ITS Surabaya.",
+    },
+    "/terms": {
+        titleId: "Syarat & Ketentuan — Laboratorium Jaringan Telekomunikasi ITS",
+        titleEn: "Terms of Service — Telecommunication Network Laboratory ITS",
+        descId: "Syarat dan ketentuan penggunaan layanan dan informasi situs web Laboratorium Jaringan Telekomunikasi ITS.",
+        descEn: "Terms and conditions of using the Telecommunication Network Laboratory ITS website and services.",
+    },
+    "/privacy": {
+        titleId: "Kebijakan Privasi (UU PDP) — Laboratorium Jaringan Telekomunikasi ITS",
+        titleEn: "Privacy Policy (UU PDP) — Telecommunication Network Laboratory ITS",
+        descId: "Kebijakan perlindungan data pribadi pengunjung dan pendaftar kegiatan sesuai UU Nomor 27 Tahun 2022 (UU PDP).",
+        descEn: "Personal data protection policy for visitors and registrants under Indonesian Personal Data Protection Law (UU PDP).",
+    },
+};
 
 function useHeadTags() {
     const { data: settings } = useSettings();
     const location = useLocation();
+    const { locale } = useLocale();
+
     useEffect(() => {
         if (!settings) return;
-        const description = settings.seo?.default_description ?? "";
-        document.title = settings.seo?.title_template
-            ? settings.seo.title_template.replace("{title}", settings.short_name || "TNL")
-            : settings.site_title;
+        const metaInfo = ROUTE_META[location.pathname] || {
+            titleId: settings.site_title,
+            titleEn: settings.site_title,
+            descId: settings.seo?.default_description ?? "",
+            descEn: settings.seo?.default_description ?? "",
+        };
+
+        const pageTitle = locale === "id" ? metaInfo.titleId : metaInfo.titleEn;
+        const pageDesc = locale === "id" ? metaInfo.descId : metaInfo.descEn;
+
+        document.title = pageTitle;
+
         const ensure = (selector: string, create: () => HTMLElement): HTMLElement => {
             let el = document.head.querySelector(selector) as HTMLElement | null;
             if (!el) {
@@ -24,17 +91,30 @@ function useHeadTags() {
             }
             return el;
         };
-        const meta = ensure('meta[name="description"]', () => {
+
+        const metaDesc = ensure('meta[name="description"]', () => {
             const m = document.createElement("meta");
             m.setAttribute("name", "description");
             return m;
         });
-        meta.setAttribute("content", description);
+        metaDesc.setAttribute("content", pageDesc);
+
+        // Canonical URL
+        const canonicalUrl = `https://labtnl.site${location.pathname === "/" ? "" : location.pathname}`;
+        const canonicalTag = ensure('link[rel="canonical"]', () => {
+            const l = document.createElement("link");
+            l.setAttribute("rel", "canonical");
+            return l;
+        });
+        canonicalTag.setAttribute("href", canonicalUrl);
+
+        // Open Graph
         for (const [prop, value] of [
-            ["og:title", document.title],
-            ["og:description", description],
+            ["og:title", pageTitle],
+            ["og:description", pageDesc],
             ["og:type", "website"],
-            ["og:url", window.location.href],
+            ["og:url", canonicalUrl],
+            ["og:image", "https://labtnl.site/assets/brand/tnl-logo-badge.png"],
         ] as const) {
             const tag = ensure(`meta[property="${prop}"]`, () => {
                 const m = document.createElement("meta");
@@ -43,6 +123,23 @@ function useHeadTags() {
             });
             tag.setAttribute("content", value);
         }
+
+        // Twitter Cards
+        for (const [name, value] of [
+            ["twitter:card", "summary_large_image"],
+            ["twitter:title", pageTitle],
+            ["twitter:description", pageDesc],
+            ["twitter:image", "https://labtnl.site/assets/brand/tnl-logo-badge.png"],
+        ] as const) {
+            const tag = ensure(`meta[name="${name}"]`, () => {
+                const m = document.createElement("meta");
+                m.setAttribute("name", name);
+                return m;
+            });
+            tag.setAttribute("content", value);
+        }
+
+        // JSON-LD Structured Data
         const ld = ensure('script[data-tnl-jsonld="1"]', () => {
             const s = document.createElement("script");
             s.setAttribute("type", "application/ld+json");
@@ -54,14 +151,24 @@ function useHeadTags() {
             "@type": "ResearchOrganization",
             name: settings.site_title,
             alternateName: settings.short_name,
+            url: "https://labtnl.site",
+            logo: "https://labtnl.site/assets/brand/tnl-logo-badge.png",
             email: settings.contact?.email ?? undefined,
             parentOrganization: {
                 "@type": "CollegeOrUniversity",
                 name: "Institut Teknologi Sepuluh Nopember",
                 url: "https://www.its.ac.id",
             },
+            address: {
+                "@type": "PostalAddress",
+                streetAddress: settings.contact?.address ?? "Ruang B-301, Gedung B Lantai 3 Teknik Elektro ITS",
+                addressLocality: "Surabaya",
+                addressRegion: "Jawa Timur",
+                postalCode: "60111",
+                addressCountry: "ID",
+            },
         });
-    }, [settings, location.pathname]);
+    }, [settings, location.pathname, locale]);
 }
 
 export function LocaleProvider({ children }: { children: ReactNode }) {

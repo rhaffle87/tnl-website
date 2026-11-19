@@ -42,6 +42,23 @@ def youtube_id(url: str) -> str | None:
     return m.group(1) if m else None
 
 
+def _validate_magic_bytes(data: bytes, ctype: str, ext: str) -> bool:
+    """Validate header magic bytes for common web media to prevent mime spoofing."""
+    if not data:
+        return False
+    if ctype == "image/jpeg" or ext in (".jpg", ".jpeg"):
+        return data.startswith(b"\xff\xd8\xff")
+    if ctype == "image/png" or ext == ".png":
+        return data.startswith(b"\x89PNG\r\n\x1a\n")
+    if ctype == "image/gif" or ext == ".gif":
+        return data.startswith(b"GIF87a") or data.startswith(b"GIF89a")
+    if ctype == "image/webp" or ext == ".webp":
+        return len(data) >= 12 and data.startswith(b"RIFF") and data[8:12] == b"WEBP"
+    if ctype == "application/pdf" or ext == ".pdf":
+        return data.startswith(b"%PDF-")
+    return True
+
+
 def _derive(data: bytes, base_key: str) -> dict:
     """WebP master + responsive widths. Pillow missing → originals only, never an error."""
     out: dict = {}
@@ -129,6 +146,11 @@ async def upload_media(request: Request, file: UploadFile = File(...), alt: str 
             status_code=415,
             detail="Only images (JPG, PNG, WebP, GIF) and academic/lab documents (PDF, Word, PKT, Python, ZIP) are allowed."
         )
+    if not _validate_magic_bytes(data, ctype, ext):
+        raise HTTPException(
+            status_code=422,
+            detail="File content header does not match the claimed file type."
+        )
     kind = "image" if is_image else "document"
     key = f"{folder or 'general'}/{safe_name(file.filename or 'file')}"
     url = put_object(data, key, ctype)
@@ -211,10 +233,16 @@ async def delete_media(media_id: str, request: Request):
 
 @router.get("/media-files/{path:path}")
 async def serve_media(path: str):
-    """Serve locally stored media. Path traversal is rejected before touching disk."""
-    if ".." in path or path.startswith("/"):
+    """Serve locally stored media. Path traversal is strictly rejected before touching disk."""
+    if ".." in path or path.startswith("/") or "\\" in path:
         raise HTTPException(status_code=400, detail="Invalid path.")
-    full = local_path(path)
+    full = os.path.abspath(local_path(path))
+    media_root = os.path.abspath(MEDIA_DIR)
+    try:
+        if os.path.commonpath([media_root, full]) != media_root:
+            raise HTTPException(status_code=403, detail="Access denied.")
+    except (ValueError, Exception):
+        raise HTTPException(status_code=400, detail="Invalid path.")
     if not os.path.isfile(full):
         raise HTTPException(status_code=404, detail="File not found.")
     return FileResponse(full, headers={"Cache-Control": "public, max-age=86400"})
