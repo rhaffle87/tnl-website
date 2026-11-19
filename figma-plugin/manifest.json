@@ -1,0 +1,15 @@
+{
+  "name": "TNL Studio CMS Sync",
+  "id": "tnl-studio-cms-sync",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma", "dev"],
+  "networkAccess": {
+    "allowedDomains": [
+      "https://labtnl.site",
+      "http://localhost:8001"
+    ],
+    "reasoning": "Synchronises design tokens and page draft frames directly to the official TNL Studio CMS backend."
+  }
+}

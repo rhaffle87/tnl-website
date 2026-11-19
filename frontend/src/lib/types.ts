@@ -550,6 +550,30 @@ export interface ThemeResponse {
   default: ThemeTokens;
 }
 
+export interface FigmaSyncStatus {
+  configured: boolean;
+  prefix?: string | null;
+  created_at?: string | null;
+  endpoint_sync_frame: string;
+  endpoint_import_tokens: string;
+}
+
+export interface FigmaTokenResult {
+  ok: boolean;
+  token: string;
+  prefix: string;
+  created_at: string;
+  message: string;
+}
+
+export interface FigmaImportTokensResult {
+  ok: boolean;
+  tokens: ThemeTokens;
+  contrast: ContrastCheck[];
+  all_pass: boolean;
+  message: string;
+}
+
 export interface ListResponse<T> {
   items: T[];
   total?: number;

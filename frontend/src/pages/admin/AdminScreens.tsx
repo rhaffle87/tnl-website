@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Award, Download, FileSpreadsheet, RefreshCw, Sparkles, Upload } from "lucide-react";
+import { Award, Check, Copy, Download, FileJson, FileSpreadsheet, KeyRound, RefreshCw, Sparkles, Upload } from "lucide-react";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
 import { AdminHeader, ConfirmButton, Panel, adminError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
@@ -13,6 +13,9 @@ import type {
     ApiKeyRecord,
     AuthUser,
     ContactMessage,
+    FigmaImportTokensResult,
+    FigmaSyncStatus,
+    FigmaTokenResult,
     LabEvent,
     ListResponse,
     MediaAsset,
@@ -845,7 +848,70 @@ export function SettingsPage() {
         retry: false,
     });
     const [form, setForm] = useState<Partial<SiteSettings> | null>(null);
+    const [figmaRawJson, setFigmaRawJson] = useState("");
+    const [jsonImportPreview, setJsonImportPreview] = useState<any | null>(null);
+    const [generatedToken, setGeneratedToken] = useState<string | null>(null);
+    const [copiedToken, setCopiedToken] = useState(false);
     const current = { ...(data ?? {}), ...(form ?? {}) } as SiteSettings;
+
+    const { data: figmaStatus, refetch: refetchFigmaStatus } = useQuery<FigmaSyncStatus>({
+        queryKey: ["admin", "figma", "status"],
+        queryFn: () => apiGet<FigmaSyncStatus>("/admin/figma/status"),
+        retry: false,
+    });
+
+    const generateToken = useMutation({
+        mutationFn: () => apiPost<FigmaTokenResult>("/admin/figma/token"),
+        onSuccess: (res) => {
+            setGeneratedToken(res.token);
+            void refetchFigmaStatus();
+            toast.success("Figma Sync Token berhasil dibuat! Salin sekarang.");
+        },
+        onError: (err) => toast.error(adminError(err, "Gagal membuat token.")),
+    });
+
+    const importTokensMutation = useMutation({
+        mutationFn: (payload: any) => apiPost<FigmaImportTokensResult>("/admin/figma/import-tokens", payload),
+        onSuccess: (res) => {
+            void qc.invalidateQueries({ queryKey: ["admin", "settings"] });
+            void qc.invalidateQueries({ queryKey: ["admin", "theme"] });
+            void qc.invalidateQueries({ queryKey: ["public", "settings"] });
+            setFigmaRawJson("");
+            setJsonImportPreview(null);
+            toast.success(`Token berhasil diimpor! WCAG AA: ${res.all_pass ? "Lulus" : "Periksa di /admin/theme"}`);
+        },
+        onError: (err) => toast.error(adminError(err, "Gagal mengimpor token.")),
+    });
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const parsed = JSON.parse(event.target?.result as string);
+                setFigmaRawJson(JSON.stringify(parsed, null, 2));
+                setJsonImportPreview(parsed);
+            } catch {
+                toast.error("File JSON tidak valid.");
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const handleJsonPaste = (text: string) => {
+        setFigmaRawJson(text);
+        if (!text.trim()) {
+            setJsonImportPreview(null);
+            return;
+        }
+        try {
+            const parsed = JSON.parse(text);
+            setJsonImportPreview(parsed);
+        } catch {
+            setJsonImportPreview(null);
+        }
+    };
 
     const save = useMutation({
         mutationFn: () =>
@@ -988,6 +1054,136 @@ export function SettingsPage() {
                         >
                             Kelola Tema & Token Warna GSM →
                         </Link>
+                    </div>
+                </Panel>
+
+                {/* Import dari Figma Tokens (JSON) */}
+                <Panel>
+                    <div className="flex items-center gap-2">
+                        <FileJson className="h-5 w-5 text-[var(--gsm-accent,#A8977B)]" />
+                        <h2 className="tnl-h5 text-[18px]">Import dari Figma Tokens (JSON)</h2>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Unggah file <code className="font-mono text-[11px]">.json</code> hasil ekspor plugin <strong>Tokens Studio for Figma</strong> atau W3C Design Tokens untuk sinkronisasi warna GSM secara instan.
+                    </p>
+
+                    <div className="mt-3 space-y-3">
+                        <div>
+                            <label className="block text-xs font-medium mb-1">Pilih File JSON (.json)</label>
+                            <input
+                                type="file"
+                                accept=".json,application/json"
+                                onChange={handleFileUpload}
+                                className="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[var(--gsm-primary,#223027)] file:text-white hover:file:opacity-90"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-medium mb-1">Atau Tempel JSON Tokens Studio / W3C</label>
+                            <textarea
+                                rows={4}
+                                className="tnl-field font-mono text-[11px]"
+                                placeholder='{"primary": {"value": "#223027"}, "emerald": {"value": "#5D8A6B"}, "accent": {"value": "#A8977B"}}'
+                                value={figmaRawJson}
+                                onChange={(e) => handleJsonPaste(e.target.value)}
+                            />
+                        </div>
+
+                        {jsonImportPreview && (
+                            <div className="rounded-lg border p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40 text-xs text-emerald-800 dark:text-emerald-200">
+                                <span className="font-semibold block mb-1">✓ JSON Terdeteksi Valid</span>
+                                <span className="text-[11px]">Struktur token terbaca dan siap disuntikkan ke draf tema.</span>
+                            </div>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (!jsonImportPreview) {
+                                    toast.error("Masukkan atau unggah JSON terlebih dahulu.");
+                                    return;
+                                }
+                                importTokensMutation.mutate(jsonImportPreview);
+                            }}
+                            disabled={!jsonImportPreview || importTokensMutation.isPending}
+                            className="tnl-btn tnl-btn-primary w-full h-10 min-h-[40px] text-xs font-semibold flex items-center justify-center gap-1.5"
+                            data-testid="settings-import-figma-tokens-button"
+                        >
+                            <Upload className="h-4 w-4" />
+                            {importTokensMutation.isPending ? "Mengimpor..." : "Terapkan ke Draf Tema GSM"}
+                        </button>
+                    </div>
+                </Panel>
+
+                {/* Koneksi Plugin Figma (TNL CMS Sync) */}
+                <Panel>
+                    <div className="flex items-center gap-2">
+                        <KeyRound className="h-5 w-5 text-[var(--gsm-emerald,#5D8A6B)]" />
+                        <h2 className="tnl-h5 text-[18px]">Koneksi Plugin Figma (TNL CMS Sync)</h2>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Gunakan plugin privat <strong>TNL Studio CMS Sync</strong> di Figma untuk mengirim seleksi frame langsung menjadi draf halaman di CMS.
+                    </p>
+
+                    <div className="mt-3 space-y-3">
+                        <div className="rounded-lg border p-3 border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02] text-xs space-y-1.5">
+                            <div className="flex items-center justify-between">
+                                <span className="text-gray-500">Status Token:</span>
+                                <span className={`font-bold px-2 py-0.5 rounded text-[11px] ${figmaStatus?.configured ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"}`}>
+                                    {figmaStatus?.configured ? `Aktif (${figmaStatus.prefix})` : "Belum Dikonfigurasi"}
+                                </span>
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                                <span className="text-gray-500">Endpoint Frame Sync:</span>
+                                <code className="font-mono text-[10px] break-all p-1 bg-black/5 dark:bg-white/5 rounded">
+                                    {figmaStatus?.endpoint_sync_frame || "https://labtnl.site/api/admin/figma/sync-frame"}
+                                </code>
+                            </div>
+                        </div>
+
+                        {generatedToken && (
+                            <div className="rounded-lg border p-3 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/50">
+                                <span className="text-xs font-bold text-amber-900 dark:text-amber-200 block mb-1">
+                                    Simpan Token Figma Ini Sekarang
+                                </span>
+                                <p className="text-[11px] text-amber-700 dark:text-amber-300 mb-2">
+                                    Token lengkap hanya ditampilkan sekali ini untuk keamanan.
+                                </p>
+                                <div className="flex items-center gap-1.5">
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        value={generatedToken}
+                                        className="tnl-field font-mono text-xs flex-1 bg-white dark:bg-black/40"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            void navigator.clipboard.writeText(generatedToken);
+                                            setCopiedToken(true);
+                                            setTimeout(() => setCopiedToken(false), 2000);
+                                            toast.success("Token disalin!");
+                                        }}
+                                        className="tnl-btn tnl-btn-outline shrink-0 h-[42px] px-3 text-xs"
+                                    >
+                                        {copiedToken ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => generateToken.mutate()}
+                                disabled={generateToken.isPending}
+                                className="tnl-btn tnl-btn-outline flex-1 h-10 min-h-[40px] text-xs font-semibold flex items-center justify-center gap-1.5"
+                                data-testid="settings-generate-figma-token-button"
+                            >
+                                <KeyRound className="h-4 w-4" />
+                                {generateToken.isPending ? "Memproses..." : figmaStatus?.configured ? "Rotasi Figma Token" : "Generate Figma Sync Token"}
+                            </button>
+                        </div>
                     </div>
                 </Panel>
             </div>

@@ -15,7 +15,7 @@ load_dotenv(ROOT_DIR / ".env")
 from lib.db import client, db, ensure_indexes  # noqa: E402
 from lib.jev import close_jev  # noqa: E402
 from routers import (  # noqa: E402
-    apiv1, auth, content, google_auth, labphotos, media, public, pubimport, registrar, seo, siteadmin,
+    apiv1, auth, content, figma, google_auth, labphotos, media, public, pubimport, registrar, seo, siteadmin,
 )
 
 
@@ -60,6 +60,8 @@ api_router.include_router(google_auth.router)
 api_router.include_router(content.router)
 # Page builder, settings, theme tokens, audit log, dashboard.
 api_router.include_router(siteadmin.router)
+# Figma to CMS sync (tokens, frames, private plugin).
+api_router.include_router(figma.router)
 # Registrar pipeline, contact inbox management, UU PDP tools.
 api_router.include_router(registrar.router)
 # Media library + local file serving.

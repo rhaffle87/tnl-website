@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TNL Studio CMS Sync</title>
+  <style>
+    :root {
+      --bg: #0C100E;
+      --card-bg: #141A16;
+      --border: rgba(93, 138, 107, 0.25);
+      --primary: #223027;
+      --emerald: #5D8A6B;
+      --accent: #A8977B;
+      --accent-hover: #C2B091;
+      --text: #E5EDE7;
+      --muted: #829288;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+    .badge {
+      background: var(--primary);
+      border: 1px solid var(--emerald);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .title {
+      font-weight: 700;
+      font-size: 14px;
+      color: #FFFFFF;
+    }
+    .section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input, select, textarea {
+      width: 100%;
+      background: #080A09;
+      border: 1px solid var(--border);
+      color: #FFFFFF;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 8px;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--emerald);
+      box-shadow: 0 0 0 1px var(--emerald);
+    }
+    .radio-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .radio-card {
+      background: #080A09;
+      border: 1px solid var(--border);
+      padding: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all 0.15s ease;
+    }
+    .radio-card.active {
+      border-color: var(--accent);
+      background: rgba(168, 151, 123, 0.1);
+      color: #FFFFFF;
+    }
+    .selection-info {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+      padding: 6px 8px;
+      background: #080A09;
+      border-radius: 4px;
+      border-left: 2px solid var(--emerald);
+    }
+    .btn {
+      width: 100%;
+      background: var(--accent);
+      color: #0C100E;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn:hover {
+      background: var(--accent-hover);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .status {
+      margin-top: 10px;
+      font-size: 11px;
+      padding: 8px;
+      border-radius: 6px;
+      display: none;
+      word-break: break-word;
+    }
+    .status.success {
+      display: block;
+      background: rgba(93, 138, 107, 0.15);
+      border: 1px solid var(--emerald);
+      color: #A3D1B0;
+    }
+    .status.error {
+      display: block;
+      background: rgba(185, 28, 28, 0.15);
+      border: 1px solid #B91C1C;
+      color: #FCA5A5;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="badge">LAB TNL</span>
+    <div>
+      <div class="title">TNL Studio CMS Sync</div>
+      <div style="font-size: 10px; color: var(--muted);">Figma &rarr; labtnl.site Draft Sync</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <label>Endpoint Target</label>
+    <select id="endpointSelect">
+      <option value="https://labtnl.site">Production (https://labtnl.site)</option>
+      <option value="http://localhost:8001">Local Development (:8001)</option>
+    </select>
+
+    <label>Figma Sync Token</label>
+    <input type="password" id="syncToken" placeholder="tnl_figma_..." />
+    <span style="font-size: 10px; color: var(--muted);">Dapatkan token ini di /admin/settings dashboard.</span>
+  </div>
+
+  <div class="section">
+    <label>Target Sinkronisasi</label>
+    <div class="radio-group">
+      <div class="radio-card active" id="tabFrame" onclick="setMode('frame')">Push Frame Draft</div>
+      <div class="radio-card" id="tabTokens" onclick="setMode('tokens')">Sync GSM Tokens</div>
+    </div>
+
+    <!-- Frame Mode Fields -->
+    <div id="frameModeSection">
+      <label>Status Seleksi Canvas</label>
+      <div id="selectionBox" class="selection-info">Pilih frame atau section di canvas Figma...</div>
+
+      <div style="margin-top: 8px;">
+        <label>Judul Halaman (Draft)</label>
+        <input type="text" id="pageTitle" placeholder="cth: Riset 5G & IoT 2026" />
+
+        <label>Custom Slug (Opsional)</label>
+        <input type="text" id="pageSlug" placeholder="cth: riset-5g-iot" />
+      </div>
+    </div>
+
+    <!-- Tokens Mode Fields -->
+    <div id="tokensModeSection" style="display: none;">
+      <label>Edisi GSM Label</label>
+      <input type="text" id="editionLabel" placeholder="cth: GSM Kabinet Keberlanjutan 2026" value="GSM Kabinet Keberlanjutan 2026" />
+      <p style="font-size: 11px; color: var(--muted);">
+        Membaca koleksi color variables lokal (Primary, Emerald, Obsidian, Accent) dari file Figma ini dan menyuntikkannya ke draf tema CMS.
+      </p>
+    </div>
+  </div>
+
+  <button class="btn" id="syncBtn" onclick="handleSync()">Push ke Admin Dashboard</button>
+  <div id="statusBox" class="status"></div>
+
+  <script>
+    let currentMode = "frame";
+    let selectedNode = null;
+
+    // Load saved token from localStorage
+    const savedToken = localStorage.getItem("tnl_figma_token");
+    if (savedToken) document.getElementById("syncToken").value = savedToken;
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById("tabFrame").className = mode === "frame" ? "radio-card active" : "radio-card";
+      document.getElementById("tabTokens").className = mode === "tokens" ? "radio-card active" : "radio-card";
+      document.getElementById("frameModeSection").style.display = mode === "frame" ? "block" : "none";
+      document.getElementById("tokensModeSection").style.display = mode === "tokens" ? "block" : "none";
+      document.getElementById("syncBtn").innerText = mode === "frame" ? "Push Selected Frame as Page Draft" : "Sync GSM Variables to CMS";
+    }
+
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+
+      if (msg.type === "selection-changed") {
+        if (msg.hasSelection && msg.node) {
+          selectedNode = msg.node;
+          document.getElementById("selectionBox").innerText = `${msg.node.name} (${msg.node.type}, ${msg.node.width}x${msg.node.height}px)`;
+          if (!document.getElementById("pageTitle").value) {
+            document.getElementById("pageTitle").value = msg.node.heading || msg.node.name;
+          }
+        } else {
+          selectedNode = null;
+          document.getElementById("selectionBox").innerText = "Tidak ada seleksi aktif. Pilih frame di canvas.";
+        }
+      } else if (msg.type === "variables-result") {
+        if (msg.ok) {
+          pushTokensToBackend(msg.tokens);
+        } else {
+          showStatus("Gagal membaca variables: " + msg.error, "error");
+        }
+      }
+    };
+
+    function showStatus(text, type) {
+      const b = document.getElementById("statusBox");
+      b.className = "status " + type;
+      b.innerText = text;
+    }
+
+    async function handleSync() {
+      const token = document.getElementById("syncToken").value.trim();
+      if (!token) {
+        showStatus("Wajib mengisi Figma Sync Token terlebih dahulu.", "error");
+        return;
+      }
+      localStorage.setItem("tnl_figma_token", token);
+
+      document.getElementById("syncBtn").disabled = true;
+      document.getElementById("syncBtn").innerText = "Mengirim data...";
+
+      if (currentMode === "tokens") {
+        parent.postMessage({ pluginMessage: { type: "get-variables" } }, "*");
+      } else {
+        await pushFrameDraftToBackend();
+      }
+    }
+
+    async function pushTokensToBackend(tokens) {
+      const baseUrl = document.getElementById("endpointSelect").value;
+      const token = document.getElementById("syncToken").value.trim();
+      const edition = document.getElementById("editionLabel").value.trim();
+
+      try {
+        const res = await fetch(`${baseUrl}/api/admin/figma/import-tokens`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Figma-Token": token,
+          },
+          body: JSON.stringify({
+            ...tokens,
+            gsm_edition_label: edition,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Gagal sinkronisasi token.");
+
+        showStatus(`✓ Berhasil! Token GSM tersinkronisasi. Skor kontras WCAG AA: ${data.all_pass ? "Lulus" : "Perlu cek"}`, "success");
+        parent.postMessage({ pluginMessage: { type: "notify", message: "Token GSM berhasil disinkronisasi ke draf CMS!" } }, "*");
+      } catch (err) {
+        showStatus("Error: " + err.message, "error");
+      } finally {
+        document.getElementById("syncBtn").disabled = false;
+        document.getElementById("syncBtn").innerText = "Sync GSM Variables to CMS";
+      }
+    }
+
+    async function pushFrameDraftToBackend() {
+      const baseUrl = document.getElementById("endpointSelect").value;
+      const token = document.getElementById("syncToken").value.trim();
+      const title = document.getElementById("pageTitle").value.trim() || (selectedNode ? selectedNode.name : "Figma Page Draft");
+      const slug = document.getElementById("pageSlug").value.trim();
+
+      const cards = [];
+      if (selectedNode && selectedNode.allTexts && selectedNode.allTexts.length > 2) {
+        for (let i = 2; i < selectedNode.allTexts.length; i += 2) {
+          cards.push({
+            title: selectedNode.allTexts[i],
+            description: selectedNode.allTexts[i + 1] || "",
+          });
+        }
+      }
+
+      const payload = {
+        title: title,
+        slug: slug || undefined,
+        frame_name: selectedNode ? selectedNode.name : "Frame",
+        heading: selectedNode ? selectedNode.heading : title,
+        subheading: selectedNode ? selectedNode.subheading : "",
+        cards: cards,
+        cta_label: "Pelajari Lebih Lanjut",
+        cta_url: "/activities",
+      };
+
+      try {
+        const res = await fetch(`${baseUrl}/api/admin/figma/sync-frame`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Figma-Token": token,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Gagal sinkronisasi frame.");
+
+        showStatus(`✓ Sukses! Halaman tersimpan sebagai draf: /${data.slug}. Buka /admin/pages untuk review & publish.`, "success");
+        parent.postMessage({ pluginMessage: { type: "notify", message: `Draft halaman '${data.slug}' tersimpan di CMS!` } }, "*");
+      } catch (err) {
+        showStatus("Error: " + err.message, "error");
+      } finally {
+        document.getElementById("syncBtn").disabled = false;
+        document.getElementById("syncBtn").innerText = "Push Selected Frame as Page Draft";
+      }
+    }
+  </script>
+</body>
+</html>
