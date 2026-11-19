@@ -24,6 +24,13 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
         <div className="flex min-h-svh" style={{ background: "var(--tnl-surface)" }}>
             <div className="tnl-hero-gradient hidden w-[44%] flex-col justify-between p-12 lg:flex">
                 <div>
+                    <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-[#111613] p-2.5 shadow-lg">
+                        <img
+                            src="/assets/brand/tnl-logo-white.png"
+                            alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
+                            className="h-full w-full object-contain"
+                        />
+                    </div>
                     <span className="text-xs font-bold uppercase tracking-[0.25em]" style={{ color: "var(--tnl-tan)" }}>
                         TNL Studio
                     </span>
@@ -41,8 +48,22 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
             </div>
             <div className="flex flex-1 items-center justify-center p-6">
                 <div className="tnl-card w-full max-w-md p-8">
-                    <h2 className="tnl-h4 text-[24px]">{title}</h2>
-                    <p className="mt-1.5 text-sm text-[var(--tnl-body)]">{subtitle}</p>
+                    <div className="mb-4 flex items-center gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-[#111613] p-1.5 shadow-sm">
+                            <img
+                                src="/assets/brand/tnl-logo-white.png"
+                                alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
+                                className="h-full w-full object-contain"
+                            />
+                        </span>
+                        <div>
+                            <span className="text-xs font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
+                                TNL Studio
+                            </span>
+                            <h2 className="tnl-h4 text-[22px] leading-tight">{title}</h2>
+                        </div>
+                    </div>
+                    <p className="mt-1 text-sm text-[var(--tnl-body)]">{subtitle}</p>
                     <div className="mt-6">{children}</div>
                 </div>
             </div>

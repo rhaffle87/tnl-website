@@ -5,6 +5,7 @@ import os
 import re
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
@@ -532,8 +533,14 @@ async def certificate_pdf(code: str):
         # Corner corner accents
         pdf.rect(16, 16, 265, 178)
 
+        # Official Laboratory Logo
+        logo_path = Path(__file__).resolve().parent.parent / "assets" / "brand" / "tnl-logo-dark.png"
+        if logo_path.is_file():
+            # Emblem: 15mm x 15mm, centered at x = (297 - 15) / 2 = 141.0
+            pdf.image(str(logo_path), x=141.0, y=19, w=15, h=15)
+
         # Institution headers
-        pdf.set_y(22)
+        pdf.set_y(36)
         pdf.set_font("helvetica", "B", 13)
         pdf.set_text_color(67, 89, 74)
         pdf.cell(0, 6, "INSTITUT TEKNOLOGI SEPULUH NOPEMBER", align="C", new_x="LMARGIN", new_y="NEXT")
@@ -546,13 +553,13 @@ async def certificate_pdf(code: str):
         pdf.cell(0, 4, "Gedung B Lantai 3 Ruang B-301, Kampus ITS Sukolilo, Surabaya 60111", align="C", new_x="LMARGIN", new_y="NEXT")
 
         # Decorative line
-        pdf.set_y(40)
+        pdf.set_y(53)
         pdf.set_draw_color(168, 151, 123)
         pdf.set_line_width(0.6)
-        pdf.line(40, 40, 257, 40)
+        pdf.line(40, 53, 257, 53)
 
         # Title
-        pdf.set_y(46)
+        pdf.set_y(57)
         pdf.set_font("helvetica", "B", 24)
         pdf.set_text_color(17, 21, 24)
         pdf.cell(0, 12, "CERTIFICATE OF ACHIEVEMENT", align="C", new_x="LMARGIN", new_y="NEXT")
@@ -562,7 +569,7 @@ async def certificate_pdf(code: str):
         pdf.cell(0, 6, "This is to certify that", align="C", new_x="LMARGIN", new_y="NEXT")
 
         # Participant Name
-        pdf.set_y(70)
+        pdf.set_y(76)
         pdf.set_font("helvetica", "B", 26)
         pdf.set_text_color(67, 89, 74)
         pdf.cell(0, 14, name, align="C", new_x="LMARGIN", new_y="NEXT")

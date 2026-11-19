@@ -41,14 +41,19 @@ const NAV = [
     { key: "nav_contact", to: "/contact" },
 ] as const;
 
-function LogoMark({ short }: { short: string }) {
+function LogoMark({ short }: { short?: string }) {
     return (
         <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-sm font-bold tracking-tight text-white"
-            style={{ background: "linear-gradient(135deg, #111518 0%, #43594A 100%)" }}
-            aria-hidden="true"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#111613] p-1.5 border border-black/10 dark:border-white/15 shadow-sm"
+            aria-label={short || "TNL"}
         >
-            {short}
+            <img
+                src="/assets/brand/tnl-logo-white.png"
+                alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
+                className="h-full w-full object-contain"
+                fetchPriority="high"
+                loading="eager"
+            />
         </span>
     );
 }
@@ -506,8 +511,13 @@ export function SiteFooter({
                                     to="/"
                                     className={`inline-flex min-h-[44px] items-center gap-3 rounded-lg py-1 ${focusRing}`}
                                 >
-                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#223027] text-xs font-extrabold tracking-wider text-[#F4F4F0]">
-                                        {settings?.short_name ?? "TNL"}
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-[#1B2620] p-1.5 shadow-sm">
+                                        <img
+                                            src="/assets/brand/tnl-logo-white.png"
+                                            alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
+                                            className="h-full w-full object-contain"
+                                            loading="lazy"
+                                        />
                                     </span>
                                     <div>
                                         <span className="block text-base font-bold leading-snug text-[#F4F4F0]">

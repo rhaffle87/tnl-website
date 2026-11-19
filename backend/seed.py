@@ -523,6 +523,8 @@ async def seed_settings() -> None:
         site_title="Telecommunication Network Laboratory",
         site_title_id="Laboratorium Jaringan Telekomunikasi",
         short_name="TNL",
+        logo_url="/assets/brand/tnl-logo-white.png",
+        logo_url_dark="/assets/brand/tnl-logo-dark.png",
         focus_areas=FOCUS_AREAS,
         language_default="id",
         theme={"draft": ThemeTokens(), "published": ThemeTokens()},
@@ -541,7 +543,7 @@ async def seed_settings() -> None:
         "title_template": "{title} — Telecommunication Network Laboratory ITS",
         "default_description": ("Telecommunication Network Laboratory (TNL), Department of Electrical "
                                 "Engineering, Institut Teknologi Sepuluh Nopember — Room B-301, Surabaya."),
-        "og_image_url": None,
+        "og_image_url": "https://labtnl.site/assets/brand/tnl-logo-badge.png",
     }
     doc["announcement"] = {
         "enabled": True,

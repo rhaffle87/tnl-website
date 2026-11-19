@@ -111,11 +111,20 @@ export default function AdminLayout() {
                 data-testid="admin-sidebar"
             >
                 <div className="border-b px-5 py-5" style={{ borderColor: "#262c33" }}>
-                    <Link to="/admin" className="block" data-testid="admin-logo-link">
-                        <span className="text-xs font-bold uppercase tracking-[0.25em]" style={{ color: "var(--tnl-tan)" }}>
-                            TNL Studio
+                    <Link to="/admin" className="flex items-center gap-3" data-testid="admin-logo-link">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#1C2821] p-1.5 shadow-sm">
+                            <img
+                                src="/assets/brand/tnl-logo-white.png"
+                                alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
+                                className="h-full w-full object-contain"
+                            />
                         </span>
-                        <span className="mt-1 block text-sm font-semibold">Content manager</span>
+                        <div>
+                            <span className="text-xs font-bold uppercase tracking-[0.25em]" style={{ color: "var(--tnl-tan)" }}>
+                                TNL Studio
+                            </span>
+                            <span className="block text-sm font-semibold text-white">Content manager</span>
+                        </div>
                     </Link>
                 </div>
                 <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Admin navigation">
@@ -171,8 +180,15 @@ export default function AdminLayout() {
                     className="flex items-center justify-between gap-4 border-b px-5 py-3 lg:hidden"
                     style={{ background: "#111518", borderColor: "#262c33" }}
                 >
-                    <Link to="/admin" className="text-sm font-bold text-white">
-                        TNL Studio
+                    <Link to="/admin" className="flex items-center gap-2.5 text-sm font-bold text-white">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-[#1C2821] p-1">
+                            <img
+                                src="/assets/brand/tnl-logo-white.png"
+                                alt="TNL"
+                                className="h-full w-full object-contain"
+                            />
+                        </span>
+                        <span>TNL Studio</span>
                     </Link>
                     <button type="button" onClick={signOut} className="text-xs" style={{ color: "#c8ccd0" }} data-testid="admin-mobile-sign-out">
                         Sign out

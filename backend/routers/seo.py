@@ -72,6 +72,7 @@ async def jsonld():
         "name": s.get("site_title"),
         "alternateName": s.get("short_name"),
         "url": base or None,
+        "logo": "https://labtnl.site/assets/brand/tnl-logo-badge.png",
         "email": contact.get("email"),
         "sameAs": social,
         "parentOrganization": {
