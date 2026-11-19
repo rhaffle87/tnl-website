@@ -822,8 +822,8 @@ async def seed_practicum() -> None:
              PracticumResource(title="Topology Lab 01: Subnetting Lab (PKT)", file_url="/api/media-files/academic/lab-01-topology.pkt", file_type="pkt", size_bytes=245760),
          ],
          [
-             PracticumShift(day="Senin", time_slot="08:00 - 10:00 WIB", coordinator_name="Daffa & Fathur", quota=24, room="Ruang B-301", notes="Shift A - Harap membawa laptop dan Packet Tracer v8+"),
-             PracticumShift(day="Rabu", time_slot="13:00 - 15:00 WIB", coordinator_name="Rafi & Alya", quota=24, room="Ruang B-301", notes="Shift B - Wajib hadir 10 menit sebelum sesi dimulai"),
+             PracticumShift(day="Senin", time_slot="16:00 - 18:00 WIB", coordinator_name="Steffano & Darel", quota=24, room="Ruang B-301", notes="Sesi 1 — Harap membawa laptop dan Packet Tracer v8+"),
+             PracticumShift(day="Rabu", time_slot="18:00 - 20:00 WIB", coordinator_name="Rafli & Izzul", quota=24, room="Ruang B-301", notes="Sesi 2 — Wajib hadir 10 menit sebelum sesi dimulai"),
          ]),
         ("TNL-02", "Switching and VLAN", "Switching dan VLAN",
          "Switch configuration, VLAN segmentation and trunking in the laboratory testbed.",
@@ -833,8 +833,8 @@ async def seed_practicum() -> None:
              PracticumResource(title="Switch CLI Configuration Script (TXT)", file_url="/api/media-files/academic/switch-vlan-config.txt", file_type="txt", size_bytes=16384),
          ],
          [
-             PracticumShift(day="Selasa", time_slot="10:00 - 12:00 WIB", coordinator_name="Nabil & Salsa", quota=24, room="Ruang B-301", notes="Praktikum di rak switch B-301"),
-             PracticumShift(day="Kamis", time_slot="15:30 - 17:30 WIB", coordinator_name="Arya & Kevin", quota=24, room="Ruang B-301", notes="Praktikum di rak switch B-301"),
+             PracticumShift(day="Selasa", time_slot="16:00 - 18:00 WIB", coordinator_name="Nathanael & Darel", quota=24, room="Ruang B-301", notes="Sesi 1 — Praktikum di rak switch B-301"),
+             PracticumShift(day="Kamis", time_slot="18:00 - 20:00 WIB", coordinator_name="Steffano & Izzul", quota=24, room="Ruang B-301", notes="Sesi 2 — Praktikum di rak switch B-301"),
          ]),
         ("TNL-03", "Routing", "Routing",
          "Static and dynamic routing between networks, configured on laboratory equipment.",
@@ -844,7 +844,8 @@ async def seed_practicum() -> None:
              PracticumResource(title="Dynamic Routing Packet Tracer Simulation (PKT)", file_url="/api/media-files/academic/lab-03-ospf.pkt", file_type="pkt", size_bytes=312000),
          ],
          [
-             PracticumShift(day="Senin", time_slot="13:00 - 15:00 WIB", coordinator_name="Fathur & Dimas", quota=24, room="Ruang B-301", notes="Eksperimen router Cisco & MikroTik"),
+             PracticumShift(day="Senin", time_slot="16:00 - 18:00 WIB", coordinator_name="Rafli & Nathanael", quota=24, room="Ruang B-301", notes="Sesi 1 — Eksperimen router Cisco & MikroTik"),
+             PracticumShift(day="Rabu", time_slot="18:00 - 20:00 WIB", coordinator_name="Rafi Adin & Nindita", quota=24, room="Ruang B-301", notes="Sesi 2 — Eksperimen router Cisco & MikroTik"),
          ]),
         ("TNL-04", "Network Services", "Layanan Jaringan",
          "DHCP, DNS and address translation as deployed in a small campus network.",
@@ -854,7 +855,8 @@ async def seed_practicum() -> None:
              PracticumResource(title="Automated DNS/DHCP Provisioning Script (PY)", file_url="/api/media-files/academic/services-setup.py", file_type="py", size_bytes=24500),
          ],
          [
-             PracticumShift(day="Rabu", time_slot="08:00 - 10:00 WIB", coordinator_name="Rayhan & Zaki", quota=24, room="Ruang B-301", notes="Hands-on server Ubuntu Linux"),
+             PracticumShift(day="Selasa", time_slot="16:00 - 18:00 WIB", coordinator_name="Raihan & Zein", quota=24, room="Ruang B-301", notes="Sesi 1 — Hands-on server Ubuntu Linux"),
+             PracticumShift(day="Kamis", time_slot="18:00 - 20:00 WIB", coordinator_name="Dhika & Rizqi", quota=24, room="Ruang B-301", notes="Sesi 2 — Hands-on server Ubuntu Linux"),
          ]),
         ("TNL-05", "Network Measurement", "Pengukuran Jaringan",
          "Measuring throughput, delay and loss, and interpreting the results.",
@@ -864,7 +866,8 @@ async def seed_practicum() -> None:
              PracticumResource(title="QoS Automated Log Analysis Script (PY)", file_url="/api/media-files/academic/measure-analyze.py", file_type="py", size_bytes=18000),
          ],
          [
-             PracticumShift(day="Jumat", time_slot="08:30 - 11:00 WIB", coordinator_name="Daffa & Rayhan", quota=24, room="Ruang B-301", notes="Shift Final & Pengambilan Data Laporan Akhir"),
+             PracticumShift(day="Senin", time_slot="16:00 - 18:00 WIB", coordinator_name="Zidan & Roy", quota=24, room="Ruang B-301", notes="Sesi 1 — Pengukuran QoS dan Analisis Throughput"),
+             PracticumShift(day="Jumat", time_slot="16:00 - 18:00 WIB", coordinator_name="Steffano & Rafli", quota=24, room="Ruang B-301", notes="Sesi 2 — Shift Final & Pengambilan Data Laporan Akhir"),
          ]),
     ]
     docs = []

@@ -60,7 +60,7 @@ function num(props: Record<string, unknown>, key: string, fallback: number): num
 function HeroBlock({ props }: { props: Record<string, unknown> }) {
     const { locale, t } = useLocale();
     const badge = str(props, "badge");
-    const [imgError, setImgError] = useState(false);
+
     return (
         <section className="tnl-hero-gradient relative overflow-hidden" data-testid="block-hero">
             <div
@@ -106,48 +106,39 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
                         </Link>
                     </div>
                 </div>
-                <div className="hidden lg:flex lg:justify-center">
-                    {!imgError && str(props, "image_url") ? (
-                        <figure className="w-full max-w-md" data-testid="hero-image-figure">
-                            <img
-                                src={str(props, "image_url")}
-                                alt={str(props, "image_alt")}
-                                loading="eager"
-                                fetchPriority="high"
-                                className="h-64 w-full rounded-[28px] border object-cover"
-                                style={{ borderColor: "rgba(168,151,123,0.35)" }}
-                                data-testid="hero-image"
-                                onError={(e) => {
-                                    const target = e.currentTarget;
-                                    if (!target.dataset.retried) {
-                                        target.dataset.retried = "true";
-                                        target.src = target.src + (target.src.includes("?") ? "&" : "?") + "retry=" + Date.now();
-                                    } else {
-                                        setImgError(true);
-                                    }
-                                }}
-                            />
-                            {pickProp(locale, props, "image_caption") &&
-                            !pickProp(locale, props, "image_caption").toLowerCase().includes("illustrative") &&
-                            !pickProp(locale, props, "image_caption").toLowerCase().includes("foto ilustrasi") ? (
-                                <figcaption
-                                    className="mt-2 text-xs italic text-center"
-                                    style={{ color: "#c9ccd1" }}
-                                    data-testid="hero-image-caption"
-                                >
-                                    {pickProp(locale, props, "image_caption")}
-                                </figcaption>
-                            ) : null}
-                        </figure>
-                    ) : (
+
+                {/* Animated Floating TNL Emblem & Concentric Signal Waves */}
+                <div className="flex justify-center lg:justify-end" data-testid="hero-emblem-container">
+                    <div className="relative flex items-center justify-center p-4">
+                        {/* Ambient Radial Glow */}
                         <div
-                            className="flex h-64 w-64 items-center justify-center rounded-[28px] border text-7xl font-bold shadow-2xl"
-                            style={{ borderColor: "rgba(168,151,123,0.35)", background: "rgba(255,255,255,0.04)", color: "var(--tnl-tan)" }}
                             aria-hidden="true"
-                        >
-                            TNL
+                            className="pointer-events-none absolute h-64 w-64 md:h-80 md:w-80 rounded-full blur-3xl opacity-35"
+                            style={{
+                                background: "radial-gradient(circle, rgba(126,168,139,0.4) 0%, rgba(196,179,147,0.22) 50%, transparent 72%)"
+                            }}
+                        />
+
+                        {/* Animated Signal Pulse Rings (Concentric Waves) */}
+                        <div
+                            aria-hidden="true"
+                            className="pointer-events-none absolute h-52 w-52 md:h-72 md:w-72 rounded-full border border-[#7EA88B]/25 animate-signal-pulse-1 motion-reduce:animate-none"
+                        />
+                        <div
+                            aria-hidden="true"
+                            className="pointer-events-none absolute h-64 w-64 md:h-88 md:w-88 rounded-full border border-[#C4B393]/20 animate-signal-pulse-2 motion-reduce:animate-none"
+                        />
+
+                        {/* Floating Emblem */}
+                        <div className="relative z-10 animate-hero-float motion-reduce:animate-none">
+                            <img
+                                src="/assets/brand/tnl-logo-white.png"
+                                alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
+                                fetchPriority="high"
+                                className="h-56 w-56 md:h-72 md:w-72 lg:h-80 lg:w-80 object-contain drop-shadow-[0_16px_36px_rgba(0,0,0,0.55)] select-none pointer-events-none"
+                            />
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </section>
@@ -597,62 +588,70 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
         return locale === "id" ? "Operator Telekomunikasi" : "Telco Operator";
     };
 
+    const marqueeList = list.length > 0 ? [...list, ...list, ...list, ...list] : [];
+
     return (
-        <section className="tnl-section" style={{ background: "var(--tnl-surface)" }} data-testid="block-partners">
+        <section className="tnl-section overflow-hidden" style={{ background: "var(--tnl-surface)" }} data-testid="block-partners">
             <div className="tnl-container">
                 <SectionHeading title={pickProp(locale, props, "heading") || t("partners")} testId="partners-heading" />
                 {!isLoading && list.length === 0 ? (
                     <EmptyState title={t("coming_soon")} body={t("coming_soon_body")} testId="partners-empty-state" />
                 ) : (
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-                        {list.map((p) => {
-                            const category = getCategory(p.name);
-                            const content = (
-                                <>
-                                    <div className="flex h-12 w-full items-center justify-center p-1">
-                                        {p.logo_url ? (
-                                            <img
-                                                src={p.logo_url}
-                                                alt={`${p.name} logo`}
-                                                className="h-10 max-w-[150px] w-auto object-contain transition-transform duration-200 group-hover:scale-105"
-                                                loading="lazy"
-                                            />
-                                        ) : (
-                                            <span className="text-center text-[15px] font-bold tracking-tight">{p.name}</span>
-                                        )}
+                    <div className="group relative mt-6 w-full overflow-hidden py-4 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+                        <div className="flex w-max items-center gap-10 md:gap-16 animate-marquee group-hover:[animation-play-state:paused] motion-reduce:animate-none">
+                            {marqueeList.map((p, idx) => {
+                                const category = getCategory(p.name);
+                                const content = (
+                                    <div className="flex flex-col items-center justify-center transition-transform duration-300 hover:scale-105">
+                                        <div className="flex h-14 md:h-16 w-36 md:w-48 items-center justify-center p-1">
+                                            {p.logo_url ? (
+                                                <img
+                                                    src={p.logo_url}
+                                                    alt={`${p.name} logo`}
+                                                    className="h-11 md:h-14 w-auto max-w-[130px] md:max-w-[160px] object-contain opacity-85 transition-opacity duration-200 hover:opacity-100"
+                                                    loading="lazy"
+                                                />
+                                            ) : (
+                                                <span className="text-center text-sm md:text-base font-bold tracking-tight text-[#111613] dark:text-white">
+                                                    {p.name}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="mt-2 text-center text-xs font-semibold text-[var(--tnl-body)] dark:text-[#B8C0BA] line-clamp-1 max-w-[150px]">
+                                            {p.name.replace("Institut Teknologi Sepuluh Nopember", "ITS Surabaya")}
+                                        </span>
+                                        <span
+                                            className="mt-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                                            style={{
+                                                background: "color-mix(in srgb, var(--tnl-tan) 18%, transparent)",
+                                                color: "var(--tnl-tan-text)",
+                                            }}
+                                        >
+                                            {category}
+                                        </span>
                                     </div>
-                                    <span className="mt-2 text-center text-xs font-bold leading-tight line-clamp-1">
-                                        {p.name.replace("Institut Teknologi Sepuluh Nopember", "ITS Surabaya")}
-                                    </span>
-                                    <span
-                                        className="mt-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                                        style={{ background: "color-mix(in srgb, var(--tnl-tan) 18%, transparent)", color: "var(--tnl-tan-text)" }}
+                                );
+                                return p.url ? (
+                                    <a
+                                        key={`${p.id}-${idx}`}
+                                        href={p.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B393]"
+                                        data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
                                     >
-                                        {category}
-                                    </span>
-                                </>
-                            );
-                            return p.url ? (
-                                <a
-                                    key={p.id}
-                                    href={p.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="tnl-card tnl-card-hover group flex min-h-[120px] flex-col items-center justify-between p-4 transition-all duration-200"
-                                    data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
-                                >
-                                    {content}
-                                </a>
-                            ) : (
-                                <div
-                                    key={p.id}
-                                    className="tnl-card group flex min-h-[120px] flex-col items-center justify-between p-4"
-                                    data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
-                                >
-                                    {content}
-                                </div>
-                            );
-                        })}
+                                        {content}
+                                    </a>
+                                ) : (
+                                    <div
+                                        key={`${p.id}-${idx}`}
+                                        data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
+                                    >
+                                        {content}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </div>

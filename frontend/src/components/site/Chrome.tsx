@@ -14,7 +14,6 @@ import {
     MapPin,
     Menu,
     Moon,
-    ShieldCheck,
     Sun,
     X,
 } from "lucide-react";
@@ -383,7 +382,7 @@ function WatermarkSection() {
                     observer.disconnect();
                 }
             },
-            { threshold: 0.15 }
+            { threshold: 0.1 }
         );
 
         observer.observe(el);
@@ -394,7 +393,7 @@ function WatermarkSection() {
         <div
             ref={watermarkRef}
             aria-hidden="true"
-            className="relative pointer-events-none select-none pt-6 pb-3 md:pb-4"
+            className="relative pointer-events-none select-none pt-8 pb-4"
         >
             {/* Subtle Backlight Lighting (Ambient Glow) */}
             <div
@@ -409,7 +408,7 @@ function WatermarkSection() {
                     className="absolute inset-0 blur-3xl"
                     style={{
                         background:
-                            "radial-gradient(ellipse 70% 65% at 50% 65%, rgba(93, 138, 107, 0.24) 0%, rgba(67, 89, 74, 0.10) 45%, transparent 72%)",
+                            "radial-gradient(ellipse 70% 65% at 50% 65%, rgba(93, 138, 107, 0.28) 0%, rgba(67, 89, 74, 0.12) 45%, transparent 75%)",
                     }}
                 />
             </div>
@@ -424,14 +423,14 @@ function WatermarkSection() {
                     "motion-reduce:opacity-100 motion-reduce:translate-y-0 motion-reduce:scale-100 motion-reduce:transition-none"
                 )}
             >
-                <p className="w-full whitespace-nowrap text-center text-[clamp(3.75rem,13.8vw,13.5rem)] font-black leading-[0.96] tracking-[-0.05em] select-none [mask-image:linear-gradient(to_bottom,rgba(0,0,0,1)_0%,rgba(0,0,0,0.88)_42%,rgba(0,0,0,0.22)_76%,transparent_94%)]">
-                    <span className="bg-gradient-to-b from-[#7EA88B] via-[#43634E]/80 to-[#111613]/0 bg-clip-text text-transparent">
+                <p className="w-full text-center text-[clamp(4.25rem,16.5vw,16.5rem)] font-black leading-[0.94] tracking-[-0.045em] select-none [mask-image:linear-gradient(to_bottom,rgba(0,0,0,1)_0%,rgba(0,0,0,0.85)_40%,rgba(0,0,0,0.22)_76%,transparent_95%)]">
+                    <span className="bg-gradient-to-b from-[#7EA88B] via-[#43634E]/80 to-transparent bg-clip-text text-transparent">
                         LAB TNL
                     </span>
                     <span className="bg-gradient-to-b from-[#D6C39F] via-[#A8977B]/75 to-transparent bg-clip-text text-transparent">
                         .
                     </span>
-                    <span className="bg-gradient-to-b from-[#7EA88B] via-[#43634E]/80 to-[#111613]/0 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-b from-[#7EA88B] via-[#43634E]/80 to-transparent bg-clip-text text-transparent">
                         ITS
                     </span>
                 </p>
@@ -476,14 +475,6 @@ export function SiteFooter({
         settings?.social?.instagram ||
         "https://www.instagram.com/tnlab_its/";
 
-    const siteName =
-        (settings as any)?.site_name?.[lang] ||
-        (settings?.site_title ? pick(lang, settings.site_title, settings.site_title_id) : t.labName);
-
-    const copyrightText =
-        (settings as any)?.copyright?.[lang] ||
-        t.rights;
-
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
@@ -504,33 +495,21 @@ export function SiteFooter({
                 />
                 <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="grid grid-cols-1 gap-10 py-12 lg:grid-cols-12 lg:gap-0 lg:py-16">
-                        {/* Left Column: 5 cols */}
+                        {/* Left Column: 5 cols (Clean Large Official Logo & Social pill only) */}
                         <div className="flex flex-col justify-between space-y-6 lg:col-span-5 lg:border-r lg:border-white/[0.08] lg:pr-12">
-                            <div className="space-y-4">
+                            <div>
                                 <Link
                                     to="/"
-                                    className={`inline-flex min-h-[44px] items-center gap-3 rounded-lg py-1 ${focusRing}`}
+                                    className={`inline-block rounded-2xl transition-transform hover:scale-[1.02] ${focusRing}`}
+                                    aria-label="Laboratorium Jaringan Telekomunikasi ITS"
                                 >
-                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-[#1B2620] p-1.5 shadow-sm">
-                                        <img
-                                            src="/assets/brand/tnl-logo-white.png"
-                                            alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
-                                            className="h-full w-full object-contain"
-                                            loading="lazy"
-                                        />
-                                    </span>
-                                    <div>
-                                        <span className="block text-base font-bold leading-snug text-[#F4F4F0]">
-                                            {siteName}
-                                        </span>
-                                        <span className="block text-xs font-medium text-[#C4B393]">
-                                            labtnl.site · ITS Surabaya
-                                        </span>
-                                    </div>
+                                    <img
+                                        src="/assets/brand/tnl-logo-white.png"
+                                        alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
+                                        className="h-28 w-28 md:h-36 md:w-36 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
+                                        loading="lazy"
+                                    />
                                 </Link>
-                                <p className="max-w-md text-sm leading-relaxed text-[#B8C0BA]">
-                                    {t.labShortDesc}
-                                </p>
                             </div>
 
                             <div className="flex flex-wrap items-center gap-3">
@@ -545,21 +524,13 @@ export function SiteFooter({
                                     <Instagram className="h-4 w-4 text-[#C4B393]" aria-hidden="true" />
                                     <span>{igHandle}</span>
                                 </a>
-                                <Link
-                                    to="/verify"
-                                    className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] px-3.5 text-sm font-medium text-[#D1D5DB] transition-colors hover:border-[#C4B393]/50 hover:text-[#F4F4F0] ${focusRing}`}
-                                    data-testid="footer-verify-link"
-                                >
-                                    <ShieldCheck className="h-4 w-4 text-[#C4B393]" aria-hidden="true" />
-                                    <span>{t.verifyBadge}</span>
-                                </Link>
                             </div>
                         </div>
 
-                        {/* Right Columns: 7 cols (3 sub-columns with clean vertical borders ala s4ras) */}
-                        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 lg:col-span-7 lg:pl-12">
+                        {/* Right Columns: 7 cols (3 balanced sub-columns with clean vertical borders) */}
+                        <div className="grid grid-cols-1 gap-8 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.05fr)_minmax(0,1.4fr)] lg:col-span-7 lg:pl-12">
                             {/* 1. Explore */}
-                            <nav aria-label={t.exploreTitle} className="space-y-2">
+                            <nav aria-label={t.exploreTitle} className="min-w-0 space-y-2">
                                 <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
                                     {t.exploreTitle}
                                 </h3>
@@ -579,7 +550,7 @@ export function SiteFooter({
                             </nav>
 
                             {/* 2. Lab & Resources */}
-                            <nav aria-label={t.resourcesTitle} className="space-y-2 sm:border-l sm:border-white/[0.07] sm:pl-7">
+                            <nav aria-label={t.resourcesTitle} className="min-w-0 space-y-2 sm:border-l sm:border-white/[0.07] sm:pl-7">
                                 <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
                                     {t.resourcesTitle}
                                 </h3>
@@ -597,23 +568,23 @@ export function SiteFooter({
                                 </ul>
                             </nav>
 
-                            {/* 3. Location & Desk */}
-                            <div className="space-y-3 sm:border-l sm:border-white/[0.07] sm:pl-7">
+                            {/* 3. Location & Desk (Full email visible without clipping) */}
+                            <div className="min-w-0 space-y-3 sm:border-l sm:border-white/[0.07] sm:pl-7">
                                 <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
                                     {t.contactTitle}
                                 </h3>
                                 <div className="space-y-2 text-sm text-[#D1D5DB]">
                                     <div className="flex items-start gap-2.5 leading-relaxed">
                                         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
-                                        <span data-testid="footer-address">{address}</span>
+                                        <span className="text-[13px] leading-snug break-words" data-testid="footer-address">{address}</span>
                                     </div>
                                     <a
                                         href={`mailto:${email}`}
-                                        className={`inline-flex min-h-[44px] items-center gap-2.5 text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                        className={`inline-flex min-h-[44px] items-center gap-2.5 text-[13px] text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline break-words min-w-0 ${focusRing}`}
                                         data-testid="footer-email-link"
                                     >
                                         <Mail className="h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
-                                        <span>{email}</span>
+                                        <span className="truncate">{email}</span>
                                     </a>
                                 </div>
                             </div>
