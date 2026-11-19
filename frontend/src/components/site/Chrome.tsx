@@ -494,99 +494,92 @@ export function SiteFooter({
                     className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-[#223027]/35 via-[#18221C]/15 to-transparent"
                 />
                 <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="grid grid-cols-1 gap-10 py-12 lg:grid-cols-12 lg:gap-0 lg:py-16">
-                        {/* Left Column: 5 cols (Clean Large Official Logo & Social pill only) */}
-                        <div className="flex flex-col justify-between space-y-6 lg:col-span-5 lg:border-r lg:border-white/[0.08] lg:pr-12">
-                            <div>
-                                <Link
-                                    to="/"
-                                    className={`inline-block rounded-2xl transition-transform hover:scale-[1.02] ${focusRing}`}
-                                    aria-label="Laboratorium Jaringan Telekomunikasi ITS"
-                                >
-                                    <img
-                                        src="/assets/brand/tnl-logo-white.png"
-                                        alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
-                                        className="h-28 w-28 md:h-36 md:w-36 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
-                                        loading="lazy"
-                                    />
-                                </Link>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-3">
-                                <a
-                                    href={igUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label={`Instagram ${igHandle}`}
-                                    className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] px-3.5 text-sm font-medium text-[#D1D5DB] transition-colors hover:border-[#C4B393]/50 hover:text-[#F4F4F0] ${focusRing}`}
-                                    data-testid="footer-instagram-link"
-                                >
-                                    <Instagram className="h-4 w-4 text-[#C4B393]" aria-hidden="true" />
-                                    <span>{igHandle}</span>
-                                </a>
-                            </div>
+                    {/* 4-column balanced flat grid with even spacing & subtle dividers */}
+                    <div className="grid grid-cols-1 gap-8 py-10 sm:grid-cols-2 lg:grid-cols-[minmax(180px,0.85fr)_1fr_1fr_1.15fr] lg:gap-0 lg:divide-x lg:divide-white/[0.08] lg:py-12">
+                        {/* Column 1: Logo & Instagram */}
+                        <div className="flex flex-col items-start justify-center gap-5 lg:items-center lg:pr-8">
+                            <Link
+                                to="/"
+                                className={`inline-block rounded-2xl transition-transform hover:scale-[1.02] ${focusRing}`}
+                                aria-label="Laboratorium Jaringan Telekomunikasi ITS"
+                            >
+                                <img
+                                    src="/assets/brand/tnl-logo-white.png"
+                                    alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
+                                    className="h-28 w-28 md:h-32 md:w-32 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
+                                    loading="lazy"
+                                />
+                            </Link>
+                            <a
+                                href={igUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`Instagram ${igHandle}`}
+                                className={`inline-flex min-h-[44px] md:min-h-[38px] items-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] px-3.5 text-sm font-medium text-[#D1D5DB] transition-colors hover:border-[#C4B393]/50 hover:text-[#F4F4F0] ${focusRing}`}
+                                data-testid="footer-instagram-link"
+                            >
+                                <Instagram className="h-4 w-4 text-[#C4B393]" aria-hidden="true" />
+                                <span>{igHandle}</span>
+                            </a>
                         </div>
 
-                        {/* Right Columns: 7 cols (3 balanced sub-columns with clean vertical borders) */}
-                        <div className="grid grid-cols-1 gap-8 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.05fr)_minmax(0,1.4fr)] lg:col-span-7 lg:pl-12">
-                            {/* 1. Explore */}
-                            <nav aria-label={t.exploreTitle} className="min-w-0 space-y-2">
-                                <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
-                                    {t.exploreTitle}
-                                </h3>
-                                <ul className="space-y-0.5">
-                                    {t.navLinks.map((item) => (
-                                        <li key={item.to}>
-                                            <Link
-                                                to={item.to}
-                                                className={`inline-flex min-h-[44px] items-center text-sm text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
-                                                data-testid={`footer-${item.to === "/" ? "home" : item.to.replace("/", "")}-link`}
-                                            >
-                                                {item.label}
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </nav>
+                        {/* Column 2: Explore */}
+                        <nav aria-label={t.exploreTitle} className="min-w-0 space-y-2 lg:px-10">
+                            <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
+                                {t.exploreTitle}
+                            </h3>
+                            <ul className="space-y-0.5">
+                                {t.navLinks.map((item) => (
+                                    <li key={item.to}>
+                                        <Link
+                                            to={item.to}
+                                            className={`inline-flex min-h-[44px] md:min-h-[34px] py-1 items-center text-sm text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                            data-testid={`footer-${item.to === "/" ? "home" : item.to.replace("/", "")}-link`}
+                                        >
+                                            {item.label}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
 
-                            {/* 2. Lab & Resources */}
-                            <nav aria-label={t.resourcesTitle} className="min-w-0 space-y-2 sm:border-l sm:border-white/[0.07] sm:pl-7">
-                                <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
-                                    {t.resourcesTitle}
-                                </h3>
-                                <ul className="space-y-0.5">
-                                    {t.resourceLinks.map((item) => (
-                                        <li key={item.to}>
-                                            <Link
-                                                to={item.to}
-                                                className={`inline-flex min-h-[44px] items-center text-sm text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
-                                            >
-                                                {item.label}
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </nav>
+                        {/* Column 3: Lab & Resources */}
+                        <nav aria-label={t.resourcesTitle} className="min-w-0 space-y-2 lg:px-10">
+                            <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
+                                {t.resourcesTitle}
+                            </h3>
+                            <ul className="space-y-0.5">
+                                {t.resourceLinks.map((item) => (
+                                    <li key={item.to}>
+                                        <Link
+                                            to={item.to}
+                                            className={`inline-flex min-h-[44px] md:min-h-[34px] py-1 items-center text-sm text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
+                                        >
+                                            {item.label}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
 
-                            {/* 3. Location & Desk (Full email visible without clipping) */}
-                            <div className="min-w-0 space-y-3 sm:border-l sm:border-white/[0.07] sm:pl-7">
-                                <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
-                                    {t.contactTitle}
-                                </h3>
-                                <div className="space-y-2 text-sm text-[#D1D5DB]">
-                                    <div className="flex items-start gap-2.5 leading-relaxed">
-                                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
-                                        <span className="text-[13px] leading-snug break-words" data-testid="footer-address">{address}</span>
-                                    </div>
-                                    <a
-                                        href={`mailto:${email}`}
-                                        className={`inline-flex min-h-[44px] items-center gap-2.5 text-[13px] text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline break-words min-w-0 ${focusRing}`}
-                                        data-testid="footer-email-link"
-                                    >
-                                        <Mail className="h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
-                                        <span className="truncate">{email}</span>
-                                    </a>
+                        {/* Column 4: Location & Desk */}
+                        <div className="min-w-0 space-y-3 lg:pl-10">
+                            <h3 className="text-xs font-bold tracking-[0.14em] text-[#C4B393]">
+                                {t.contactTitle}
+                            </h3>
+                            <div className="space-y-2 text-sm text-[#D1D5DB]">
+                                <div className="flex items-start gap-2.5 leading-relaxed">
+                                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
+                                    <span className="text-[13px] leading-snug break-words" data-testid="footer-address">{address}</span>
                                 </div>
+                                <a
+                                    href={`mailto:${email}`}
+                                    className={`inline-flex min-h-[44px] items-center gap-2.5 text-[13px] text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline break-words min-w-0 ${focusRing}`}
+                                    data-testid="footer-email-link"
+                                >
+                                    <Mail className="h-4 w-4 shrink-0 text-[#C4B393]" aria-hidden="true" />
+                                    <span className="truncate">{email}</span>
+                                </a>
                             </div>
                         </div>
                     </div>
