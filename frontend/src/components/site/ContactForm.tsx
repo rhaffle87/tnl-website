@@ -85,64 +85,64 @@ export function ContactForm() {
                     </div>
 
                     <div>
-                        <label htmlFor="contact-name" className="mb-1.5 block text-sm font-medium">
-                            {t("your_name")}
+                        <label htmlFor="contact-name" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
+                            {t("your_name")} <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
                         </label>
-                        <input id="contact-name" name="name" type="text" className="tnl-field" required data-testid="contact-name-input" />
+                        <input id="contact-name" name="name" type="text" className="tnl-input min-h-[44px]" required data-testid="contact-name-input" />
                         {errors.name ? (
-                            <p className="mt-1 text-xs" style={{ color: "#b91c1c" }} data-testid="contact-name-error">
+                            <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-name-error">
                                 {errors.name}
                             </p>
                         ) : null}
                     </div>
 
                     <div>
-                        <label htmlFor="contact-email" className="mb-1.5 block text-sm font-medium">
-                            {t("your_email")}
+                        <label htmlFor="contact-email" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
+                            {t("your_email")} <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
                         </label>
-                        <input id="contact-email" name="email" type="email" className="tnl-field" required data-testid="contact-email-input" />
+                        <input id="contact-email" name="email" type="email" className="tnl-input min-h-[44px]" required data-testid="contact-email-input" />
                         {errors.email ? (
-                            <p className="mt-1 text-xs" style={{ color: "#b91c1c" }} data-testid="contact-email-error">
+                            <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-email-error">
                                 {errors.email}
                             </p>
                         ) : null}
                     </div>
 
                     <div>
-                        <label htmlFor="contact-subject" className="mb-1.5 block text-sm font-medium">
-                            {t("subject")}
+                        <label htmlFor="contact-subject" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
+                            {t("subject")} <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
                         </label>
-                        <input id="contact-subject" name="subject" type="text" className="tnl-field" required data-testid="contact-subject-input" />
+                        <input id="contact-subject" name="subject" type="text" className="tnl-input min-h-[44px]" required data-testid="contact-subject-input" />
                         {errors.subject ? (
-                            <p className="mt-1 text-xs" style={{ color: "#b91c1c" }} data-testid="contact-subject-error">
+                            <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-subject-error">
                                 {errors.subject}
                             </p>
                         ) : null}
                     </div>
 
                     <div>
-                        <label htmlFor="contact-message" className="mb-1.5 block text-sm font-medium">
-                            {t("message")}
+                        <label htmlFor="contact-message" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
+                            {t("message")} <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
                         </label>
-                        <textarea id="contact-message" name="message" className="tnl-field" rows={5} required data-testid="contact-message-input" />
+                        <textarea id="contact-message" name="message" className="tnl-input" rows={5} required data-testid="contact-message-input" />
                         {errors.message ? (
-                            <p className="mt-1 text-xs" style={{ color: "#b91c1c" }} data-testid="contact-message-error">
+                            <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-message-error">
                                 {errors.message}
                             </p>
                         ) : null}
                     </div>
 
-                    <div className="rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] p-3 text-xs">
+                    <div className="rounded-xl border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] p-4 text-xs">
                         <label className="flex items-start gap-2.5 cursor-pointer">
                             <input
                                 type="checkbox"
                                 name="consent"
-                                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5D8A6B] focus:ring-[#5D8A6B]"
+                                className="mt-0.5 h-4 w-4 rounded border-[#C5CDC2] text-[#223027] dark:text-[#A8977B] focus:ring-[#223027]"
                                 data-testid="contact-form-consent"
                             />
-                            <span className="text-[var(--tnl-body)]">
-                                Saya menyetujui pemrosesan data sesuai ketentuan UU PDP No. 27/2022 dan{" "}
-                                <Link to="/privacy" className="underline text-[#5D8A6B] dark:text-[#8AB597]">
+                            <span className="text-xs leading-relaxed text-[var(--tnl-body)]">
+                                Saya menyetujui pemrosesan data sesuai ketentuan <strong>UU PDP No. 27/2022</strong> dan{" "}
+                                <Link to="/privacy" className="text-[#223027] dark:text-[#C4B393] underline font-semibold hover:opacity-80">
                                     Kebijakan Privasi
                                 </Link>
                                 .
@@ -153,7 +153,12 @@ export function ContactForm() {
                         ) : null}
                     </div>
 
-                    <button type="submit" className="tnl-btn tnl-btn-primary w-full" disabled={sending} data-testid="contact-submit-button">
+                    <button
+                        type="submit"
+                        className="w-full min-h-[48px] rounded-[10px] bg-[#223027] hover:bg-[#18221c] text-white dark:bg-[#A8977B] dark:hover:bg-[#C2B091] dark:text-[#111613] text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all"
+                        disabled={sending}
+                        data-testid="contact-submit-button"
+                    >
                         {sending ? t("sending") : t("send_message")}
                         {!sending ? <Send className="h-4 w-4" aria-hidden="true" /> : null}
                     </button>

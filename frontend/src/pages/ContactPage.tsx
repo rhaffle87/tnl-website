@@ -7,12 +7,10 @@ import {
     CheckCircle2,
     Clock,
     Copy,
-    ExternalLink,
     Mail,
     MapPin,
     Navigation,
     Send,
-    ShieldCheck,
     Sparkles,
     ArrowUpRight,
 } from "lucide-react";
@@ -198,74 +196,81 @@ export default function ContactPage() {
 
             {/* 2. Main 2-Column Asymmetric Content */}
             <main className="tnl-container py-12 md:py-16">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-stretch">
                     {/* Left Column (5 Cols): Direct Channels & Lab Desk Cards */}
-                    <div className="lg:col-span-5 space-y-6">
+                    <div className="lg:col-span-5 flex flex-col gap-6 h-full">
                         {/* Card 1: Laboratory Address */}
-                        <div className="tnl-card p-6 sm:p-7 space-y-4" data-testid="contact-address-card">
-                            <div className="flex items-center justify-between">
+                        <div className="tnl-card overflow-hidden flex flex-col" data-testid="contact-address-card">
+                            <div className="tnl-card-header flex items-center justify-between">
                                 <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                     {isId ? "LOKASI LABORATORIUM" : "LABORATORY LOCATION"}
                                 </span>
-                                <span className="inline-flex items-center gap-1 text-[11px] font-mono text-[#5D8A6B] dark:text-[#7EA88B]">
-                                    <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#111613] px-2.5 py-0.5 text-[11px] font-mono text-[#5D8A6B] dark:text-[#7EA88B] shadow-2xs">
+                                    <MapPin className="h-3 w-3" aria-hidden="true" />
                                     <span>7°17'02"S 112°47'47"E</span>
                                 </span>
                             </div>
 
-                            <div>
-                                <h2 className="text-xl font-bold tracking-tight text-[var(--tnl-heading)]">
-                                    Gedung B, Ruang B-301
-                                </h2>
-                                <p className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)]">
-                                    Departemen Teknik Elektro, Fakultas Teknologi Elektro dan Informatika Cerdas (FTEIC),
-                                    Institut Teknologi Sepuluh Nopember (ITS), Keputih, Sukolilo, Surabaya 60111
-                                </p>
-                            </div>
+                            <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between">
+                                <div>
+                                    <h2 className="text-xl font-bold tracking-tight text-[var(--tnl-heading)]">
+                                        Gedung B, Ruang B-301
+                                    </h2>
+                                    <p className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)]">
+                                        Departemen Teknik Elektro, Fakultas Teknologi Elektro dan Informatika Cerdas (FTEIC),
+                                        Institut Teknologi Sepuluh Nopember (ITS), Keputih, Sukolilo, Surabaya 60111
+                                    </p>
+                                </div>
 
-                            <div className="pt-2">
-                                <button
-                                    type="button"
-                                    onClick={handleCopyAddress}
-                                    className="inline-flex items-center gap-2 rounded-lg border border-black/10 dark:border-white/15 bg-black/[0.02] dark:bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-[var(--tnl-heading)] transition-colors hover:bg-black/[0.06] dark:hover:bg-white/[0.08]"
-                                    data-testid="copy-address-button"
-                                >
-                                    {copiedAddress ? (
-                                        <>
-                                            <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-                                            <span className="text-emerald-700 dark:text-emerald-300">
-                                                {isId ? "Tersalin!" : "Copied!"}
-                                            </span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                                            <span>{isId ? "Salin Alamat Lengkap" : "Copy Full Address"}</span>
-                                        </>
-                                    )}
-                                </button>
+                                <div className="border-t border-[var(--tnl-border)] pt-4 mt-5">
+                                    <button
+                                        type="button"
+                                        onClick={handleCopyAddress}
+                                        className="inline-flex items-center gap-2 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3.5 py-2 text-xs font-semibold text-[var(--tnl-heading)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                        data-testid="copy-address-button"
+                                    >
+                                        {copiedAddress ? (
+                                            <>
+                                                <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                                                <span className="text-emerald-700 dark:text-emerald-300">
+                                                    {isId ? "Alamat Tersalin!" : "Address Copied!"}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                                                <span>{isId ? "Salin Alamat Lengkap" : "Copy Full Address"}</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                         {/* Card 2: Email & Official Channels */}
-                        <div className="tnl-card p-6 sm:p-7 space-y-5" data-testid="contact-channels-card">
-                            <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
-                                {isId ? "KANAL RESMI & KORESPONDENSI" : "OFFICIAL CHANNELS"}
-                            </span>
+                        <div className="tnl-card overflow-hidden flex flex-col" data-testid="contact-channels-card">
+                            <div className="tnl-card-header flex items-center justify-between">
+                                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
+                                    {isId ? "KANAL RESMI & KORESPONDENSI" : "OFFICIAL CHANNELS"}
+                                </span>
+                                <span className="text-[10px] font-mono tracking-wider text-[var(--tnl-tan-text)] uppercase">
+                                    RESMI · ITS
+                                </span>
+                            </div>
 
-                            <div className="space-y-4">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#5D8A6B]/15 text-[#2E583A] dark:text-[#8AB597]">
+                            <div className="p-6 sm:p-7 space-y-3.5">
+                                <div className="tnl-inset-tile p-3.5 flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#223027]/10 dark:bg-[#5D8A6B]/20 text-[#223027] dark:text-[#A3C9AE] border border-[#223027]/15 dark:border-[#5D8A6B]/30">
                                             <Mail className="h-5 w-5" aria-hidden="true" />
                                         </div>
-                                        <div>
-                                            <span className="block text-xs font-medium text-[var(--tnl-tan-text)]">
+                                        <div className="min-w-0">
+                                            <span className="block text-[11px] font-mono uppercase tracking-wider text-[var(--tnl-tan-text)]">
                                                 Email Administrasi
                                             </span>
                                             <a
                                                 href={`mailto:${officialEmail}`}
-                                                className="text-sm font-semibold hover:underline text-[var(--tnl-heading)]"
+                                                className="text-sm font-semibold hover:underline text-[var(--tnl-heading)] truncate block"
                                                 data-testid="official-email-link"
                                             >
                                                 {officialEmail}
@@ -276,27 +281,33 @@ export default function ContactPage() {
                                         type="button"
                                         onClick={handleCopyEmail}
                                         aria-label="Salin email"
-                                        className="shrink-0 p-2 text-[var(--tnl-body)] hover:text-[var(--tnl-heading)] transition-colors"
+                                        className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#131A16] px-3 py-1.5 text-xs font-semibold text-[var(--tnl-heading)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
                                         data-testid="copy-email-button"
                                     >
                                         {copiedEmail ? (
-                                            <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                            <>
+                                                <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                                <span className="text-emerald-700 dark:text-emerald-300">Tersalin</span>
+                                            </>
                                         ) : (
-                                            <Copy className="h-4 w-4" />
+                                            <>
+                                                <Copy className="h-3.5 w-3.5" />
+                                                <span>Salin</span>
+                                            </>
                                         )}
                                     </button>
                                 </div>
 
-                                <div className="flex items-center justify-between gap-3 border-t border-black/5 dark:border-white/5 pt-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C4B393]/20 text-[#7F715C] dark:text-[#C4B393]">
+                                <div className="tnl-inset-tile p-3.5 flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C4B393]/20 text-[#7F715C] dark:text-[#C4B393] border border-[#C4B393]/30">
                                             <Sparkles className="h-5 w-5" aria-hidden="true" />
                                         </div>
-                                        <div>
-                                            <span className="block text-xs font-medium text-[var(--tnl-tan-text)]">
+                                        <div className="min-w-0">
+                                            <span className="block text-[11px] font-mono uppercase tracking-wider text-[var(--tnl-tan-text)]">
                                                 Instagram Resmi
                                             </span>
-                                            <span className="text-sm font-semibold text-[var(--tnl-heading)]">
+                                            <span className="text-sm font-semibold text-[var(--tnl-heading)] truncate block">
                                                 {igHandle}
                                             </span>
                                         </div>
@@ -305,7 +316,7 @@ export default function ContactPage() {
                                         href={igUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#5D8A6B] dark:text-[#8AB597] hover:underline"
+                                        className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#131A16] px-3 py-1.5 text-xs font-semibold text-[var(--tnl-heading)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
                                         data-testid="official-instagram-link"
                                     >
                                         <span>Buka</span>
@@ -315,334 +326,364 @@ export default function ContactPage() {
                             </div>
                         </div>
 
-                        {/* Card 3: Operational Hours & Quick Links */}
-                        <div className="tnl-card p-6 sm:p-7 space-y-4" data-testid="contact-hours-card">
-                            <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
-                                {isId ? "JAM OPERASIONAL & LAYANAN" : "OPERATING HOURS & DESK"}
-                            </span>
-
-                            <div className="space-y-3 text-sm">
-                                <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-2.5">
-                                    <span className="text-[var(--tnl-body)]">{isId ? "Layanan Ruang B-301" : "Office Hours"}</span>
-                                    <span className="font-semibold text-[var(--tnl-heading)]">Senin – Jumat · 08:00 – 16:00 WIB</span>
+                        {/* Card 3: Operational Hours & Quick Links — flex-1 to equalize column height */}
+                        <div className="tnl-card overflow-hidden flex flex-col flex-1 justify-between" data-testid="contact-hours-card">
+                            <div>
+                                <div className="tnl-card-header flex items-center justify-between">
+                                    <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
+                                        {isId ? "JAM OPERASIONAL & LAYANAN" : "OPERATING HOURS & DESK"}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#111613] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[#5D8A6B] dark:text-[#7EA88B] shadow-2xs">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span>WIB · UTC+7</span>
+                                    </span>
                                 </div>
-                                <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-2.5">
-                                    <span className="text-[var(--tnl-body)]">{isId ? "Sesi Praktikum & Riset" : "Practicum Sessions"}</span>
-                                    <span className="font-semibold text-[var(--tnl-heading)]">16:00 – 20:00 WIB</span>
+
+                                <div className="p-6 sm:p-7 space-y-4">
+                                    <div className="divide-y divide-[var(--tnl-border)] border border-[var(--tnl-border)] rounded-xl bg-[#F6F7F4] dark:bg-[#0E1411] overflow-hidden text-sm">
+                                        <div className="p-3.5 flex items-center justify-between gap-2">
+                                            <span className="text-xs sm:text-sm font-medium text-[var(--tnl-body)]">
+                                                {isId ? "Layanan Ruang B-301" : "Office Hours"}
+                                            </span>
+                                            <span className="font-mono font-semibold text-xs sm:text-sm text-[var(--tnl-heading)]">
+                                                Senin – Jumat · 08:00 – 16:00 WIB
+                                            </span>
+                                        </div>
+                                        <div className="p-3.5 flex items-center justify-between gap-2">
+                                            <span className="text-xs sm:text-sm font-medium text-[var(--tnl-body)]">
+                                                {isId ? "Sesi Praktikum & Riset" : "Practicum Sessions"}
+                                            </span>
+                                            <span className="font-mono font-semibold text-xs sm:text-sm text-[var(--tnl-heading)]">
+                                                16:00 – 20:00 WIB
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="pt-2">
-                                <span className="block text-xs font-bold uppercase tracking-wider text-[var(--tnl-tan-text)] mb-2">
-                                    {isId ? "Akses Pintas Cepat" : "Quick Shortcuts"}
-                                </span>
-                                <div className="flex flex-wrap gap-2 text-xs">
-                                    <Link
-                                        to="/open-house"
-                                        className="inline-flex items-center gap-1 rounded-md border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] px-2.5 py-1.5 font-medium hover:border-[#5D8A6B] hover:text-[#5D8A6B] transition-colors"
-                                    >
-                                        <span>Open House</span>
-                                        <ArrowUpRight className="h-3 w-3" />
-                                    </Link>
-                                    <Link
-                                        to="/activity"
-                                        className="inline-flex items-center gap-1 rounded-md border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] px-2.5 py-1.5 font-medium hover:border-[#5D8A6B] hover:text-[#5D8A6B] transition-colors"
-                                    >
-                                        <span>Pelatihan & Riset</span>
-                                        <ArrowUpRight className="h-3 w-3" />
-                                    </Link>
-                                    <Link
-                                        to="/verify"
-                                        className="inline-flex items-center gap-1 rounded-md border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] px-2.5 py-1.5 font-medium hover:border-[#5D8A6B] hover:text-[#5D8A6B] transition-colors"
-                                    >
-                                        <span>Verifikasi Sertifikat</span>
-                                        <ArrowUpRight className="h-3 w-3" />
-                                    </Link>
+                            <div className="px-6 pb-6 sm:px-7 sm:pb-7">
+                                <div className="border-t border-[var(--tnl-border)] pt-4 mt-auto">
+                                    <span className="block text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--tnl-tan-text)] mb-2.5">
+                                        {isId ? "Akses Pintas Cepat" : "Quick Shortcuts"}
+                                    </span>
+                                    <div className="flex flex-wrap gap-2 text-xs">
+                                        <Link
+                                            to="/open-house"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--tnl-heading)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                        >
+                                            <span>Open House</span>
+                                            <ArrowUpRight className="h-3 w-3" />
+                                        </Link>
+                                        <Link
+                                            to="/activity"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--tnl-heading)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                        >
+                                            <span>Kegiatan & Riset</span>
+                                            <ArrowUpRight className="h-3 w-3" />
+                                        </Link>
+                                        <Link
+                                            to="/verify"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--tnl-heading)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                        >
+                                            <span>Verifikasi Sertifikat</span>
+                                            <ArrowUpRight className="h-3 w-3" />
+                                        </Link>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Column (7 Cols): Revamped Message Form */}
-                    <div className="lg:col-span-7">
-                        <div className="tnl-card p-6 sm:p-8" data-testid="contact-form-container">
-                            <div className="border-b border-black/10 dark:border-white/10 pb-6 mb-6">
+                    {/* Right Column (7 Cols): Revamped Message Form Card */}
+                    <div className="lg:col-span-7 h-full">
+                        <div className="tnl-card overflow-hidden flex flex-col h-full" data-testid="contact-form-container">
+                            {/* Header Strip */}
+                            <div className="tnl-card-header">
                                 <div className="inline-flex items-center gap-2 text-xs font-mono font-bold tracking-wider text-[#5D8A6B] dark:text-[#8AB597] uppercase">
                                     <Send className="h-3.5 w-3.5" aria-hidden="true" />
                                     <span>{isId ? "FORMULIR PESAN RESMI" : "OFFICIAL DIRECT INQUIRY"}</span>
                                 </div>
-                                <h2 className="mt-2 text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
+                                <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Kirim Pesan Langsung" : "Send a Direct Message"}
                                 </h2>
-                                <p className="mt-1.5 text-sm text-[var(--tnl-body)]">
+                                <p className="mt-1 text-xs sm:text-sm text-[var(--tnl-body)] leading-relaxed">
                                     {isId
                                         ? "Sampaikan pesan Anda langsung ke meja administrasi laboratorium. Kami akan merespon melalui email resmi."
                                         : "Direct your message straight to the laboratory administrative desk. We reply via official lab email."}
                                 </p>
-
-                                {/* Quick Topic Pills */}
-                                <div className="mt-5">
-                                    <label className="block text-xs font-semibold text-[var(--tnl-tan-text)] uppercase tracking-wider mb-2.5">
-                                        {isId ? "Pilih Topik Cepat (Opsional)" : "Quick Topic Selection (Optional)"}
-                                    </label>
-                                    <div className="flex flex-wrap gap-2" role="group" aria-label="Topic Pills">
-                                        {TOPIC_PILLS.map((pill) => {
-                                            const label = isId ? pill.label_id : pill.label_en;
-                                            const isSelected = activePill === pill.id;
-                                            return (
-                                                <button
-                                                    key={pill.id}
-                                                    type="button"
-                                                    onClick={() => handleSelectPill(pill)}
-                                                    className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                                                        isSelected
-                                                            ? "bg-[#223027] text-white dark:bg-[#7EA88B] dark:text-[#111613] shadow-sm font-semibold"
-                                                            : "border border-black/10 dark:border-white/15 bg-black/[0.02] dark:bg-white/[0.04] text-[var(--tnl-body)] hover:border-[#5D8A6B] hover:text-[var(--tnl-heading)]"
-                                                    }`}
-                                                    data-testid={`topic-pill-${pill.id}`}
-                                                >
-                                                    {label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
                             </div>
 
-                            {done ? (
-                                <div
-                                    className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center space-y-4 animate-fade-in"
-                                    data-testid="contact-form-success"
-                                >
-                                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                                        <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-[var(--tnl-heading)]">
-                                            {isId ? "Pesan Berhasil Terkirim!" : "Message Successfully Sent!"}
-                                        </h3>
-                                        <p className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)] max-w-md mx-auto">
-                                            {isId
-                                                ? "Terima kasih telah menghubungi Laboratorium TNL ITS. Tim kami akan meninjau pesan Anda dan membalasnya ke alamat email yang Anda cantumkan."
-                                                : "Thank you for contacting the TNL Laboratory at ITS. Our administrative desk will review your inquiry and follow up at your provided email address."}
-                                        </p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={handleResetForm}
-                                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--tnl-heading)] px-5 py-2.5 text-xs font-bold text-[var(--background)] transition-opacity hover:opacity-90"
-                                        data-testid="send-another-message-button"
-                                    >
-                                        <span>{isId ? "Kirim Pesan Lain" : "Send Another Message"}</span>
-                                    </button>
-                                </div>
-                            ) : (
-                                <form onSubmit={onSubmit} className="space-y-5" noValidate data-testid="contact-form">
-                                    {/* Honeypot */}
-                                    <div className="hidden" aria-hidden="true">
-                                        <label htmlFor="company_website">Company website</label>
-                                        <input
-                                            id="company_website"
-                                            name="company_website"
-                                            type="text"
-                                            tabIndex={-1}
-                                            autoComplete="off"
-                                            value={companyWebsite}
-                                            onChange={(e) => setCompanyWebsite(e.target.value)}
-                                        />
-                                    </div>
-
-                                    {/* Responsive 2-column Grid for Name & Email */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label htmlFor="contact-name" className="mb-1.5 block text-sm font-semibold text-[var(--tnl-heading)]">
-                                                {isId ? "Nama Lengkap" : "Full Name"}{" "}
-                                                <span className="text-rose-500">*</span>
-                                            </label>
-                                            <input
-                                                id="contact-name"
-                                                name="name"
-                                                type="text"
-                                                value={name}
-                                                onChange={(e) => {
-                                                    setName(e.target.value);
-                                                    if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
-                                                }}
-                                                placeholder={isId ? "Contoh: Budi Prasetyo" : "e.g. John Doe"}
-                                                className="tnl-field min-h-[44px]"
-                                                required
-                                                data-testid="contact-name-input"
-                                            />
-                                            {errors.name ? (
-                                                <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-name-error">
-                                                    {errors.name}
-                                                </p>
-                                            ) : null}
-                                        </div>
-
-                                        <div>
-                                            <label htmlFor="contact-email" className="mb-1.5 block text-sm font-semibold text-[var(--tnl-heading)]">
-                                                {isId ? "Email Resmi / Institusi" : "Official / Personal Email"}{" "}
-                                                <span className="text-rose-500">*</span>
-                                            </label>
-                                            <input
-                                                id="contact-email"
-                                                name="email"
-                                                type="email"
-                                                value={email}
-                                                onChange={(e) => {
-                                                    setEmail(e.target.value);
-                                                    if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
-                                                }}
-                                                placeholder="email@example.com"
-                                                className="tnl-field min-h-[44px]"
-                                                required
-                                                data-testid="contact-email-input"
-                                            />
-                                            {errors.email ? (
-                                                <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-email-error">
-                                                    {errors.email}
-                                                </p>
-                                            ) : null}
+                            <div className="p-6 sm:p-8 flex-1 flex flex-col justify-between">
+                                <div>
+                                    {/* Quick Topic Pills */}
+                                    <div className="pb-5 border-b border-dashed border-[var(--tnl-border)] mb-5">
+                                        <label className="block text-xs font-semibold text-[var(--tnl-tan-text)] uppercase tracking-wider mb-2.5">
+                                            {isId ? "Pilih Topik Cepat (Opsional)" : "Quick Topic Selection (Optional)"}
+                                        </label>
+                                        <div className="flex flex-wrap gap-2" role="group" aria-label="Topic Pills">
+                                            {TOPIC_PILLS.map((pill) => {
+                                                const label = isId ? pill.label_id : pill.label_en;
+                                                const isSelected = activePill === pill.id;
+                                                return (
+                                                    <button
+                                                        key={pill.id}
+                                                        type="button"
+                                                        onClick={() => handleSelectPill(pill)}
+                                                        className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 py-1.5 text-xs transition-all ${
+                                                            isSelected
+                                                                ? "bg-[#223027] text-white border border-[#223027] dark:bg-[#A8977B] dark:text-[#111613] dark:border-[#A8977B] font-semibold shadow-xs"
+                                                                : "border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] text-[var(--tnl-heading)] hover:border-[#223027] dark:hover:border-[#C4B393] font-medium shadow-2xs"
+                                                        }`}
+                                                        data-testid={`topic-pill-${pill.id}`}
+                                                    >
+                                                        {label}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
 
-                                    {/* Subject */}
-                                    <div>
-                                        <label htmlFor="contact-subject" className="mb-1.5 block text-sm font-semibold text-[var(--tnl-heading)]">
-                                            {isId ? "Subjek Pesan" : "Subject"}{" "}
-                                            <span className="text-rose-500">*</span>
-                                        </label>
-                                        <input
-                                            id="contact-subject"
-                                            name="subject"
-                                            type="text"
-                                            value={subject}
-                                            onChange={(e) => {
-                                                setSubject(e.target.value);
-                                                if (errors.subject) setErrors((prev) => ({ ...prev, subject: "" }));
-                                            }}
-                                            placeholder={isId ? "Topik atau perihal pesan..." : "Inquiry subject..."}
-                                            className="tnl-field min-h-[44px]"
-                                            required
-                                            data-testid="contact-subject-input"
-                                        />
-                                        {errors.subject ? (
-                                            <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-subject-error">
-                                                {errors.subject}
-                                            </p>
-                                        ) : null}
-                                    </div>
+                                    {done ? (
+                                        <div
+                                            className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center space-y-4 animate-fade-in my-auto"
+                                            data-testid="contact-form-success"
+                                        >
+                                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                                                <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-bold text-[var(--tnl-heading)]">
+                                                    {isId ? "Pesan Berhasil Terkirim!" : "Message Successfully Sent!"}
+                                                </h3>
+                                                <p className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)] max-w-md mx-auto">
+                                                    {isId
+                                                        ? "Terima kasih telah menghubungi Laboratorium TNL ITS. Tim kami akan meninjau pesan Anda dan membalasnya ke alamat email yang Anda cantumkan."
+                                                        : "Thank you for contacting the TNL Laboratory at ITS. Our administrative desk will review your inquiry and follow up at your provided email address."}
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleResetForm}
+                                                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#223027] hover:bg-[#18221c] text-white dark:bg-[#A8977B] dark:hover:bg-[#C2B091] dark:text-[#111613] px-5 py-2.5 text-xs font-bold transition-all shadow-sm"
+                                                data-testid="send-another-message-button"
+                                            >
+                                                <span>{isId ? "Kirim Pesan Lain" : "Send Another Message"}</span>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <form onSubmit={onSubmit} className="space-y-4" noValidate data-testid="contact-form">
+                                            {/* Honeypot */}
+                                            <div className="hidden" aria-hidden="true">
+                                                <label htmlFor="company_website">Company website</label>
+                                                <input
+                                                    id="company_website"
+                                                    name="company_website"
+                                                    type="text"
+                                                    tabIndex={-1}
+                                                    autoComplete="off"
+                                                    value={companyWebsite}
+                                                    onChange={(e) => setCompanyWebsite(e.target.value)}
+                                                />
+                                            </div>
 
-                                    {/* Message */}
-                                    <div>
-                                        <label htmlFor="contact-message" className="mb-1.5 block text-sm font-semibold text-[var(--tnl-heading)]">
-                                            {isId ? "Isi Pesan" : "Message Body"}{" "}
-                                            <span className="text-rose-500">*</span>
-                                        </label>
-                                        <textarea
-                                            id="contact-message"
-                                            name="message"
-                                            rows={5}
-                                            value={message}
-                                            onChange={(e) => {
-                                                setMessage(e.target.value);
-                                                if (errors.message) setErrors((prev) => ({ ...prev, message: "" }));
-                                            }}
-                                            placeholder={
-                                                isId
-                                                    ? "Jelaskan kebutuhan, rencana kolaborasi, atau pertanyaan Anda secara rinci..."
-                                                    : "Detail your inquiry, proposed collaboration, or question here..."
-                                            }
-                                            className="tnl-field"
-                                            required
-                                            data-testid="contact-message-input"
-                                        />
-                                        {errors.message ? (
-                                            <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-message-error">
-                                                {errors.message}
-                                            </p>
-                                        ) : null}
-                                    </div>
+                                            {/* Responsive 2-column Grid for Name & Email */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label htmlFor="contact-name" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
+                                                        {isId ? "Nama Lengkap" : "Full Name"}{" "}
+                                                        <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
+                                                    </label>
+                                                    <input
+                                                        id="contact-name"
+                                                        name="name"
+                                                        type="text"
+                                                        value={name}
+                                                        onChange={(e) => {
+                                                            setName(e.target.value);
+                                                            if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
+                                                        }}
+                                                        placeholder={isId ? "Contoh: Budi Prasetyo" : "e.g. John Doe"}
+                                                        className="tnl-input min-h-[44px]"
+                                                        required
+                                                        data-testid="contact-name-input"
+                                                    />
+                                                    {errors.name ? (
+                                                        <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-name-error">
+                                                            {errors.name}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
 
-                                    {/* UU PDP Consent Checkbox */}
-                                    <div className="rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] p-4">
-                                        <div className="flex items-start gap-3">
-                                            <input
-                                                id="contact-pdp-consent"
-                                                type="checkbox"
-                                                checked={consent}
-                                                onChange={(e) => {
-                                                    setConsent(e.target.checked);
-                                                    if (errors.consent) setErrors((prev) => ({ ...prev, consent: "" }));
-                                                }}
-                                                className="mt-1 h-4 w-4 rounded border-gray-300 text-[#5D8A6B] focus:ring-[#5D8A6B]"
-                                                data-testid="contact-pdp-consent-checkbox"
-                                            />
-                                            <label htmlFor="contact-pdp-consent" className="text-xs leading-relaxed text-[var(--tnl-body)]">
-                                                {isId ? (
+                                                <div>
+                                                    <label htmlFor="contact-email" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
+                                                        {isId ? "Email Resmi / Institusi" : "Official / Personal Email"}{" "}
+                                                        <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
+                                                    </label>
+                                                    <input
+                                                        id="contact-email"
+                                                        name="email"
+                                                        type="email"
+                                                        value={email}
+                                                        onChange={(e) => {
+                                                            setEmail(e.target.value);
+                                                            if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
+                                                        }}
+                                                        placeholder="email@example.com"
+                                                        className="tnl-input min-h-[44px]"
+                                                        required
+                                                        data-testid="contact-email-input"
+                                                    />
+                                                    {errors.email ? (
+                                                        <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-email-error">
+                                                            {errors.email}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+
+                                            {/* Subject */}
+                                            <div>
+                                                <label htmlFor="contact-subject" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
+                                                    {isId ? "Subjek Pesan" : "Subject"}{" "}
+                                                    <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
+                                                </label>
+                                                <input
+                                                    id="contact-subject"
+                                                    name="subject"
+                                                    type="text"
+                                                    value={subject}
+                                                    onChange={(e) => {
+                                                        setSubject(e.target.value);
+                                                        if (errors.subject) setErrors((prev) => ({ ...prev, subject: "" }));
+                                                    }}
+                                                    placeholder={isId ? "Topik atau perihal pesan..." : "Inquiry subject..."}
+                                                    className="tnl-input min-h-[44px]"
+                                                    required
+                                                    data-testid="contact-subject-input"
+                                                />
+                                                {errors.subject ? (
+                                                    <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-subject-error">
+                                                        {errors.subject}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+
+                                            {/* Message */}
+                                            <div>
+                                                <div className="mb-1.5 flex items-center justify-between">
+                                                    <label htmlFor="contact-message" className="block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
+                                                        {isId ? "Isi Pesan" : "Message Body"}{" "}
+                                                        <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
+                                                    </label>
+                                                    <span className="text-[10px] font-mono text-[var(--tnl-tan-text)]">
+                                                        {message.length} {isId ? "karakter" : "chars"}
+                                                    </span>
+                                                </div>
+                                                <textarea
+                                                    id="contact-message"
+                                                    name="message"
+                                                    rows={5}
+                                                    value={message}
+                                                    onChange={(e) => {
+                                                        setMessage(e.target.value);
+                                                        if (errors.message) setErrors((prev) => ({ ...prev, message: "" }));
+                                                    }}
+                                                    placeholder={
+                                                        isId
+                                                            ? "Jelaskan kebutuhan, rencana kolaborasi, atau pertanyaan Anda secara rinci..."
+                                                            : "Detail your inquiry, proposed collaboration, or question here..."
+                                                    }
+                                                    className="tnl-input"
+                                                    required
+                                                    data-testid="contact-message-input"
+                                                />
+                                                {errors.message ? (
+                                                    <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-message-error">
+                                                        {errors.message}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+
+                                            {/* UU PDP Consent Checkbox */}
+                                            <div className="rounded-xl border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] p-4">
+                                                <div className="flex items-start gap-3">
+                                                    <input
+                                                        id="contact-pdp-consent"
+                                                        type="checkbox"
+                                                        checked={consent}
+                                                        onChange={(e) => {
+                                                            setConsent(e.target.checked);
+                                                            if (errors.consent) setErrors((prev) => ({ ...prev, consent: "" }));
+                                                        }}
+                                                        className="mt-1 h-4 w-4 rounded border-[#C5CDC2] text-[#223027] dark:text-[#A8977B] focus:ring-[#223027]"
+                                                        data-testid="contact-pdp-consent-checkbox"
+                                                    />
+                                                    <label htmlFor="contact-pdp-consent" className="text-xs leading-relaxed text-[var(--tnl-body)]">
+                                                        {isId ? (
+                                                            <>
+                                                                Saya menyetujui pemrosesan data pribadi ini untuk keperluan korespondensi resmi
+                                                                sesuai dengan ketentuan <strong>UU PDP No. 27/2022</strong> dan{" "}
+                                                                <Link to="/privacy" className="text-[#223027] dark:text-[#C4B393] underline font-semibold hover:opacity-80">
+                                                                    Kebijakan Privasi
+                                                                </Link>{" "}
+                                                                Lab TNL ITS.
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                I consent to the processing of this personal data for official correspondence in
+                                                                compliance with <strong>Indonesian PDP Law No. 27/2022</strong> and the Lab TNL ITS{" "}
+                                                                <Link to="/privacy" className="text-[#223027] dark:text-[#C4B393] underline font-semibold hover:opacity-80">
+                                                                    Privacy Policy
+                                                                </Link>
+                                                                .
+                                                            </>
+                                                        )}
+                                                    </label>
+                                                </div>
+                                                {errors.consent ? (
+                                                    <p className="mt-2 text-xs font-medium text-rose-500 pl-7" data-testid="contact-consent-error">
+                                                        {errors.consent}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+
+                                            {/* Submit Button */}
+                                            <button
+                                                type="submit"
+                                                disabled={sending}
+                                                className="w-full min-h-[48px] rounded-[10px] bg-[#223027] hover:bg-[#18221c] text-white dark:bg-[#A8977B] dark:hover:bg-[#C2B091] dark:text-[#111613] text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all"
+                                                data-testid="contact-submit-button"
+                                            >
+                                                {sending ? (
                                                     <>
-                                                        Saya menyetujui pemrosesan data pribadi ini untuk keperluan korespondensi resmi
-                                                        sesuai dengan ketentuan <strong>UU PDP No. 27/2022</strong> dan{" "}
-                                                        <Link to="/privacy" className="text-[#5D8A6B] dark:text-[#8AB597] underline hover:opacity-80">
-                                                            Kebijakan Privasi
-                                                        </Link>{" "}
-                                                        Lab TNL ITS.
+                                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                        <span>{isId ? "Mengirim Pesan..." : "Sending Message..."}</span>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        I consent to the processing of this personal data for official correspondence in
-                                                        compliance with <strong>Indonesian PDP Law No. 27/2022</strong> and the Lab TNL ITS{" "}
-                                                        <Link to="/privacy" className="text-[#5D8A6B] dark:text-[#8AB597] underline hover:opacity-80">
-                                                            Privacy Policy
-                                                        </Link>
-                                                        .
+                                                        <span>{isId ? "Kirim Pesan Sekarang" : "Send Message Now"}</span>
+                                                        <Send className="h-4 w-4" aria-hidden="true" />
                                                     </>
                                                 )}
-                                            </label>
-                                        </div>
-                                        {errors.consent ? (
-                                            <p className="mt-2 text-xs font-medium text-rose-500 pl-7" data-testid="contact-consent-error">
-                                                {errors.consent}
-                                            </p>
-                                        ) : null}
-                                    </div>
-
-                                    {/* Submit Button */}
-                                    <button
-                                        type="submit"
-                                        disabled={sending}
-                                        className="tnl-btn tnl-btn-primary w-full min-h-[46px] text-sm font-bold flex items-center justify-center gap-2"
-                                        data-testid="contact-submit-button"
-                                    >
-                                        {sending ? (
-                                            <>
-                                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                                                <span>{isId ? "Mengirim Pesan..." : "Sending Message..."}</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <span>{isId ? "Kirim Pesan Sekarang" : "Send Message Now"}</span>
-                                                <Send className="h-4 w-4" aria-hidden="true" />
-                                            </>
-                                        )}
-                                    </button>
-                                </form>
-                            )}
+                                            </button>
+                                        </form>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* 3. Interactive Campus Map Section (Full-Width) */}
                 <section className="mt-14" data-testid="contact-map-section">
-                    <div className="tnl-card overflow-hidden p-0 border border-black/10 dark:border-white/10 shadow-lg">
+                    <div className="tnl-card overflow-hidden p-0 border border-[var(--tnl-border)] shadow-md">
                         {/* Map Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/10 dark:border-white/10 p-6 bg-black/[0.01] dark:bg-white/[0.02]">
+                        <div className="tnl-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>
-                                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#5D8A6B] dark:text-[#8AB597]">
+                                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#5D8A6B] dark:text-[#7EA88B]">
                                     INTERACTIVE LOCATION · GEDUNG B, B-301
                                 </span>
-                                <h3 className="text-xl font-bold tracking-tight text-[var(--tnl-heading)] mt-1">
+                                <h3 className="text-xl font-bold tracking-tight text-[var(--tnl-heading)] mt-0.5">
                                     {isId ? "Kunjungi Ruang B-301" : "Visit Room B-301"}
                                 </h3>
                                 <p className="text-xs text-[var(--tnl-body)] mt-0.5">
@@ -656,7 +697,7 @@ export default function ContactPage() {
                                     href="https://maps.google.com/maps?q=Departemen+Teknik+Elektro+ITS+Surabaya"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-black/10 dark:border-white/15 bg-white dark:bg-[#1C2821] px-3.5 py-2 text-xs font-semibold text-[var(--tnl-heading)] shadow-sm transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.08]"
+                                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#111613] px-3.5 py-2 text-xs font-semibold text-[var(--tnl-heading)] shadow-2xs transition-all hover:bg-[#F6F7F4] dark:hover:bg-white/[0.06]"
                                     data-testid="map-open-google-maps"
                                 >
                                     <span>Buka di Google Maps</span>
@@ -666,7 +707,7 @@ export default function ContactPage() {
                                     href="https://www.google.com/maps/dir/?api=1&destination=Departemen+Teknik+Elektro+ITS+Surabaya"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg bg-[#223027] dark:bg-[#7EA88B] px-3.5 py-2 text-xs font-semibold text-white dark:text-[#111613] shadow-sm transition-all hover:opacity-90"
+                                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-[#223027] hover:bg-[#18221c] text-white dark:bg-[#A8977B] dark:hover:bg-[#C2B091] dark:text-[#111613] px-4 py-2 text-xs font-semibold shadow-2xs transition-all"
                                     data-testid="map-get-directions"
                                 >
                                     <Navigation className="h-3.5 w-3.5" aria-hidden="true" />
@@ -675,22 +716,24 @@ export default function ContactPage() {
                             </div>
                         </div>
 
-                        {/* Interactive Google Maps Embed Container */}
-                        <div className="relative w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
-                            <iframe
-                                src="https://maps.google.com/maps?q=Departemen+Teknik+Elektro+ITS+Surabaya&t=&z=17&ie=UTF8&iwloc=&output=embed"
-                                title="Lokasi Laboratorium Jaringan Telekomunikasi ITS - Gedung B Ruang B-301"
-                                className="w-full h-[380px] md:h-[460px] border-0 dark:brightness-90 dark:contrast-105 transition-all duration-300"
-                                loading="lazy"
-                                allowFullScreen
-                                referrerPolicy="no-referrer-when-downgrade"
-                                data-testid="google-maps-iframe"
-                            />
+                        {/* Interactive Google Maps Frame */}
+                        <div className="p-3 sm:p-4 bg-[#F6F7F4] dark:bg-[#0E1411]">
+                            <div className="relative w-full rounded-xl overflow-hidden border border-[#C5CDC2] dark:border-white/15 shadow-inner">
+                                <iframe
+                                    src="https://maps.google.com/maps?q=Departemen+Teknik+Elektro+ITS+Surabaya&t=&z=17&ie=UTF8&iwloc=&output=embed"
+                                    title="Lokasi Laboratorium Jaringan Telekomunikasi ITS - Gedung B Ruang B-301"
+                                    className="w-full h-[380px] md:h-[460px] border-0 dark:brightness-90 dark:contrast-105 transition-all duration-300 block"
+                                    loading="lazy"
+                                    allowFullScreen
+                                    referrerPolicy="no-referrer-when-downgrade"
+                                    data-testid="google-maps-iframe"
+                                />
 
-                            {/* Floating Non-Blocking Info Badge */}
-                            <div className="pointer-events-none absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/15 bg-white/90 dark:bg-[#111613]/90 px-3.5 py-2 text-xs font-medium text-[var(--tnl-heading)] shadow-md backdrop-blur-md">
-                                <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                                <span>Ruang B-301 · Lantai 3 Gedung B, Teknik Elektro ITS</span>
+                                {/* Floating Non-Blocking Info Badge */}
+                                <div className="pointer-events-none absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-2.5 rounded-xl border border-white/15 bg-[#111613]/92 text-white px-3.5 py-2 text-xs font-medium shadow-lg backdrop-blur-md">
+                                    <span className="flex h-2 w-2 rounded-full bg-[#5D8A6B] animate-pulse" />
+                                    <span>Ruang B-301 · Lantai 3 Gedung B, Teknik Elektro ITS</span>
+                                </div>
                             </div>
                         </div>
                     </div>
