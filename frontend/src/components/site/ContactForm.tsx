@@ -1,6 +1,7 @@
 // Contact form with honeypot; messages land in the admin inbox (Jev triages them).
 
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Send } from "lucide-react";
 import { apiPost } from "@/lib/api";
@@ -14,7 +15,7 @@ interface ContactResponse {
 }
 
 export function ContactForm() {
-    const { t } = useLocale();
+    const { t, locale } = useLocale();
     const [sending, setSending] = useState(false);
     const [done, setDone] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -36,6 +37,13 @@ export function ContactForm() {
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) next.email = t("invalid_email");
         if (!payload.subject) next.subject = t("required_field");
         if (!payload.message) next.message = t("required_field");
+        const consent = data.get("consent");
+        if (!consent) {
+            next.consent =
+                locale === "id"
+                    ? "Persetujuan UU PDP No. 27/2022 wajib dicentang."
+                    : "You must consent to data processing under PDP Law No. 27/2022.";
+        }
         setErrors(next);
         if (Object.keys(next).length) return;
 
@@ -121,6 +129,27 @@ export function ContactForm() {
                             <p className="mt-1 text-xs" style={{ color: "#b91c1c" }} data-testid="contact-message-error">
                                 {errors.message}
                             </p>
+                        ) : null}
+                    </div>
+
+                    <div className="rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] p-3 text-xs">
+                        <label className="flex items-start gap-2.5 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="consent"
+                                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#5D8A6B] focus:ring-[#5D8A6B]"
+                                data-testid="contact-form-consent"
+                            />
+                            <span className="text-[var(--tnl-body)]">
+                                Saya menyetujui pemrosesan data sesuai ketentuan UU PDP No. 27/2022 dan{" "}
+                                <Link to="/privacy" className="underline text-[#5D8A6B] dark:text-[#8AB597]">
+                                    Kebijakan Privasi
+                                </Link>
+                                .
+                            </span>
+                        </label>
+                        {errors.consent ? (
+                            <p className="mt-1.5 text-xs text-rose-500 font-medium pl-6">{errors.consent}</p>
                         ) : null}
                     </div>
 

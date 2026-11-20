@@ -20,6 +20,7 @@ import {
 import { useLocale, pick } from "@/lib/i18n";
 import { useEvents, useSettings } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
+import { TnlLogo } from "@/components/site/TnlLogo";
 import type { SiteSettings } from "@/lib/types";
 
 const NAV = [
@@ -42,17 +43,8 @@ const NAV = [
 
 function LogoMark({ short }: { short?: string }) {
     return (
-        <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#111613] p-1.5 border border-black/10 dark:border-white/15 shadow-sm"
-            aria-label={short || "TNL"}
-        >
-            <img
-                src="/assets/brand/tnl-logo-white.png"
-                alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
-                className="h-full w-full object-contain"
-                fetchPriority="high"
-                loading="eager"
-            />
+        <span className="flex shrink-0 items-center justify-center" aria-label={short || "TNL"}>
+            <TnlLogo variant="auto" className="h-9 w-9 sm:h-10 sm:w-10" />
         </span>
     );
 }
@@ -519,11 +511,10 @@ export function SiteFooter({
                                 className={`inline-block rounded-2xl transition-transform hover:scale-[1.02] ${focusRing}`}
                                 aria-label="Laboratorium Jaringan Telekomunikasi ITS"
                             >
-                                <img
-                                    src="/assets/brand/tnl-logo-white.png"
-                                    alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
-                                    className="h-28 w-28 md:h-32 md:w-32 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
-                                    loading="lazy"
+                                <TnlLogo
+                                    variant="light"
+                                    className="h-28 w-28 md:h-32 md:w-32"
+                                    imgClassName="drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
                                 />
                             </Link>
                             <a

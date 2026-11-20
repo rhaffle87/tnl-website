@@ -64,6 +64,13 @@ if (-not $SkipBackendDeploy) {
     ssh root@$AppNode "systemctl reload nginx"
 }
 
+# 4b. Sync CT 102 Edge Nginx Config
+if (Test-Path "$PSScriptRoot\nginx-ct102.conf") {
+    Write-Host "Syncing Nginx configuration to CT 102 (Web Edge)..." -ForegroundColor Yellow
+    scp "$PSScriptRoot\nginx-ct102.conf" "root@100.102.105.77:/etc/nginx/sites-available/labtnl"
+    ssh root@100.102.105.77 "nginx -t && systemctl reload nginx"
+}
+
 # 5. Post-deploy Health Check
 Write-Host "`n[5/5] Running post-deploy verification..." -ForegroundColor Yellow
 & "$PSScriptRoot\health-check.ps1"

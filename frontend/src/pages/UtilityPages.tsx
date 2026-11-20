@@ -6,6 +6,7 @@ import { BadgeCheck, Download, QrCode, RotateCcw, Search, ShieldAlert, ShieldChe
 import { apiGet } from "@/lib/api";
 import { useLocale } from "@/lib/i18n";
 import { EmptyState, Spinner } from "@/components/site/Primitives";
+import { TnlLogo } from "@/components/site/TnlLogo";
 import { CmsPage } from "@/pages/Home";
 
 export function TermsPage() {
@@ -158,13 +159,7 @@ export function VerifyPage() {
                     ) : searched && data ? (
                         data.valid ? (
                             <div className="tnl-card p-8 text-center animate-fade-in shadow-md border-emerald-500/20" data-testid="verify-valid">
-                                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-black/10 dark:border-white/10 bg-[#111613] p-2.5 shadow-md">
-                                    <img
-                                        src="/assets/brand/tnl-logo-white.png"
-                                        alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
-                                        className="h-full w-full object-contain"
-                                    />
-                                </div>
+                                <TnlLogo variant="auto" className="mx-auto mb-4 h-16 w-16" />
                                 <div className="inline-flex items-center gap-1.5 rounded-full bg-[#5D8A6B]/15 px-3 py-1 text-xs font-semibold text-[#2E583A] dark:text-[#8AB597]">
                                     <BadgeCheck className="h-4 w-4" aria-hidden="true" />
                                     <span>{t("certificate_valid")}</span>

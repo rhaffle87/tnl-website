@@ -27,6 +27,7 @@ import { useMembers, usePartners, usePosts, useSettings, useStats } from "@/lib/
 import { EmptyState, SectionHeading, formatDate } from "@/components/site/Primitives";
 import { MemberSections } from "@/components/site/MemberSections";
 import { ContactForm } from "@/components/site/ContactForm";
+import { TnlLogo } from "@/components/site/TnlLogo";
 import type { Block } from "@/lib/types";
 
 const ICONS = [Radio, Wrench, GraduationCap, Users, ActivityIcon];
@@ -131,11 +132,11 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
 
                         {/* Floating Emblem */}
                         <div className="relative z-10 animate-hero-float motion-reduce:animate-none">
-                            <img
-                                src="/assets/brand/tnl-logo-white.png"
-                                alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
-                                fetchPriority="high"
-                                className="h-56 w-56 md:h-72 md:w-72 lg:h-80 lg:w-80 object-contain drop-shadow-[0_16px_36px_rgba(0,0,0,0.55)] select-none pointer-events-none"
+                            <TnlLogo
+                                variant="light"
+                                priority
+                                className="h-56 w-56 md:h-72 md:w-72 lg:h-80 lg:w-80"
+                                imgClassName="drop-shadow-[0_16px_36px_rgba(0,0,0,0.55)] select-none pointer-events-none"
                             />
                         </div>
                     </div>

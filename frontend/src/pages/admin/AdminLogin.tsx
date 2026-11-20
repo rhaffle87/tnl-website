@@ -8,6 +8,7 @@ import { KeyRound, LogIn } from "lucide-react";
 import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { beginSession } from "@/lib/session";
 import { useQuery } from "@tanstack/react-query";
+import { TnlLogo } from "@/components/site/TnlLogo";
 import type { AuthUser, GoogleAuthConfig } from "@/lib/types";
 
 function errorText(err: unknown, fallback: string): string {
@@ -24,13 +25,7 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
         <div className="flex min-h-svh" style={{ background: "var(--tnl-surface)" }}>
             <div className="tnl-hero-gradient hidden w-[44%] flex-col justify-between p-12 lg:flex">
                 <div>
-                    <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-[#111613] p-2.5 shadow-lg">
-                        <img
-                            src="/assets/brand/tnl-logo-white.png"
-                            alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
-                            className="h-full w-full object-contain"
-                        />
-                    </div>
+                    <TnlLogo variant="light" className="mb-6 h-14 w-14" />
                     <span className="text-xs font-bold uppercase tracking-[0.25em]" style={{ color: "var(--tnl-tan)" }}>
                         TNL Studio
                     </span>
@@ -49,13 +44,7 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
             <div className="flex flex-1 items-center justify-center p-6">
                 <div className="tnl-card w-full max-w-md p-8">
                     <div className="mb-4 flex items-center gap-3">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-[#111613] p-1.5 shadow-sm">
-                            <img
-                                src="/assets/brand/tnl-logo-white.png"
-                                alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
-                                className="h-full w-full object-contain"
-                            />
-                        </span>
+                        <TnlLogo variant="auto" className="h-10 w-10" />
                         <div>
                             <span className="text-xs font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                 TNL Studio

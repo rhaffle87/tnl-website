@@ -27,6 +27,23 @@ describe("Chrome and Layout Components", () => {
     expect(screen.getByText(/Laboratorium Jaringan Telekomunikasi|Telecommunication Network/i)).toBeInTheDocument();
   });
 
+  it("SiteHeader renders borderless TnlLogo with auto theme switching images", () => {
+    const { container } = renderWithProviders(<SiteHeader />, { route: "/" });
+    const headerLogoLink = screen.getByTestId("header-logo-link");
+    expect(headerLogoLink).toBeInTheDocument();
+
+    // Ensure no dark box wrapper with border
+    expect(headerLogoLink.querySelector(".bg-\\[\\#111613\\]")).toBeNull();
+
+    // Verify auto switch logo images
+    const darkLogo = container.querySelector('img[src="/assets/brand/tnl-logo-dark.svg"]');
+    const whiteLogo = container.querySelector('img[src="/assets/brand/tnl-logo-white.svg"]');
+    expect(darkLogo).toBeInTheDocument();
+    expect(darkLogo).toHaveClass("block", "dark:hidden");
+    expect(whiteLogo).toBeInTheDocument();
+    expect(whiteLogo).toHaveClass("hidden", "dark:block");
+  });
+
   it("SiteCollaborationBand renders collaboration prompt", () => {
     renderWithProviders(<SiteCollaborationBand show={true} />, { route: "/" });
     expect(screen.getByText(/Tertarik berkolaborasi|Interested in collaborating/i)).toBeInTheDocument();

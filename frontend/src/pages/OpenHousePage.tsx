@@ -16,6 +16,7 @@ import { useEvent, useSubmitRegistration } from "@/lib/hooks";
 import { useLocale, pick } from "@/lib/i18n";
 import { toast } from "sonner";
 import { FadeCarousel } from "@/components/site/MediaCarousel";
+import { TnlLogo } from "@/components/site/TnlLogo";
 
 const BATCH_OPTIONS = ["2023", "2024", "2025", "2026"];
 
@@ -119,13 +120,7 @@ export default function OpenHousePage() {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
                         <div className="lg:col-span-7 space-y-6">
                             <div className="flex flex-wrap items-center gap-3">
-                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-[#111613] p-1.5 shadow-sm">
-                                    <img
-                                        src="/assets/brand/tnl-logo-white.png"
-                                        alt="Logo Lab TNL"
-                                        className="h-full w-full object-contain"
-                                    />
-                                </span>
+                                <TnlLogo variant="auto" className="h-9 w-9" />
                                 <div className="inline-flex items-center gap-2 rounded-full border border-[#A8977B]/40 bg-[#A8977B]/10 px-3.5 py-1 text-xs font-bold tracking-widest text-[#7F715C] dark:text-[#C4B393] uppercase">
                                     <Sparkles className="h-3.5 w-3.5" />
                                     <span>OPEN HOUSE 2026 · LIVE SYNC</span>

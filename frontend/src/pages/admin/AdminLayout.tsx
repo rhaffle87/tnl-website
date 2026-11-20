@@ -26,6 +26,7 @@ import {
 import { useMe } from "@/lib/hooks";
 import { endSession } from "@/lib/session";
 import { Spinner } from "@/components/site/Primitives";
+import { TnlLogo } from "@/components/site/TnlLogo";
 import type { AuthUser } from "@/lib/types";
 
 const ROLE_LABELS: Record<AuthUser["role"], string> = {
@@ -112,13 +113,7 @@ export default function AdminLayout() {
             >
                 <div className="border-b px-5 py-5" style={{ borderColor: "#262c33" }}>
                     <Link to="/admin" className="flex items-center gap-3" data-testid="admin-logo-link">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#1C2821] p-1.5 shadow-sm">
-                            <img
-                                src="/assets/brand/tnl-logo-white.png"
-                                alt="Logo Laboratorium Jaringan Telekomunikasi ITS"
-                                className="h-full w-full object-contain"
-                            />
-                        </span>
+                        <TnlLogo variant="light" className="h-10 w-10" />
                         <div>
                             <span className="text-xs font-bold uppercase tracking-[0.25em]" style={{ color: "var(--tnl-tan)" }}>
                                 TNL Studio
@@ -181,13 +176,7 @@ export default function AdminLayout() {
                     style={{ background: "#111518", borderColor: "#262c33" }}
                 >
                     <Link to="/admin" className="flex items-center gap-2.5 text-sm font-bold text-white">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-[#1C2821] p-1">
-                            <img
-                                src="/assets/brand/tnl-logo-white.png"
-                                alt="TNL"
-                                className="h-full w-full object-contain"
-                            />
-                        </span>
+                        <TnlLogo variant="light" className="h-7 w-7" />
                         <span>TNL Studio</span>
                     </Link>
                     <button type="button" onClick={signOut} className="text-xs" style={{ color: "#c8ccd0" }} data-testid="admin-mobile-sign-out">
