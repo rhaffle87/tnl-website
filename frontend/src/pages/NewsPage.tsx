@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { usePost } from "@/lib/hooks";
 import { pick, useLocale } from "@/lib/i18n";
 import { Breadcrumb, EmptyState, Spinner, formatDate } from "@/components/site/Primitives";
+import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
 import { CmsPage } from "@/pages/Home";
 
 export default function NewsPage() {
@@ -62,12 +63,17 @@ export function NewsArticlePage() {
             <div className="tnl-section" style={{ background: "var(--tnl-surface)" }}>
                 <div className="tnl-container">
                     {post.cover_url ? (
-                        <img
-                            src={post.cover_url}
-                            alt={post.cover_alt || title}
-                            className="mb-8 w-full rounded-[15px] object-cover"
-                            style={{ maxHeight: 440 }}
-                        />
+                        <div className="tnl-parallax-media mb-8 w-full overflow-hidden rounded-[15px]" style={{ maxHeight: 440 }}>
+                            <img
+                                src={post.cover_url}
+                                alt={post.cover_alt || title}
+                                className="w-full object-cover"
+                                style={{
+                                    maxHeight: 440,
+                                    viewTransitionName: `news-cover-${(post.slug || post.id || "post").replace(/[^a-zA-Z0-9_-]/g, "-")}`,
+                                }}
+                            />
+                        </div>
                     ) : null}
                     <div className="tnl-card p-7 sm:p-10">
                         {/* Sanitized server-side before storage. */}
@@ -91,7 +97,9 @@ export function NewsArticlePage() {
                                     <Link
                                         key={rel.id}
                                         to={`/news/${rel.slug}`}
-                                        className="tnl-card tnl-card-hover p-6"
+                                        viewTransition
+                                        className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal p-6"
+                                        onPointerMove={handleSpotlightPointerMove}
                                         data-testid={`related-article-${rel.slug}`}
                                     >
                                         <span className="tnl-count-chip">{rel.category}</span>
@@ -103,7 +111,7 @@ export function NewsArticlePage() {
                     ) : null}
 
                     <div className="mt-10">
-                        <Link to="/news" className="tnl-btn tnl-btn-outline" data-testid="article-back-link">
+                        <Link to="/news" viewTransition className="tnl-btn tnl-btn-outline" data-testid="article-back-link">
                             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                             {t("back_to_news")}
                         </Link>

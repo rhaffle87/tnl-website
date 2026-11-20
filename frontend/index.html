@@ -2,40 +2,65 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon-dark.svg?v=3" media="(prefers-color-scheme: light)" />
-    <link rel="icon" type="image/svg+xml" href="/favicon-white.svg?v=3" media="(prefers-color-scheme: dark)" />
-    <link rel="icon" type="image/svg+xml" href="/favicon-white.svg?v=3" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=3" />
-    <link rel="shortcut icon" href="/favicon.ico?v=3" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3" />
+    <link rel="icon" type="image/svg+xml" href="/favicon-white.svg?v=4" id="tnl-favicon" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
+    <link rel="shortcut icon" href="/favicon.ico?v=4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#111613" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <script>
-      try {
-        const stored = localStorage.getItem("tnl-theme");
-        if (stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-          document.documentElement.classList.add("dark");
-          const meta = document.querySelector('meta[name="color-scheme"]');
-          if (meta) meta.content = "dark";
-        } else if (stored === "light") {
-          document.documentElement.classList.remove("dark");
-          const meta = document.querySelector('meta[name="color-scheme"]');
-          if (meta) meta.content = "light";
+      (function() {
+        function updateFavicon(isDark) {
+          try {
+            var link = document.getElementById("tnl-favicon") || document.querySelector('link[rel="icon"][type="image/svg+xml"]');
+            if (link) {
+              link.href = isDark ? "/favicon-white.svg?v=4" : "/favicon-dark.svg?v=4";
+            }
+          } catch (e) {}
         }
 
-        const tokensStr = localStorage.getItem("tnl-theme-tokens");
-        if (tokensStr) {
-          const t = JSON.parse(tokensStr);
-          const root = document.documentElement;
-          if (t.primary_color) root.style.setProperty("--gsm-primary", t.primary_color);
-          if (t.emerald_color) root.style.setProperty("--gsm-emerald", t.emerald_color);
-          if (t.obsidian_color) root.style.setProperty("--gsm-obsidian", t.obsidian_color);
-          if (t.accent_color) root.style.setProperty("--gsm-accent", t.accent_color);
-          if (t.accent_hover_color) root.style.setProperty("--gsm-accent-hover", t.accent_hover_color);
-        }
-      } catch (e) {}
+        try {
+          var stored = localStorage.getItem("tnl-theme");
+          var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var isDark = stored === "dark" || (!stored && prefersDark);
+
+          if (isDark) {
+            document.documentElement.classList.add("dark");
+            var meta = document.querySelector('meta[name="color-scheme"]');
+            if (meta) meta.content = "dark";
+            updateFavicon(true);
+          } else if (stored === "light") {
+            document.documentElement.classList.remove("dark");
+            var metaLight = document.querySelector('meta[name="color-scheme"]');
+            if (metaLight) metaLight.content = "light";
+            updateFavicon(false);
+          } else {
+            updateFavicon(prefersDark);
+          }
+
+          window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(e) {
+            if (!localStorage.getItem("tnl-theme")) {
+              document.documentElement.classList.toggle("dark", e.matches);
+              var m = document.querySelector('meta[name="color-scheme"]');
+              if (m) m.content = e.matches ? "dark" : "light";
+              updateFavicon(e.matches);
+            }
+          });
+
+          var tokensStr = localStorage.getItem("tnl-theme-tokens");
+          if (tokensStr) {
+            var t = JSON.parse(tokensStr);
+            var root = document.documentElement;
+            if (t.primary_color) root.style.setProperty("--gsm-primary", t.primary_color);
+            if (t.emerald_color) root.style.setProperty("--gsm-emerald", t.emerald_color);
+            if (t.obsidian_color) root.style.setProperty("--gsm-obsidian", t.obsidian_color);
+            if (t.accent_color) root.style.setProperty("--gsm-accent", t.accent_color);
+            if (t.accent_hover_color) root.style.setProperty("--gsm-accent-hover", t.accent_hover_color);
+          }
+        } catch (e) {}
+      })();
     </script>
     <title>Telecommunication Network Laboratory — ITS Surabaya</title>
     <meta

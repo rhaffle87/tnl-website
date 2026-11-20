@@ -5,6 +5,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { m } from "motion/react";
+import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
 import {
     Calendar,
     ChevronLeft,
@@ -117,7 +119,11 @@ function EventCard({ event }: { event: LabEvent }) {
     }, [event.type, locale]);
 
     return (
-        <article className="tnl-card overflow-hidden p-0" data-testid={`event-card-${event.slug}`}>
+        <article
+            className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal overflow-hidden p-0"
+            onPointerMove={handleSpotlightPointerMove}
+            data-testid={`event-card-${event.slug}`}
+        >
             <div className="tnl-hero-gradient flex flex-wrap items-center gap-3 px-6 py-4">
                 <TypeBadge label={eventTypeLabel} testId={`event-type-badge-${event.slug}`} />
                 <StatusBadge status={status} label={statusLabel} testId={`event-status-badge-${event.slug}`} />
@@ -402,7 +408,11 @@ function ActivityRow({ activity, index }: { activity: Activity; index: number })
 function ProjectCard({ project }: { project: Project }) {
     const { locale, t } = useLocale();
     return (
-        <article className="tnl-card tnl-card-hover p-6" data-testid={`project-card-${project.id}`}>
+        <article
+            className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal p-6"
+            onPointerMove={handleSpotlightPointerMove}
+            data-testid={`project-card-${project.id}`}
+        >
             <div className="flex flex-wrap items-center gap-2">
                 {project.cluster ? <span className="tnl-count-chip">{project.cluster}</span> : null}
                 {project.year ? (
@@ -497,7 +507,8 @@ function EquipmentCard({ item }: { item: Equipment }) {
 
     return (
         <article
-            className="tnl-card tnl-card-hover flex flex-col justify-between overflow-hidden p-6"
+            className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal flex flex-col justify-between overflow-hidden p-6"
+            onPointerMove={handleSpotlightPointerMove}
             data-testid={`equipment-card-${item.id}`}
         >
             <div>
@@ -586,7 +597,8 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
 
     return (
         <article
-            className="tnl-card border-l-4 p-6 flex flex-col justify-between"
+            className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal border-l-4 p-6 flex flex-col justify-between"
+            onPointerMove={handleSpotlightPointerMove}
             style={{ borderLeftColor: "var(--tnl-tan)" }}
             data-testid={`practicum-card-${mod.id}`}
         >
@@ -755,7 +767,12 @@ export default function ActivityPage() {
                         >
                             {t(item.labelKey)}
                             {tab === item.key ? (
-                                <span className="absolute inset-x-3 bottom-0 h-[3px] rounded-t-full" style={{ background: "var(--tnl-green)" }} />
+                                <m.span
+                                    layoutId="activity-active-tab-indicator"
+                                    className="absolute inset-x-3 bottom-0 h-[3px] rounded-t-full"
+                                    style={{ background: "var(--tnl-green)" }}
+                                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                                />
                             ) : null}
                         </button>
                     ))}

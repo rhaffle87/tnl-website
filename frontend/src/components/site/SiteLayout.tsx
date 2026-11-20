@@ -4,6 +4,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AnnouncementPopup, MobileRegistrationBar, SiteCollaborationBand, SiteFooter, SiteHeader } from "@/components/site/Chrome";
+import { ReadingProgressBar } from "@/components/site/ReadingProgressBar";
+import { SmoothScrollProvider } from "@/components/site/SmoothScrollProvider";
 import { LOCALE_STORAGE_KEY, LocaleContext, STRINGS, useLocale, type Locale, type StringKey } from "@/lib/i18n";
 import { useSettings } from "@/lib/hooks";
 
@@ -261,16 +263,19 @@ export default function SiteLayout() {
     }, [settings?.theme_tokens]);
 
     return (
-        <div className="flex min-h-svh flex-col" style={{ background: "var(--background)" }}>
-            <MaintenanceNotice />
-            <SiteHeader />
-            <main className="flex-1">
-                <Outlet />
-            </main>
-            {isHome ? <SiteCollaborationBand /> : null}
-            <SiteFooter />
-            <AnnouncementPopup />
-            <MobileRegistrationBar />
-        </div>
+        <SmoothScrollProvider>
+            <div className="flex min-h-svh flex-col" style={{ background: "var(--background)" }}>
+                <MaintenanceNotice />
+                <SiteHeader />
+                <ReadingProgressBar />
+                <main className="flex-1">
+                    <Outlet />
+                </main>
+                {isHome ? <SiteCollaborationBand /> : null}
+                <SiteFooter />
+                <AnnouncementPopup />
+                <MobileRegistrationBar />
+            </div>
+        </SmoothScrollProvider>
     );
 }

@@ -4,6 +4,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { m, AnimatePresence } from "motion/react";
+import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
 import { BookOpen, Briefcase, ExternalLink, FileText, Github, Instagram, Linkedin, Mail, Users, X } from "lucide-react";
 import { pick, useLocale } from "@/lib/i18n";
 import { useMembers, usePublications } from "@/lib/hooks";
@@ -186,10 +188,11 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
         <button
             type="button"
             onClick={onOpen}
-            className="tnl-card tnl-card-hover flex flex-col overflow-hidden p-0 text-left transition-all duration-300 hover:shadow-md"
+            onPointerMove={handleSpotlightPointerMove}
+            className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal flex flex-col overflow-hidden p-0 text-left transition-all duration-300 hover:shadow-md"
             data-testid={testId}
         >
-            <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#E5E7EB]">
+            <div className="tnl-parallax-media relative aspect-[3/4] w-full overflow-hidden bg-[#E5E7EB]">
                 {member.photo_url ? (
                     <img
                         src={member.photo_url}
@@ -263,8 +266,23 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
             aria-labelledby="member-modal-name"
             data-testid="member-detail-modal"
         >
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} aria-hidden="true" />
-            <div className="tnl-card relative z-10 max-h-[88vh] w-full max-w-2xl overflow-y-auto p-0 animate-pop">
+            <m.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={onClose}
+                aria-hidden="true"
+            />
+            <m.div
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                data-lenis-prevent
+                className="tnl-card relative z-10 max-h-[88vh] w-full max-w-2xl overflow-y-auto p-0"
+            >
                 <button
                     type="button"
                     onClick={onClose}
@@ -452,7 +470,7 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                         <SocialLinks member={member} />
                     </div>
                 </div>
-            </div>
+            </m.div>
         </div>
     );
 }
@@ -594,15 +612,26 @@ export function MemberSections() {
                                         role="tab"
                                         aria-selected={activeAlumniBatch === b}
                                         onClick={() => setAlumniBatch(b)}
-                                        className="rounded-full border px-4 py-2 text-sm font-medium transition-colors"
-                                        style={
-                                            activeAlumniBatch === b
-                                                ? { background: "var(--tnl-green)", color: "#fff", borderColor: "var(--tnl-green)" }
-                                                : { borderColor: "var(--tnl-border)", background: "var(--card)" }
-                                        }
+                                        className="relative rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+                                        style={{
+                                            borderColor: activeAlumniBatch === b ? "var(--tnl-green)" : "var(--tnl-border)",
+                                        }}
                                         data-testid={`member-batch-${b.replace("/", "-")}-tab`}
                                     >
-                                        Batch {b}
+                                        {activeAlumniBatch === b ? (
+                                            <m.span
+                                                layoutId="member-alumni-batch-pill"
+                                                className="absolute inset-0 rounded-full"
+                                                style={{ background: "var(--tnl-green)" }}
+                                                transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                                            />
+                                        ) : null}
+                                        <span
+                                            className="relative z-10"
+                                            style={{ color: activeAlumniBatch === b ? "#fff" : "inherit" }}
+                                        >
+                                            Batch {b}
+                                        </span>
                                     </button>
                                 ))
                             )}
@@ -615,15 +644,26 @@ export function MemberSections() {
                                     key={s}
                                     type="button"
                                     onClick={() => setStatusFilter(s)}
-                                    className="rounded-full border px-4 py-2 text-sm font-medium transition-colors"
-                                    style={
-                                        statusFilter === s
-                                            ? { background: "var(--tnl-tan)", color: "#111518", borderColor: "var(--tnl-tan)" }
-                                            : { borderColor: "var(--tnl-border)", background: "var(--card)" }
-                                    }
+                                    className="relative rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+                                    style={{
+                                        borderColor: statusFilter === s ? "var(--tnl-tan)" : "var(--tnl-border)",
+                                    }}
                                     data-testid={`member-status-${s}-filter`}
                                 >
-                                    {s === "active" ? t("active") : t("alumni")}
+                                    {statusFilter === s ? (
+                                        <m.span
+                                            layoutId="member-status-pill"
+                                            className="absolute inset-0 rounded-full"
+                                            style={{ background: "var(--tnl-tan)" }}
+                                            transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                                        />
+                                    ) : null}
+                                    <span
+                                        className="relative z-10"
+                                        style={{ color: statusFilter === s ? "#111518" : "inherit" }}
+                                    >
+                                        {s === "active" ? t("active") : t("alumni")}
+                                    </span>
                                 </button>
                             ))}
                         </div>
@@ -661,7 +701,9 @@ export function MemberSections() {
                 </div>
             </section>
 
-            {selected ? <MemberModal member={selected} onClose={() => setSelected(null)} /> : null}
+            <AnimatePresence>
+                {selected ? <MemberModal member={selected} onClose={() => setSelected(null)} /> : null}
+            </AnimatePresence>
             <span className="sr-only">{locale}</span>
         </>
     );

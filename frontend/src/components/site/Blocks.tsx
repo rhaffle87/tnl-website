@@ -3,6 +3,8 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { m } from "motion/react";
+import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
 import {
     Activity as ActivityIcon,
     ArrowRight,
@@ -62,10 +64,32 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
     const { locale, t } = useLocale();
     const badge = str(props, "badge");
 
+    const handleHeroPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        const tiltX = (x / (rect.width / 2)) * 6;
+        const tiltY = (y / (rect.height / 2)) * 6;
+        const rotX = (-y / (rect.height / 2)) * 3;
+        const rotY = (x / (rect.width / 2)) * 3;
+        e.currentTarget.style.setProperty("--tilt-x", `${tiltX.toFixed(2)}px`);
+        e.currentTarget.style.setProperty("--tilt-y", `${tiltY.toFixed(2)}px`);
+        e.currentTarget.style.setProperty("--tilt-rot-x", `${rotX.toFixed(2)}deg`);
+        e.currentTarget.style.setProperty("--tilt-rot-y", `${rotY.toFixed(2)}deg`);
+    };
+
+    const handleHeroPointerLeave = (e: React.PointerEvent<HTMLDivElement>) => {
+        e.currentTarget.style.setProperty("--tilt-x", "0px");
+        e.currentTarget.style.setProperty("--tilt-y", "0px");
+        e.currentTarget.style.setProperty("--tilt-rot-x", "0deg");
+        e.currentTarget.style.setProperty("--tilt-rot-y", "0deg");
+    };
+
     return (
         <section className="tnl-hero-gradient relative overflow-hidden" data-testid="block-hero">
             <div
-                className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full opacity-20 blur-3xl"
+                className="tnl-hero-parallax-bg pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full opacity-20 blur-3xl"
                 style={{ background: "var(--tnl-tan)" }}
                 aria-hidden="true"
             />
@@ -92,6 +116,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
                     <div className="mt-8 flex flex-wrap gap-3">
                         <Link
                             to={str(props, "primary_url", "/activity")}
+                            viewTransition
                             className="tnl-btn tnl-btn-tan text-[#111613]"
                             data-testid="hero-primary-cta-button"
                         >
@@ -100,6 +125,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
                         </Link>
                         <Link
                             to={str(props, "secondary_url", "/contact")}
+                            viewTransition
                             className="tnl-btn tnl-btn-ghost-light"
                             data-testid="hero-secondary-cta-button"
                         >
@@ -108,9 +134,14 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
                     </div>
                 </div>
 
-                {/* Animated Floating TNL Emblem & Concentric Signal Waves */}
-                <div className="flex justify-center lg:justify-end" data-testid="hero-emblem-container">
-                    <div className="relative flex items-center justify-center p-4">
+                {/* Animated Floating TNL Emblem & Concentric Signal Waves with Subtle 3D Pointer Tilt */}
+                <div
+                    className="flex justify-center lg:justify-end"
+                    data-testid="hero-emblem-container"
+                    onPointerMove={handleHeroPointerMove}
+                    onPointerLeave={handleHeroPointerLeave}
+                >
+                    <div className="tnl-hero-tilt relative flex items-center justify-center p-4">
                         {/* Ambient Radial Glow */}
                         <div
                             aria-hidden="true"
@@ -182,7 +213,7 @@ function StatsBlock() {
         <section className="border-y" style={{ background: "#111518", borderColor: "#262c33" }} data-testid="block-stats">
             <div className="tnl-container grid grid-cols-2 gap-8 py-10 lg:grid-cols-4">
                 {items.map((item) => (
-                    <div key={item.key} className="flex flex-col items-center justify-center text-center" data-testid={`stat-${item.key}`}>
+                    <div key={item.key} className="tnl-scroll-reveal flex flex-col items-center justify-center text-center" data-testid={`stat-${item.key}`}>
                         <div className="text-[40px] font-bold leading-none lg:text-[56px]" style={{ color: "var(--tnl-tan)" }}>
                             {isError && !data ? "—" : item.value}
                         </div>
@@ -243,7 +274,8 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                             return (
                                 <div
                                     key={tile.name ?? tile.title ?? i}
-                                    className="tnl-card tnl-card-hover border-l-4 p-6"
+                                    className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal border-l-4 p-6"
+                                    onPointerMove={handleSpotlightPointerMove}
                                     style={{ borderLeftColor: i % 2 === 0 ? "var(--tnl-green)" : "var(--tnl-tan)" }}
                                     data-testid={`about-tile-${i}`}
                                 >
@@ -293,7 +325,12 @@ function FeatureTilesBlock({ props }: { props: Record<string, unknown> }) {
                     {list.map((tile, i) => {
                         const Icon = ICONS[i % ICONS.length];
                         return (
-                            <div key={i} className="tnl-card tnl-card-hover p-6" data-testid={`feature-tile-${i}`}>
+                            <div
+                                key={i}
+                                className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal p-6"
+                                onPointerMove={handleSpotlightPointerMove}
+                                data-testid={`feature-tile-${i}`}
+                            >
                                 <Icon className="mb-3 h-6 w-6" style={{ color: "var(--tnl-green)" }} aria-hidden="true" />
                                 <h3 className="text-[18px] font-bold">{pick(locale, tile.title ?? tile.name, tile.title_id ?? tile.name_id)}</h3>
                                 <p className="mt-2 text-sm text-[var(--tnl-body)]">{pick(locale, tile.description, tile.description_id)}</p>
@@ -323,7 +360,8 @@ function NumberedCardsBlock({ props }: { props: Record<string, unknown> }) {
                     {cards.map((card, i) => (
                         <article
                             key={i}
-                            className="tnl-card tnl-card-hover border-l-4 p-6"
+                            className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal border-l-4 p-6"
+                            onPointerMove={handleSpotlightPointerMove}
                             style={{ borderLeftColor: "var(--tnl-tan)" }}
                             data-testid={`numbered-card-${i}`}
                         >
@@ -338,7 +376,9 @@ function NumberedCardsBlock({ props }: { props: Record<string, unknown> }) {
                     ))}
                     <Link
                         to={str(props, "see_all_url", "/activity")}
-                        className="tnl-hero-gradient tnl-card tnl-card-hover flex flex-col justify-between p-6"
+                        viewTransition
+                        className="tnl-hero-gradient tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal flex flex-col justify-between p-6"
+                        onPointerMove={handleSpotlightPointerMove}
                         data-testid="numbered-cards-see-all-card"
                     >
                         <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--tnl-tan)" }}>
@@ -530,30 +570,42 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                             <button
                                 type="button"
                                 onClick={() => setCategory("")}
-                                className="rounded-full border px-4 py-2 text-sm font-medium transition-colors"
-                                style={
-                                    category === ""
-                                        ? { background: "var(--tnl-green)", color: "#fff", borderColor: "var(--tnl-green)" }
-                                        : { borderColor: "var(--tnl-border)" }
-                                }
+                                className="relative rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+                                style={{ borderColor: category === "" ? "var(--tnl-green)" : "var(--tnl-border)" }}
                                 data-testid="news-category-all-button"
                             >
-                                {t("all_categories")}
+                                {category === "" ? (
+                                    <m.span
+                                        layoutId="news-category-active-pill"
+                                        className="absolute inset-0 rounded-full"
+                                        style={{ background: "var(--tnl-green)" }}
+                                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                                    />
+                                ) : null}
+                                <span className="relative z-10" style={{ color: category === "" ? "#fff" : "inherit" }}>
+                                    {t("all_categories")}
+                                </span>
                             </button>
                             {categories.map((c) => (
                                 <button
                                     key={c}
                                     type="button"
                                     onClick={() => setCategory(c)}
-                                    className="rounded-full border px-4 py-2 text-sm font-medium transition-colors"
-                                    style={
-                                        category === c
-                                            ? { background: "var(--tnl-green)", color: "#fff", borderColor: "var(--tnl-green)" }
-                                            : { borderColor: "var(--tnl-border)" }
-                                    }
+                                    className="relative rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+                                    style={{ borderColor: category === c ? "var(--tnl-green)" : "var(--tnl-border)" }}
                                     data-testid={`news-category-${c.toLowerCase().replace(/\s+/g, "-")}-button`}
                                 >
-                                    {c}
+                                    {category === c ? (
+                                        <m.span
+                                            layoutId="news-category-active-pill"
+                                            className="absolute inset-0 rounded-full"
+                                            style={{ background: "var(--tnl-green)" }}
+                                            transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                                        />
+                                    ) : null}
+                                    <span className="relative z-10" style={{ color: category === c ? "#fff" : "inherit" }}>
+                                        {c}
+                                    </span>
                                 </button>
                             ))}
                         </div>
@@ -568,16 +620,21 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                             <Link
                                 key={post.id}
                                 to={`/news/${post.slug}`}
-                                className="tnl-card tnl-card-hover group flex flex-col overflow-hidden p-0"
+                                viewTransition
+                                className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal group flex flex-col overflow-hidden p-0"
+                                onPointerMove={handleSpotlightPointerMove}
                                 data-testid={`news-card-${post.slug}`}
                             >
                                 {post.cover_url ? (
-                                    <img
-                                        src={post.cover_url}
-                                        alt={post.cover_alt ?? pick(locale, post.title, post.title_id)}
-                                        className="h-44 w-full object-cover"
-                                        loading="lazy"
-                                    />
+                                    <div className="tnl-parallax-media h-44 w-full">
+                                        <img
+                                            src={post.cover_url}
+                                            alt={post.cover_alt ?? pick(locale, post.title, post.title_id)}
+                                            className="h-full w-full object-cover"
+                                            loading="lazy"
+                                            style={{ viewTransitionName: `news-cover-${(post.slug || post.id || "post").replace(/[^a-zA-Z0-9_-]/g, "-")}` }}
+                                        />
+                                    </div>
                                 ) : (
                                     <div className="tnl-hero-gradient h-44 w-full" aria-hidden="true" />
                                 )}

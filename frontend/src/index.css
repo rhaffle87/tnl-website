@@ -418,6 +418,186 @@
   .tnl-scroll-x { scrollbar-width: thin; }
   .tnl-scroll-x::-webkit-scrollbar { height: 6px; }
   .tnl-scroll-x::-webkit-scrollbar-thumb { background: var(--tnl-border); border-radius: 9999px; }
+
+  /* -------------------------------------------------------------------------
+     Precision Engineering Motion Suite
+     CSS Scroll-Driven Animations, Parallax & View Transitions
+     GPU Compositor Thread — 0 KB JavaScript Overhead
+     ------------------------------------------------------------------------- */
+
+  /* 1. Reading Progress Bar */
+  .tnl-reading-progress {
+    position: fixed;
+    top: 72px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--gsm-accent, #A8977B);
+    transform-origin: 0 50%;
+    transform: scaleX(0);
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .tnl-reading-progress {
+        animation: tnlReadingProgress linear both;
+        animation-timeline: scroll(root block);
+      }
+    }
+  }
+
+  @keyframes tnlReadingProgress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+
+  /* 2. Scroll-Over Card & Section Reveal */
+  @keyframes tnlRevealUp {
+    from {
+      opacity: 0;
+      transform: translateY(24px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @supports ((animation-timeline: view()) and (animation-range: entry)) {
+    @media (prefers-reduced-motion: no-preference) {
+      .tnl-scroll-reveal {
+        animation: tnlRevealUp linear both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 22%;
+      }
+    }
+  }
+
+  /* 3. Inner Image Parallax (Editorial Depth in overflow: clip) */
+  .tnl-parallax-media {
+    overflow: clip;
+  }
+
+  @keyframes tnlParallaxMediaShift {
+    from {
+      transform: scale(1.08) translateY(-4%);
+    }
+    to {
+      transform: scale(1.08) translateY(4%);
+    }
+  }
+
+  @supports ((animation-timeline: view()) and (animation-range: cover)) {
+    @media (prefers-reduced-motion: no-preference) {
+      .tnl-parallax-media > img,
+      .tnl-parallax-media > picture > img {
+        animation: tnlParallaxMediaShift linear both;
+        animation-timeline: view();
+        animation-range: cover 0% cover 100%;
+        will-change: transform;
+      }
+    }
+  }
+
+  /* 4. Subtle Depth Parallax on Hero Grid */
+  @keyframes tnlHeroParallax {
+    from { transform: translateY(0); }
+    to { transform: translateY(36px); }
+  }
+
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .tnl-hero-parallax-bg {
+        animation: tnlHeroParallax linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0px 500px;
+      }
+    }
+  }
+
+  /* 5. Cursor Hairline Spotlight on Cards */
+  .tnl-card-spotlight {
+    position: relative;
+  }
+
+  .tnl-card-spotlight::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: radial-gradient(
+      420px circle at var(--spot-x, -999px) var(--spot-y, -999px),
+      rgba(168, 151, 123, 0.24),
+      transparent 65%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 10;
+  }
+
+  .dark .tnl-card-spotlight::before {
+    background: radial-gradient(
+      420px circle at var(--spot-x, -999px) var(--spot-y, -999px),
+      rgba(196, 179, 147, 0.32),
+      transparent 65%
+    );
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .tnl-card-spotlight:hover::before {
+      opacity: 1;
+    }
+  }
+
+  /* 6. Subtle 3D Pointer Tilt on Hero Emblem */
+  .tnl-hero-tilt {
+    transform: translate3d(var(--tilt-x, 0px), var(--tilt-y, 0px), 0)
+               rotateX(var(--tilt-rot-x, 0deg))
+               rotateY(var(--tilt-rot-y, 0deg));
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-style: preserve-3d;
+  }
+}
+
+/* 7. Native View Transitions API */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 220ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* 8. Lenis Smooth Scroll Foundation */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {

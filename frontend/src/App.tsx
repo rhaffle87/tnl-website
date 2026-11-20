@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
+import { LazyMotion, domAnimation } from "motion/react";
 import { Toaster } from "@/components/ui/sonner";
 import SiteLayout, { LocaleProvider } from "@/components/site/SiteLayout";
 import Home from "@/pages/Home";
@@ -64,8 +65,9 @@ export default function App() {
 
     return (
         <LocaleProvider>
-            <Suspense fallback={<RouteFallback />}>
-                <Routes>
+            <LazyMotion features={domAnimation} strict>
+                <Suspense fallback={<RouteFallback />}>
+                    <Routes>
                     {/* Admin — TNL Studio */}
                     <Route path="/admin/login" element={<AdminLogin />} />
                     <Route path="/admin/invite/:token" element={<AdminInviteAccept />} />
@@ -106,6 +108,7 @@ export default function App() {
                     </Route>
                 </Routes>
             </Suspense>
+            </LazyMotion>
             <Toaster richColors />
         </LocaleProvider>
     );

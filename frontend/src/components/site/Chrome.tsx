@@ -67,6 +67,10 @@ export function SiteHeader() {
         const meta = document.querySelector('meta[name="color-scheme"]');
         if (meta) meta.setAttribute("content", next ? "dark" : "light");
         localStorage.setItem("tnl-theme", next ? "dark" : "light");
+        const svgLink = document.querySelector<HTMLLinkElement>('link[rel="icon"][type="image/svg+xml"]');
+        if (svgLink) {
+            svgLink.href = next ? "/favicon-white.svg?v=4" : "/favicon-dark.svg?v=4";
+        }
     };
 
     const title = settings ? pick(locale, settings.site_title, settings.site_title_id) : "Telecommunication Network Laboratory";
@@ -79,7 +83,7 @@ export function SiteHeader() {
             data-testid="site-header"
         >
             <div className="tnl-container flex h-[72px] items-center justify-between gap-4">
-                <Link to="/" className="flex shrink-0 items-center gap-3" data-testid="header-logo-link">
+                <Link to="/" viewTransition className="flex shrink-0 items-center gap-3" data-testid="header-logo-link">
                     <LogoMark short={short} />
                     <span className="hidden flex-col leading-tight sm:flex">
                         <span className="text-[14px] xl:text-[15px] font-bold tracking-tight whitespace-nowrap">
@@ -99,6 +103,7 @@ export function SiteHeader() {
                             <div key={item.key} className="group relative">
                                 <Link
                                     to={item.to}
+                                    viewTransition
                                     className={cn(
                                         "flex items-center gap-1 rounded-[6px] px-2.5 py-2 text-[14px] xl:text-[15px] font-medium transition-colors whitespace-nowrap",
                                         active ? "text-[var(--tnl-green)]" : "hover:text-[var(--tnl-green)]",
@@ -118,6 +123,7 @@ export function SiteHeader() {
                                             <Link
                                                 key={child.key}
                                                 to={child.to}
+                                                viewTransition
                                                 className="block rounded-[6px] px-3 py-2 text-sm transition-colors hover:bg-[var(--tnl-surface)] hover:text-[var(--tnl-green)]"
                                                 data-testid={`nav-${child.key.replace("nav_", "")}-link`}
                                             >
@@ -155,6 +161,7 @@ export function SiteHeader() {
                     </button>
                     <Link
                         to="/activity?tab=training"
+                        viewTransition
                         className="tnl-btn tnl-btn-primary hidden h-10 min-h-[40px] shrink-0 whitespace-nowrap px-4 py-2 text-sm sm:inline-flex"
                         data-testid="header-join-us-button"
                     >
@@ -540,6 +547,7 @@ export function SiteFooter({
                                     <li key={item.to}>
                                         <Link
                                             to={item.to}
+                                            viewTransition
                                             className={`inline-flex min-h-[44px] md:min-h-[34px] py-1 items-center text-sm text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
                                             data-testid={`footer-${item.to === "/" ? "home" : item.to.replace("/", "")}-link`}
                                         >
@@ -560,6 +568,7 @@ export function SiteFooter({
                                     <li key={item.to}>
                                         <Link
                                             to={item.to}
+                                            viewTransition
                                             className={`inline-flex min-h-[44px] md:min-h-[34px] py-1 items-center text-sm text-[#D1D5DB] underline-offset-4 transition-colors hover:text-[#F4F4F0] hover:underline ${focusRing}`}
                                         >
                                             {item.label}
