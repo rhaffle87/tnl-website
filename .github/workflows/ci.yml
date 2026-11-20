@@ -35,7 +35,7 @@ jobs:
         env:
           TESTING: "1"
           MONGO_URL: "mongodb://127.0.0.1:27017"
-          MONGO_DB: "tnl_ci_isolated"
+          DB_NAME: "tnl_ci_isolated"
           JWT_SECRET: "test-ci-secret-key-for-tnl-mock-testing-only-1234567890"
           SEED_ADMIN_PASSWORD: "ChangeMe2026!"
         run: |
@@ -58,7 +58,7 @@ jobs:
       - name: Install Frontend Dependencies
         run: |
           cd frontend
-          npm ci --legacy-peer-deps
+          npm install --legacy-peer-deps
 
       - name: TypeScript Typecheck
         run: |
