@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest-cov>=4.1.0
+mongomock-motor>=0.0.30
+playwright>=1.40.0

@@ -83,6 +83,18 @@ $results.Add((Test-NodeEndpoint -Name "CT 116 (MongoDB)" -HostTarget $DbIp -Port
 $results.Add((Test-NodeEndpoint -Name "CT 117 (Prometheus)" -HostTarget $MonitorIp -Port 9090 -Type "TCP"))
 $results.Add((Test-NodeEndpoint -Name "CT 117 (Grafana)" -HostTarget $MonitorIp -Port 3000 -Type "TCP"))
 
+# 5. Backup Status (CT 116 DB & CT 103 Media)
+try {
+    $dbStat = ssh -o ConnectTimeout=3 root@$DbIp "if [ -f /var/backups/tnl/db/latest.archive.gz ]; then ls -lh /var/backups/tnl/db/latest.archive.gz | awk '{print `$5, `$6, `$7, `$8}'; fi" 2>$null
+    if ($dbStat) {
+        $results.Add([PSCustomObject]@{ Node = "CT 116 (Backup DB)"; Target = "$DbIp"; Test = "latest.archive.gz"; Status = "OK"; Detail = "$($dbStat.Trim())" })
+    }
+    $mediaStat = ssh -o ConnectTimeout=3 root@$AppIp "if [ -f /var/backups/tnl/media/latest.tar.gz ]; then ls -lh /var/backups/tnl/media/latest.tar.gz | awk '{print `$5, `$6, `$7, `$8}'; fi" 2>$null
+    if ($mediaStat) {
+        $results.Add([PSCustomObject]@{ Node = "CT 103 (Backup Media)"; Target = "$AppIp"; Test = "latest.tar.gz"; Status = "OK"; Detail = "$($mediaStat.Trim())" })
+    }
+} catch {}
+
 # Output table
 $results | Format-Table -AutoSize
 

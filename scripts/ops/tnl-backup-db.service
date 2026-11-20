@@ -1,0 +1,14 @@
+[Unit]
+Description=TNL MongoDB Automated Daily Backup
+After=mongod.service network.target
+Wants=mongod.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/tnl-backup-db.sh
+StandardOutput=journal
+StandardError=journal
+Nice=10
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
