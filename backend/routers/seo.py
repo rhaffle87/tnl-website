@@ -145,12 +145,12 @@ async def render_ssr_shell(path: str = Query("/")) -> HTMLResponse:
             desc = f"Validasi keaslian e-sertifikat resmi #{code} di Laboratorium Jaringan Telekomunikasi ITS."
 
         elif clean_path == "/terms":
-            title = "Syarat & Ketentuan — Laboratorium Jaringan Telekomunikasi ITS"
-            desc = "Syarat dan ketentuan penggunaan layanan dan informasi situs web Laboratorium Jaringan Telekomunikasi ITS."
+            title = "Ketentuan Penggunaan — Laboratorium Jaringan Telekomunikasi ITS"
+            desc = "Ketentuan hukum penggunaan situs, modul praktikum, dan portal verifikasi sertifikat Laboratorium Jaringan Telekomunikasi ITS."
 
         elif clean_path == "/privacy":
-            title = "Kebijakan Privasi (UU PDP) — Laboratorium Jaringan Telekomunikasi ITS"
-            desc = "Kebijakan perlindungan data pribadi pengunjung dan pendaftar kegiatan sesuai UU Nomor 27 Tahun 2022 (UU PDP)."
+            title = "Kebijakan Privasi (UU PDP No. 27/2022) — Laboratorium Jaringan Telekomunikasi ITS"
+            desc = "Kebijakan perlindungan data pribadi sesuai UU No. 27 Tahun 2022 (UU PDP) di Laboratorium Jaringan Telekomunikasi ITS."
 
         else:
             page_slug = clean_path.lstrip("/")

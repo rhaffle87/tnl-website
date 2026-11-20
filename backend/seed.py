@@ -529,56 +529,75 @@ SYSTEM_PAGES = [
     ]),
     ("terms", "Terms of Use", "Ketentuan Penggunaan", [
         inner_hero("Terms of Use", "Ketentuan Penggunaan",
-                   "The conditions that apply when using this website.",
-                   "Ketentuan yang berlaku saat menggunakan situs web ini.", "Legal", "Legal"),
+                   "Official legal terms governing website access, practicum modules, and verification portals (v2026.1).",
+                   "Ketentuan hukum resmi penggunaan situs, modul praktikum, dan portal verifikasi sertifikat (v2026.1).", "Legal", "Legal"),
         {"type": "rich_text", "props": {
-            "html": ("<h3>Use of this website</h3><p>This website is published by the Telecommunication Network "
-                     "Laboratory, Department of Electrical Engineering, Institut Teknologi Sepuluh Nopember. "
-                     "Content is provided for information about the laboratory's teaching, research and training "
-                     "activities.</p><h3>Content accuracy</h3><p>Schedules, registration periods and contact "
-                     "details may change. Where information is time-sensitive, please confirm with the laboratory "
-                     "before relying on it.</p><h3>Intellectual property</h3><p>Laboratory names, logos and "
-                     "published material remain the property of the laboratory and the institute. Please request "
-                     "permission before reproducing material from this site.</p>"),
-            "html_id": ("<h3>Penggunaan situs web ini</h3><p>Situs web ini diterbitkan oleh Laboratorium Jaringan "
-                        "Telekomunikasi, Departemen Teknik Elektro, Institut Teknologi Sepuluh Nopember. Konten "
-                        "disediakan sebagai informasi mengenai kegiatan pendidikan, penelitian, dan pelatihan "
-                        "laboratorium.</p><h3>Keakuratan konten</h3><p>Jadwal, periode pendaftaran, dan data "
-                        "kontak dapat berubah. Untuk informasi yang bersifat waktu tertentu, mohon konfirmasi "
-                        "terlebih dahulu kepada laboratorium.</p><h3>Hak kekayaan intelektual</h3><p>Nama, logo, "
-                        "dan materi yang diterbitkan tetap menjadi milik laboratorium dan institut. Mohon meminta "
-                        "izin sebelum menggunakan kembali materi dari situs ini.</p>"),
+            "html": ("<h3>Terms of Use (v2026.1 — Effective: 20 November 2026)</h3>"
+                     "<p>This website is published and maintained by the Telecommunication Network Laboratory (TNL), "
+                     "Department of Electrical Engineering, Faculty of Intelligent Electrical and Informatics Technology (FTEIC), "
+                     "Institut Teknologi Sepuluh Nopember (ITS), Surabaya, Indonesia (Room B-301). By accessing or using this website, "
+                     "you agree to be bound by these Terms and our Privacy Policy.</p>"
+                     "<h3>Acceptable Use & Cyber Law Compliance</h3>"
+                     "<p>Users must comply with Indonesian Cyber Law (UU ITE). Unauthorized vulnerability scanning, penetration testing "
+                     "without written consent, distributed denial of service (DDoS), spamming, and malicious script uploads are strictly prohibited.</p>"
+                     "<h3>e-Certificate Authenticity (/verify)</h3>"
+                     "<p>Official credentials issued by TNL Laboratory are verified exclusively through https://labtnl.site/verify. "
+                     "Falsifying certificates or altering verification codes constitutes document forgery subject to legal sanctions.</p>"
+                     "<h3>Intellectual Property & Practicum Materials</h3>"
+                     "<p>All logos, GSM brand assets, and practicum modules remain the intellectual property of TNL Laboratory FTEIC ITS. "
+                     "Practicum modules (.pdf, .pkt) are licensed strictly for non-commercial educational use with mandatory attribution.</p>"
+                     "<h3>Administrative Contact</h3>"
+                     "<p>For legal or licensing inquiries, contact Room B-301 or email telconnetlab@gmail.com.</p>"),
+            "html_id": ("<h3>Ketentuan Penggunaan (v2026.1 — Berlaku: 20 November 2026)</h3>"
+                        "<p>Situs web ini diterbitkan dan dikelola oleh Laboratorium Jaringan Telekomunikasi (TNL), "
+                        "Departemen Teknik Elektro, Fakultas Teknologi Elektro dan Informatika Cerdas (FTEIC), "
+                        "Institut Teknologi Sepuluh Nopember (ITS) Surabaya (Ruang B-301). Dengan mengakses situs ini, "
+                        "Anda setuju untuk terikat oleh Ketentuan Penggunaan ini dan Kebijakan Privasi kami.</p>"
+                        "<h3>Kepatuhan Etika & UU ITE</h3>"
+                        "<p>Pengguna wajib mematuhi ketentuan UU ITE No. 11/2008 jo. UU No. 1/2024. Dilarang keras melakukan pemindaian "
+                        "kerentanan tanpa izin, serangan DoS/DDoS, spamming formulir, atau pengunggahan berkas berbahaya.</p>"
+                        "<h3>Keabsahan e-Sertifikat (/verify)</h3>"
+                        "<p>Sertifikat resmi hanya dinyatakan sah apabila terverifikasi pada portal https://labtnl.site/verify. "
+                        "Pemalsuan sertifikat atau pengubahan dokumen merupakan tindak pidana pemalsuan surat yang dapat diproses hukum.</p>"
+                        "<h3>Hak Cipta & Lisensi Modul Praktikum</h3>"
+                        "<p>Logo, desain GSM, dan modul praktikum merupakan hak cipta Laboratorium TNL Teknik Elektro ITS. "
+                        "Materi praktikum dilisensikan murni untuk pembelajaran non-komersial dengan kewajiban mencantumkan atribusi.</p>"
+                        "<h3>Kontak Administrasi</h3>"
+                        "<p>Untuk perizinan dan urusan administratif, hubungi Ruang B-301 atau surel telconnetlab@gmail.com.</p>"),
         }},
     ]),
     ("privacy", "Privacy Policy", "Kebijakan Privasi", [
         inner_hero("Privacy Policy", "Kebijakan Privasi",
-                   "How the laboratory handles personal data collected through this website.",
-                   "Bagaimana laboratorium mengelola data pribadi yang dikumpulkan melalui situs web ini.",
+                   "Comprehensive personal data protection policy under Indonesian Law No. 27/2022 (UU PDP, v2026.1).",
+                   "Kebijakan perlindungan data pribadi komprehensif berlandaskan amanat UU No. 27 Tahun 2022 (UU PDP, v2026.1).",
                    "Legal", "Legal"),
         {"type": "rich_text", "props": {
-            "html": ("<h3>What we collect</h3><p>When you register for an event or send a message through the "
-                     "contact form, we collect the details you enter in that form, such as your name, email "
-                     "address, phone number and student number.</p><h3>Why we collect it</h3><p>Registration data "
-                     "is used only to manage your participation in the event you registered for: verifying "
-                     "eligibility, contacting you about the event, recording attendance and issuing certificates. "
-                     "Contact messages are used only to reply to your enquiry.</p><h3>Your rights</h3><p>In line "
-                     "with Indonesia's Personal Data Protection Law (UU PDP), you may ask us to correct, delete or "
-                     "anonymise your data at any time. Registration data is removed or anonymised automatically "
-                     "after the retention period set by the laboratory. Participant lists are never published.</p>"
-                     "<h3>Contact</h3><p>To exercise any of these rights, email the laboratory using the address "
-                     "on the contact page.</p>"),
-            "html_id": ("<h3>Data yang kami kumpulkan</h3><p>Saat Anda mendaftar kegiatan atau mengirim pesan "
-                        "melalui formulir kontak, kami mengumpulkan data yang Anda isikan pada formulir tersebut, "
-                        "seperti nama, alamat email, nomor telepon, dan nomor induk mahasiswa.</p><h3>Tujuan "
-                        "pengumpulan</h3><p>Data pendaftaran hanya digunakan untuk mengelola keikutsertaan Anda "
-                        "pada kegiatan yang Anda daftarkan: verifikasi kelayakan, komunikasi terkait kegiatan, "
-                        "pencatatan kehadiran, dan penerbitan sertifikat. Pesan kontak hanya digunakan untuk "
-                        "menjawab pertanyaan Anda.</p><h3>Hak Anda</h3><p>Sesuai Undang-Undang Pelindungan Data "
-                        "Pribadi (UU PDP), Anda dapat meminta koreksi, penghapusan, atau anonimisasi data kapan "
-                        "saja. Data pendaftaran dihapus atau dianonimkan secara otomatis setelah masa retensi yang "
-                        "ditetapkan laboratorium. Daftar peserta tidak pernah dipublikasikan.</p><h3>Kontak</h3>"
-                        "<p>Untuk menggunakan hak tersebut, kirim email ke laboratorium melalui alamat yang "
-                        "tercantum pada halaman kontak.</p>"),
+            "html": ("<h3>Privacy Policy (v2026.1 — Effective: 20 November 2026)</h3>"
+                     "<p>The Telecommunication Network Laboratory (TNL), Room B-301, Department of Electrical Engineering, "
+                     "FTEIC, Institut Teknologi Sepuluh Nopember (ITS) Surabaya acts as the Data Controller under Law No. 27/2022 (UU PDP).</p>"
+                     "<h3>Data Categories & Minimisation</h3>"
+                     "<p>We collect only necessary personal data: event registration records (name, NRP, motivation, Instagram follow screenshot, "
+                     "consent timestamp, policy version 2026.1), contact messages, and minimal public validation records for /verify (name, event, date, code). "
+                     "Zero ad tracking pixels or marketing cookies are deployed.</p>"
+                     "<h3>Sub-processors & Backups</h3>"
+                     "<p>Data infrastructure utilizes Cloudflare (Edge CDN/WAF), Google Workspace (authorized operational sheet sync), "
+                     "and isolated on-premises Proxmox LXC server clusters. Compressed database and media backups undergo an automated 14-day safe rotation.</p>"
+                     "<h3>Data Subject Rights & 3x24h SLA</h3>"
+                     "<p>Under Articles 5–13 UU PDP, data subjects hold rights of access, rectification, erasure, and consent withdrawal. "
+                     "Submit requests to telconnetlab@gmail.com with subject '[UU PDP Request]'. Verified requests are processed within a 3x24 working hour SLA.</p>"),
+            "html_id": ("<h3>Kebijakan Privasi (v2026.1 — Berlaku: 20 November 2026)</h3>"
+                        "<p>Laboratorium Jaringan Telekomunikasi (TNL), Ruang B-301, Departemen Teknik Elektro, "
+                        "FTEIC, Institut Teknologi Sepuluh Nopember (ITS) Surabaya bertindak sebagai Pengendali Data Pribadi sesuai UU No. 27 Tahun 2022 (UU PDP).</p>"
+                        "<h3>Kategori Data & Minimisasi</h3>"
+                        "<p>Kami hanya mengumpulkan data yang esensial: pendaftaran kegiatan (nama, NRP, motivasi, screenshot bukti follow, "
+                        "stempel persetujuan, versi kebijakan 2026.1), pesan formulir kontak, serta data verifikasi minimal di /verify (nama, acara, tanggal, kode). "
+                        "Situs ini bebas dari cookie pelacak iklan komersial maupun pixel pemasaran lintas platform.</p>"
+                        "<h3>Pemroses Pihak Ketiga & Cadangan Data</h3>"
+                        "<p>Layanan berinteraksi terbatas dengan Cloudflare (CDN/WAF tepi), Google Workspace (sinkronisasi panitia), "
+                        "dan klaster server Proxmox LXC internal ITS. Arsip cadangan otomatis server diputar secara aman dengan rotasi 14 hari.</p>"
+                        "<h3>Hak Subjek Data & SLA 3×24 Jam</h3>"
+                        "<p>Sesuai Pasal 5–13 UU PDP, Anda berhak mengakses, memperbaiki, menghapus, atau menarik persetujuan data pribadi Anda. "
+                        "Kirim permohonan ke telconnetlab@gmail.com dengan subjek '[Permintaan UU PDP]'. Permintaan diproses maksimal 3×24 jam kerja.</p>"),
         }},
     ]),
 ]

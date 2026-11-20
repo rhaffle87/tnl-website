@@ -57,16 +57,16 @@ const ROUTE_META: Record<string, { titleId: string; titleEn: string; descId: str
         descEn: "Authenticity validation system for official activity, training, and practicum certificates issued by Telecommunication Network Laboratory ITS.",
     },
     "/terms": {
-        titleId: "Syarat & Ketentuan — Laboratorium Jaringan Telekomunikasi ITS",
-        titleEn: "Terms of Service — Telecommunication Network Laboratory ITS",
-        descId: "Syarat dan ketentuan penggunaan layanan dan informasi situs web Laboratorium Jaringan Telekomunikasi ITS.",
-        descEn: "Terms and conditions of using the Telecommunication Network Laboratory ITS website and services.",
+        titleId: "Ketentuan Penggunaan — Laboratorium Jaringan Telekomunikasi ITS",
+        titleEn: "Terms of Use — Telecommunication Network Laboratory ITS",
+        descId: "Ketentuan hukum penggunaan situs, modul praktikum, dan portal verifikasi sertifikat Laboratorium Jaringan Telekomunikasi ITS.",
+        descEn: "Terms and conditions of using the Telecommunication Network Laboratory ITS website, practicum modules, and certificate verification portals.",
     },
     "/privacy": {
-        titleId: "Kebijakan Privasi (UU PDP) — Laboratorium Jaringan Telekomunikasi ITS",
-        titleEn: "Privacy Policy (UU PDP) — Telecommunication Network Laboratory ITS",
-        descId: "Kebijakan perlindungan data pribadi pengunjung dan pendaftar kegiatan sesuai UU Nomor 27 Tahun 2022 (UU PDP).",
-        descEn: "Personal data protection policy for visitors and registrants under Indonesian Personal Data Protection Law (UU PDP).",
+        titleId: "Kebijakan Privasi (UU PDP No. 27/2022) — Laboratorium Jaringan Telekomunikasi ITS",
+        titleEn: "Privacy Policy (Indonesian PDP Law) — Telecommunication Network Laboratory ITS",
+        descId: "Kebijakan perlindungan data pribadi sesuai UU No. 27 Tahun 2022 (UU PDP) di Laboratorium Jaringan Telekomunikasi ITS.",
+        descEn: "Comprehensive personal data protection policy under Indonesian Law No. 27/2022 (UU PDP) at Telecommunication Network Laboratory ITS.",
     },
 };
 

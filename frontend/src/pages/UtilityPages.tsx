@@ -8,14 +8,7 @@ import { useLocale } from "@/lib/i18n";
 import { EmptyState, Spinner } from "@/components/site/Primitives";
 import { TnlLogo } from "@/components/site/TnlLogo";
 import { CmsPage } from "@/pages/Home";
-
-export function TermsPage() {
-    return <CmsPage slug="terms" testId="terms-page" />;
-}
-
-export function PrivacyPage() {
-    return <CmsPage slug="privacy" testId="privacy-page" />;
-}
+export { TermsPage, PrivacyPage } from "@/pages/LegalPages";
 
 /** Any page the admin creates renders here via its slug. */
 export function DynamicCmsPage() {
