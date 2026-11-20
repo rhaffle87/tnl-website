@@ -1,0 +1,27 @@
+# S4RAS to TNL Design DNA Style Mapping
+
+Dokumen ini memetakan prinsip desain, kualitas permukaan (*surface craft*), ritme visual, dan atmosfer dari landing page `s4ras.site` ke dalam sistem desain **GSM TNL** di `labtnl.site`.
+
+---
+
+## 8 Dimensi Pemetaan Desain
+
+| Dimensi | Desain DNA `s4ras.site` | Adaptasi Terukur pada GSM TNL (`labtnl.site`) |
+| :--- | :--- | :--- |
+| **1. Surface & Elevation System** | Kanvas `#fafafa` vs card surface `#ffffff` (light), `#09090b` vs `#0f0f12` (dark). Garis batas hairline tegas `1px` (`#e4e4e7` / `rgba(255,255,255,0.09)`). Glassmorphism navbar `blur(14px)` dengan `color-mix(82%, transparent)`. Radial hover glow `300px-420px` pada permukaan kartu. | Pertahankan `--gsm-bg-page` (`#F1F3EE` light / `#0B0F0D` dark) dan `--gsm-bg-surface` (`#FFFFFF` light / `#131A16` dark). Perkuat hairline border 1px (`#D5DBD3` light / `rgba(255,255,255,0.12)` dark). Pertahankan `.tnl-card-header` dan `.tnl-inset-tile`. Perhalus radial spotlight (`.tnl-card-spotlight`) agar mengikuti warna emas aksen TNL (`#C4B393`) dan emerald (`#5D8A6B`). |
+| **2. Atmospheric Background & Framing** | Kisi latar geometris beranimasi drift 70s (`64px` grid dengan mask radial), radial glow "breathe" 14s di sudut atas, dan 6 floating ambient glowing micro-dots (3-5px). | Terapkan kisi teknis NOC halus pada `.tnl-hero-gradient` (`64px` grid dengan radial mask lembut) plus partikel ambient glow GSM halus di latar Hero tanpa menambah beban JS, tetap 100% compositor-driven. |
+| **3. Typography Rhythm & Hierarchy** | Judul dengan tight tracking (`letter-spacing: -.04em`), line-height padat (`1.08`), clamp responsif (`clamp(1.85rem, 5.2vw, 4.2rem)`). Angka metrik besar dengan tabular figures `font-feature-settings: 'tnum'`. Section header 2-kolom asimetris (`1fr 1.2fr`). | Pertahankan tipografi baku TNL (`Geist` untuk UI/Headings, `JetBrains Mono` untuk kode & metrik, `Lora` untuk aksen editorial). Terapkan clamp padat & tight tracking (`-.035em` s.d. `-.04em`) pada `.tnl-hero-title` dan section headings. Terapkan `font-feature-settings: 'tnum'` pada angka statistik & counter. |
+| **4. Spacing, Radius, & Layout Proportions** | Konsistensi `rounded-[9px]` untuk tombol, `rounded-[8px]` untuk chip/pil, `rounded-[12px]` untuk kartu. Kontainer `max-width: 1200px` dengan clamp padding horizontal `clamp(1rem, 3.5vw, 2.5rem)`. Hairline divider `.rule { height: 1px; }` pemisah seksi. | Harmonisasikan radius: tombol `rounded-[9px]`, pil kategori `rounded-full`, kartu `rounded-[14px]`. Terapkan pemisah hairline rule antar-seksi yang tenang dan bersih (`border-t border-[var(--tnl-border)]`). |
+| **5. Interactive Controls** | Tombol primer padat dengan tinggi tepat `44px` (touch-friendly), active press `translateY(1px)`. Ghost button dengan border hairline dan subtle wash hover. Chip filter dengan transisi border & warna tajam. Focus ring `outline: 2px solid var(--red); outline-offset: 3px`. | Tombol TNL (`.tnl-btn-primary`, `.tnl-btn-tan`, `.tnl-btn-outline`) distandarisasi ke tinggi minimum `44px` (WCAG 2.1 AA target). Berikan active press `active:translate-y-[1px]` dan hover elevation halus. Focus ring tajam dengan warna aksen emas GSM (`#C4B393`). |
+| **6. Card & Section Visual Clarity** | Pemisahan tegas antara header kartu, konten, dan status footer. Garis pembatas 1px yang konsisten di semua viewport. Tidak ada bayangan kabur yang muddy. | Pertahankan kartu arsitektural GSM dengan hairline border tegas, `.tnl-card-header` dengan latar recessed `#F7F8F5` / `#17201B`, pemisah sub-segmen `.tnl-inset-tile`, dan pembungkus peta yang rapi. |
+| **7. Motion & Micro-Interactions** | Easing cubic-bezier `(.16, 1, .3, 1)` untuk semua transisi hover dan pergeseran teks (`transform: translateX(.6rem)` pada hover baris layanan). Spring physics untuk filtering. Strict reduced-motion fallback. | Satukan dengan sistem *Precision Engineering Motion* TNL: Lenis smooth scroll, View Transitions, LazyMotion spring tabs (`stiffness: 420, damping: 34`), dan zero-re-render card spotlight. Tambahkan micro-translate lembut pada hover link/kartu. |
+| **8. Batas Adaptasi (*What Stays Pure TNL*)** | Warna merah `#dc2626` s4ras, logo s4ras, teks branding s4ras, struktur Vue. | **DILARANG memakai warna merah/branding s4ras.** Warna tetap hijau hutan GSM (`#223027`), zamrud (`#5D8A6B`), emas aksen (`#A8977B` / `#C4B393`), dan obsidian (`#0C100E`). Struktur akademik TNL, logo emblem beranimasi, 4-kolom footer, modul praktikum, dan CMS admin tetap 100% utuh. |
+
+---
+
+## Keputusan Arsitektur Implementasi
+
+1. **Sentuhan Atmosfer Hero:** Menambahkan animasi kisi geometris drift halus (`grid-drift`) dan 4 partikel ambient glow halus bertema hijau/emas di dalam `.tnl-hero-gradient`, memberikan kedalaman visual NOC tanpa menambah script eksternal.
+2. **Kerapian Spacing & Metric Rhythm:** Menyelaraskan blok statistik di Beranda (`Blocks.tsx`) dengan tabular figures (`JetBrains Mono`) dan divider hairline presisi ala s4ras metrics.
+3. **Penyempurnaan Button & Chip Polish:** Standarisasi tinggi `44px`, radius `9px`, dan active press `translateY(1px)`.
+4. **Watermark Footer Kualitas Tinggi:** Menyempurnakan watermark `LAB TNL` di `SiteFooter` (`Chrome.tsx`) dengan teknik gradient text masking vertikal (`linear-gradient(to bottom, rgba(168,151,123,0.18), transparent 90%)`) agar senada dengan keanggunan watermark raksasa s4ras namun tetap berada di dalam batas margin yang tertib.

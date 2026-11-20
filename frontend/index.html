@@ -2,25 +2,17 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon-white.svg?v=4" id="tnl-favicon" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
-    <link rel="shortcut icon" href="/favicon.ico?v=4" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=5" id="tnl-favicon" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=5" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=5" />
+    <link rel="shortcut icon" href="/favicon.ico?v=5" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=5" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#111613" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <script>
       (function() {
-        function updateFavicon(isDark) {
-          try {
-            var link = document.getElementById("tnl-favicon") || document.querySelector('link[rel="icon"][type="image/svg+xml"]');
-            if (link) {
-              link.href = isDark ? "/favicon-white.svg?v=4" : "/favicon-dark.svg?v=4";
-            }
-          } catch (e) {}
-        }
-
         try {
           var stored = localStorage.getItem("tnl-theme");
           var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -30,14 +22,10 @@
             document.documentElement.classList.add("dark");
             var meta = document.querySelector('meta[name="color-scheme"]');
             if (meta) meta.content = "dark";
-            updateFavicon(true);
           } else if (stored === "light") {
             document.documentElement.classList.remove("dark");
             var metaLight = document.querySelector('meta[name="color-scheme"]');
             if (metaLight) metaLight.content = "light";
-            updateFavicon(false);
-          } else {
-            updateFavicon(prefersDark);
           }
 
           window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(e) {
@@ -45,7 +33,6 @@
               document.documentElement.classList.toggle("dark", e.matches);
               var m = document.querySelector('meta[name="color-scheme"]');
               if (m) m.content = e.matches ? "dark" : "light";
-              updateFavicon(e.matches);
             }
           });
 

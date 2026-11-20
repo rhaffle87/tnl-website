@@ -25,7 +25,7 @@ export function SectionHeading({
                 <span className={cn("tnl-accent-bar", light && "bg-[var(--tnl-tan)]")} aria-hidden="true" />
                 <div className="flex flex-1 flex-wrap items-center justify-between gap-3">
                     <h2
-                        className={cn("tnl-h2 text-[28px] sm:text-[35px]", light && "text-white")}
+                        className={cn("tnl-h2 text-[28px] sm:text-[35px] font-bold tracking-tight", light && "text-white")}
                         style={light ? { color: "#ffffff" } : undefined}
                     >
                         {title}

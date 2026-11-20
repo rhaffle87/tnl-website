@@ -68,10 +68,6 @@ export function SiteHeader() {
         const meta = document.querySelector('meta[name="color-scheme"]');
         if (meta) meta.setAttribute("content", next ? "dark" : "light");
         localStorage.setItem("tnl-theme", next ? "dark" : "light");
-        const svgLink = document.querySelector<HTMLLinkElement>('link[rel="icon"][type="image/svg+xml"]');
-        if (svgLink) {
-            svgLink.href = next ? "/favicon-white.svg?v=4" : "/favicon-dark.svg?v=4";
-        }
     };
 
     const title = settings ? pick(locale, settings.site_title, settings.site_title_id) : "Telecommunication Network Laboratory";
@@ -79,8 +75,8 @@ export function SiteHeader() {
 
     return (
         <header
-            className="sticky top-0 z-50 border-b backdrop-blur-xl"
-            style={{ background: "color-mix(in srgb, var(--background) 95%, transparent)", borderColor: "var(--tnl-border)" }}
+            className="sticky top-0 z-50 border-b backdrop-blur-md"
+            style={{ background: "color-mix(in srgb, var(--background) 88%, transparent)", borderColor: "var(--tnl-border)" }}
             data-testid="site-header"
         >
             <div className="tnl-container flex h-[72px] items-center justify-between gap-4">

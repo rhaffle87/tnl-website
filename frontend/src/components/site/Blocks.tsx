@@ -88,6 +88,14 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
 
     return (
         <section className="tnl-hero-gradient relative overflow-hidden" data-testid="block-hero">
+            <div className="tnl-hero-ambient" aria-hidden="true">
+                <span className="tnl-amb-dot" />
+                <span className="tnl-amb-dot" />
+                <span className="tnl-amb-dot" />
+                <span className="tnl-amb-dot" />
+                <span className="tnl-amb-dot" />
+                <span className="tnl-amb-dot" />
+            </div>
             <div
                 className="tnl-hero-parallax-bg pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full opacity-20 blur-3xl"
                 style={{ background: "var(--tnl-tan)" }}
@@ -210,14 +218,14 @@ function StatsBlock() {
         { label: t("stat_room"), value: data?.room ?? "B-301", key: "room" },
     ];
     return (
-        <section className="border-y" style={{ background: "#111518", borderColor: "#262c33" }} data-testid="block-stats">
-            <div className="tnl-container grid grid-cols-2 gap-8 py-10 lg:grid-cols-4">
+        <section className="border-y" style={{ background: "#0C100E", borderColor: "rgba(255,255,255,0.08)" }} data-testid="block-stats">
+            <div className="tnl-container grid grid-cols-2 divide-y sm:divide-y-0 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x divide-white/[0.08] py-8 lg:py-10">
                 {items.map((item) => (
-                    <div key={item.key} className="tnl-scroll-reveal flex flex-col items-center justify-center text-center" data-testid={`stat-${item.key}`}>
-                        <div className="text-[40px] font-bold leading-none lg:text-[56px]" style={{ color: "var(--tnl-tan)" }}>
+                    <div key={item.key} className="tnl-scroll-reveal flex flex-col items-center justify-center text-center px-4 py-5 sm:py-2" data-testid={`stat-${item.key}`}>
+                        <div className="text-[38px] lg:text-[52px] font-bold font-mono tracking-tight tabular-nums leading-none" style={{ color: "var(--tnl-tan)" }}>
                             {isError && !data ? "—" : item.value}
                         </div>
-                        <div className="mt-2 text-sm text-center" style={{ color: "#c8ccd0" }}>
+                        <div className="mt-2.5 text-xs lg:text-sm font-medium tracking-wide uppercase text-white/60 text-center">
                             {item.label}
                         </div>
                     </div>

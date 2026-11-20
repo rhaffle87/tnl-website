@@ -369,6 +369,60 @@
       radial-gradient(80% 90% at 85% 40%, #2E4235 0%, transparent 70%);
     background-size: 56px 56px, 56px 56px, 100% 100%;
   }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tnl-hero-gradient {
+      animation: tnl-grid-drift 80s linear infinite;
+    }
+  }
+
+  @keyframes tnl-grid-drift {
+    from { background-position: 0 0, 0 0, 85% 40%; }
+    to   { background-position: 112px 56px, 112px 56px, 85% 40%; }
+  }
+
+  /* Ambient floating network signal nodes ala s4ras NOC atmospheric style */
+  .tnl-hero-ambient {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+  }
+  .tnl-amb-dot {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--gsm-accent, #A8977B);
+    opacity: 0;
+    animation: tnl-amb-float 18s ease-in-out infinite;
+  }
+  .tnl-amb-dot::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(196, 179, 147, 0.4), transparent 70%);
+  }
+  .tnl-amb-dot:nth-child(1) { top: 22%; left: 14%; animation-delay: 0s; animation-duration: 18s; }
+  .tnl-amb-dot:nth-child(2) { top: 68%; left: 8%; width: 3px; height: 3px; animation-delay: -4s; animation-duration: 22s; background: var(--gsm-emerald, #5D8A6B); }
+  .tnl-amb-dot:nth-child(3) { top: 38%; left: 48%; width: 4px; height: 4px; animation-delay: -9s; animation-duration: 20s; }
+  .tnl-amb-dot:nth-child(4) { top: 82%; left: 42%; width: 3px; height: 3px; animation-delay: -13s; animation-duration: 17s; }
+  .tnl-amb-dot:nth-child(5) { top: 15%; left: 68%; width: 4px; height: 4px; animation-delay: -6s; animation-duration: 24s; background: var(--gsm-emerald, #5D8A6B); }
+  .tnl-amb-dot:nth-child(6) { top: 54%; left: 90%; width: 3px; height: 3px; animation-delay: -16s; animation-duration: 19s; }
+
+  @keyframes tnl-amb-float {
+    0% { transform: translate(0, 0); opacity: 0; }
+    12% { opacity: 0.65; }
+    50% { transform: translate(12px, -18px); opacity: 0.35; }
+    88% { opacity: 0.55; }
+    100% { transform: translate(0, 0); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tnl-amb-dot { display: none !important; }
+  }
   .tnl-hero-title {
     font-size: 35px;
     line-height: 1.2;
@@ -428,6 +482,7 @@
     cursor: pointer;
   }
   .tnl-btn:focus-visible { outline: 2px solid var(--tnl-green); outline-offset: 2px; }
+  .tnl-btn:active:not(:disabled) { transform: translateY(1px); }
   .tnl-btn:disabled { opacity: 0.55; cursor: not-allowed; }
   .tnl-btn-primary { background: var(--tnl-green); color: #ffffff; }
   .tnl-btn-primary:hover:not(:disabled) { background: var(--tnl-green-hover); transform: translateY(-1px); }
