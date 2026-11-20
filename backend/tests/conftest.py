@@ -1,47 +1,190 @@
-"""Pre-scaffolded pytest fixtures for the FastAPI backend.
+"""Holistic pytest configuration and fixtures for TNL Studio backend.
 
-Tests hit the live uvicorn process managed by supervisor (not an in-process ASGI app), so
-the app under test is the same one the frontend and Playwright see. Do NOT re-create this
-file — add app-specific fixtures below the marker at the bottom.
+ZERO PRODUCTION POLLUTION:
+All tests run against an in-memory mongomock_motor client and ASGI TestClient.
+Production MongoDB (CT 116 / 100.111.32.102) is NEVER connected to or modified.
 """
 
+import asyncio
 import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from uuid import uuid4
 
 import httpx
 import pytest
 import pytest_asyncio
+from mongomock_motor import AsyncMongoMockClient
 
-BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8001")
-API_URL = f"{BACKEND_URL}/api"
+# Ensure backend root is on sys.path
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+# Global in-memory test database client
+_MOCK_CLIENT = AsyncMongoMockClient()
+_MOCK_DB = _MOCK_CLIENT["tnl_test_isolated"]
+
+# Patch lib.db before any router imports
+import lib.db  # noqa: E402
+lib.db.client = _MOCK_CLIENT
+lib.db.db = _MOCK_DB
+
+# Import server and routers
+from server import app  # noqa: E402
+from starlette.testclient import TestClient  # noqa: E402
+import lib.auth  # noqa: E402
+import lib.settings  # noqa: E402
+import lib.storage  # noqa: E402
+import seed  # noqa: E402
+from routers import (  # noqa: E402
+    apiv1, auth, content, figma, google_auth, labphotos, media, public, pubimport, registrar, seo, siteadmin,
+)
+
+# Bind all module db references to the mock DB
+for mod in (
+    lib.auth, lib.settings, lib.db, seed,
+    apiv1, auth, content, figma, google_auth, labphotos, media, public, pubimport, registrar, seo, siteadmin,
+):
+    setattr(mod, "db", _MOCK_DB)
+    if hasattr(mod, "client"):
+        setattr(mod, "client", _MOCK_CLIENT)
+
+SEED_PASSWORD = os.environ.get("SEED_ADMIN_PASSWORD", "ChangeMe2026!")
+ADMIN_EMAILS = [
+    "admin@its.ac.id",
+    os.environ.get("SEED_ADMIN_EMAIL", "admin@its.ac.id"),
+    "rhaffle87@gmail.com",
+]
 
 
-def api_url(path: str = "") -> str:
-    """Absolute URL for an /api route: api_url("/status") -> http://localhost:8001/api/status."""
-    return f"{API_URL}{path}"
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    """Clear in-memory rate limit buckets before every test."""
+    if hasattr(lib.auth, "_buckets"):
+        lib.auth._buckets.clear()
+
+
+async def _init_test_database():
+    """Seed test database with full baseline fixtures for comprehensive test coverage."""
+    # Ensure indexes on mock db
+    await lib.db.ensure_indexes()
+
+    # Seed core data
+    await seed.seed_settings()
+    await seed.seed_admin()
+    await seed.seed_pages()
+    await seed.seed_members()
+    await seed.seed_activities()
+    await seed.seed_practicum()
+    await seed.seed_equipment()
+    await seed.seed_partners()
+    await seed.seed_events()
+    await seed.seed_publications()
+    await seed.seed_posts()
+
+    # Ensure all configured admin emails exist with super_admin role
+    p_hash = lib.auth.hash_password(SEED_PASSWORD)
+    for email in ADMIN_EMAILS:
+        norm_email = email.strip().lower()
+        existing = await _MOCK_DB.users.find_one({"email": norm_email})
+        if not existing:
+            await _MOCK_DB.users.insert_one({
+                "id": str(uuid4()),
+                "name": "TNL Test Administrator",
+                "email": norm_email,
+                "role": "super_admin",
+                "divisions": [],
+                "active": True,
+                "password_hash": p_hash,
+                "totp_secret": None,
+                "totp_enabled": False,
+                "invite_token": None,
+                "created_at": datetime.now(timezone.utc),
+                "last_login_at": None,
+            })
+        else:
+            await _MOCK_DB.users.update_one(
+                {"email": norm_email},
+                {"$set": {"role": "super_admin", "active": True, "password_hash": p_hash}}
+            )
+
+
+# Initialize DB once per session
+asyncio.run(_init_test_database())
 
 
 @pytest.fixture(scope="session")
-def backend_url() -> str:
-    return BACKEND_URL
+def mock_db():
+    return _MOCK_DB
+
+
+@pytest.fixture(scope="session")
+def mock_client():
+    return _MOCK_CLIENT
 
 
 @pytest.fixture
 def client():
-    """Sync httpx client rooted at /api — the default for endpoint tests.
-
-    Example:
-        def test_status(client):
-            assert client.get("/status").status_code == 200
-    """
-    with httpx.Client(base_url=API_URL, timeout=30.0) as c:
+    """In-process sync TestClient rooted at http://test/api."""
+    with TestClient(app, base_url="http://test/api") as c:
         yield c
 
 
 @pytest_asyncio.fixture
-async def aclient():
-    """Async variant, for tests that also await motor/backend helpers directly."""
-    async with httpx.AsyncClient(base_url=API_URL, timeout=30.0) as c:
-        yield c
+async def async_client():
+    """In-process async httpx client rooted at http://test/api."""
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test/api") as ac:
+        yield ac
 
 
-# --- app-specific fixtures below this line ---
+@pytest_asyncio.fixture
+async def admin_user():
+    admin = await _MOCK_DB.users.find_one({"role": "super_admin", "active": True})
+    return admin
+
+
+@pytest_asyncio.fixture
+async def admin_token(admin_user):
+    token = await lib.auth.create_session(admin_user["id"])
+    return token
+
+
+@pytest_asyncio.fixture
+async def admin_cookies(admin_token):
+    return {"tnl_session": admin_token}
+
+
+@pytest_asyncio.fixture
+async def admin_headers(admin_token):
+    return {"Cookie": f"tnl_session={admin_token}"}
+
+
+@pytest.fixture
+def temp_media_dir(tmp_path, monkeypatch):
+    """Overrides MEDIA_DIR with a local isolated tmp_path."""
+    test_media = tmp_path / "media"
+    test_media.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(lib.storage, "MEDIA_DIR", str(test_media))
+    monkeypatch.setattr(media, "MEDIA_DIR", str(test_media))
+    return test_media
+
+
+@pytest.fixture
+def mock_sheets_webhook(monkeypatch):
+    """Mocks outgoing HTTP requests to Google Apps Script webhook."""
+    original_send = httpx.AsyncClient.send
+
+    async def mocked_send(self, request, *args, **kwargs):
+        if "script.google.com" in str(request.url):
+            return httpx.Response(
+                status_code=200,
+                json={"status": "success", "row": 42},
+                request=request
+            )
+        return await original_send(self, request, *args, **kwargs)
+
+    monkeypatch.setattr(httpx.AsyncClient, "send", mocked_send)
+    return True

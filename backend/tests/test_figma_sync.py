@@ -12,13 +12,6 @@ import sys
 import unittest
 from unittest.mock import MagicMock
 
-# Stub external dependencies if running in minimal test environment
-sys.modules.setdefault("motor", MagicMock())
-sys.modules.setdefault("motor.motor_asyncio", MagicMock())
-sys.modules.setdefault("pymongo", MagicMock())
-sys.modules.setdefault("bson", MagicMock())
-sys.modules.setdefault("bcrypt", MagicMock())
-
 # Add backend directory to sys.path
 backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if backend_dir not in sys.path:

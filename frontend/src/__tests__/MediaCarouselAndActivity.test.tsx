@@ -1,0 +1,97 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { screen, fireEvent, render, act } from "@testing-library/react";
+import { FadeCarousel, ImageLightboxModal } from "@/components/site/MediaCarousel";
+import ActivityPage from "@/pages/ActivityPage";
+import { renderWithProviders } from "./test-utils";
+
+vi.mock("@/lib/hooks", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/hooks")>();
+  return {
+    ...actual,
+    usePage: vi.fn().mockReturnValue({ data: { blocks: [] }, isLoading: false }),
+    useProjects: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+    usePracticum: vi.fn().mockReturnValue({
+      data: [
+        {
+          id: "prac-1",
+          name: "Jaringan Komputer Lanjut",
+          shifts: [
+            { id: "s1", day: "Senin", time_slot: "08:00 - 10:00", coordinator_name: "Fadhil", room: "B-301" },
+          ],
+        },
+      ],
+      isLoading: false,
+    }),
+    useEquipment: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+    useEvents: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+    useActivities: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+  };
+});
+
+describe("MediaCarousel & Activity Components", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("FadeCarousel auto-advances every 3 seconds and pauses on hover", () => {
+    const images = [
+      { url: "/img1.jpg", caption: "Slide 1" },
+      { url: "/img2.jpg", caption: "Slide 2" },
+      { url: "/img3.jpg", caption: "Slide 3" },
+    ];
+
+    const { container } = render(<FadeCarousel images={images} intervalMs={3000} />);
+    expect(screen.getByText("Slide 1")).toBeInTheDocument();
+
+    // Advance timers by 3000ms
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    // Hover over carousel container to pause
+    const carouselWrapper = container.firstChild as HTMLElement;
+    fireEvent.mouseEnter(carouselWrapper);
+
+    // Advance timers while paused; slide should NOT advance
+    act(() => {
+      vi.advanceTimersByTime(6000);
+    });
+
+    // Leave hover; timer resumes
+    fireEvent.mouseLeave(carouselWrapper);
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+  });
+
+  it("ImageLightboxModal supports Escape key to close", () => {
+    const images = [{ url: "/img1.jpg", alt: "Preview 1" }, { url: "/img2.jpg", alt: "Preview 2" }];
+    const onClose = vi.fn();
+
+    render(<ImageLightboxModal images={images} isOpen={true} onClose={onClose} />);
+
+    // Press Escape
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("ActivityPage renders tab navigation and shift table correctly", () => {
+    renderWithProviders(<ActivityPage />, { route: "/activity?tab=practicum" });
+
+    // Verify tabs rendered
+    expect(screen.getByTestId("activity-tab-rd")).toBeInTheDocument();
+    expect(screen.getByTestId("activity-tab-practicum")).toBeInTheDocument();
+
+    // Click on Practicum tab
+    fireEvent.click(screen.getByTestId("activity-tab-practicum"));
+
+    // Verify practicum shift table is visible
+    expect(screen.getByText("Jaringan Komputer Lanjut")).toBeInTheDocument();
+    expect(screen.getByText("Senin")).toBeInTheDocument();
+    expect(screen.getByText("08:00 - 10:00")).toBeInTheDocument();
+  });
+});

@@ -487,7 +487,13 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
     const [masterCategories, setMasterCategories] = useState<string[]>([]);
     useEffect(() => {
         if (data?.categories && data.categories.length > 0) {
-            setMasterCategories(data.categories);
+            setMasterCategories((prev) => {
+                const incoming = data.categories as string[];
+                if (prev.length === incoming.length && prev.every((v, i) => v === incoming[i])) {
+                    return prev;
+                }
+                return incoming;
+            });
         } else if (posts.length > 0) {
             setMasterCategories((prev) => {
                 const current = Array.from(new Set(posts.map((p) => p.category))).filter(Boolean);

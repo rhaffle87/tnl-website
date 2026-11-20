@@ -476,7 +476,7 @@ async def submit_registration(event_id: str, request: Request):
 @router.get("/verify/{code}")
 async def verify_certificate(code: str):
     reg = await db.registrations.find_one({"certificate_code": code.upper()})
-    if not reg or reg.get("status") not in ("accepted", "attended"):
+    if not reg or reg.get("status") == "rejected" or not reg.get("certificate_code"):
         return {"valid": False, "message": "No valid certificate found for this code."}
     ev = await db.events.find_one({"id": reg.get("event_id")}) or {}
     return {
@@ -495,7 +495,7 @@ async def verify_certificate(code: str):
 @router.get("/public/certificates/{code}/download")
 async def certificate_pdf(code: str):
     reg = await db.registrations.find_one({"certificate_code": code.upper()})
-    if not reg or reg.get("status") not in ("accepted", "attended"):
+    if not reg or reg.get("status") == "rejected" or not reg.get("certificate_code"):
         raise HTTPException(status_code=404, detail="Certificate not found.")
     try:
         import tempfile
