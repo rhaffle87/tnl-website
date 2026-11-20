@@ -25,6 +25,9 @@ async def test_sitemap_xml_contains_public_routes(async_client):
     assert "/member" in text
     assert "/open-house" in text
     assert "/activity" in text
+    import re
+    locs = re.findall(r"<loc>(.*?)</loc>", text)
+    assert len(locs) == len(set(locs)), f"Found duplicate URLs in sitemap: {[x for x in locs if locs.count(x) > 1]}"
 
 
 @pytest.mark.asyncio

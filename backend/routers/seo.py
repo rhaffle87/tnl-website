@@ -283,7 +283,11 @@ async def sitemap():
 
     body = ['<?xml version="1.0" encoding="UTF-8"?>',
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    seen: set[str] = set()
     for path, lastmod in urls:
+        if path in seen:
+            continue
+        seen.add(path)
         body.append("  <url>")
         body.append(f"    <loc>{base}{path}</loc>")
         if lastmod:
