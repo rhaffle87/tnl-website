@@ -15,6 +15,7 @@ import {
     Sparkles,
 } from "lucide-react";
 import { useLocale } from "@/lib/i18n";
+import { useSmoothScroll } from "@/components/site/SmoothScrollProvider";
 
 export const POLICY_VERSION = "2026.1";
 export const EFFECTIVE_DATE = "20 November 2026";
@@ -40,10 +41,14 @@ export function PrivacyPage() {
         { id: "sec-12", title_id: "12. Pembaruan & Kontak Pengaduan", title_en: "12. Policy Updates & Contact" },
     ];
 
+    const { scrollTo } = useSmoothScroll();
     const scrollToSection = (id: string) => {
         const el = document.getElementById(id);
         if (el) {
-            el.scrollIntoView({ behavior: "smooth" });
+            try {
+                el.scrollIntoView({ behavior: "smooth" });
+            } catch {}
+            scrollTo(`#${id}`, { offset: -96 });
             setActiveSection(id);
         }
     };
@@ -681,10 +686,14 @@ export function TermsPage() {
         { id: "sec-10", title_id: "10. Kontak Hukum & Administrasi", title_en: "10. Legal & Administrative Desk" },
     ];
 
+    const { scrollTo } = useSmoothScroll();
     const scrollToSection = (id: string) => {
         const el = document.getElementById(id);
         if (el) {
-            el.scrollIntoView({ behavior: "smooth" });
+            try {
+                el.scrollIntoView({ behavior: "smooth" });
+            } catch {}
+            scrollTo(`#${id}`, { offset: -96 });
             setActiveSection(id);
         }
     };

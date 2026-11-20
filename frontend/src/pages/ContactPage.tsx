@@ -200,7 +200,7 @@ export default function ContactPage() {
                     {/* Left Column (5 Cols): Direct Channels & Lab Desk Cards */}
                     <div className="lg:col-span-5 flex flex-col gap-6 h-full">
                         {/* Card 1: Laboratory Address */}
-                        <div className="tnl-card overflow-hidden flex flex-col" data-testid="contact-address-card">
+                        <div className="tnl-card tnl-scroll-reveal overflow-hidden flex flex-col" data-testid="contact-address-card">
                             <div className="tnl-card-header flex items-center justify-between">
                                 <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                     {isId ? "LOKASI LABORATORIUM" : "LABORATORY LOCATION"}
@@ -248,7 +248,7 @@ export default function ContactPage() {
                         </div>
 
                         {/* Card 2: Email & Official Channels */}
-                        <div className="tnl-card overflow-hidden flex flex-col" data-testid="contact-channels-card">
+                        <div className="tnl-card tnl-scroll-reveal overflow-hidden flex flex-col" data-testid="contact-channels-card">
                             <div className="tnl-card-header flex items-center justify-between">
                                 <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                     {isId ? "KANAL RESMI & KORESPONDENSI" : "OFFICIAL CHANNELS"}
@@ -327,7 +327,7 @@ export default function ContactPage() {
                         </div>
 
                         {/* Card 3: Operational Hours & Quick Links — flex-1 to equalize column height */}
-                        <div className="tnl-card overflow-hidden flex flex-col flex-1 justify-between" data-testid="contact-hours-card">
+                        <div className="tnl-card tnl-scroll-reveal overflow-hidden flex flex-col flex-1 justify-between" data-testid="contact-hours-card">
                             <div>
                                 <div className="tnl-card-header flex items-center justify-between">
                                     <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
@@ -396,7 +396,7 @@ export default function ContactPage() {
 
                     {/* Right Column (7 Cols): Revamped Message Form Card */}
                     <div className="lg:col-span-7 h-full">
-                        <div className="tnl-card overflow-hidden flex flex-col h-full" data-testid="contact-form-container">
+                        <div className="tnl-card tnl-scroll-reveal overflow-hidden flex flex-col h-full" data-testid="contact-form-container">
                             {/* Header Strip */}
                             <div className="tnl-card-header">
                                 <div className="inline-flex items-center gap-2 text-xs font-mono font-bold tracking-wider text-[#5D8A6B] dark:text-[#8AB597] uppercase">
@@ -676,7 +676,7 @@ export default function ContactPage() {
 
                 {/* 3. Interactive Campus Map Section (Full-Width) */}
                 <section className="mt-14" data-testid="contact-map-section">
-                    <div className="tnl-card overflow-hidden p-0 border border-[var(--tnl-border)] shadow-md">
+                    <div className="tnl-card tnl-scroll-reveal overflow-hidden p-0 border border-[var(--tnl-border)] shadow-md">
                         {/* Map Header */}
                         <div className="tnl-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>

@@ -209,6 +209,7 @@ export function ImageLightboxModal({
             role="dialog"
             aria-modal="true"
             aria-label="Image preview lightbox"
+            data-lenis-prevent
             onClick={onClose}
         >
             {/* Top Bar */}

@@ -21,6 +21,7 @@ import { useLocale, pick } from "@/lib/i18n";
 import { useEvents, useSettings } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 import { TnlLogo } from "@/components/site/TnlLogo";
+import { useSmoothScroll } from "@/components/site/SmoothScrollProvider";
 import type { SiteSettings } from "@/lib/types";
 
 const NAV = [
@@ -490,8 +491,9 @@ export function SiteFooter({
         settings?.social?.instagram ||
         "https://www.instagram.com/tnlab_its/";
 
+    const { scrollTo } = useSmoothScroll();
     const scrollToTop = () => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        scrollTo(0, { duration: 0.8 });
     };
 
     const focusRing =
@@ -669,6 +671,7 @@ export function AnnouncementPopup() {
             aria-modal="true"
             aria-labelledby="announcement-title"
             data-testid="announcement-popup"
+            data-lenis-prevent
         >
             <div className="absolute inset-0 bg-black/55 backdrop-blur-sm animate-fade-in" onClick={dismiss} aria-hidden="true" />
             <div className="tnl-card relative z-10 w-full max-w-lg overflow-hidden p-0 animate-pop">

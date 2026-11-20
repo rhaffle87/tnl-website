@@ -6,6 +6,7 @@ import { ExternalLink, FileText, Users } from "lucide-react";
 import { usePublications } from "@/lib/hooks";
 import { useLocale } from "@/lib/i18n";
 import { EmptyState, SectionHeading, Spinner } from "@/components/site/Primitives";
+import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
 import { usePage } from "@/lib/hooks";
 import { BlockRenderer } from "@/components/site/Blocks";
 
@@ -88,7 +89,12 @@ export default function PublicationsPage() {
                     ) : (
                         <div className="space-y-4">
                             {filtered.map((pub) => (
-                                <article key={pub.id} className="tnl-card tnl-card-hover p-6" data-testid={`publication-${pub.id}`}>
+                                <article
+                                    key={pub.id}
+                                    className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal p-6"
+                                    onPointerMove={handleSpotlightPointerMove}
+                                    data-testid={`publication-${pub.id}`}
+                                >
                                     <div className="flex flex-wrap items-center gap-2">
                                         <span className="tnl-count-chip">{pub.ptype}</span>
                                         {pub.year ? (
