@@ -1,0 +1,72 @@
+groups:
+  - name: tnl_cluster_alerts
+    rules:
+      - alert: NodeDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node {{ $labels.instance }} (CT {{ $labels.ct_id }}) is down"
+          description: "Target {{ $labels.instance }} has been unreachable for more than 2 minutes."
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100) < 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low root disk space on {{ $labels.instance }} (CT {{ $labels.ct_id }})"
+          description: "Available disk space is {{ $value | printf \"%.1f\" }}% on root mountpoint."
+
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100) < 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CRITICAL root disk space on {{ $labels.instance }} (CT {{ $labels.ct_id }})"
+          description: "Available disk space is less than 10% on {{ $labels.instance }}."
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 90% (current: {{ $value | printf \"%.1f\" }}%)."
+
+      - alert: HighCpuUsage
+        expr: (100 - (avg by (instance, ct_id) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage sustained above 85% for 10 minutes (current: {{ $value | printf \"%.1f\" }}%)."
+
+      - alert: MongodbBackupStale
+        expr: (time() - tnl_backup_last_timestamp_seconds{type="mongodb"}) > 100800
+        labels:
+          severity: critical
+        annotations:
+          summary: "MongoDB daily backup is stale on CT 116"
+          description: "Last successful MongoDB backup was more than 28 hours ago."
+
+      - alert: MediaBackupStale
+        expr: (time() - tnl_backup_last_timestamp_seconds{type="media"}) > 100800
+        labels:
+          severity: warning
+        annotations:
+          summary: "Media & uploads daily backup is stale on CT 103"
+          description: "Last successful Media backup was more than 28 hours ago."
+
+      - alert: NginxExporterDown
+        expr: nginx_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Nginx reverse proxy on CT 102 is failing to report status"
+          description: "Nginx exporter cannot scrape stub_status on CT 102."

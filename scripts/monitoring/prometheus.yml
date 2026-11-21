@@ -6,6 +6,9 @@ global:
     environment: 'production'
     cluster: 'node2-proxmox'
 
+rule_files:
+  - '/etc/prometheus/alert_rules.yml'
+
 scrape_configs:
   - job_name: 'prometheus'
     scrape_interval: 10s
@@ -35,3 +38,12 @@ scrape_configs:
           instance: 'labtnl-monitor'
           role: 'monitoring-prometheus-grafana'
           ct_id: '117'
+
+  - job_name: 'nginx'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['100.102.105.77:9113']
+        labels:
+          instance: 'labtnl-web'
+          role: 'reverse-proxy'
+          ct_id: '102'
