@@ -125,7 +125,7 @@ async def render_ssr_shell(path: str = Query("/")) -> HTMLResponse:
 
         elif clean_path == "/activity":
             title = "Aktivitas & Fasilitas — Laboratorium Jaringan Telekomunikasi ITS"
-            desc = "Kegiatan riset, praktikum jaringan telekomunikasi, fasilitas testbed B-301, dan sertifikasi industri di Lab TNL ITS."
+            desc = "Kegiatan riset, praktikum jaringan telekomunikasi, event & pendaftaran terbuka, fasilitas testbed B-301, dan sertifikasi industri di Lab TNL ITS."
 
         elif clean_path == "/publications":
             title = "Publikasi Ilmiah — Laboratorium Jaringan Telekomunikasi ITS"

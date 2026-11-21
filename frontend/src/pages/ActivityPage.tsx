@@ -37,14 +37,22 @@ import { RegistrationDialog } from "@/components/site/RegistrationDialog";
 import { FadeCarousel, ImageLightboxModal, type CarouselImage } from "@/components/site/MediaCarousel";
 import type { Activity, Equipment, LabEvent, PracticumModule, Project } from "@/lib/types";
 
-type TabKey = "rd" | "practicum" | "training" | "assistant";
+type TabKey = "rd" | "practicum" | "events" | "assistant";
 
-const TABS: { key: TabKey; labelKey: "nav_rd" | "nav_practicum" | "nav_training" | "nav_assistant" }[] = [
+const TABS: { key: TabKey; labelKey: "nav_rd" | "nav_practicum" | "nav_events" | "nav_assistant" }[] = [
     { key: "rd", labelKey: "nav_rd" },
     { key: "practicum", labelKey: "nav_practicum" },
-    { key: "training", labelKey: "nav_training" },
+    { key: "events", labelKey: "nav_events" },
     { key: "assistant", labelKey: "nav_assistant" },
 ];
+
+function normalizeTab(raw: string | null): TabKey {
+    if (raw === "training") return "events";
+    if (raw && (raw === "rd" || raw === "practicum" || raw === "events" || raw === "assistant")) {
+        return raw as TabKey;
+    }
+    return "rd";
+}
 
 const CATEGORY_CHIP: Record<string, { bg: string; fg: string }> = {
     social: { bg: "#a8977b", fg: "#111518" },
@@ -708,13 +716,15 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
 export default function ActivityPage() {
     const { locale, t } = useLocale();
     const [params, setParams] = useSearchParams();
-    const requested = params.get("tab") as TabKey | null;
-    const [tab, setTab] = useState<TabKey>(requested && TABS.some((x) => x.key === requested) ? requested : "rd");
+    const requested = params.get("tab");
+    const [tab, setTab] = useState<TabKey>(() => normalizeTab(requested));
     const [equipCat, setEquipCat] = useState<string>("all");
 
     useEffect(() => {
-        if (requested && TABS.some((x) => x.key === requested)) setTab(requested);
-    }, [requested]);
+        const raw = params.get("tab");
+        const norm = normalizeTab(raw);
+        if (norm !== tab) setTab(norm);
+    }, [params]);
 
     const selectTab = (key: TabKey) => {
         setTab(key);
@@ -893,14 +903,17 @@ export default function ActivityPage() {
                         </div>
                     ) : null}
 
-                    {tab === "training" ? (
-                        <div data-testid="activity-panel-training">
+                    {tab === "events" ? (
+                        <div data-testid="activity-panel-events">
                             <SectionHeading
-                                title={t("nav_training")}
+                                title={t("events_heading")}
                                 count={(events ?? []).length}
-                                countLabel={locale === "id" ? "program" : "programmes"}
-                                testId="training-heading"
+                                countLabel={locale === "id" ? "acara" : "events"}
+                                testId="events-heading"
                             />
+                            <p className="mt-1 text-sm max-w-3xl" style={{ color: "var(--tnl-body)" }}>
+                                {t("events_subtitle")}
+                            </p>
                             {eventsLoading ? (
                                 <Spinner label={t("loading")} />
                             ) : (events ?? []).length === 0 ? (
@@ -911,7 +924,7 @@ export default function ActivityPage() {
                                     icon={<GraduationCap className="h-7 w-7" style={{ color: "var(--tnl-tan-text)" }} />}
                                 />
                             ) : (
-                                <div className="space-y-8">
+                                <div className="mt-6 space-y-8">
                                     {(events ?? []).map((ev) => (
                                         <EventCard key={ev.id} event={ev} />
                                     ))}

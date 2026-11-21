@@ -85,6 +85,7 @@ describe("MediaCarousel & Activity Components", () => {
     // Verify tabs rendered
     expect(screen.getByTestId("activity-tab-rd")).toBeInTheDocument();
     expect(screen.getByTestId("activity-tab-practicum")).toBeInTheDocument();
+    expect(screen.getByTestId("activity-tab-events")).toBeInTheDocument();
 
     // Click on Practicum tab
     fireEvent.click(screen.getByTestId("activity-tab-practicum"));
@@ -93,5 +94,13 @@ describe("MediaCarousel & Activity Components", () => {
     expect(screen.getByText("Jaringan Komputer Lanjut")).toBeInTheDocument();
     expect(screen.getByText("Senin")).toBeInTheDocument();
     expect(screen.getByText("08:00 - 10:00")).toBeInTheDocument();
+  });
+
+  it("ActivityPage maps backward-compatible ?tab=training to events panel", () => {
+    renderWithProviders(<ActivityPage />, { route: "/activity?tab=training" });
+
+    // Verify events panel is active via backward compatibility
+    expect(screen.getByTestId("activity-panel-events")).toBeInTheDocument();
+    expect(screen.getByTestId("events-heading")).toBeInTheDocument();
   });
 });

@@ -443,7 +443,7 @@ HOME_BLOCKS = [
         "intro_id": ("Pendidikan, penelitian, dan pelatihan di bidang jaringan telekomunikasi pada "
                      "Departemen Teknik Elektro, Institut Teknologi Sepuluh Nopember."),
         "primary_label": "Explore our activities", "primary_label_id": "Lihat kegiatan kami", "primary_url": "/activity",
-        "secondary_label": "Join us", "secondary_label_id": "Gabung bersama kami", "secondary_url": "/activity?tab=training",
+        "secondary_label": "Join us", "secondary_label_id": "Gabung bersama kami", "secondary_url": "/activity?tab=events",
     }},
     {"type": "stats", "props": {"source": "live"}},
     {"type": "about", "props": {
@@ -499,8 +499,8 @@ SYSTEM_PAGES = [
     ]),
     ("activity", "Activity", "Kegiatan", [
         inner_hero("Activity", "Kegiatan",
-                   "Research and development, practicum, training and assistant activities at B-301.",
-                   "Penelitian dan pengembangan, praktikum, pelatihan, serta kegiatan asisten di B-301.",
+                   "Research and development, practicum, events and assistant activities at B-301.",
+                   "Penelitian dan pengembangan, praktikum, event, serta kegiatan asisten di B-301.",
                    "Programs", "Program"),
         {"type": "activity_tabs", "props": {}},
     ]),

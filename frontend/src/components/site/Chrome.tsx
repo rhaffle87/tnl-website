@@ -33,7 +33,7 @@ const NAV = [
         children: [
             { key: "nav_rd", to: "/activity?tab=rd" },
             { key: "nav_practicum", to: "/activity?tab=practicum" },
-            { key: "nav_training", to: "/activity?tab=training" },
+            { key: "nav_events", to: "/activity?tab=events" },
             { key: "nav_assistant", to: "/activity?tab=assistant" },
         ],
     },
@@ -157,7 +157,7 @@ export function SiteHeader() {
                         {dark ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
                     </button>
                     <Link
-                        to="/activity?tab=training"
+                        to="/activity?tab=events"
                         viewTransition
                         className="tnl-btn tnl-btn-primary hidden h-10 min-h-[40px] shrink-0 whitespace-nowrap px-4 py-2 text-sm sm:inline-flex"
                         data-testid="header-join-us-button"
@@ -210,7 +210,7 @@ export function SiteHeader() {
                             </div>
                         ))}
                         <Link
-                            to="/activity?tab=training"
+                            to="/activity?tab=events"
                             className="tnl-btn tnl-btn-primary mt-3"
                             data-testid="mobile-join-us-button"
                         >
@@ -271,7 +271,7 @@ const FOOTER_COPY = {
         resourceLinks: [
             { label: "Research & Testbeds", to: "/activity?tab=research" },
             { label: "Practicum & Shifts", to: "/activity?tab=practicum" },
-            { label: "Training & Recruitment", to: "/activity?tab=events" },
+            { label: "Events & Registration", to: "/activity?tab=events" },
             { label: "Lab Equipment (B-301)", to: "/activity?tab=research#equipment" },
             { label: "Verify Certificate", to: "/verify" },
         ],
@@ -305,7 +305,7 @@ const FOOTER_COPY = {
         resourceLinks: [
             { label: "Riset & Testbed", to: "/activity?tab=research" },
             { label: "Praktikum & Shift", to: "/activity?tab=practicum" },
-            { label: "Pelatihan & Rekrutmen", to: "/activity?tab=events" },
+            { label: "Event & Registrasi", to: "/activity?tab=events" },
             { label: "Perangkat Lab (B-301)", to: "/activity?tab=research#equipment" },
             { label: "Verifikasi Sertifikat", to: "/verify" },
         ],
@@ -684,7 +684,7 @@ export function AnnouncementPopup() {
                         {pick(locale, announcement.body, announcement.body_id)}
                     </p>
                     <div className="mt-6 flex flex-wrap gap-3">
-                        <Link to="/activity?tab=training" className="tnl-btn tnl-btn-primary flex-1" data-testid="announcement-cta-button">
+                        <Link to="/activity?tab=events" className="tnl-btn tnl-btn-primary flex-1" data-testid="announcement-cta-button">
                             {t("register_now")}
                         </Link>
                         <button type="button" onClick={dismiss} className="tnl-btn tnl-btn-outline" data-testid="announcement-dismiss-button">
