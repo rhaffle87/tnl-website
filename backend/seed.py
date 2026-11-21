@@ -642,7 +642,7 @@ async def seed_settings() -> None:
     print("  settings: site identity, contact, social, announcement")
 
 
-async def seed_admin() -> None:
+async def seed_admin(include_demo: bool = True) -> None:
     email = (os.environ.get("SEED_ADMIN_EMAIL") or "admin@its.ac.id").strip().lower()
     password = os.environ.get("SEED_ADMIN_PASSWORD") or "TnlStudio2026!"
     name = os.environ.get("SEED_ADMIN_NAME") or "TNL Lab Administrator"
@@ -661,6 +661,12 @@ async def seed_admin() -> None:
         print(f"  users: Super Admin {email}")
 
     # Role demonstration accounts, so the rotating assistant team can see each role's view.
+    # main() turns these off for non-local sites unless SEED_DEMO_PASSWORD is set explicitly,
+    # so a known default password never lands in a real database.
+    if not include_demo:
+        print("  users: demo accounts skipped (non-local site and SEED_DEMO_PASSWORD not set)")
+        return
+    demo_password = os.environ.get("SEED_DEMO_PASSWORD") or "TnlStudio2026!"
     demos = [
         ("Media Division Editor", "editor@its.ac.id", "editor", ["media"]),
         ("Academics Contributor", "contributor@its.ac.id", "contributor", ["academics"]),
@@ -671,7 +677,7 @@ async def seed_admin() -> None:
         if not await db.users.find_one({"email": demail}):
             await db.users.insert_one({
                 "id": str(uuid4()), "name": dname, "email": demail, "role": drole,
-                "divisions": ddiv, "active": True, "password_hash": hash_password("TnlStudio2026!"),
+                "divisions": ddiv, "active": True, "password_hash": hash_password(demo_password),
                 "totp_secret": None, "totp_enabled": False, "invite_token": None,
                 "created_at": NOW, "last_login_at": None,
             })
@@ -1247,9 +1253,10 @@ async def seed_events() -> None:
             {"type": "textarea", "label": "Mengapa kamu tertarik untuk ikut Open House TNL?", "required": True, "options": []},
             {"type": "file", "label": "Bukti Follow Instagram @tnlab_its", "required": True, "options": []},
         ],
+        # Never hard-code a real Apps Script URL here: it is a write credential for the sheet.
         spreadsheet_webhook_url=os.environ.get(
             "OPEN_HOUSE_SHEET_WEBHOOK_URL",
-            "https://script.google.com/macros/s/AKfycbxk9BXmKlRiX5lGcU7f90J3foXBIk04yZ-BLpPAHpPE3Y2k8BQzTzZ8hEgeZ8l6VaCE/exec"
+            "https://script.google.com/macros/s/EXAMPLE_REPLACE_ME/exec",
         ),
         status="published",
     ).model_dump()
@@ -1449,13 +1456,16 @@ async def seed_placeholder_avatar() -> None:
 
 async def main() -> None:
     reset = "--reset" in sys.argv
+    # Every run replaces CMS content (members, events, posts, ...) and refreshes the admin
+    # password; --reset also drops registrations (personal data), messages, the audit log and
+    # API keys. Refuse both against a non-local site unless explicitly forced.
+    site = (os.environ.get("PUBLIC_SITE_URL") or "").lower()
+    local = any(h in site for h in ("localhost", "127.0.0.1", "0.0.0.0")) or not site
+    if not local and "--force" not in sys.argv:
+        sys.exit(f"Refusing to seed: PUBLIC_SITE_URL={site!r} is not local. Re-run with --force if you really mean it.")
+    if not local and not os.environ.get("SEED_ADMIN_PASSWORD"):
+        sys.exit("Refusing to seed a non-local site without SEED_ADMIN_PASSWORD set.")
     if reset:
-        # --reset drops registrations (personal data), messages, media records, the audit log and
-        # API keys. Refuse to do that against a non-local site unless explicitly forced.
-        site = (os.environ.get("PUBLIC_SITE_URL") or "").lower()
-        local = any(h in site for h in ("localhost", "127.0.0.1", "0.0.0.0")) or not site
-        if not local and "--force" not in sys.argv:
-            sys.exit(f"Refusing --reset: PUBLIC_SITE_URL={site!r} is not local. Re-run with --reset --force if you really mean it.")
         for coll in ("pages", "posts", "members", "events", "activities", "projects", "publications",
                      "partners", "practicum", "equipment", "registrations", "messages", "media", "audit_log",
                      "saved_blocks", "collections_def", "collection_items", "outbox", "api_keys"):
@@ -1464,7 +1474,7 @@ async def main() -> None:
 
     print("Seeding TNL Studio…")
     await seed_settings()
-    await seed_admin()
+    await seed_admin(include_demo=local or bool(os.environ.get("SEED_DEMO_PASSWORD")))
     await seed_placeholder_avatar()
     photos = await seed_illustrative_photos()
     await seed_pages(photos)

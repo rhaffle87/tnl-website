@@ -5,6 +5,7 @@ import os
 import re
 import uuid
 from datetime import datetime, timezone
+from html import escape as html_escape
 from pathlib import Path
 
 import httpx
@@ -12,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel
 
-from lib.auth import client_ip, rate_limit, user_for_request
+from lib.auth import client_ip, rate_limit, sign_upload, user_for_request
 from lib.db import db
 from lib.dates import today_iso
 from lib.mailer import send_email
@@ -22,6 +23,10 @@ from lib.settings import get_settings
 from models.core import ThemeTokens
 
 router = APIRouter(tags=["public"])
+
+# Fields that must never leave the server through the public event endpoints. The sheet webhook
+# is a write credential: anyone holding it can append rows to the registrant spreadsheet.
+EVENT_PRIVATE_PROJECTION = {"spreadsheet_webhook_url": 0}
 
 
 async def check_maintenance(request: Request) -> None:
@@ -162,7 +167,7 @@ async def public_events(type: str | None = None, include_past: bool = True):
     q: dict = {"status": "published"}
     if type:
         q["type"] = type
-    docs = await db.events.find(q).sort([("start_date", 1)]).to_list(200)
+    docs = await db.events.find(q, EVENT_PRIVATE_PROJECTION).sort([("start_date", 1)]).to_list(200)
     today = today_iso()
     if not include_past:
         docs = [d for d in docs if event_reg_status(d, today)["reg_status"] != "past"]
@@ -171,7 +176,8 @@ async def public_events(type: str | None = None, include_past: bool = True):
 
 @router.get("/public/events/{slug}", dependencies=[Depends(check_maintenance)])
 async def public_event(slug: str):
-    ev = await db.events.find_one({"$or": [{"slug": slug}, {"id": slug}], "status": "published"})
+    ev = await db.events.find_one({"$or": [{"slug": slug}, {"id": slug}], "status": "published"},
+                                  EVENT_PRIVATE_PROJECTION)
     if not ev:
         raise HTTPException(status_code=404, detail="Event not found.")
     return jsonable((await with_seats([ev], today_iso()))[0])
@@ -282,10 +288,38 @@ def _store_upload(data: bytes, filename: str, prefix: str) -> str:
     name = f"{prefix}_{uuid.uuid4().hex[:8]}_{safe}"
     with open(os.path.join(sub, name), "wb") as fh:
         fh.write(data)
-    return f"/api/media-files/uploads/{name}"
+    return f"/api/media-files/uploads/{name}?sig={sign_upload(name)}"
 
 
 ALLOWED_UPLOAD_EXT = (".pdf", ".jpg", ".jpeg", ".png", ".webp", ".doc", ".docx", ".zip")
+
+_UPLOAD_HEADERS = {
+    ".pdf": (b"%PDF-",),
+    ".jpg": (b"\xff\xd8\xff",),
+    ".jpeg": (b"\xff\xd8\xff",),
+    ".png": (b"\x89PNG\r\n\x1a\n",),
+    ".doc": (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1",),
+    ".docx": (b"PK\x03\x04",),
+    ".zip": (b"PK\x03\x04", b"PK\x05\x06"),
+}
+
+
+def _upload_header_ok(data: bytes, ext: str) -> bool:
+    """Magic-byte check so a registration upload cannot just rename arbitrary content."""
+    if ext == ".webp":
+        return len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP"
+    return any(data.startswith(h) for h in _UPLOAD_HEADERS.get(ext, ()))
+
+
+def _discard_uploads(urls: list[str]) -> None:
+    """Remove files stored during a registration attempt that ended up rejected."""
+    media_dir = os.environ.get("MEDIA_DIR", "/app/backend/media")
+    for url in urls:
+        try:
+            filename = url.split("?")[0].rsplit("/", 1)[-1]
+            os.remove(os.path.join(media_dir, "uploads", filename))
+        except OSError:
+            pass
 
 
 async def _sync_registration_to_sheet(reg_id: str, webhook_url: str, ev: dict, reg: dict):
@@ -372,6 +406,10 @@ async def submit_registration(event_id: str, request: Request):
     if form.get("consent") not in ("1", "true", "on"):
         raise HTTPException(status_code=422, detail="Consent is required to register (UU PDP).")
 
+    # Count every attempt, not only successful ones, before any file is written to disk.
+    rate_limit(f"regtry:{client_ip(request)}", 30, 3600)
+    saved_uploads: list[str] = []
+
     data: dict = {}
     missing: list[str] = []
     errors: list[str] = []
@@ -394,7 +432,11 @@ async def submit_registration(event_id: str, request: Request):
                 if not up.filename.lower().endswith(ALLOWED_UPLOAD_EXT):
                     errors.append(f"{label}: file type not allowed.")
                     continue
+                if not _upload_header_ok(content, os.path.splitext(up.filename.lower())[1]):
+                    errors.append(f"{label}: file content does not match its type.")
+                    continue
                 rel_url = _store_upload(content, up.filename, "reg")
+                saved_uploads.append(rel_url)
                 pub_url = (os.environ.get("PUBLIC_SITE_URL") or "https://labtnl.site").rstrip("/")
                 abs_url = f"{pub_url}{rel_url}" if rel_url.startswith("/") else rel_url
                 data[key] = {"url": rel_url, "absolute_url": abs_url, "name": up.filename}
@@ -420,6 +462,7 @@ async def submit_registration(event_id: str, request: Request):
         data[key] = text
 
     if missing or errors:
+        _discard_uploads(saved_uploads)
         raise HTTPException(status_code=422, detail={
             "message": "Please check the highlighted fields.",
             "missing": missing, "errors": errors,
@@ -432,11 +475,17 @@ async def submit_registration(event_id: str, request: Request):
         email = f"{clean_nim}@student.its.ac.id"
 
     if email and await db.registrations.find_one({"event_id": actual_event_id, "email": email.lower()}):
+        _discard_uploads(saved_uploads)
         raise HTTPException(status_code=409, detail="This email has already registered for this event.")
     if nim and await db.registrations.find_one({"event_id": actual_event_id, "nim": nim}):
+        _discard_uploads(saved_uploads)
         raise HTTPException(status_code=409, detail="This NIM/NRP has already registered for this event.")
 
-    rate_limit(f"reg:{client_ip(request)}", 8, 3600)
+    try:
+        rate_limit(f"reg:{client_ip(request)}", 8, 3600)
+    except HTTPException:
+        _discard_uploads(saved_uploads)
+        raise
 
     cap = ev.get("capacity") or 0
     used = await db.registrations.count_documents(
@@ -464,7 +513,8 @@ async def submit_registration(event_id: str, request: Request):
     await send_email(
         email or "unknown@example.org",
         f"Registration received — {ev.get('title', '')}",
-        f"<p>Hello {name},</p><p>Your registration for <b>{ev.get('title', '')}</b> has been {state}.</p>"
+        f"<p>Hello {html_escape(str(name))},</p>"
+        f"<p>Your registration for <b>{html_escape(ev.get('title', ''))}</b> has been {state}.</p>"
         f"<p>Telecommunication Network Laboratory — ITS</p>",
     )
     msg = ("Registration received. Please check your email for confirmation."
@@ -472,7 +522,28 @@ async def submit_registration(event_id: str, request: Request):
     return {"ok": True, "status": status, "message": msg}
 
 
+import unicodedata
+
 # ---------------------------------------------------------------- certificates
+def _pdf_safe(text: str) -> str:
+    """The built-in PDF fonts are Latin-1 only; anything else (an em dash in an event title, a
+    non-Latin name) would make fpdf2 raise and the download return a 500."""
+    text = (text or "").replace("\u2014", "-").replace("\u2013", "-")
+    text = text.replace("\u2018", "'").replace("\u2019", "'").replace("\u201c", '"').replace("\u201d", '"')
+    normalized = unicodedata.normalize("NFKD", text)
+    latin1 = normalized.encode("latin-1", "ignore").decode("latin-1").strip()
+    return latin1 or "Participant"
+
+
+def _participant_name(reg: dict) -> str:
+    """Display name for a certificate. Never falls back to the e-mail address: /verify is public
+    and anyone holding a code would otherwise read the participant's address."""
+    for key, value in (reg.get("data") or {}).items():
+        if ("name" in key or "nama" in key) and isinstance(value, str) and value.strip():
+            return value.strip()
+    return "Participant"
+
+
 @router.get("/verify/{code}")
 async def verify_certificate(code: str):
     reg = await db.registrations.find_one({"certificate_code": code.upper()})
@@ -481,7 +552,7 @@ async def verify_certificate(code: str):
     ev = await db.events.find_one({"id": reg.get("event_id")}) or {}
     return {
         "valid": True,
-        "name": reg.get("data", {}).get("f_full-name") or reg.get("data", {}).get("f_name") or reg.get("email"),
+        "name": _participant_name(reg),
         "event_title": reg.get("event_title") or ev.get("title", ""),
         "event_date": ev.get("start_date") or "",
         "status": reg.get("status"),
@@ -507,8 +578,8 @@ async def certificate_pdf(code: str):
     ev = await db.events.find_one({"id": reg.get("event_id")}) or {}
     s = await get_settings()
 
-    name = reg.get("data", {}).get("f_full-name") or reg.get("data", {}).get("f_name") or reg.get("email", "Participant")
-    event_title = reg.get("event_title") or ev.get("title", "Laboratory Training & Workshop")
+    name = _pdf_safe(_participant_name(reg))
+    event_title = _pdf_safe(reg.get("event_title") or ev.get("title", "Laboratory Training & Workshop"))
     cert_code = reg.get("certificate_code", code.upper())
     base = os.environ.get("PUBLIC_SITE_URL") or os.environ.get("APP_URL") or "http://localhost:3000"
     base = base.rstrip("/")

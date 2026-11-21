@@ -19,7 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import ValidationError
 
-from lib.auth import audit, can_write_division, require
+from lib.auth import allowed, audit, can_write_division, principal, require
 from lib.db import db
 from lib.jev import review_draft
 from lib.quality import publish_blockers, run_scan, scan_social_reuse
@@ -30,6 +30,12 @@ from models.content import CONTENT_MODELS, TITLE_FIELD
 router = APIRouter(prefix="/admin", tags=["content"])
 
 RESOURCES = CONTENT_MODELS
+# Secrets and personal data that only roles able to edit content may read back through the admin API.
+# Read-only roles (viewer, registrar) get the item without these fields.
+PRIVATE_FIELDS = {
+    "events": ("spreadsheet_webhook_url",),
+    "members": ("phone", "email_personal", "nim"),
+}
 HTML_FIELDS = {"posts": ("body", "body_id")}
 SEARCH_FIELDS = {
     "posts": ("title", "excerpt", "category"),
@@ -54,6 +60,22 @@ REVIEW_TEXT = {
     "partners": ("name",),
     "equipment": ("name", "specs"),
 }
+
+
+def _can_see_private(resource: str, user: dict) -> bool:
+    role = user.get("role")
+    if role in ("super_admin", "admin"):
+        return True
+    if resource == "events":
+        # The sheet webhook URL is a write credential: only super_admin/admin may read it.
+        return False
+    return allowed(principal(user), "content:edit")
+
+
+def _redact(resource: str, doc: dict, user: dict) -> dict:
+    if _can_see_private(resource, user):
+        return doc
+    return {k: v for k, v in doc.items() if k not in PRIVATE_FIELDS.get(resource, ())}
 
 
 def _model(resource: str):
@@ -129,9 +151,9 @@ def _is_publishing(resource: str, patch: dict, current: dict) -> bool:
 
 
 # ---------------------------------------------------------------- list / read
-@router.get("/content/{resource}", dependencies=[Depends(require("content:read"))])
+@router.get("/content/{resource}")
 async def list_items(resource: str, q: str | None = None, status: str | None = None,
-                     limit: int = 100, offset: int = 0):
+                     limit: int = 100, offset: int = 0, user: dict = Depends(require("content:read"))):
     _model(resource)
     query: dict = {}
     if status:
@@ -146,16 +168,16 @@ async def list_items(resource: str, q: str | None = None, status: str | None = N
     sort = [("order", 1), ("created_at", -1)] if resource in ("members", "activities", "partners", "practicum", "equipment") \
         else [("created_at", -1)]
     docs = await db[resource].find(query).sort(sort).skip(offset).limit(min(limit, 200)).to_list(200)
-    return {"items": jsonable(docs), "total": total}
+    return {"items": [_redact(resource, d, user) for d in jsonable(docs)], "total": total}
 
 
-@router.get("/content/{resource}/{item_id}", dependencies=[Depends(require("content:read"))])
-async def get_item(resource: str, item_id: str):
+@router.get("/content/{resource}/{item_id}")
+async def get_item(resource: str, item_id: str, user: dict = Depends(require("content:read"))):
     _model(resource)
     doc = await db[resource].find_one({"id": item_id})
     if not doc:
         raise HTTPException(status_code=404, detail="Item not found.")
-    return jsonable(doc)
+    return _redact(resource, jsonable(doc), user)
 
 
 # ---------------------------------------------------------------- create / update / delete
@@ -322,11 +344,12 @@ async def bulk_action(resource: str, payload: dict, request: Request,
     return {"ok": True, "updated": done, "skipped": skipped}
 
 
-@router.get("/content/{resource}/export/csv", dependencies=[Depends(require("content:read"))])
-async def export_resource(resource: str):
+@router.get("/content/{resource}/export/csv")
+async def export_resource(resource: str, user: dict = Depends(require("content:read"))):
     model = _model(resource)
     docs = await db[resource].find({}).to_list(2000)
-    cols = [f for f in model.model_fields if f not in ("issues", "revisions", "ai_review")]
+    hidden = () if _can_see_private(resource, user) else PRIVATE_FIELDS.get(resource, ())
+    cols = [f for f in model.model_fields if f not in ("issues", "revisions", "ai_review") + tuple(hidden)]
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(cols)

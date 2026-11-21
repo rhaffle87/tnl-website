@@ -44,7 +44,7 @@ PERMS: dict[str, set[str]] = {
         "registrations:read", "registrations:manage", "messages:manage",
         "content:read", "audit:read",
     },
-    "viewer": {"content:read", "registrations:read", "audit:read"},
+    "viewer": {"content:read", "audit:read"},
 }
 
 # Division scoping: when a staff user has divisions set, writes to these resources
@@ -216,3 +216,17 @@ async def audit(request: Request, action: str, resource: str, target_id: str | N
         "detail": detail or {},
         "created_at": datetime.now(timezone.utc),
     })
+
+
+# ---------------------------------------------------------------- signed uploads
+def sign_upload(filename: str) -> str:
+    secret = (os.environ.get("SESSION_SECRET") or os.environ.get("JWT_SECRET") or "tnl-media-upload-secret-key-2026").encode()
+    return hmac.new(secret, filename.encode(), hashlib.sha256).hexdigest()[:32]
+
+
+def verify_upload_sig(filename: str, sig: str | None) -> bool:
+    if not sig:
+        return False
+    expected = sign_upload(filename)
+    return hmac.compare_digest(expected, sig)
+

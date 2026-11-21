@@ -1,0 +1,243 @@
+"""Hardening: sheet-webhook secrecy on public event endpoints, registration uploads, seed safety."""
+
+import sys
+from datetime import date, datetime, timedelta, timezone
+from uuid import uuid4
+
+import pytest
+
+import seed
+
+SECRET_WEBHOOK = "https://script.google.com/macros/s/SECRET_TEST_ID/exec"
+PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 32
+
+NAME_FIELD = {"type": "text", "label": "Full name", "required": True, "options": []}
+PROOF_FIELD = {"type": "file", "label": "Proof", "required": True, "options": []}
+
+
+def _event(slug, form_fields, webhook=None):
+    today = date.today()
+    return {
+        "id": str(uuid4()), "slug": slug, "title": "Hardening <b>Test</b>", "title_id": "",
+        "type": "training", "status": "published", "capacity": 0, "price": 0,
+        "start_date": str(today + timedelta(days=10)), "end_date": str(today + timedelta(days=11)),
+        "reg_open_date": str(today - timedelta(days=2)), "reg_close_date": str(today + timedelta(days=5)),
+        "form_fields": form_fields, "spreadsheet_webhook_url": webhook,
+    }
+
+
+def _uploads_empty(tmp_path):
+    uploads = tmp_path / "uploads"
+    return not uploads.exists() or not list(uploads.iterdir())
+
+
+@pytest.mark.asyncio
+async def test_public_event_endpoints_never_expose_sheet_webhook(async_client, mock_db):
+    slug = "webhook-secrecy-" + uuid4().hex[:6]
+    await mock_db.events.insert_one(_event(slug, [NAME_FIELD], webhook=SECRET_WEBHOOK))
+
+    listing = await async_client.get("/public/events")
+    assert listing.status_code == 200
+    assert SECRET_WEBHOOK not in listing.text
+    assert any(e.get("slug") == slug for e in listing.json())
+    assert all("spreadsheet_webhook_url" not in e for e in listing.json())
+
+    single = await async_client.get(f"/public/events/{slug}")
+    assert single.status_code == 200
+    assert "spreadsheet_webhook_url" not in single.json()
+    assert SECRET_WEBHOOK not in single.text
+
+    # The server side must still know the webhook so registrations keep syncing.
+    stored = await mock_db.events.find_one({"slug": slug})
+    assert stored["spreadsheet_webhook_url"] == SECRET_WEBHOOK
+
+
+@pytest.mark.asyncio
+async def test_v1_events_never_expose_sheet_webhook(async_client, mock_db):
+    from routers.apiv1 import hash_key
+
+    raw = "tnl_test_" + uuid4().hex
+    await mock_db.api_keys.insert_one({
+        "id": str(uuid4()), "name": "hardening-test", "scopes": ["read"], "key_hash": hash_key(raw),
+        "prefix": raw[:12], "active": True, "calls": 0,
+        "created_at": datetime.now(timezone.utc), "last_used_at": None,
+    })
+    slug = "v1-webhook-secrecy-" + uuid4().hex[:6]
+    await mock_db.events.insert_one(_event(slug, [NAME_FIELD], webhook=SECRET_WEBHOOK))
+    headers = {"X-API-Key": raw}
+
+    single = await async_client.get(f"/v1/events/{slug}", headers=headers)
+    assert single.status_code == 200, single.text
+    assert "spreadsheet_webhook_url" not in single.json()
+    assert SECRET_WEBHOOK not in single.text
+
+    listing = await async_client.get("/v1/events?limit=100", headers=headers)
+    assert listing.status_code == 200
+    assert SECRET_WEBHOOK not in listing.text
+
+
+@pytest.mark.asyncio
+async def test_registration_rejects_upload_whose_content_does_not_match_type(
+        async_client, mock_db, monkeypatch, tmp_path):
+    monkeypatch.setenv("MEDIA_DIR", str(tmp_path))
+    ev = _event("fake-upload-" + uuid4().hex[:6], [NAME_FIELD, PROOF_FIELD])
+    await mock_db.events.insert_one(ev)
+
+    res = await async_client.post(
+        f"/registrations/{ev['id']}",
+        data={"consent": "1", "f_full-name": "Fake Upload"},
+        files={"f_proof": ("proof.png", b"<html>not a png</html>", "image/png")},
+    )
+    assert res.status_code == 422, res.text
+    assert _uploads_empty(tmp_path)
+
+
+@pytest.mark.asyncio
+async def test_rejected_registration_removes_the_file_it_already_stored(
+        async_client, mock_db, monkeypatch, tmp_path):
+    monkeypatch.setenv("MEDIA_DIR", str(tmp_path))
+    ev = _event("orphan-upload-" + uuid4().hex[:6], [NAME_FIELD, PROOF_FIELD])
+    await mock_db.events.insert_one(ev)
+
+    # Valid PNG, but the required name is missing, so the registration is refused after the
+    # upload was written. Nothing may be left on disk.
+    res = await async_client.post(
+        f"/registrations/{ev['id']}",
+        data={"consent": "1"},
+        files={"f_proof": ("proof.png", PNG, "image/png")},
+    )
+    assert res.status_code == 422, res.text
+    assert _uploads_empty(tmp_path)
+
+
+@pytest.mark.asyncio
+async def test_valid_upload_is_still_stored(async_client, mock_db, monkeypatch, tmp_path, mock_sheets_webhook):
+    monkeypatch.setenv("MEDIA_DIR", str(tmp_path))
+    ev = _event("valid-upload-" + uuid4().hex[:6], [NAME_FIELD, PROOF_FIELD])
+    await mock_db.events.insert_one(ev)
+
+    res = await async_client.post(
+        f"/registrations/{ev['id']}",
+        data={"consent": "1", "f_full-name": "Valid Upload"},
+        files={"f_proof": ("proof.png", PNG, "image/png")},
+    )
+    assert res.status_code == 200, res.text
+    assert len(list((tmp_path / "uploads").iterdir())) == 1
+
+
+async def _certified_registration(mock_db, data):
+    code = "TNL-" + uuid4().hex[:10].upper()
+    await mock_db.registrations.insert_one({
+        "id": str(uuid4()), "event_id": "hardening-event", "event_title": "Hardening Event",
+        "email": "private.person@example.org", "nim": "", "status": "attended", "data": data,
+        "certificate_code": code, "created_at": datetime.now(timezone.utc),
+    })
+    return code
+
+
+@pytest.mark.asyncio
+async def test_verify_never_falls_back_to_the_participants_email(async_client, mock_db):
+    code = await _certified_registration(mock_db, {"f_unrelated": "value"})
+    res = await async_client.get(f"/verify/{code}")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["valid"] is True
+    assert body["name"] == "Participant"
+    assert "private.person@example.org" not in res.text
+
+
+@pytest.mark.asyncio
+async def test_verify_finds_indonesian_name_labels(async_client, mock_db):
+    code = await _certified_registration(mock_db, {"f_nama-lengkap": "Budi Santoso"})
+    res = await async_client.get(f"/verify/{code}")
+    assert res.json()["name"] == "Budi Santoso"
+
+
+@pytest.mark.asyncio
+async def test_certificate_pdf_survives_non_latin_text(async_client, mock_db):
+    code = "TNL-" + uuid4().hex[:10].upper()
+    await mock_db.registrations.insert_one({
+        "id": str(uuid4()), "event_id": "hardening-event",
+        "event_title": "Open Recruitment \u2014 Asisten Laboratorium",
+        "email": "pdf.person@example.org", "nim": "", "status": "attended",
+        "data": {"f_full-name": "Budi \u65e5\u672c Santoso"},
+        "certificate_code": code, "created_at": datetime.now(timezone.utc),
+    })
+    res = await async_client.get(f"/certificates/{code}/pdf")
+    assert res.status_code == 200, res.text
+    assert res.content.startswith(b"%PDF")
+
+
+@pytest.mark.asyncio
+async def test_read_only_roles_do_not_see_webhook_or_private_member_fields(async_client, mock_db):
+    import lib.auth
+
+    viewer = await mock_db.users.find_one({"email": "viewer@its.ac.id", "active": True})
+    admin = await mock_db.users.find_one({"role": "super_admin", "active": True})
+    if viewer is None:
+        pytest.skip("demo viewer account is not seeded in this environment")
+    as_viewer = {"tnl_session": await lib.auth.create_session(viewer["id"])}
+    as_admin = {"tnl_session": await lib.auth.create_session(admin["id"])}
+
+    ev = _event("redaction-" + uuid4().hex[:6], [NAME_FIELD], webhook=SECRET_WEBHOOK)
+    await mock_db.events.insert_one(ev)
+    member_id = str(uuid4())
+    await mock_db.members.insert_one({
+        "id": member_id, "name": "Redaction Test Person", "role": "assistant", "status": "active",
+        "published": True, "phone": "+6280000000000", "email_personal": "redaction.private@example.org",
+        "nim": "5024200000", "order": 9999,
+    })
+
+    # Read-only role: no webhook, no private member data, in detail, list and CSV export.
+    single = await async_client.get(f"/admin/content/events/{ev['id']}", cookies=as_viewer)
+    assert single.status_code == 200, single.text
+    assert "spreadsheet_webhook_url" not in single.json()
+    listing = await async_client.get("/admin/content/events?limit=200", cookies=as_viewer)
+    assert listing.status_code == 200
+    assert SECRET_WEBHOOK not in listing.text
+
+    member = await async_client.get(f"/admin/content/members/{member_id}", cookies=as_viewer)
+    assert member.status_code == 200, member.text
+    for private in ("phone", "email_personal", "nim"):
+        assert private not in member.json()
+    export = await async_client.get("/admin/content/members/export/csv", cookies=as_viewer)
+    assert export.status_code == 200
+    for leaked in ("+6280000000000", "redaction.private@example.org", "5024200000"):
+        assert leaked not in export.text
+
+    # Roles that can edit still get the full record, so the admin forms keep working.
+    full = await async_client.get(f"/admin/content/events/{ev['id']}", cookies=as_admin)
+    assert full.json()["spreadsheet_webhook_url"] == SECRET_WEBHOOK
+    full_member = await async_client.get(f"/admin/content/members/{member_id}", cookies=as_admin)
+    assert full_member.json()["nim"] == "5024200000"
+
+
+@pytest.mark.asyncio
+async def test_seed_refuses_non_local_site_without_force(monkeypatch):
+    monkeypatch.setenv("PUBLIC_SITE_URL", "https://labtnl.site")
+    monkeypatch.setattr(sys, "argv", ["seed.py"])
+    with pytest.raises(SystemExit):
+        await seed.main()
+
+
+@pytest.mark.asyncio
+async def test_seed_with_force_still_needs_an_explicit_admin_password(monkeypatch):
+    monkeypatch.setenv("PUBLIC_SITE_URL", "https://labtnl.site")
+    monkeypatch.delenv("SEED_ADMIN_PASSWORD", raising=False)
+    monkeypatch.setattr(sys, "argv", ["seed.py", "--force"])
+    with pytest.raises(SystemExit):
+        await seed.main()
+
+
+@pytest.mark.asyncio
+async def test_seed_skips_demo_accounts_when_asked(mock_db, monkeypatch):
+    monkeypatch.setenv("SEED_ADMIN_EMAIL", f"seed-{uuid4().hex[:6]}@its.ac.id")
+    # The test database is shared for the whole session: take the demo account out, check, put it back.
+    original = await mock_db.users.find_one({"email": "contributor@its.ac.id"})
+    await mock_db.users.delete_many({"email": "contributor@its.ac.id"})
+    try:
+        await seed.seed_admin(include_demo=False)
+        assert await mock_db.users.find_one({"email": "contributor@its.ac.id"}) is None
+    finally:
+        if original is not None:
+            await mock_db.users.insert_one(original)

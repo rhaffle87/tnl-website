@@ -98,6 +98,12 @@ V1_READ = {
 }
 
 
+# Fields never returned by the public v1 reads. The sheet webhook is a write credential for the
+# registrant spreadsheet, so a read-scope key must not be able to see it.
+V1_PROJECTION = {"issues": 0, "ai_review": 0, "nim": 0, "email_personal": 0, "phone": 0,
+                 "spreadsheet_webhook_url": 0}
+
+
 @router.get("/v1/{resource}")
 async def v1_list(resource: str, limit: int = 50, offset: int = 0,
                   principal: dict = Depends(require_scope("read"))):
@@ -105,7 +111,7 @@ async def v1_list(resource: str, limit: int = 50, offset: int = 0,
     if not spec:
         raise HTTPException(status_code=404, detail=f"Unknown resource. Available: {', '.join(sorted(V1_READ))}")
     coll, query = spec
-    projection = {"issues": 0, "ai_review": 0, "nim": 0, "email_personal": 0, "phone": 0}
+    projection = V1_PROJECTION
     total = await db[coll].count_documents(query)
     docs = await db[coll].find(query, projection).sort("created_at", -1).skip(offset).limit(min(limit, 100)).to_list(100)
     return {"resource": resource, "total": total, "limit": limit, "offset": offset, "items": jsonable(docs)}
@@ -118,7 +124,7 @@ async def v1_get(resource: str, item_id: str, principal: dict = Depends(require_
         raise HTTPException(status_code=404, detail="Unknown resource.")
     coll, query = spec
     doc = await db[coll].find_one({**query, "$or": [{"id": item_id}, {"slug": item_id}]},
-                                  {"issues": 0, "ai_review": 0, "nim": 0, "email_personal": 0, "phone": 0})
+                                  V1_PROJECTION)
     if not doc:
         raise HTTPException(status_code=404, detail="Item not found.")
     return jsonable(doc)

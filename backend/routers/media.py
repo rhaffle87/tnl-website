@@ -10,7 +10,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
-from lib.auth import audit, require
+from lib.auth import allowed, audit, principal, require, user_for_request, verify_upload_sig
 from lib.db import db
 from lib.serialize import jsonable
 from lib.storage import MEDIA_DIR, delete_object, local_path, put_object, safe_name
@@ -232,7 +232,7 @@ async def delete_media(media_id: str, request: Request):
 
 
 @router.api_route("/media-files/{path:path}", methods=["GET", "HEAD"])
-async def serve_media(path: str):
+async def serve_media(path: str, request: Request):
     """Serve locally stored media. Path traversal is strictly rejected before touching disk."""
     if ".." in path or path.startswith("/") or "\\" in path:
         raise HTTPException(status_code=400, detail="Invalid path.")
@@ -245,4 +245,26 @@ async def serve_media(path: str):
         raise HTTPException(status_code=400, detail="Invalid path.")
     if not os.path.isfile(full):
         raise HTTPException(status_code=404, detail="File not found.")
+
+    # Restrict uploads subfolder (participant registrations) to authorized staff or signed URLs
+    is_upload = path.startswith("uploads/") or path == "uploads"
+    if is_upload:
+        sig = request.query_params.get("sig")
+        filename = os.path.basename(full)
+        has_valid_sig = verify_upload_sig(filename, sig)
+        if not has_valid_sig:
+            user = await user_for_request(request)
+            if not user or not allowed(principal(user), "registrations:read"):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Access denied. Staff session or valid signed link required."
+                )
+        return FileResponse(
+            full,
+            headers={
+                "Cache-Control": "private, no-store, max-age=0",
+                "X-Robots-Tag": "noindex, nofollow",
+            }
+        )
+
     return FileResponse(full, headers={"Cache-Control": "public, max-age=86400"})

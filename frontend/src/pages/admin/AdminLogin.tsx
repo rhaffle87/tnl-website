@@ -94,9 +94,12 @@ export default function AdminLogin() {
     };
 
     const signInWithGoogle = () => {
-        // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+        if (!googleConfig?.auth_base) {
+            toast.error("Google Sign-In is currently disabled. Please use email and password.");
+            return;
+        }
         const redirectUrl = window.location.origin + "/admin";
-        window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+        window.location.href = `${googleConfig.auth_base}?redirect=${encodeURIComponent(redirectUrl)}`;
     };
 
     return (
