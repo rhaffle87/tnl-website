@@ -68,12 +68,12 @@
 .editorial-contact [data-testid="contact-form-container"] .tnl-card-header > div { color: var(--tnl-tan-text); }
 .editorial-contact [data-testid="contact-form-container"] .tnl-card-header h2 { font-weight: 500; font-size: clamp(1.65rem,2.5vw,2.25rem); margin-block: .75rem; }
 .editorial-contact [data-testid^="topic-pill-"] { min-height: 44px; border-radius: 2px; box-shadow: none; background: transparent; border-color: var(--tnl-border); color: var(--foreground); }
-.editorial-contact [data-testid^="topic-pill-"][aria-pressed="true"] { background: var(--tnl-green); border-color: var(--tnl-green); color: #fff; }
+.editorial-contact [data-testid^="topic-pill-"][aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
 .editorial-contact :is(input:not([type="checkbox"]),textarea) { width: 100%; background: var(--background); border: 1px solid var(--tnl-border); border-radius: 2px; padding: .8rem 1rem; color: var(--foreground); }
 .editorial-contact input[type="checkbox"] { min-height: auto; accent-color: var(--tnl-link); margin-top: .2rem; }
 .editorial-contact form > div:has(#contact-pdp-consent) { background: transparent; border: 0; border-block: 1px solid var(--tnl-border); border-radius: 0; padding-inline: 0; }
 .editorial-contact a[href="/privacy"] { color: var(--tnl-link); }
-.editorial-contact [data-testid="contact-submit-button"], .editorial-contact [data-testid="send-another-message-button"], .editorial-contact [data-testid="map-get-directions"] { border-radius: 2px; background: var(--tnl-green); color: #fff; box-shadow: none; min-height: 48px; }
+.editorial-contact [data-testid="contact-submit-button"], .editorial-contact [data-testid="send-another-message-button"], .editorial-contact [data-testid="map-get-directions"] { border-radius: 2px; background: var(--primary); color: var(--primary-foreground); box-shadow: none; min-height: 48px; }
 .editorial-contact [data-testid="contact-submit-button"]:disabled { opacity: .6; cursor: wait; }
 .editorial-contact [data-testid="contact-form-success"] { border-radius: 0; background: transparent; text-align: left; padding-inline: 0; }
 .editorial-contact [data-testid="contact-map-section"] { padding-top: 1rem; border-top: 1px solid var(--tnl-border); }

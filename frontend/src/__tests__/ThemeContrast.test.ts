@@ -10,6 +10,18 @@ describe("Semantic interactive text palette",()=>{
   const ratio=(Math.max(lum(token!),lum(bg))+.05)/(Math.min(lum(token!),lum(bg))+.05);
   expect(ratio).toBeGreaterThanOrEqual(4.5);
  });
+ it("keeps inverse hero headings readable inside editorial CMS pages",()=>{
+  const hero=readFileSync("src/components/site/signal-editorial.css","utf8");
+  expect(hero).toMatch(/\.signal-hero h1,\s*\.editorial-content \.signal-hero h1\s*\{\s*color:\s*#F1F3EE/i);
+ });
+ it("pairs configurable contact control backgrounds with semantic foregrounds",()=>{
+  const content=readFileSync("src/pages/editorial-content.css","utf8");
+  for(const selector of ['[aria-pressed="true"]','[data-testid="map-get-directions"]']){
+   const rule=content.slice(content.indexOf(selector)).split("}")[0];
+   expect(rule).toContain("background: var(--primary)");
+   expect(rule).toContain("color: var(--primary-foreground)");
+  }
+ });
  it("keeps outline hover text independent from background fill",()=>{
   expect(css).toMatch(/\.tnl-btn-outline:hover[^}]*color:\s*var\(--tnl-link\)/);
  });
