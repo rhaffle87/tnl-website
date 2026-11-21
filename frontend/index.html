@@ -2,9 +2,9 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=5" id="tnl-favicon" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=5" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=5" />
+    <link id="tnl-favicon-svg" rel="icon" type="image/svg+xml" href="/favicon-dark.svg?v=5" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon-white.svg?v=5" media="(prefers-color-scheme: dark)" />
+    <link rel="alternate icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=5" />
     <link rel="shortcut icon" href="/favicon.ico?v=5" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=5" />
     <link rel="manifest" href="/site.webmanifest" />
@@ -14,9 +14,45 @@
     <script>
       (function() {
         try {
+          // --- Auto-Adaptive Favicon synced strictly with browser/OS prefers-color-scheme ---
+          var darkMql = window.matchMedia("(prefers-color-scheme: dark)");
+          function syncAdaptiveFavicon(isDark) {
+            var targetHref = isDark ? "/favicon-white.svg?v=5" : "/favicon-dark.svg?v=5";
+            var dynamicFavicon = document.querySelector('link[data-dynamic-favicon="true"]');
+            if (!dynamicFavicon) {
+              // Deactivate static conflicting svg links in DOM so dynamicFavicon is authoritative
+              var staticSvgLinks = document.querySelectorAll('link[rel="icon"][type="image/svg+xml"]:not([data-dynamic-favicon="true"])');
+              for (var i = 0; i < staticSvgLinks.length; i++) {
+                staticSvgLinks[i].setAttribute("data-inactive-favicon", "true");
+                staticSvgLinks[i].removeAttribute("rel");
+              }
+
+              dynamicFavicon = document.createElement("link");
+              dynamicFavicon.setAttribute("rel", "icon");
+              dynamicFavicon.setAttribute("type", "image/svg+xml");
+              dynamicFavicon.setAttribute("data-dynamic-favicon", "true");
+              document.head.appendChild(dynamicFavicon);
+            }
+            if (dynamicFavicon.getAttribute("href") !== targetHref) {
+              dynamicFavicon.setAttribute("href", targetHref);
+            }
+          }
+
+          syncAdaptiveFavicon(darkMql.matches);
+
+          if (darkMql.addEventListener) {
+            darkMql.addEventListener("change", function(e) {
+              syncAdaptiveFavicon(e.matches);
+            });
+          } else if (darkMql.addListener) {
+            darkMql.addListener(function(e) {
+              syncAdaptiveFavicon(e.matches);
+            });
+          }
+
+          // --- In-Page Theme & GSM Tokens initialization ---
           var stored = localStorage.getItem("tnl-theme");
-          var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-          var isDark = stored === "dark" || (!stored && prefersDark);
+          var isDark = stored === "dark" || (!stored && darkMql.matches);
 
           if (isDark) {
             document.documentElement.classList.add("dark");
