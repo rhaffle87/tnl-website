@@ -833,7 +833,7 @@ async def seed_members() -> None:
         social = MemberSocial(instagram=f"https://instagram.com/{ig.lstrip('@')}") if ig else MemberSocial()
         members.append(Member(
             name=name, role="assistant", position=position, division=division,
-            batch=batch, nim=nrp, show_nim=True, email_public=email,
+            batch=batch, nim=nrp, show_nim=False, email_public=email,
             social=social,
             bio=f"{label} ({division}) of the Telecommunication Network Laboratory assistant team.",
             bio_id=f"{label} ({division}) tim asisten Laboratorium Jaringan Telekomunikasi.",

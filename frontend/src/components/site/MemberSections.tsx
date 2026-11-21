@@ -227,22 +227,55 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
                         {member.projects.length} {locale === "id" ? "Proyek Riset" : "Projects"}
                     </span>
                 ) : null}
-                {member.social?.linkedin ? (
-                    <div className="mt-2">
-                        <a
-                            href={member.social.linkedin}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-xs font-medium text-[#0A66C2] hover:underline"
-                            aria-label={`${member.name} LinkedIn`}
-                            data-testid={`member-card-linkedin-${member.id}`}
-                        >
-                            <Linkedin className="h-3 w-3 shrink-0" aria-hidden="true" />
-                            <span>LinkedIn</span>
-                        </a>
-                    </div>
-                ) : null}
+                {(() => {
+                    const ig = formatInstagram(member.social?.instagram);
+                    const hasContacts = Boolean(member.email_public || member.social?.linkedin || ig);
+                    if (!hasContacts) return null;
+                    return (
+                        <div className="mt-2.5 flex items-center gap-3">
+                            {member.email_public ? (
+                                <a
+                                    href={`mailto:${member.email_public}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1 text-xs font-medium text-[var(--tnl-tan-text)] transition-colors hover:text-[var(--tnl-green)]"
+                                    aria-label={`Email ${member.name}`}
+                                    title={`Email ${member.name}`}
+                                    data-testid={`member-card-email-${member.id}`}
+                                >
+                                    <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                </a>
+                            ) : null}
+                            {member.social?.linkedin ? (
+                                <a
+                                    href={member.social.linkedin}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1 text-xs font-medium text-[var(--tnl-tan-text)] transition-colors hover:text-[#0A66C2]"
+                                    aria-label={`${member.name} LinkedIn`}
+                                    title={`${member.name} LinkedIn`}
+                                    data-testid={`member-card-linkedin-${member.id}`}
+                                >
+                                    <Linkedin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                </a>
+                            ) : null}
+                            {ig ? (
+                                <a
+                                    href={ig.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1 text-xs font-medium text-[var(--tnl-tan-text)] transition-colors hover:text-pink-600"
+                                    aria-label={`${member.name} Instagram`}
+                                    title={`${member.name} Instagram`}
+                                    data-testid={`member-card-instagram-${member.id}`}
+                                >
+                                    <Instagram className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                </a>
+                            ) : null}
+                        </div>
+                    );
+                })()}
                 <span className="mt-3 text-xs font-semibold" style={{ color: "var(--tnl-green)" }}>
                     {t("view_profile")} →
                 </span>

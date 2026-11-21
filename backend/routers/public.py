@@ -112,18 +112,14 @@ async def public_members(status: str | None = None, batch: str | None = None):
         q["status"] = status
     if batch:
         q["batch"] = batch
-    docs = await db.members.find(q, {"nim": 0, "email_personal": 0, "phone": 0}).sort(
+    docs = await db.members.find(q, {"email_personal": 0, "phone": 0}).sort(
         [("order", 1), ("created_at", 1)]).to_list(1000)
-    # Per-person privacy opt-ins: private fields render only when the admin enabled them.
+    # Per-person privacy opt-ins: private fields render only when explicitly opted-in.
     out = []
     for m in docs:
-        if m.get("show_nim") and m.get("nim"):
-            m["nim"] = m["nim"]
-        else:
+        if not m.get("show_nim"):
             m.pop("nim", None)
-        if m.get("show_personal_email") and m.get("email_personal"):
-            pass
-        else:
+        if not m.get("show_personal_email"):
             m.pop("email_personal", None)
         out.append(m)
     return jsonable(out)

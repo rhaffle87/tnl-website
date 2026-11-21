@@ -46,8 +46,12 @@ vi.mock("@/lib/hooks", async (importOriginal) => {
           batch: "2023",
           division: "Academics",
           position: "coordinator",
+          email_public: "fadhil@labtnl.site",
+          show_nim: false,
+          nim: "5024201001",
           social: {
             linkedin: "https://linkedin.com/in/fadhil-muhammad",
+            instagram: "@fadhil_m",
           },
           order: 3,
         },
@@ -106,16 +110,37 @@ describe("MemberSections Component", () => {
     expect(screen.getByText(/5G Open RAN Testbed Deployment/i)).toBeInTheDocument();
   });
 
-  it("assistant card LinkedIn link clicks stop propagation to prevent opening modal", () => {
+  it("assistant card contact links (email, linkedin, instagram) render and stop propagation", () => {
     renderWithProviders(<MemberSections />);
 
+    const emailLink = screen.getByTestId("member-card-email-asst-active-1");
     const linkedinLink = screen.getByTestId("member-card-linkedin-asst-active-1");
+    const igLink = screen.getByTestId("member-card-instagram-asst-active-1");
+
+    expect(emailLink).toBeInTheDocument();
     expect(linkedinLink).toBeInTheDocument();
+    expect(igLink).toBeInTheDocument();
 
-    // Simulate click on LinkedIn link
-    fireEvent.click(linkedinLink);
-
-    // Modal should NOT have opened
+    // Click contact links; modal should NOT open
+    fireEvent.click(emailLink);
     expect(screen.queryByTestId("member-detail-modal")).toBeNull();
+
+    fireEvent.click(linkedinLink);
+    expect(screen.queryByTestId("member-detail-modal")).toBeNull();
+
+    fireEvent.click(igLink);
+    expect(screen.queryByTestId("member-detail-modal")).toBeNull();
+  });
+
+  it("does not expose NIM/NRP when show_nim is false in modal", async () => {
+    renderWithProviders(<MemberSections />);
+
+    const assistantCard = screen.getByTestId("assistant-card-asst-active-1");
+    fireEvent.click(assistantCard);
+
+    const modal = await screen.findByTestId("member-detail-modal");
+    expect(modal).toBeInTheDocument();
+    expect(screen.queryByText(/5024201001/)).toBeNull();
+    expect(screen.queryByText(/NRP/)).toBeNull();
   });
 });
