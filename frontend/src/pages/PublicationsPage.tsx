@@ -6,12 +6,13 @@ import { ExternalLink, FileText, Users } from "lucide-react";
 import { usePublications } from "@/lib/hooks";
 import { useLocale } from "@/lib/i18n";
 import { EmptyState, SectionHeading, Spinner } from "@/components/site/Primitives";
-import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
+
 import { usePage } from "@/lib/hooks";
 import { BlockRenderer } from "@/components/site/Blocks";
+import "./editorial-content.css";
 
 export default function PublicationsPage() {
-    const { t } = useLocale();
+    const { t, locale } = useLocale();
     const { data: page } = usePage("publications");
     const { data: publications, isLoading } = usePublications();
     const [year, setYear] = useState<string>("");
@@ -33,10 +34,10 @@ export default function PublicationsPage() {
     const typeAllLabel = `${t("category")}: ${t("all_categories")}`;
 
     return (
-        <div data-testid="publications-page">
+        <div className="editorial-content editorial-publications" data-testid="publications-page">
             <BlockRenderer blocks={heroBlocks} />
             <section className="tnl-section" style={{ background: "var(--tnl-surface)" }}>
-                <div className="tnl-container">
+                <div className="tnl-container editorial-bibliography-layout">
                     <SectionHeading
                         title={t("nav_publications")}
                         count={filtered.length}
@@ -45,7 +46,7 @@ export default function PublicationsPage() {
                     />
 
                     {list.length ? (
-                        <div className="mb-6 flex flex-wrap gap-3">
+                        <div className="editorial-publication-filters" role="group" aria-label={locale === "id" ? "Filter publikasi" : "Publication filters"}>
                             <select
                                 value={year}
                                 onChange={(e) => setYear(e.target.value)}
@@ -87,12 +88,11 @@ export default function PublicationsPage() {
                             icon={<FileText className="h-7 w-7" style={{ color: "var(--tnl-tan-text)" }} />}
                         />
                     ) : (
-                        <div className="space-y-4">
+                        <ol className="editorial-bibliography" aria-label={t("nav_publications")}>
                             {filtered.map((pub) => (
+                                <li key={pub.id}>
                                 <article
-                                    key={pub.id}
-                                    className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal p-6"
-                                    onPointerMove={handleSpotlightPointerMove}
+                                    className="editorial-publication"
                                     data-testid={`publication-${pub.id}`}
                                 >
                                     <div className="flex flex-wrap items-center gap-2">
@@ -112,14 +112,13 @@ export default function PublicationsPage() {
                                     {pub.linked_members && pub.linked_members.length > 0 ? (
                                         <div className="mt-2.5 flex flex-wrap items-center gap-1.5" data-testid={`publication-linked-members-${pub.id}`}>
                                             <span className="text-xs font-semibold" style={{ color: "var(--tnl-tan-text)" }}>
-                                                TNL Team:
+                                                {locale === "id" ? "Tim TNL:" : "TNL Team:"}
                                             </span>
                                             {pub.linked_members.map((m) => (
                                                 <Link
                                                     key={m.id}
                                                     to={`/member?highlight=${m.id}`}
-                                                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors hover:bg-[var(--tnl-green)] hover:text-white"
-                                                    style={{ background: "rgba(67, 89, 74, 0.1)", color: "var(--tnl-green)" }}
+                                                    className="editorial-author-link"
                                                     data-testid={`pub-author-link-${pub.id}-${m.id}`}
                                                 >
                                                     <Users className="h-3 w-3" />
@@ -138,11 +137,11 @@ export default function PublicationsPage() {
                                     ) : null}
                                     {pub.url || pub.doi ? (
                                         <a
-                                            href={pub.url ?? `https://doi.org/${pub.doi}`}
+                                            href={pub.url || `https://doi.org/${pub.doi}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="mt-4 inline-flex items-center gap-2 text-sm font-semibold"
-                                            style={{ color: "var(--tnl-green)" }}
+                                            style={{ color: "var(--tnl-link)" }}
                                             data-testid={`publication-link-${pub.id}`}
                                         >
                                             {pub.doi ? `DOI ${pub.doi}` : t("read_more")}
@@ -150,8 +149,9 @@ export default function PublicationsPage() {
                                         </a>
                                     ) : null}
                                 </article>
+                                </li>
                             ))}
-                        </div>
+                        </ol>
                     )}
                 </div>
             </section>

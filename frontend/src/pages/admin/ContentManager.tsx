@@ -96,6 +96,7 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             { key: "poster_urls", label: "Poster links", type: "tags", help: "Separate with commas; several posters become a carousel." },
             { key: "gallery_images", label: "Gallery image links", type: "tags", help: "Separate with commas; carousel images for event & open house." },
             { key: "spreadsheet_webhook_url", label: "Google Spreadsheet Webhook URL", type: "text", help: "Google Apps Script Web App URL to auto-sync registrations." },
+            { key: "whatsapp_group_url", label: "Link Grup WhatsApp Pasca-Registrasi", type: "text", help: "Tautan undangan grup WhatsApp resmi (https://chat.whatsapp.com/...) yang hanya muncul di layar sukses dan email setelah pendaftaran berhasil." },
             { key: "start_date", label: "Starts on", type: "date" },
             { key: "end_date", label: "Ends on", type: "date" },
             { key: "reg_open_date", label: "Registration opens", type: "date" },

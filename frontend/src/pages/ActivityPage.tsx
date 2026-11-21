@@ -4,6 +4,7 @@
 // registration button that disables itself after the close date.
 
 import { useEffect, useMemo, useState } from "react";
+import "@/pages/activity-editorial.css";
 import { Link, useSearchParams } from "react-router-dom";
 import { m } from "motion/react";
 import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
@@ -32,7 +33,7 @@ import {
 import { useActivities, useEquipment, useEvents, usePage, usePracticum, useProjects } from "@/lib/hooks";
 import { pick, useLocale } from "@/lib/i18n";
 import { BlockRenderer } from "@/components/site/Blocks";
-import { EmptyState, SectionHeading, Spinner, StatusBadge, TypeBadge, formatDate } from "@/components/site/Primitives";
+import { EmptyState, SectionHeading, Spinner, formatDate } from "@/components/site/Primitives";
 import { RegistrationDialog } from "@/components/site/RegistrationDialog";
 import { FadeCarousel, ImageLightboxModal, type CarouselImage } from "@/components/site/MediaCarousel";
 import type { Activity, Equipment, LabEvent, PracticumModule, Project } from "@/lib/types";
@@ -54,11 +55,6 @@ function normalizeTab(raw: string | null): TabKey {
     return "rd";
 }
 
-const CATEGORY_CHIP: Record<string, { bg: string; fg: string }> = {
-    social: { bg: "#a8977b", fg: "#111518" },
-    internal: { bg: "#43594A", fg: "#ffffff" },
-    academic: { bg: "#7f715c", fg: "#ffffff" },
-};
 
 function waLink(phone: string): string {
     const digits = phone.replace(/\D/g, "");
@@ -67,7 +63,9 @@ function waLink(phone: string): string {
 }
 
 // ---------------------------------------------------------------- event card
-function EventCard({ event }: { event: LabEvent }) {
+export function EventCard({ event, detail = false }: { event: LabEvent; detail?: boolean }) {
+    const eventKey = event.slug || event.id;
+    const Heading = detail ? "h1" : "h3";
     const { locale, t } = useLocale();
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const [registerOpen, setRegisterOpen] = useState(false);
@@ -128,20 +126,15 @@ function EventCard({ event }: { event: LabEvent }) {
 
     return (
         <article
-            className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal overflow-hidden p-0"
+            className="activity-record"
             onPointerMove={handleSpotlightPointerMove}
-            data-testid={`event-card-${event.slug}`}
+            data-testid={`event-card-${eventKey}`}
         >
-            <div className="tnl-hero-gradient flex flex-wrap items-center gap-3 px-6 py-4">
-                <TypeBadge label={eventTypeLabel} testId={`event-type-badge-${event.slug}`} />
-                <StatusBadge status={status} label={statusLabel} testId={`event-status-badge-${event.slug}`} />
-                {event.slug === "open-house-tnl" ? (
-                    <span className="rounded-full bg-[#A8977B] px-3 py-1 text-xs font-black tracking-wide text-[#111613]">
-                        FEATURED 2026
-                    </span>
-                ) : null}
+            <div className="activity-record-header">
+                <span className="activity-category" data-testid={`event-type-badge-${eventKey}`}>{eventTypeLabel}</span>
+                <span className="activity-category" data-status={status} data-testid={`event-status-badge-${eventKey}`}>{statusLabel}</span>
                 {typeof event.seats_left === "number" ? (
-                    <span className="ml-auto text-xs font-semibold" style={{ color: "var(--tnl-tan)" }} data-testid={`event-seats-${event.slug}`}>
+                    <span className="ml-auto text-xs font-semibold" style={{ color: "var(--tnl-tan-text)" }} data-testid={`event-seats-${eventKey}`}>
                         {event.seats_left} {t("seats_left")}
                     </span>
                 ) : null}
@@ -167,17 +160,17 @@ function EventCard({ event }: { event: LabEvent }) {
                         </>
                     ) : (
                         <div className="flex h-full items-center justify-center p-8" aria-hidden="true">
-                            <GraduationCap className="h-12 w-12" style={{ color: "var(--tnl-tan)" }} />
+                            <GraduationCap className="h-12 w-12" style={{ color: "var(--tnl-tan-text)" }} />
                         </div>
                     )}
                 </div>
 
                 <div className="p-6 sm:p-8">
-                    <h3 className="tnl-h4 text-[21px] sm:text-[25px]" data-testid={`event-title-${event.slug}`}>
+                    <Heading className={detail ? "event-detail-title" : "tnl-h4 text-[21px] sm:text-[25px]"} data-testid={`event-title-${eventKey}`}>
                         {pick(locale, event.title, event.title_id)}
-                    </h3>
+                    </Heading>
                     <p
-                        className="mt-3 border-l-2 pl-4 text-sm leading-relaxed text-[var(--tnl-body)]"
+                        className="mt-3 whitespace-pre-line text-sm leading-relaxed text-[var(--tnl-body)]"
                         style={{ borderColor: "var(--tnl-tan)" }}
                     >
                         {pick(locale, event.description, event.description_id)}
@@ -189,7 +182,7 @@ function EventCard({ event }: { event: LabEvent }) {
                                 <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
                                 {t("date")}
                             </div>
-                            <div className="mt-1 text-sm font-medium" data-testid={`event-date-${event.slug}`}>
+                            <div className="mt-1 text-sm font-medium" data-testid={`event-date-${eventKey}`}>
                                 {formatDate(event.start_date, locale)}
                                 {event.end_date && event.end_date !== event.start_date ? ` – ${formatDate(event.end_date, locale)}` : ""}
                             </div>
@@ -210,8 +203,8 @@ function EventCard({ event }: { event: LabEvent }) {
                             </h4>
                             <ol className="space-y-2">
                                 {event.modules.map((m, i) => (
-                                    <li key={i} className="flex gap-3 text-sm" data-testid={`event-module-${event.slug}-${i}`}>
-                                        <span className="font-bold" style={{ color: "var(--tnl-tan)" }}>
+                                    <li key={i} className="flex gap-3 text-sm" data-testid={`event-module-${eventKey}-${i}`}>
+                                        <span className="font-bold" style={{ color: "var(--tnl-tan-text)" }}>
                                             {String(i + 1).padStart(2, "0")}
                                         </span>
                                         <span>
@@ -244,9 +237,9 @@ function EventCard({ event }: { event: LabEvent }) {
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors hover:border-[var(--tnl-green)]"
                                         style={{ borderColor: "var(--tnl-border)" }}
-                                        data-testid={`event-contact-${event.slug}-${i}`}
+                                        data-testid={`event-contact-${eventKey}-${i}`}
                                     >
-                                        <MessageCircle className="h-3.5 w-3.5" style={{ color: "var(--tnl-green)" }} aria-hidden="true" />
+                                        <MessageCircle className="h-3.5 w-3.5" style={{ color: "var(--tnl-link)" }} aria-hidden="true" />
                                         {c.name}
                                     </a>
                                 ) : (
@@ -254,10 +247,10 @@ function EventCard({ event }: { event: LabEvent }) {
                                         key={i}
                                         className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium"
                                         style={{ borderColor: "var(--tnl-border)" }}
-                                        data-testid={`event-contact-${event.slug}-${i}`}
+                                        data-testid={`event-contact-${eventKey}-${i}`}
                                     >
                                         {c.name}
-                                        {c.email ? ` · ${c.email}` : ""}
+                                        {c.email ? <> · <a className="activity-detail-link" href={`mailto:${c.email}`}>{c.email}</a></> : null}
                                     </span>
                                 ),
                             )}
@@ -265,6 +258,9 @@ function EventCard({ event }: { event: LabEvent }) {
                     ) : null}
 
                     <div className="mt-6 flex flex-wrap items-center gap-3">
+                        {!detail ? <Link to={`/activity/events/${encodeURIComponent(eventKey)}`} className="activity-detail-link" data-testid={`event-detail-link-${eventKey}`}>
+                            {locale === "id" ? "Detail acara" : "Event details"}: {pick(locale, event.title, event.title_id)} →
+                        </Link> : null}
                         {event.slug === "open-house-tnl" ? (
                             <Link
                                 to="/open-house"
@@ -280,12 +276,12 @@ function EventCard({ event }: { event: LabEvent }) {
                             onClick={() => setRegisterOpen(true)}
                             disabled={!canRegister}
                             className="tnl-btn tnl-btn-primary w-full sm:w-auto"
-                            data-testid={`event-register-button-${event.slug}`}
+                            data-testid={`event-register-button-${eventKey}`}
                         >
                             {status === "full" ? t("reg_full") : t("register_now")}
                         </button>
                         {note && !canRegister ? (
-                            <p className="mt-2 text-sm" style={{ color: "var(--tnl-tan-text)" }} data-testid={`event-reg-note-${event.slug}`}>
+                            <p className="mt-2 text-sm" style={{ color: "var(--tnl-tan-text)" }} data-testid={`event-reg-note-${eventKey}`}>
                                 {note}
                             </p>
                         ) : null}
@@ -311,7 +307,7 @@ function EventCard({ event }: { event: LabEvent }) {
                                 alt={doc.alt}
                                 className="h-28 w-full rounded-[10px] object-cover"
                                 loading="lazy"
-                                data-testid={`event-doc-${event.slug}-${i}`}
+                                data-testid={`event-doc-${eventKey}-${i}`}
                             />
                         ))}
                     </div>
@@ -327,7 +323,6 @@ function EventCard({ event }: { event: LabEvent }) {
 function ActivityRow({ activity, index }: { activity: Activity; index: number }) {
     const { locale, t } = useLocale();
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-    const chip = CATEGORY_CHIP[activity.category] ?? CATEGORY_CHIP.internal;
     const flip = index % 2 === 1;
 
     const activityImages: CarouselImage[] = useMemo(() => {
@@ -353,19 +348,10 @@ function ActivityRow({ activity, index }: { activity: Activity; index: number })
             className="relative grid items-center gap-8 py-10 lg:grid-cols-2"
             data-testid={`activity-row-${activity.id}`}
         >
-            <span
-                className="pointer-events-none absolute -top-2 select-none text-[120px] font-bold leading-none opacity-[0.07] lg:text-[160px]"
-                style={{ color: "var(--tnl-tan)", [flip ? "right" : "left"]: 0 } as React.CSSProperties}
-                aria-hidden="true"
-            >
-                {String(index + 1).padStart(2, "0")}
-            </span>
-
             <div className={flip ? "lg:order-2" : ""}>
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                     <span
-                        className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold capitalize"
-                        style={{ background: chip.bg, color: chip.fg }}
+                        className="activity-category capitalize"
                         data-testid={`activity-category-${activity.id}`}
                     >
                         {activity.category}
@@ -401,8 +387,8 @@ function ActivityRow({ activity, index }: { activity: Activity; index: number })
                             ) : null}
                         </>
                     ) : (
-                        <div className="tnl-hero-gradient flex h-64 items-center justify-center" aria-hidden="true">
-                            <Sparkles className="h-10 w-10" style={{ color: "var(--tnl-tan)" }} />
+                        <div className="activity-placeholder flex h-64 items-center justify-center" aria-hidden="true">
+                            <Sparkles className="h-10 w-10" style={{ color: "var(--tnl-tan-text)" }} />
                         </div>
                     )}
                 </div>
@@ -417,7 +403,7 @@ function ProjectCard({ project }: { project: Project }) {
     const { locale, t } = useLocale();
     return (
         <article
-            className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal p-6"
+            className="project-record"
             onPointerMove={handleSpotlightPointerMove}
             data-testid={`project-card-${project.id}`}
         >
@@ -464,22 +450,17 @@ function formatBytes(bytes?: number | null): string {
 
 function ResourceIcon({ type }: { type?: string }) {
     const t = (type || "").toLowerCase();
-    if (t === "pdf") return <FileText className="h-4 w-4 shrink-0" style={{ color: "#ef4444" }} />;
+    if (t === "pdf") return <FileText className="h-4 w-4 shrink-0" style={{ color: "var(--tnl-link)" }} />;
     if (t === "pkt") return <Layers className="h-4 w-4 shrink-0" style={{ color: "#0284c7" }} />;
     if (t === "py" || t === "txt" || t === "json") return <FileCode className="h-4 w-4 shrink-0" style={{ color: "#10b981" }} />;
-    return <Download className="h-4 w-4 shrink-0" style={{ color: "#f59e0b" }} />;
+    return <Download className="h-4 w-4 shrink-0" style={{ color: "var(--tnl-link)" }} />;
 }
 
-const EQUIP_STATUS_STYLE: Record<string, { bg: string; fg: string }> = {
-    available: { bg: "rgba(34, 197, 94, 0.15)", fg: "#16a34a" },
-    in_use: { bg: "rgba(245, 158, 11, 0.15)", fg: "#d97706" },
-    maintenance: { bg: "rgba(239, 68, 68, 0.15)", fg: "#dc2626" },
-};
 
 function EquipmentCard({ item }: { item: Equipment }) {
     const { locale, t } = useLocale();
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-    const stStyle = EQUIP_STATUS_STYLE[item.status] || EQUIP_STATUS_STYLE.available;
+
     const statusLabel =
         item.status === "available"
             ? t("status_available")
@@ -515,7 +496,7 @@ function EquipmentCard({ item }: { item: Equipment }) {
 
     return (
         <article
-            className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal flex flex-col justify-between overflow-hidden p-6"
+            className="equipment-record flex flex-col justify-between overflow-hidden p-6"
             onPointerMove={handleSpotlightPointerMove}
             data-testid={`equipment-card-${item.id}`}
         >
@@ -524,10 +505,10 @@ function EquipmentCard({ item }: { item: Equipment }) {
                     <span className="tnl-count-chip text-xs uppercase tracking-wider">{categoryLabel}</span>
                     <span
                         className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                        style={{ background: stStyle.bg, color: stStyle.fg }}
+                        style={{ background: "var(--muted)", color: "var(--foreground)" }}
                         data-testid={`equipment-status-${item.id}`}
                     >
-                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: stStyle.fg }} />
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: "currentColor" }} />
                         {statusLabel}
                     </span>
                 </div>
@@ -605,14 +586,13 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
 
     return (
         <article
-            className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal border-l-4 p-6 flex flex-col justify-between"
+            className="practicum-record flex flex-col justify-between"
             onPointerMove={handleSpotlightPointerMove}
-            style={{ borderLeftColor: "var(--tnl-tan)" }}
             data-testid={`practicum-card-${mod.id}`}
         >
             <div>
                 <div className="flex items-baseline justify-between gap-2">
-                    <span className="block text-[32px] font-bold leading-none" style={{ color: "var(--tnl-tan)" }}>
+                    <span className="block text-[32px] font-bold leading-none" style={{ color: "var(--tnl-tan-text)" }}>
                         {String(index + 1).padStart(2, "0")}
                     </span>
                     {mod.code ? (
@@ -697,10 +677,10 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
                                 <tbody className="divide-y" style={{ borderColor: "var(--tnl-border)" }}>
                                     {shifts.map((sh, idx) => (
                                         <tr key={sh.id || idx}>
-                                            <td className="py-2 pr-2 font-semibold" style={{ color: "var(--tnl-green)" }}>{sh.day}</td>
+                                            <td className="py-2 pr-2 font-semibold" style={{ color: "var(--tnl-link)" }}>{sh.day}</td>
                                             <td className="py-2 px-2 whitespace-nowrap">{sh.time_slot}</td>
                                             <td className="py-2 px-2">{sh.coordinator_name}</td>
-                                            <td className="py-2 pl-2 whitespace-nowrap" style={{ color: "var(--tnl-body)" }}>{sh.room || "B-301"}</td>
+                                            <td className="py-2 pl-2 whitespace-nowrap" style={{ color: "var(--tnl-body)" }}>{sh.room || "—"}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -728,11 +708,11 @@ export default function ActivityPage() {
 
     const selectTab = (key: TabKey) => {
         setTab(key);
-        setParams({ tab: key }, { replace: true });
+        setParams((previous) => { const next = new URLSearchParams(previous); next.set("tab", key); return next; }, { replace: true });
     };
 
     const { data: page } = usePage("activity");
-    const heroBlocks = (page?.blocks ?? []).filter((b) => b.type === "inner_hero");
+    const pageBlocks = page?.blocks ?? [];
 
     const { data: projects, isLoading: projectsLoading } = useProjects();
     const { data: practicum, isLoading: practicumLoading } = usePracticum();
@@ -759,20 +739,37 @@ export default function ActivityPage() {
     }, [equipment, equipCat]);
 
     return (
-        <div data-testid="activity-page">
-            <BlockRenderer blocks={heroBlocks} />
+        <div className="activity-editorial" data-testid="activity-page">
+            {pageBlocks.length ? <BlockRenderer blocks={pageBlocks} /> : (
+                <header className="tnl-container activity-masthead">
+                    <p className="activity-kicker">TNL / {t("nav_activity")}</p>
+                    <h1>{t("nav_activity")}</h1>
+                    <p>{t("events_subtitle")}</p>
+                </header>
+            )}
 
-            <div className="border-b" style={{ background: "var(--background)", borderColor: "var(--tnl-border)" }}>
+            <div className="activity-tabbar" style={{ background: "var(--background)", borderColor: "var(--tnl-border)" }}>
                 <div className="tnl-container flex gap-1 overflow-x-auto tnl-scroll-x" role="tablist" aria-label={t("nav_activity")}>
                     {TABS.map((item) => (
                         <button
                             key={item.key}
                             type="button"
                             role="tab"
+                            id={`activity-tab-${item.key}`}
+                            aria-controls={`activity-panel-${item.key}`}
+                            tabIndex={tab === item.key ? 0 : -1}
+                            onKeyDown={(event) => {
+                                const index = TABS.findIndex((entry) => entry.key === item.key);
+                                const next = event.key === "ArrowRight" ? (index + 1) % TABS.length : event.key === "ArrowLeft" ? (index + TABS.length - 1) % TABS.length : event.key === "Home" ? 0 : event.key === "End" ? TABS.length - 1 : null;
+                                if (next === null) return;
+                                event.preventDefault();
+                                selectTab(TABS[next].key);
+                                document.getElementById(`activity-tab-${TABS[next].key}`)?.focus();
+                            }}
                             aria-selected={tab === item.key}
                             onClick={() => selectTab(item.key)}
                             className="relative shrink-0 px-5 py-4 text-sm font-medium transition-colors"
-                            style={tab === item.key ? { color: "var(--tnl-green)" } : undefined}
+                            style={tab === item.key ? { color: "var(--foreground)" } : undefined}
                             data-testid={`activity-tab-${item.key}`}
                         >
                             {t(item.labelKey)}
@@ -780,7 +777,7 @@ export default function ActivityPage() {
                                 <m.span
                                     layoutId="activity-active-tab-indicator"
                                     className="absolute inset-x-3 bottom-0 h-[3px] rounded-t-full"
-                                    style={{ background: "var(--tnl-green)" }}
+                                    style={{ background: "var(--tnl-link)" }}
                                     transition={{ type: "spring", stiffness: 420, damping: 34 }}
                                 />
                             ) : null}
@@ -792,7 +789,7 @@ export default function ActivityPage() {
             <section className="tnl-section" style={{ background: "var(--tnl-surface)" }}>
                 <div className="tnl-container">
                     {tab === "rd" ? (
-                        <div data-testid="activity-panel-rd">
+                        <div role="tabpanel" id="activity-panel-rd" aria-labelledby="activity-tab-rd" tabIndex={0} data-testid="activity-panel-rd">
                             <SectionHeading
                                 title={t("research_clusters")}
                                 count={clusters.length}
@@ -847,7 +844,7 @@ export default function ActivityPage() {
                                             className="rounded-full px-4 py-1.5 text-xs font-semibold transition-all border"
                                             style={
                                                 equipCat === cat.key
-                                                    ? { background: "var(--tnl-green)", color: "#ffffff", borderColor: "var(--tnl-green)" }
+                                                    ? { background: "var(--primary)", color: "var(--primary-foreground)", borderColor: "var(--primary)" }
                                                     : { background: "var(--background)", color: "var(--tnl-body)", borderColor: "var(--tnl-border)" }
                                             }
                                             data-testid={`equipment-cat-filter-${cat.key}`}
@@ -882,7 +879,7 @@ export default function ActivityPage() {
                     ) : null}
 
                     {tab === "practicum" ? (
-                        <div data-testid="activity-panel-practicum">
+                        <div role="tabpanel" id="activity-panel-practicum" aria-labelledby="activity-tab-practicum" tabIndex={0} data-testid="activity-panel-practicum">
                             <SectionHeading
                                 title={t("practicum_modules")}
                                 count={(practicum ?? []).length}
@@ -904,7 +901,7 @@ export default function ActivityPage() {
                     ) : null}
 
                     {tab === "events" ? (
-                        <div data-testid="activity-panel-events">
+                        <div role="tabpanel" id="activity-panel-events" aria-labelledby="activity-tab-events" tabIndex={0} data-testid="activity-panel-events">
                             <SectionHeading
                                 title={t("events_heading")}
                                 count={(events ?? []).length}
@@ -934,7 +931,7 @@ export default function ActivityPage() {
                     ) : null}
 
                     {tab === "assistant" ? (
-                        <div data-testid="activity-panel-assistant">
+                        <div role="tabpanel" id="activity-panel-assistant" aria-labelledby="activity-tab-assistant" tabIndex={0} data-testid="activity-panel-assistant">
                             <SectionHeading
                                 title={t("nav_assistant")}
                                 count={(activities ?? []).length}

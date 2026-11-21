@@ -2,8 +2,16 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 
+// Node's experimental Web Storage can shadow jsdom's origin-scoped storage.
+// Use the browser implementation explicitly so tests exercise production semantics.
+Object.defineProperty(globalThis, "localStorage", { configurable: true, value: window.localStorage });
+Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: window.sessionStorage });
+
 afterEach(() => {
   cleanup();
+  window.localStorage.clear();
+  window.sessionStorage.clear();
+  document.documentElement.classList.remove("dark");
 });
 
 // Mock window.matchMedia

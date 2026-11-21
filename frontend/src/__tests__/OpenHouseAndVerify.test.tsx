@@ -80,4 +80,93 @@ describe("OpenHouse & Certificate Verification", () => {
       expect(screen.getByText(/TNL-2026-TRA-ABCDEF/i)).toBeInTheDocument();
     });
   });
+
+  it("OpenHousePage renders WhatsApp invite card after registration when url returned", async () => {
+    const hooks = await import("@/lib/hooks");
+    vi.mocked(hooks.useSubmitRegistration).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue({
+        ok: true,
+        whatsapp_group_url: "https://chat.whatsapp.com/EXAMPLE_TEST_GROUP",
+      }),
+      isPending: false,
+    } as any);
+
+    renderWithProviders(<OpenHousePage />, { route: "/open-house" });
+
+    fireEvent.change(screen.getByLabelText(/Nama Lengkap/i), { target: { value: "Peserta Uji" } });
+    fireEvent.change(screen.getByPlaceholderText(/5022201045/i), { target: { value: "5024201001" } });
+    fireEvent.change(screen.getByLabelText(/Mengapa kamu tertarik/i), {
+      target: { value: "Tertarik belajar infrastruktur jaringan telekomunikasi dan cloud native." },
+    });
+
+    // Mock file input
+    const file = new File(["dummy png"], "follow.png", { type: "image/png" });
+    const fileInput = screen.getByLabelText(/Bukti Follow Instagram/i);
+    Object.defineProperty(fileInput, "files", { value: [file], configurable: true });
+    fireEvent.change(fileInput);
+
+    // Ensure consent checkbox is checked
+    const consent = screen.getByLabelText(/UU PDP|Persetujuan/i);
+    fireEvent.change(consent, { target: { checked: true } });
+
+    // Submit form
+    const form = fileInput.closest("form");
+    if (form) {
+      fireEvent.submit(form);
+    } else {
+      const submitBtn = screen.getByRole("button", { name: /Kirim Pendaftaran Open House/i });
+      fireEvent.click(submitBtn);
+    }
+
+    // Verify WhatsApp card renders with join link and copy button
+    const waCard = await screen.findByTestId("open-house-wa-group-card");
+    expect(waCard).toBeInTheDocument();
+
+    const joinBtn = screen.getByTestId("open-house-wa-group-join-button");
+    expect(joinBtn).toHaveAttribute("href", "https://chat.whatsapp.com/EXAMPLE_TEST_GROUP");
+    expect(joinBtn).toHaveAttribute("target", "_blank");
+    expect(joinBtn).toHaveAttribute("rel", "noopener noreferrer");
+
+    const copyBtn = screen.getByTestId("open-house-wa-group-copy-button");
+    expect(copyBtn).toBeInTheDocument();
+    fireEvent.click(copyBtn);
+  });
+
+  it("OpenHousePage does not render WhatsApp card if url is absent in response", async () => {
+    const hooks = await import("@/lib/hooks");
+    vi.mocked(hooks.useSubmitRegistration).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue({
+        ok: true,
+      }),
+      isPending: false,
+    } as any);
+
+    renderWithProviders(<OpenHousePage />, { route: "/open-house" });
+
+    fireEvent.change(screen.getByLabelText(/Nama Lengkap/i), { target: { value: "Peserta Uji Dua" } });
+    fireEvent.change(screen.getByPlaceholderText(/5022201045/i), { target: { value: "5024201002" } });
+    fireEvent.change(screen.getByLabelText(/Mengapa kamu tertarik/i), {
+      target: { value: "Tertarik belajar switching dan routing praktikum laboratorium." },
+    });
+
+    const file = new File(["dummy png"], "follow.png", { type: "image/png" });
+    const fileInput = screen.getByLabelText(/Bukti Follow Instagram/i);
+    Object.defineProperty(fileInput, "files", { value: [file], configurable: true });
+    fireEvent.change(fileInput);
+
+    // Ensure consent checkbox is checked
+    const consent = screen.getByLabelText(/UU PDP|Persetujuan/i);
+    fireEvent.change(consent, { target: { checked: true } });
+
+    const form = fileInput.closest("form");
+    if (form) {
+      fireEvent.submit(form);
+    } else {
+      const submitBtn = screen.getByRole("button", { name: /Kirim Pendaftaran Open House/i });
+      fireEvent.click(submitBtn);
+    }
+
+    await screen.findByText(/Pendaftaran Berhasil Diterima/i);
+    expect(screen.queryByTestId("open-house-wa-group-card")).toBeNull();
+  });
 });

@@ -33,7 +33,7 @@ RESOURCES = CONTENT_MODELS
 # Secrets and personal data that only roles able to edit content may read back through the admin API.
 # Read-only roles (viewer, registrar) get the item without these fields.
 PRIVATE_FIELDS = {
-    "events": ("spreadsheet_webhook_url",),
+    "events": ("spreadsheet_webhook_url", "whatsapp_group_url"),
     "members": ("phone", "email_personal", "nim"),
 }
 HTML_FIELDS = {"posts": ("body", "body_id")}

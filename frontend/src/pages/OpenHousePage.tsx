@@ -1,16 +1,16 @@
 import { useState, useId } from "react";
+import "./utility-editorial.css";
 import { Link } from "react-router-dom";
 import {
-    Calendar,
     MapPin,
     Users,
     Instagram,
     CheckCircle2,
     UploadCloud,
     ArrowRight,
-    Sparkles,
-    AlertCircle,
-    Info,
+    MessageCircle,
+    Copy,
+    Check,
 } from "lucide-react";
 import { useEvent, useSubmitRegistration } from "@/lib/hooks";
 import { useLocale, pick } from "@/lib/i18n";
@@ -23,7 +23,7 @@ const BATCH_OPTIONS = ["2023", "2024", "2025", "2026"];
 export default function OpenHousePage() {
     const { locale } = useLocale();
     const eventSlug = "open-house-tnl";
-    const { data: event, isLoading: eventLoading } = useEvent(eventSlug);
+    const { data: event } = useEvent(eventSlug);
     const submitRegistration = useSubmitRegistration(event?.id ?? eventSlug);
 
     const [fullName, setFullName] = useState("");
@@ -32,7 +32,24 @@ export default function OpenHousePage() {
     const [motivation, setMotivation] = useState("");
     const [igFile, setIgFile] = useState<File | null>(null);
     const [consent, setConsent] = useState(true);
-    const [submittedData, setSubmittedData] = useState<{ name: string; nrp: string; batch: string } | null>(null);
+    const [submittedData, setSubmittedData] = useState<{
+        name: string;
+        nrp: string;
+        batch: string;
+        whatsapp_group_url?: string;
+    } | null>(null);
+    const [copiedWa, setCopiedWa] = useState(false);
+
+    const handleCopyWa = async (url: string) => {
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopiedWa(true);
+            toast.success("Tautan grup WhatsApp berhasil disalin!");
+            setTimeout(() => setCopiedWa(false), 2000);
+        } catch {
+            toast.error("Gagal menyalin tautan.");
+        }
+    };
 
     const fullNameId = useId();
     const nrpId = useId();
@@ -90,11 +107,12 @@ export default function OpenHousePage() {
         formData.append("f_bukti-follow-instagram-tnlab-its", igFile);
 
         try {
-            await submitRegistration.mutateAsync(formData);
+            const resp = (await submitRegistration.mutateAsync(formData)) as { whatsapp_group_url?: string } | null;
             setSubmittedData({
                 name: fullName.trim(),
                 nrp: cleanNrp,
                 batch,
+                whatsapp_group_url: resp?.whatsapp_group_url,
             });
             toast.success("Pendaftaran Open House berhasil terkirim!");
         } catch (err: any) {
@@ -108,44 +126,39 @@ export default function OpenHousePage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#FBFBFA] dark:bg-[#0C100E] text-[#111613] dark:text-[#F4F4F0] transition-colors duration-200">
-            {/* Top Atmospheric Hero */}
-            <section className="relative overflow-hidden border-b border-black/5 dark:border-white/10 bg-gradient-to-b from-[#EFEFEA] to-[#FBFBFA] dark:from-[#111613] dark:to-[#0C100E] pt-14 pb-16 lg:pt-20 lg:pb-24">
-                <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-[#5D8A6B]/15 blur-3xl dark:bg-[#43594A]/20"
-                />
+        <div className="utility-editorial open-house-editorial">
+            <section className="utility-masthead">
+
 
                 <div className="tnl-container max-w-6xl px-6 lg:px-8 relative z-10">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
                         <div className="lg:col-span-7 space-y-6">
                             <div className="flex flex-wrap items-center gap-3">
                                 <TnlLogo variant="auto" className="h-9 w-9" />
-                                <div className="inline-flex items-center gap-2 rounded-full border border-[#A8977B]/40 bg-[#A8977B]/10 px-3.5 py-1 text-xs font-bold tracking-widest text-[#7F715C] dark:text-[#C4B393] uppercase">
-                                    <Sparkles className="h-3.5 w-3.5" />
-                                    <span>OPEN HOUSE 2026 · LIVE SYNC</span>
+                                <div className="utility-kicker">
+                                    <span>OPEN HOUSE / TNL · ITS</span>
                                 </div>
                             </div>
 
-                            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08] text-[#111613] dark:text-[#F4F4F0]">
+                            <h1 className="utility-title">
                                 {title}
                             </h1>
 
-                            <p className="text-base sm:text-lg text-[#555E58] dark:text-[#B8C0BA] leading-relaxed max-w-2xl">
+                            <p className="text-base sm:text-lg text-[var(--tnl-body)] leading-relaxed max-w-2xl">
                                 {description}
                             </p>
 
                             {/* Meta Badges */}
-                            <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm font-medium text-[#444E48] dark:text-[#D1D5DB]">
+                            <div className="open-house-facts">
                                 <span className="inline-flex items-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 px-3 py-1.5 border border-black/5 dark:border-white/10">
-                                    <MapPin className="h-4 w-4 text-[#A8977B]" />
+                                    <MapPin className="h-4 w-4 text-[var(--tnl-body)]" />
                                     <span>Ruang B-301, Teknik Elektro ITS</span>
                                 </span>
                                 <span className="inline-flex items-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 px-3 py-1.5 border border-black/5 dark:border-white/10">
-                                    <Users className="h-4 w-4 text-[#A8977B]" />
+                                    <Users className="h-4 w-4 text-[var(--tnl-body)]" />
                                     <span>Terbuka Mahasiswa Baru & Aktif</span>
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-lg bg-[#5D8A6B]/15 text-[#2E583A] dark:text-[#8AB597] px-3 py-1.5 border border-[#5D8A6B]/30 font-semibold">
+                                <span className="utility-button">
                                     <CheckCircle2 className="h-4 w-4" />
                                     <span>Gratis / Pendaftaran Terbuka</span>
                                 </span>
@@ -154,7 +167,7 @@ export default function OpenHousePage() {
                             <div className="pt-2">
                                 <a
                                     href="#form-section"
-                                    className="inline-flex items-center gap-2 rounded-xl bg-[#223027] dark:bg-[#A8977B] px-6 py-3.5 text-sm font-semibold text-white dark:text-[#111613] shadow-md transition-all hover:bg-[#35483B] dark:hover:bg-[#C2B091]"
+                                    className="utility-button utility-button-primary"
                                 >
                                     <span>Isi Formulir Pendaftaran</span>
                                     <ArrowRight className="h-4 w-4" />
@@ -164,13 +177,13 @@ export default function OpenHousePage() {
 
                         {/* Interactive Gallery Preview */}
                         <div className="lg:col-span-5">
-                            <div className="relative rounded-2xl border border-black/10 dark:border-white/10 p-2 bg-white/40 dark:bg-black/20 backdrop-blur-md shadow-2xl">
+                            <div className="open-house-figure">
                                 <FadeCarousel
                                     images={galleryImages}
                                     aspectRatio="aspect-[4/3]"
-                                    className="rounded-xl"
+                                    className="open-house-media"
                                 />
-                                <div className="mt-2 text-center text-xs text-[#7F715C] dark:text-[#A8977B] font-medium">
+                                <div className="mt-2 text-center text-xs text-[var(--tnl-body)] font-medium">
                                     Suasana Fasilitas & Testbed Ruang B-301
                                 </div>
                             </div>
@@ -180,11 +193,11 @@ export default function OpenHousePage() {
             </section>
 
             {/* Registration Form Section */}
-            <section id="form-section" className="py-16 lg:py-24">
-                <div className="tnl-container max-w-3xl px-6 lg:px-8">
+            <section id="form-section" aria-label={submittedData ? "Pendaftaran Berhasil Diterima" : "Formulir Pendaftaran Peserta"} className="utility-section">
+                <div className="tnl-container open-house-registration">
                     {submittedData ? (
-                        <div className="rounded-2xl border border-[#5D8A6B]/40 bg-[#5D8A6B]/10 p-8 sm:p-12 text-center space-y-6 animate-fade-in">
-                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#5D8A6B] text-white shadow-lg">
+                        <div role="status" className="open-house-success space-y-6">
+                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--gsm-bg-elevated)] text-[var(--tnl-heading)] shadow-lg">
                                 <CheckCircle2 className="h-8 w-8" />
                             </div>
 
@@ -192,12 +205,12 @@ export default function OpenHousePage() {
                                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
                                     Pendaftaran Berhasil Diterima!
                                 </h2>
-                                <p className="text-sm sm:text-base text-[#555E58] dark:text-[#B8C0BA] max-w-lg mx-auto">
+                                <p className="text-sm sm:text-base text-[var(--tnl-body)] max-w-lg mx-auto">
                                     Terima kasih, <strong className="text-current">{submittedData.name}</strong> (NRP: {submittedData.nrp}). Data pendaftaranmu telah tercatat dan otomatis disinkronkan ke lembar registrasi panitia.
                                 </p>
                             </div>
 
-                            <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-black/40 p-4 text-xs sm:text-sm text-left max-w-md mx-auto space-y-1.5">
+                            <div className="rounded-xl border border-black/10 dark:border-white/10 bg-[var(--gsm-bg-elevated)] p-4 text-xs sm:text-sm text-left max-w-md mx-auto space-y-1.5">
                                 <p><strong>Nama:</strong> {submittedData.name}</p>
                                 <p><strong>NRP:</strong> {submittedData.nrp}</p>
                                 <p><strong>Angkatan:</strong> {submittedData.batch}</p>
@@ -205,10 +218,64 @@ export default function OpenHousePage() {
                                 <p><strong>Email Notifikasi:</strong> {submittedData.nrp}@student.its.ac.id</p>
                             </div>
 
+                            {submittedData.whatsapp_group_url ? (
+                                <div
+                                    className="rounded-xl border border-[#22c55e]/40 bg-[var(--gsm-bg-elevated)] p-5 text-left max-w-md mx-auto space-y-3"
+                                    data-testid="open-house-wa-group-card"
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--gsm-bg-elevated)] text-[var(--tnl-heading)] shadow-sm">
+                                            <MessageCircle className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-[var(--tnl-body)]">
+                                                {locale === "id"
+                                                    ? "Langkah Terakhir: Gabung Grup WhatsApp Peserta"
+                                                    : "Final Step: Join the Participant WhatsApp Group"}
+                                            </h3>
+                                            <p className="mt-1 text-xs text-[var(--tnl-body)] leading-relaxed">
+                                                {locale === "id"
+                                                    ? "Seluruh pengumuman jadwal, ruang praktikum, dan panduan teknis Open House akan dibagikan melalui grup resmi peserta."
+                                                    : "All schedule updates, room instructions, and Open House technical guides will be shared in the official participant group."}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                                        <a
+                                            href={submittedData.whatsapp_group_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="utility-button utility-button-primary"
+                                            data-testid="open-house-wa-group-join-button"
+                                        >
+                                            <span>{locale === "id" ? "Gabung Grup WhatsApp Sekarang ↗" : "Join WhatsApp Group Now ↗"}</span>
+                                        </a>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleCopyWa(submittedData.whatsapp_group_url!)}
+                                            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#16a34a]/30 bg-[var(--gsm-bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--tnl-body)] hover:bg-[var(--gsm-bg-recessed-hover)] transition-colors"
+                                            data-testid="open-house-wa-group-copy-button"
+                                        >
+                                            {copiedWa ? (
+                                                <>
+                                                    <Check className="h-3.5 w-3.5 text-[var(--tnl-body)]" />
+                                                    <span>{locale === "id" ? "Tersalin!" : "Copied!"}</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Copy className="h-3.5 w-3.5" />
+                                                    <span>{locale === "id" ? "Salin Tautan Grup" : "Copy Group Link"}</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : null}
+
                             <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
                                 <Link
                                     to="/activity"
-                                    className="inline-flex items-center gap-2 rounded-lg bg-[#223027] dark:bg-[#A8977B] px-5 py-2.5 text-sm font-semibold text-white dark:text-[#111613]"
+                                    className="utility-button"
                                 >
                                     <span>Jelajahi Kegiatan Lab</span>
                                     <ArrowRight className="h-4 w-4" />
@@ -229,12 +296,12 @@ export default function OpenHousePage() {
                             </div>
                         </div>
                     ) : (
-                        <div className="rounded-3xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#111613] p-8 sm:p-12 shadow-xl space-y-8">
+                        <div className="open-house-form space-y-8">
                             <div className="space-y-2 border-b border-black/5 dark:border-white/10 pb-6">
                                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
                                     Formulir Pendaftaran Peserta
                                 </h2>
-                                <p className="text-sm text-[#555E58] dark:text-[#B8C0BA]">
+                                <p className="text-sm text-[var(--tnl-body)]">
                                     Lengkapi 5 data wajib di bawah ini. Pendaftaran otomatis terhubung secara real-time dengan Google Spreadsheet panitia.
                                 </p>
                             </div>
@@ -246,7 +313,7 @@ export default function OpenHousePage() {
                                         htmlFor={fullNameId}
                                         className="mb-2 block text-sm font-semibold tracking-wide"
                                     >
-                                        1. Nama Lengkap <span className="text-red-500">*</span>
+                                        1. Nama Lengkap <span className="text-[var(--tnl-body)]">*</span>
                                     </label>
                                     <input
                                         id={fullNameId}
@@ -266,7 +333,7 @@ export default function OpenHousePage() {
                                         htmlFor={nrpId}
                                         className="mb-2 block text-sm font-semibold tracking-wide"
                                     >
-                                        2. NRP (Nomor Registrasi Pokok) <span className="text-red-500">*</span>
+                                        2. NRP (Nomor Registrasi Pokok) <span className="text-[var(--tnl-body)]">*</span>
                                     </label>
                                     <input
                                         id={nrpId}
@@ -278,7 +345,7 @@ export default function OpenHousePage() {
                                         placeholder="cth. 5022201045"
                                         className="w-full rounded-xl border border-black/15 dark:border-white/15 bg-transparent px-4 py-3 text-sm focus:border-[#A8977B] focus:outline-none focus:ring-1 focus:ring-[#A8977B]"
                                     />
-                                    <p className="mt-1.5 text-xs text-[#7F715C] dark:text-[#9FA8A2]">
+                                    <p className="mt-1.5 text-xs text-[var(--tnl-body)]">
                                         Format angka NRP mahasiswa ITS (minimal 7 digit).
                                     </p>
                                 </div>
@@ -289,13 +356,13 @@ export default function OpenHousePage() {
                                         htmlFor={batchId}
                                         className="mb-2 block text-sm font-semibold tracking-wide"
                                     >
-                                        3. Angkatan <span className="text-red-500">*</span>
+                                        3. Angkatan <span className="text-[var(--tnl-body)]">*</span>
                                     </label>
                                     <select
                                         id={batchId}
                                         value={batch}
                                         onChange={(e) => setBatch(e.target.value)}
-                                        className="w-full rounded-xl border border-black/15 dark:border-white/15 bg-white dark:bg-[#111613] px-4 py-3 text-sm focus:border-[#A8977B] focus:outline-none focus:ring-1 focus:ring-[#A8977B]"
+                                        className="w-full rounded-xl border border-black/15 dark:border-white/15 bg-[var(--tnl-surface)] px-4 py-3 text-sm focus:border-[#A8977B] focus:outline-none focus:ring-1 focus:ring-[#A8977B]"
                                     >
                                         {BATCH_OPTIONS.map((opt) => (
                                             <option key={opt} value={opt}>
@@ -311,7 +378,7 @@ export default function OpenHousePage() {
                                         htmlFor={motivationId}
                                         className="mb-2 block text-sm font-semibold tracking-wide"
                                     >
-                                        4. Mengapa kamu tertarik untuk ikut Open House TNL? <span className="text-red-500">*</span>
+                                        4. Mengapa kamu tertarik untuk ikut Open House TNL? <span className="text-[var(--tnl-body)]">*</span>
                                     </label>
                                     <textarea
                                         id={motivationId}
@@ -322,7 +389,7 @@ export default function OpenHousePage() {
                                         placeholder="Ceritakan minatmu di bidang jaringan telekomunikasi, serat optik, SDR, atau ketertarikanmu menjadi asisten..."
                                         className="w-full rounded-xl border border-black/15 dark:border-white/15 bg-transparent px-4 py-3 text-sm focus:border-[#A8977B] focus:outline-none focus:ring-1 focus:ring-[#A8977B]"
                                     />
-                                    <div className="mt-1 flex items-center justify-between text-xs text-[#7F715C] dark:text-[#9FA8A2]">
+                                    <div className="mt-1 flex items-center justify-between text-xs text-[var(--tnl-body)]">
                                         <span>Minimal 15 karakter.</span>
                                         <span>{motivation.length} karakter</span>
                                     </div>
@@ -334,19 +401,19 @@ export default function OpenHousePage() {
                                         htmlFor={igFileId}
                                         className="block text-sm font-semibold tracking-wide"
                                     >
-                                        5. Bukti Follow Instagram @tnlab_its <span className="text-red-500">*</span>
+                                        5. Bukti Follow Instagram @tnlab_its <span className="text-[var(--tnl-body)]">*</span>
                                     </label>
 
                                     {/* Direct Instagram Link Note */}
-                                    <div className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border border-purple-500/20 p-3 text-xs">
-                                        <Instagram className="h-4 w-4 text-pink-500 shrink-0" />
+                                    <div className="utility-note flex items-center gap-2 text-xs">
+                                        <Instagram className="h-4 w-4 text-[var(--tnl-body)] shrink-0" />
                                         <span>
                                             Follow akun resmi kami di{" "}
                                             <a
                                                 href="https://www.instagram.com/tnlab_its/"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="font-bold underline text-pink-600 dark:text-pink-400 hover:text-pink-700"
+                                                className="font-bold underline text-[var(--tnl-body)] hover:text-[var(--tnl-body)]"
                                             >
                                                 @tnlab_its
                                             </a>{" "}
@@ -355,7 +422,7 @@ export default function OpenHousePage() {
                                     </div>
 
                                     <div className="relative mt-2 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-black/15 dark:border-white/15 p-6 hover:border-[#A8977B] transition-colors bg-black/[0.01] dark:bg-white/[0.01]">
-                                        <UploadCloud className="h-8 w-8 text-[#A8977B] mb-2" />
+                                        <UploadCloud className="h-8 w-8 text-[var(--tnl-body)] mb-2" />
                                         <input
                                             id={igFileId}
                                             type="file"
@@ -366,10 +433,10 @@ export default function OpenHousePage() {
                                         />
                                         {igFile ? (
                                             <div className="text-center">
-                                                <p className="text-sm font-semibold text-[#2E583A] dark:text-[#8AB597]">
+                                                <p className="text-sm font-semibold text-[var(--tnl-body)]">
                                                     ✓ {igFile.name}
                                                 </p>
-                                                <p className="text-xs text-[#7F715C] dark:text-[#9FA8A2]">
+                                                <p className="text-xs text-[var(--tnl-body)]">
                                                     {(igFile.size / (1024 * 1024)).toFixed(2)} MB · Klik untuk mengganti
                                                 </p>
                                             </div>
@@ -378,7 +445,7 @@ export default function OpenHousePage() {
                                                 <p className="text-sm font-medium">
                                                     Pilih atau seret screenshot bukti follow ke sini
                                                 </p>
-                                                <p className="text-xs text-[#7F715C] dark:text-[#9FA8A2]">
+                                                <p className="text-xs text-[var(--tnl-body)]">
                                                     Format .JPG, .PNG, .WEBP (maks 5 MB)
                                                 </p>
                                             </div>
@@ -394,9 +461,9 @@ export default function OpenHousePage() {
                                         required
                                         checked={consent}
                                         onChange={(e) => setConsent(e.target.checked)}
-                                        className="mt-1 h-4 w-4 rounded border-gray-300 text-[#223027] focus:ring-[#A8977B]"
+                                        className="mt-1 h-4 w-4 rounded border-gray-300 text-[var(--tnl-body)] focus:ring-[#A8977B]"
                                     />
-                                    <label htmlFor={consentId} className="text-xs leading-relaxed text-[#555E58] dark:text-[#B8C0BA]">
+                                    <label htmlFor={consentId} className="text-xs leading-relaxed text-[var(--tnl-body)]">
                                         Saya menyetujui pemrosesan data diri (nama, NRP, dan kontak) oleh panitia Laboratorium Jaringan Telekomunikasi ITS semata-mata untuk verifikasi dan pelaksanaan kegiatan Open House sesuai ketentuan UU PDP.
                                     </label>
                                 </div>
@@ -406,7 +473,7 @@ export default function OpenHousePage() {
                                     <button
                                         type="submit"
                                         disabled={submitRegistration.isPending}
-                                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#223027] dark:bg-[#A8977B] px-8 py-4 text-base font-bold text-white dark:text-[#111613] shadow-lg transition-all hover:bg-[#35483B] dark:hover:bg-[#C2B091] disabled:opacity-50"
+                                        className="utility-button utility-button-primary w-full"
                                     >
                                         {submitRegistration.isPending ? (
                                             <span>Menyimpan & Mensinkronkan…</span>

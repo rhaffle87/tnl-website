@@ -166,6 +166,8 @@
     --tnl-black: var(--gsm-obsidian);
     --tnl-tan: var(--gsm-accent);
     --tnl-tan-text: #6E604B;
+    --tnl-link: #254C35;
+    --tnl-muted: var(--gsm-text-muted);
     --tnl-green: var(--gsm-primary);
     --tnl-green-hover: #18221c;
     --tnl-surface: var(--gsm-bg-surface);
@@ -238,6 +240,8 @@
     --tnl-black: #0C100E;
     --tnl-tan: var(--gsm-accent);
     --tnl-tan-text: #D6C39F;
+    --tnl-link: #A9D1B3;
+    --tnl-muted: var(--gsm-text-muted);
     --tnl-green: var(--gsm-primary);
     --tnl-green-hover: #3a5242;
     --tnl-surface: var(--gsm-bg-surface);
@@ -290,7 +294,7 @@
     font-weight: 700;
     line-height: 1.2;
     letter-spacing: -0.015em;
-    color: var(--tnl-black);
+    color: var(--tnl-heading);
     }
   .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 { color: #f4f4f5; }
 }
@@ -489,7 +493,7 @@
   .tnl-btn-tan { background: var(--tnl-tan); color: #111613; }
   .tnl-btn-tan:hover:not(:disabled) { background: #c2b091; color: #111613; transform: translateY(-1px); }
   .tnl-btn-outline { border: 1px solid var(--tnl-border); background: transparent; color: var(--foreground); }
-  .tnl-btn-outline:hover:not(:disabled) { border-color: var(--tnl-green); color: var(--tnl-green); }
+  .tnl-btn-outline:hover:not(:disabled) { border-color: var(--tnl-link); color: var(--tnl-link); }
   .tnl-btn-ghost-light { border: 1px solid rgba(255,255,255,0.35); background: transparent; color: #ffffff; }
   .tnl-btn-ghost-light:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
 
@@ -513,7 +517,7 @@
   .tnl-prose :where(ul) { list-style: disc; padding-left: 1.5rem; margin-block: 0.85rem; color: var(--tnl-body); }
   .tnl-prose :where(ol) { list-style: decimal; padding-left: 1.5rem; margin-block: 0.85rem; color: var(--tnl-body); }
   .tnl-prose :where(li) { margin-block: 0.35rem; }
-  .tnl-prose :where(a) { color: var(--tnl-green); text-decoration: underline; text-underline-offset: 3px; }
+  .tnl-prose :where(a) { color: var(--tnl-link); text-decoration: underline; text-underline-offset: 3px; }
   .dark .tnl-prose :where(a) { color: var(--tnl-tan); }
   .tnl-prose :where(blockquote) {
     border-left: 4px solid var(--tnl-tan);

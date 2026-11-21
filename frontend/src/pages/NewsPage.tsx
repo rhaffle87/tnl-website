@@ -5,11 +5,11 @@ import { ArrowLeft } from "lucide-react";
 import { usePost } from "@/lib/hooks";
 import { pick, useLocale } from "@/lib/i18n";
 import { Breadcrumb, EmptyState, Spinner, formatDate } from "@/components/site/Primitives";
-import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
 import { CmsPage } from "@/pages/Home";
+import "./editorial-content.css";
 
 export default function NewsPage() {
-    return <CmsPage slug="news" testId="news-page" />;
+    return <div className="editorial-content editorial-news-index"><CmsPage slug="news" testId="news-page" /></div>;
 }
 
 export function NewsArticlePage() {
@@ -43,27 +43,27 @@ export function NewsArticlePage() {
     const body = locale === "id" ? post.body_id || post.body : post.body || post.body_id;
 
     return (
-        <article data-testid="news-article-page">
-            <header className="tnl-hero-gradient">
+        <article className="editorial-content editorial-article" data-testid="news-article-page">
+            <header className="editorial-masthead">
                 <div className="tnl-container py-14 lg:py-20">
                     <Breadcrumb items={[{ label: t("nav_home"), to: "/" }, { label: t("nav_news"), to: "/news" }, { label: title }]} />
-                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: "var(--tnl-tan)" }}>
+                    <p className="editorial-eyebrow">
                         {post.category}
                     </p>
-                    <h1 className="tnl-hero-title font-bold" style={{ color: "#ffffff" }} data-testid="article-title">
+                    <h1 className="editorial-article-title" data-testid="article-title">
                         {title}
                     </h1>
-                    <p className="mt-4 text-sm" style={{ color: "#dfe2e5" }} data-testid="article-date">
-                        {t("published_on")} {formatDate(post.published_at, locale)}
+                    <p className="mt-4 editorial-meta" data-testid="article-date">
+                        {t("published_on")} <time dateTime={post.published_at || undefined}>{formatDate(post.published_at, locale)}</time>
                         {post.author ? ` · ${post.author}` : ""}
                     </p>
                 </div>
             </header>
 
             <div className="tnl-section" style={{ background: "var(--tnl-surface)" }}>
-                <div className="tnl-container">
+                <div className="tnl-container editorial-reading-column">
                     {post.cover_url ? (
-                        <div className="tnl-parallax-media mb-8 w-full overflow-hidden rounded-[15px]" style={{ maxHeight: 440 }}>
+                        <div className="editorial-article-cover mb-8 w-full overflow-hidden" style={{ maxHeight: 440 }}>
                             <img
                                 src={post.cover_url}
                                 alt={post.cover_alt || title}
@@ -75,9 +75,9 @@ export function NewsArticlePage() {
                             />
                         </div>
                     ) : null}
-                    <div className="tnl-card p-7 sm:p-10">
+                    <div className="editorial-article-body">
                         {/* Sanitized server-side before storage. */}
-                        <div className="tnl-prose max-w-none" dangerouslySetInnerHTML={{ __html: body }} data-testid="article-body" />
+                        <div className="tnl-prose editorial-prose max-w-none" dangerouslySetInnerHTML={{ __html: body }} data-testid="article-body" />
                         {post.tags?.length ? (
                             <div className="mt-8 flex flex-wrap gap-2 border-t pt-6" style={{ borderColor: "var(--tnl-border)" }}>
                                 {post.tags.map((tag) => (
@@ -90,16 +90,15 @@ export function NewsArticlePage() {
                     </div>
 
                     {post.related?.length ? (
-                        <div className="mt-10">
-                            <h2 className="tnl-h4 mb-5 text-[22px]">{t("related_news")}</h2>
-                            <div className="grid gap-5 md:grid-cols-3">
+                        <div className="editorial-related mt-10">
+                            <h2 className="mb-5 text-[22px]">{t("related_news")}</h2>
+                            <div>
                                 {post.related.map((rel) => (
                                     <Link
                                         key={rel.id}
                                         to={`/news/${rel.slug}`}
                                         viewTransition
-                                        className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal p-6"
-                                        onPointerMove={handleSpotlightPointerMove}
+                                        className="editorial-related-link"
                                         data-testid={`related-article-${rel.slug}`}
                                     >
                                         <span className="tnl-count-chip">{rel.category}</span>

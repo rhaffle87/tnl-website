@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import "./utility-editorial.css";
 import { Link } from "react-router-dom";
 import {
     ArrowUpRight,
@@ -69,35 +70,31 @@ export function PrivacyPage() {
     }, []);
 
     return (
-        <div data-testid="privacy-page" className="min-h-screen">
+        <div data-testid="privacy-page" className="utility-editorial legal-editorial">
             {/* Hero Header */}
-            <header className="tnl-hero-gradient relative border-b border-black/10 dark:border-white/10 py-12 md:py-16 overflow-hidden print:bg-none print:border-b-2 print:py-6">
-                <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -top-24 right-1/4 h-72 w-96 rounded-full bg-[#5D8A6B]/20 blur-3xl dark:bg-[#43594A]/25 print:hidden"
-                />
+            <header className="utility-masthead print:border-b-2 print:py-6">
                 <div className="tnl-container relative z-10">
                     <div className="max-w-4xl">
                         {/* Eyebrow & Badges */}
-                        <div className="flex flex-wrap items-center gap-2 text-xs font-mono font-bold tracking-widest uppercase">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-[#E6E8E6] backdrop-blur-md">
-                                <ShieldCheck className="h-3.5 w-3.5 text-[#C4B393]" aria-hidden="true" />
+                        <div className="legal-metadata">
+                            <span className="">
+                                <ShieldCheck className="h-3.5 w-3.5 text-[var(--tnl-body)]" aria-hidden="true" />
                                 <span>VERSI {POLICY_VERSION}</span>
                             </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-[#E6E8E6] backdrop-blur-md">
-                                <Clock className="h-3.5 w-3.5 text-[#C4B393]" aria-hidden="true" />
+                            <span className="">
+                                <Clock className="h-3.5 w-3.5 text-[var(--tnl-body)]" aria-hidden="true" />
                                 <span>{isId ? `BERLAKU: ${EFFECTIVE_DATE}` : `EFFECTIVE: ${EFFECTIVE_DATE_EN}`}</span>
                             </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-emerald-300 backdrop-blur-md">
+                            <span className="">
                                 <Scale className="h-3.5 w-3.5" aria-hidden="true" />
                                 <span>UU PDP NO. 27/2022</span>
                             </span>
                         </div>
 
-                        <h1 className="mt-4 text-3xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl print:text-black">
+                        <h1 className="utility-title mt-6">
                             {isId ? "Kebijakan Privasi" : "Privacy Policy"}
                         </h1>
-                        <p className="mt-4 text-base leading-relaxed text-[#D1D5DB] sm:text-lg print:text-black">
+                        <p className="legal-intro">
                             {isId
                                 ? "Keterbukaan lengkap tata kelola, pemrosesan, dan pelindungan data pribadi di Laboratorium Jaringan Telekomunikasi (TNL) Departemen Teknik Elektro FTEIC ITS sesuai amanat Undang-Undang No. 27 Tahun 2022 tentang Pelindungan Data Pribadi."
                                 : "Comprehensive transparency on personal data governance, processing, and protection at the Telecommunication Network Laboratory (TNL), Department of Electrical Engineering FTEIC ITS in accordance with Indonesian Personal Data Protection Law No. 27/2022."}
@@ -108,7 +105,7 @@ export function PrivacyPage() {
                             <button
                                 type="button"
                                 onClick={() => window.print()}
-                                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-white/20 backdrop-blur-sm"
+                                className="utility-button"
                                 data-testid="print-privacy-button"
                             >
                                 <Printer className="h-3.5 w-3.5" aria-hidden="true" />
@@ -116,7 +113,7 @@ export function PrivacyPage() {
                             </button>
                             <Link
                                 to="/terms"
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2 text-xs font-bold text-[#D1D5DB] transition-all hover:text-white hover:bg-white/10"
+                                className="utility-button"
                                 data-testid="cross-link-terms"
                             >
                                 <span>{isId ? "Lihat Ketentuan Penggunaan" : "View Terms of Use"}</span>
@@ -133,7 +130,7 @@ export function PrivacyPage() {
                     {/* Sticky Left Sidebar (4 Columns) */}
                     <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6 print:hidden">
                         {/* Table of Contents */}
-                        <div className="tnl-card p-5 sm:p-6" data-testid="privacy-toc">
+                        <div className="legal-note p-5 sm:p-6" data-testid="privacy-toc">
                             <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                 {isId ? "DAFTAR ISI KEBIJAKAN" : "TABLE OF CONTENTS"}
                             </span>
@@ -145,9 +142,10 @@ export function PrivacyPage() {
                                         onClick={() => scrollToSection(sec.id)}
                                         className={`w-full text-left py-1.5 px-2.5 rounded-lg transition-colors flex items-center justify-between ${
                                             activeSection === sec.id
-                                                ? "bg-[#5D8A6B]/15 text-[#2E583A] dark:text-[#8AB597] font-bold"
+                                                ? "text-[var(--tnl-heading)] font-bold"
                                                 : "text-[var(--tnl-body)] hover:bg-black/[0.03] dark:hover:bg-white/[0.04] hover:text-[var(--tnl-heading)]"
                                         }`}
+                                        aria-current={activeSection === sec.id ? "location" : undefined}
                                         data-testid={`toc-link-${sec.id}`}
                                     >
                                         <span className="truncate">{isId ? sec.title_id : sec.title_en}</span>
@@ -158,33 +156,33 @@ export function PrivacyPage() {
                         </div>
 
                         {/* Quick Highlights / TL;DR Card */}
-                        <div className="tnl-card p-5 sm:p-6 space-y-3" data-testid="privacy-highlights">
-                            <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">
+                        <div className="legal-note p-5 sm:p-6 space-y-3" data-testid="privacy-highlights">
+                            <div className="flex items-center gap-2 text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">
                                 <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                                 <span>{isId ? "RINGKASAN CEPAT (TL;DR)" : "KEY HIGHLIGHTS"}</span>
                             </div>
                             <ul className="space-y-2.5 text-xs leading-relaxed text-[var(--tnl-body)]">
                                 <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-[var(--tnl-body)] shrink-0 mt-0.5" />
                                     <span>{isId ? "Prinsip minimisasi data: hanya mengumpulkan data yang esensial untuk kegiatan tridarma dan administrasi lab." : "Data minimisation: we only collect what is strictly necessary for academic activities."}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-[var(--tnl-body)] shrink-0 mt-0.5" />
                                     <span>{isId ? "Nol pelacak iklan: tidak memasang pixel iklan, cookie pemasaran pihak ketiga, atau pelacak lintas situs." : "Zero ad trackers: no marketing pixels, third-party advertising cookies, or cross-site tracking."}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-[var(--tnl-body)] shrink-0 mt-0.5" />
                                     <span>{isId ? "Cadangan terenkripsi dengan rotasi 14 hari: arsip cadangan otomatis server diputar dan dibersihkan berkala." : "Encrypted backups on 14-day safe rotation: server automated archives rotate and expire securely."}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-[var(--tnl-body)] shrink-0 mt-0.5" />
                                     <span>{isId ? "SLA Pemenuhan Hak 3×24 Jam: permohonan akses, perbaikan, atau penghapusan data diproses maks 3 hari kerja." : "3x24-hour SLA: requests for data access, rectification, or erasure processed within 3 workdays."}</span>
                                 </li>
                             </ul>
                         </div>
 
                         {/* Privacy Help Card */}
-                        <div className="tnl-card p-5 sm:p-6 space-y-3" data-testid="privacy-help-card">
+                        <div className="legal-note p-5 sm:p-6 space-y-3" data-testid="privacy-help-card">
                             <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                 {isId ? "KONTAK DATA PRIVASI" : "DATA PRIVACY DESK"}
                             </span>
@@ -195,7 +193,7 @@ export function PrivacyPage() {
                             </p>
                             <a
                                 href="mailto:telconnetlab@gmail.com?subject=[Permintaan%20UU%20PDP]%20Hak%20Subjek%20Data"
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] p-2.5 text-xs font-semibold hover:border-[#5D8A6B] hover:text-[#5D8A6B] transition-colors"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] p-2.5 text-xs font-semibold hover:border-[#5D8A6B] hover:text-[var(--tnl-body)] transition-colors"
                             >
                                 <Mail className="h-3.5 w-3.5" />
                                 <span>telconnetlab@gmail.com</span>
@@ -204,11 +202,11 @@ export function PrivacyPage() {
                     </aside>
 
                     {/* Main Content Column (8 Columns) */}
-                    <div className="lg:col-span-8 space-y-12 leading-relaxed text-[var(--tnl-body)]">
+                    <div className="legal-reading lg:col-span-8 space-y-12 leading-relaxed text-[var(--tnl-body)]">
                         {/* Section 1 */}
                         <section id="sec-1" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">PASAL 1 / SECTION 1</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 1 / SECTION 1</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Identitas Pengendali Data Pribadi" : "Identity of the Data Controller"}
                                 </h2>
@@ -227,7 +225,7 @@ export function PrivacyPage() {
                                     </>
                                 )}
                             </p>
-                            <div className="tnl-card p-5 space-y-2 text-sm bg-black/[0.01] dark:bg-white/[0.02]">
+                            <div className="legal-note p-5 space-y-2 text-sm bg-black/[0.01] dark:bg-white/[0.02]">
                                 <p className="font-bold text-[var(--tnl-heading)]">Laboratorium Jaringan Telekomunikasi (TNL)</p>
                                 <p>Departemen Teknik Elektro, Fakultas Teknologi Elektro dan Informatika Cerdas (FTEIC)</p>
                                 <p>Institut Teknologi Sepuluh Nopember (ITS)</p>
@@ -240,8 +238,8 @@ export function PrivacyPage() {
 
                         {/* Section 2 */}
                         <section id="sec-2" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">PASAL 2 / SECTION 2</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 2 / SECTION 2</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Ruang Lingkup & Jenis Data Pribadi yang Dikumpulkan" : "Scope & Categories of Personal Data Collected"}
                                 </h2>
@@ -252,7 +250,7 @@ export function PrivacyPage() {
                                     : "We apply strict purpose limitation and data minimisation principles. We only collect data directly relevant to your interactions with the laboratory:"}
                             </p>
 
-                            <div className="overflow-x-auto tnl-card p-0 border border-black/10 dark:border-white/10">
+                            <div className="overflow-x-auto legal-note p-0 border border-black/10 dark:border-white/10">
                                 <table className="w-full text-left text-xs border-collapse">
                                     <thead className="border-b border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03]">
                                         <tr>
@@ -265,32 +263,32 @@ export function PrivacyPage() {
                                         <tr>
                                             <td className="py-3 px-4 font-semibold text-[var(--tnl-heading)]">{isId ? "Pendaftaran Kegiatan (Open House / Pelatihan)" : "Event Registration"}</td>
                                             <td className="py-3 px-4">Nama lengkap, NRP/NIM, angkatan/jurusan, motivasi/alasan ketertarikan, unggahan bukti follow Instagram resmi <code>@tnlab_its</code>, stempel waktu persetujuan (<code>consent_timestamp</code>), dan versi kebijakan (<code>2026.1</code>).</td>
-                                            <td className="py-3 px-4 text-emerald-700 dark:text-emerald-400 font-medium">{isId ? "Internal Panitia Terbatas" : "Restricted Internal Desk"}</td>
+                                            <td className="py-3 px-4 text-[var(--tnl-body)] font-medium">{isId ? "Internal Panitia Terbatas" : "Restricted Internal Desk"}</td>
                                         </tr>
                                         <tr>
                                             <td className="py-3 px-4 font-semibold text-[var(--tnl-heading)]">{isId ? "Formulir Kontak (/contact)" : "Contact Form"}</td>
                                             <td className="py-3 px-4">Nama lengkap, alamat email pengirim, subjek permohonan, dan isi pesan korespondensi resmi.</td>
-                                            <td className="py-3 px-4 text-emerald-700 dark:text-emerald-400 font-medium">{isId ? "Internal Administrasi Lab" : "Admin Desk Only"}</td>
+                                            <td className="py-3 px-4 text-[var(--tnl-body)] font-medium">{isId ? "Internal Administrasi Lab" : "Admin Desk Only"}</td>
                                         </tr>
                                         <tr>
                                             <td className="py-3 px-4 font-semibold text-[var(--tnl-heading)]">{isId ? "Portal e-Sertifikat (/verify)" : "Certificate Verification"}</td>
                                             <td className="py-3 px-4">Nama penerima, judul acara/pelatihan/praktikum, tanggal terbit, dan kode unik sertifikat. <strong>Nol kebocoran PII</strong>: tidak pernah menampilkan email pribadi, nomor telepon, atau NRP.</td>
-                                            <td className="py-3 px-4 text-blue-700 dark:text-blue-400 font-medium">{isId ? "Publik Minimal (Verifikasi)" : "Minimal Public Proof"}</td>
+                                            <td className="py-3 px-4 text-[var(--tnl-body)] font-medium">{isId ? "Publik Minimal (Verifikasi)" : "Minimal Public Proof"}</td>
                                         </tr>
                                         <tr>
                                             <td className="py-3 px-4 font-semibold text-[var(--tnl-heading)]">{isId ? "Direktori Anggota (/member)" : "Member Directory"}</td>
                                             <td className="py-3 px-4">Nama, peran/divisi, angkatan, foto resmi, riwayat riset/publikasi, dan tautan profil publik (LinkedIn/Scholar) berdasarkan persetujuan civitas lab. Bebas dari NIK, nomor WhatsApp, dan alamat rumah.</td>
-                                            <td className="py-3 px-4 text-blue-700 dark:text-blue-400 font-medium">{isId ? "Publik Akademik" : "Academic Public"}</td>
+                                            <td className="py-3 px-4 text-[var(--tnl-body)] font-medium">{isId ? "Publik Akademik" : "Academic Public"}</td>
                                         </tr>
                                         <tr>
                                             <td className="py-3 px-4 font-semibold text-[var(--tnl-heading)]">{isId ? "Keamanan Jaringan & Akses Server" : "Security & Network Logs"}</td>
                                             <td className="py-3 px-4">Alamat IP (pada lapisan firewall/rate-limiting), User-Agent, dan log permintaan HTTP untuk mitigasi serangan siber.</td>
-                                            <td className="py-3 px-4 text-amber-700 dark:text-amber-400 font-medium">{isId ? "Log Keamanan Teknis" : "Technical Firewall Logs"}</td>
+                                            <td className="py-3 px-4 text-[var(--tnl-body)] font-medium">{isId ? "Log Keamanan Teknis" : "Technical Firewall Logs"}</td>
                                         </tr>
                                         <tr>
                                             <td className="py-3 px-4 font-semibold text-[var(--tnl-heading)]">{isId ? "Akses Administrator CMS (/admin)" : "Admin CMS Access"}</td>
                                             <td className="py-3 px-4">Alamat email akun dosen/asisten terdaftar, hash kata sandi terenkripsi, sesi cookie <code>tnl_session</code>, dan catatan riwayat tindakan <code>audit_log</code>.</td>
-                                            <td className="py-3 px-4 text-rose-700 dark:text-rose-400 font-medium">{isId ? "Terkunci Ketat (RBAC)" : "Strict Role-Based"}</td>
+                                            <td className="py-3 px-4 text-[var(--tnl-body)] font-medium">{isId ? "Terkunci Ketat (RBAC)" : "Strict Role-Based"}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -299,8 +297,8 @@ export function PrivacyPage() {
 
                         {/* Section 3 */}
                         <section id="sec-3" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">PASAL 3 / SECTION 3</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 3 / SECTION 3</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Dasar Pemrosesan & Tujuan Penggunaan Data (Pasal 20 UU PDP)" : "Legal Basis & Processing Purposes"}
                                 </h2>
@@ -330,7 +328,7 @@ export function PrivacyPage() {
                                         : "Preventing DDoS attacks, defending forms against automated spam (honeypots), internal CMS auditing, and laboratory compliance."}
                                 </li>
                             </ul>
-                            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs font-semibold text-[var(--tnl-body)]">
                                 {isId
                                     ? "Penegasan Resmi: Laboratorium TNL ITS TIDAK PERNAH menjual, menyewakan, memperjualbelikan, atau menyerahkan data pribadi Anda kepada pihak ketiga untuk kepentingan pemasaran komersial atau iklan."
                                     : "Official Guarantee: TNL Laboratory NEVER sells, rents, monetises, or discloses your personal data to any third party for commercial marketing or advertising purposes."}
@@ -339,8 +337,8 @@ export function PrivacyPage() {
 
                         {/* Section 4 */}
                         <section id="sec-4" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">PASAL 4 / SECTION 4</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 4 / SECTION 4</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Penggunaan Penyimpanan Browser & Tanpa Pelacak Iklan" : "Browser Storage, Cookies & Zero Ad Trackers"}
                                 </h2>
@@ -351,7 +349,7 @@ export function PrivacyPage() {
                                     : "This website is built with Privacy by Design. We do not deploy third-party advertising cookies. All local browser storage is strictly utilitarian:"}
                             </p>
 
-                            <div className="overflow-x-auto tnl-card p-0 border border-black/10 dark:border-white/10">
+                            <div className="overflow-x-auto legal-note p-0 border border-black/10 dark:border-white/10">
                                 <table className="w-full text-left text-xs border-collapse">
                                     <thead className="border-b border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03]">
                                         <tr>
@@ -393,8 +391,8 @@ export function PrivacyPage() {
 
                         {/* Section 5 */}
                         <section id="sec-5" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">PASAL 5 / SECTION 5</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 5 / SECTION 5</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Pihak Ketiga & Pemroses Data (Sub-processors)" : "Third Parties & Sub-processors"}
                                 </h2>
@@ -405,10 +403,10 @@ export function PrivacyPage() {
                                     : "To ensure infrastructure reliability and smooth academic operations, the laboratory interacts with the following service providers:"}
                             </p>
                             <div className="space-y-3">
-                                <div className="tnl-card p-4 space-y-1">
+                                <div className="legal-note p-4 space-y-1">
                                     <div className="flex items-center justify-between">
                                         <h4 className="font-bold text-sm text-[var(--tnl-heading)]">1. Cloudflare, Inc. (Edge CDN & WAF)</h4>
-                                        <span className="text-xs font-mono text-[#5D8A6B] dark:text-[#8AB597]">Edge Infrastructure</span>
+                                        <span className="text-xs font-mono text-[var(--tnl-body)]">Edge Infrastructure</span>
                                     </div>
                                     <p className="text-xs leading-relaxed">
                                         {isId
@@ -417,10 +415,10 @@ export function PrivacyPage() {
                                     </p>
                                 </div>
 
-                                <div className="tnl-card p-4 space-y-1">
+                                <div className="legal-note p-4 space-y-1">
                                     <div className="flex items-center justify-between">
                                         <h4 className="font-bold text-sm text-[var(--tnl-heading)]">2. Google Workspace / Google Sheets (via Apps Script Webhook)</h4>
-                                        <span className="text-xs font-mono text-[#5D8A6B] dark:text-[#8AB597]">Operational Sync</span>
+                                        <span className="text-xs font-mono text-[var(--tnl-body)]">Operational Sync</span>
                                     </div>
                                     <p className="text-xs leading-relaxed">
                                         {isId
@@ -429,10 +427,10 @@ export function PrivacyPage() {
                                     </p>
                                 </div>
 
-                                <div className="tnl-card p-4 space-y-1">
+                                <div className="legal-note p-4 space-y-1">
                                     <div className="flex items-center justify-between">
                                         <h4 className="font-bold text-sm text-[var(--tnl-heading)]">3. Google Maps Embed (Google LLC)</h4>
-                                        <span className="text-xs font-mono text-[#5D8A6B] dark:text-[#8AB597]">Interactive Mapping</span>
+                                        <span className="text-xs font-mono text-[var(--tnl-body)]">Interactive Mapping</span>
                                     </div>
                                     <p className="text-xs leading-relaxed">
                                         {isId
@@ -441,10 +439,10 @@ export function PrivacyPage() {
                                     </p>
                                 </div>
 
-                                <div className="tnl-card p-4 space-y-1">
+                                <div className="legal-note p-4 space-y-1">
                                     <div className="flex items-center justify-between">
                                         <h4 className="font-bold text-sm text-[var(--tnl-heading)]">4. Klaster Server Mandiri Laboratorium (Proxmox LXC)</h4>
-                                        <span className="text-xs font-mono text-[#5D8A6B] dark:text-[#8AB597]">Internal On-Premises</span>
+                                        <span className="text-xs font-mono text-[var(--tnl-body)]">Internal On-Premises</span>
                                     </div>
                                     <p className="text-xs leading-relaxed">
                                         {isId
@@ -457,8 +455,8 @@ export function PrivacyPage() {
 
                         {/* Section 6 */}
                         <section id="sec-6" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">PASAL 6 / SECTION 6</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 6 / SECTION 6</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Keamanan Informasi & Perlindungan Teknis" : "Information Security & Technical Safeguards"}
                                 </h2>
@@ -486,8 +484,8 @@ export function PrivacyPage() {
 
                         {/* Section 7 */}
                         <section id="sec-7" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">PASAL 7 / SECTION 7</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 7 / SECTION 7</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Masa Retensi Data & Siklus Cadangan (Backup)" : "Data Retention Period & Backup Cycles"}
                                 </h2>
@@ -504,19 +502,19 @@ export function PrivacyPage() {
                                 )}
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                                <div className="tnl-card p-4 space-y-1">
+                                <div className="legal-note p-4 space-y-1">
                                     <h4 className="font-bold text-[var(--tnl-heading)]">{isId ? "Pendaftaran Kegiatan / Open House" : "Event Registrations"}</h4>
                                     <p>{isId ? "Disimpan selama siklus seleksi & pelaporan akademik berlangsung, kemudian dihapus atau dianonimkan untuk keperluan statistik akademik agregat." : "Retained for the event duration and academic reporting, then purged or anonymised for aggregated statistics."}</p>
                                 </div>
-                                <div className="tnl-card p-4 space-y-1">
+                                <div className="legal-note p-4 space-y-1">
                                     <h4 className="font-bold text-[var(--tnl-heading)]">{isId ? "Pesan Formulir Kontak" : "Contact Inquiries"}</h4>
                                     <p>{isId ? "Disimpan selama proses korespondensi dan penyelesaian tindak lanjut pesan (maksimal 1 tahun sejak kontak terakhir)." : "Retained during correspondence and follow-up (up to 1 year from last contact)."}</p>
                                 </div>
-                                <div className="tnl-card p-4 space-y-1">
+                                <div className="legal-note p-4 space-y-1">
                                     <h4 className="font-bold text-[var(--tnl-heading)]">{isId ? "Keabsahan e-Sertifikat (/verify)" : "e-Certificate Authenticity"}</h4>
                                     <p>{isId ? "Disimpan secara berkelanjutan agar lulusan dan peserta dapat memvalidasi keaslian sertifikat mereka di masa depan." : "Stored continuously so alumni and participants can reliably verify certificates at any time."}</p>
                                 </div>
-                                <div className="tnl-card p-4 space-y-1">
+                                <div className="legal-note p-4 space-y-1">
                                     <h4 className="font-bold text-[var(--tnl-heading)]">{isId ? "Rotasi Cadangan Server (14 Hari)" : "Server Backups (14-Day Safe Rotation)"}</h4>
                                     <p>{isId ? "Cadangan otomatis terkompresi harian pada server Proxmox LXC (CT 116 & CT 103) mengalami rotasi otomatis 14 hari sebelum dihapus permanen." : "Daily compressed automated archives on internal Proxmox LXC undergo 14-day safe rotation before secure removal."}</p>
                                 </div>
@@ -525,8 +523,8 @@ export function PrivacyPage() {
 
                         {/* Section 8 */}
                         <section id="sec-8" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">PASAL 8 / SECTION 8</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 8 / SECTION 8</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Hak Subjek Data Pribadi & SLA Pemenuhan 3×24 Jam" : "Data Subject Rights & 3x24-Hour SLA"}
                                 </h2>
@@ -537,35 +535,35 @@ export function PrivacyPage() {
                                     : "Under Articles 5 through 13 of Law No. 27/2022, you hold explicit statutory rights as a Data Subject:"}
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                                <div className="tnl-card p-3.5 space-y-1">
+                                <div className="legal-note p-3.5 space-y-1">
                                     <strong className="text-[var(--tnl-heading)]">{isId ? "1. Hak atas Kejelasan Informasi:" : "1. Right to Information:"}</strong>
                                     <p>{isId ? "Mendapatkan kejelasan mengenai identitas pengendali, dasar hukum, dan tujuan pemrosesan data." : "Clarity on controller identity, legal basis, and processing purposes."}</p>
                                 </div>
-                                <div className="tnl-card p-3.5 space-y-1">
+                                <div className="legal-note p-3.5 space-y-1">
                                     <strong className="text-[var(--tnl-heading)]">{isId ? "2. Hak Memperbaiki & Melengkapi:" : "2. Right to Rectification:"}</strong>
                                     <p>{isId ? "Memperbarui atau melengkapi data pribadi yang tidak akurat atau tidak lengkap." : "Correct or complete outdated or inaccurate personal records."}</p>
                                 </div>
-                                <div className="tnl-card p-3.5 space-y-1">
+                                <div className="legal-note p-3.5 space-y-1">
                                     <strong className="text-[var(--tnl-heading)]">{isId ? "3. Hak Akses & Salinan Data:" : "3. Right of Access & Portability:"}</strong>
                                     <p>{isId ? "Memperoleh akses dan salinan data pribadi yang diproses laboratorium secara terstruktur." : "Obtain access and copies of your processed personal data."}</p>
                                 </div>
-                                <div className="tnl-card p-3.5 space-y-1">
+                                <div className="legal-note p-3.5 space-y-1">
                                     <strong className="text-[var(--tnl-heading)]">{isId ? "4. Hak Menghapus / Menganonimkan:" : "4. Right to Erasure / Anonymisation:"}</strong>
                                     <p>{isId ? "Meminta penghapusan atau pemusnahan data pribadi apabila tujuan pemrosesan telah selesai." : "Request deletion or anonymisation once the purpose has concluded."}</p>
                                 </div>
-                                <div className="tnl-card p-3.5 space-y-1">
+                                <div className="legal-note p-3.5 space-y-1">
                                     <strong className="text-[var(--tnl-heading)]">{isId ? "5. Hak Menarik Kembali Persetujuan:" : "5. Right to Withdraw Consent:"}</strong>
                                     <p>{isId ? "Mencabut persetujuan pemrosesan yang telah diberikan sebelumnya kapan saja." : "Withdraw previously granted consent at any time without penalty."}</p>
                                 </div>
-                                <div className="tnl-card p-3.5 space-y-1">
+                                <div className="legal-note p-3.5 space-y-1">
                                     <strong className="text-[var(--tnl-heading)]">{isId ? "6. Hak Mengajukan Keberatan:" : "6. Right to Object:"}</strong>
                                     <p>{isId ? "Menolak pemrosesan data yang didasarkan pada kepentingan yang sah." : "Object to processing based upon legitimate interest grounds."}</p>
                                 </div>
                             </div>
 
-                            <div className="tnl-card p-5 space-y-3 bg-[#5D8A6B]/10 border-[#5D8A6B]/30">
+                            <div className="legal-note p-5 space-y-3 bg-[#5D8A6B]/10 border-[#5D8A6B]/30">
                                 <h4 className="font-bold text-sm text-[var(--tnl-heading)] flex items-center gap-2">
-                                    <Clock className="h-4 w-4 text-[#5D8A6B]" />
+                                    <Clock className="h-4 w-4 text-[var(--tnl-body)]" />
                                     <span>{isId ? "Prosedur Pengajuan & Komitmen SLA 3×24 Jam Kerja" : "Request Procedure & 3x24-Hour SLA"}</span>
                                 </h4>
                                 <p className="text-xs leading-relaxed text-justify">
@@ -589,8 +587,8 @@ export function PrivacyPage() {
 
                         {/* Section 9 */}
                         <section id="sec-9" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">PASAL 9 / SECTION 9</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 9 / SECTION 9</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Kerahasiaan & Pembatasan Akses Internal" : "Internal Confidentiality & Access Restrictions"}
                                 </h2>
@@ -604,8 +602,8 @@ export function PrivacyPage() {
 
                         {/* Section 10 */}
                         <section id="sec-10" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">PASAL 10 / SECTION 10</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 10 / SECTION 10</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Transfer Data Pribadi Lintas Batas" : "Cross-Border Data Transfers"}
                                 </h2>
@@ -619,8 +617,8 @@ export function PrivacyPage() {
 
                         {/* Section 11 */}
                         <section id="sec-11" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">PASAL 11 / SECTION 11</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 11 / SECTION 11</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Pelindungan Data Anak / Mahasiswa di Bawah Umur" : "Child & Student Privacy Protection"}
                                 </h2>
@@ -634,8 +632,8 @@ export function PrivacyPage() {
 
                         {/* Section 12 */}
                         <section id="sec-12" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">PASAL 12 / SECTION 12</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 12 / SECTION 12</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Pembaruan Kebijakan & Saluran Pengaduan Resmi" : "Policy Revisions & Official Grievance Channel"}
                                 </h2>
@@ -653,7 +651,7 @@ export function PrivacyPage() {
                                     </>
                                 )}
                             </p>
-                            <div className="tnl-card p-5 space-y-2 text-xs">
+                            <div className="legal-note p-5 space-y-2 text-xs">
                                 <p className="font-bold text-[var(--tnl-heading)]">{isId ? "Pengaduan & Lembaga Terkait:" : "Official Grievance Desk:"}</p>
                                 <p>
                                     Laboratorium Jaringan Telekomunikasi ITS · Ruang B-301 Gedung B Departemen Teknik Elektro FTEIC ITS, Surabaya 60111.
@@ -714,35 +712,31 @@ export function TermsPage() {
     }, []);
 
     return (
-        <div data-testid="terms-page" className="min-h-screen">
+        <div data-testid="terms-page" className="utility-editorial legal-editorial">
             {/* Hero Header */}
-            <header className="tnl-hero-gradient relative border-b border-black/10 dark:border-white/10 py-12 md:py-16 overflow-hidden print:bg-none print:border-b-2 print:py-6">
-                <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -top-24 right-1/4 h-72 w-96 rounded-full bg-[#5D8A6B]/20 blur-3xl dark:bg-[#43594A]/25 print:hidden"
-                />
+            <header className="utility-masthead print:border-b-2 print:py-6">
                 <div className="tnl-container relative z-10">
                     <div className="max-w-4xl">
                         {/* Eyebrow & Badges */}
-                        <div className="flex flex-wrap items-center gap-2 text-xs font-mono font-bold tracking-widest uppercase">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-[#E6E8E6] backdrop-blur-md">
-                                <FileText className="h-3.5 w-3.5 text-[#C4B393]" aria-hidden="true" />
+                        <div className="legal-metadata">
+                            <span className="">
+                                <FileText className="h-3.5 w-3.5 text-[var(--tnl-body)]" aria-hidden="true" />
                                 <span>VERSI {POLICY_VERSION}</span>
                             </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-[#E6E8E6] backdrop-blur-md">
-                                <Clock className="h-3.5 w-3.5 text-[#C4B393]" aria-hidden="true" />
+                            <span className="">
+                                <Clock className="h-3.5 w-3.5 text-[var(--tnl-body)]" aria-hidden="true" />
                                 <span>{isId ? `BERLAKU: ${EFFECTIVE_DATE}` : `EFFECTIVE: ${EFFECTIVE_DATE_EN}`}</span>
                             </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-emerald-300 backdrop-blur-md">
+                            <span className="">
                                 <Scale className="h-3.5 w-3.5" aria-hidden="true" />
                                 <span>HUKUM RI & STANDAR ITS</span>
                             </span>
                         </div>
 
-                        <h1 className="mt-4 text-3xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl print:text-black">
+                        <h1 className="utility-title mt-6">
                             {isId ? "Ketentuan Penggunaan" : "Terms of Use"}
                         </h1>
-                        <p className="mt-4 text-base leading-relaxed text-[#D1D5DB] sm:text-lg print:text-black">
+                        <p className="legal-intro">
                             {isId
                                 ? "Ketentuan hukum yang mengikat penggunaan situs resmi, materi modul praktikum, pendaftaran kegiatan, dan portal verifikasi sertifikat Laboratorium Jaringan Telekomunikasi (TNL) Departemen Teknik Elektro FTEIC ITS Surabaya."
                                 : "The legal terms governing your access to the official website, practicum modules, event registrations, and certificate verification portals of the Telecommunication Network Laboratory (TNL) at FTEIC ITS Surabaya."}
@@ -753,7 +747,7 @@ export function TermsPage() {
                             <button
                                 type="button"
                                 onClick={() => window.print()}
-                                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-white/20 backdrop-blur-sm"
+                                className="utility-button"
                                 data-testid="print-terms-button"
                             >
                                 <Printer className="h-3.5 w-3.5" aria-hidden="true" />
@@ -761,7 +755,7 @@ export function TermsPage() {
                             </button>
                             <Link
                                 to="/privacy"
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2 text-xs font-bold text-[#D1D5DB] transition-all hover:text-white hover:bg-white/10"
+                                className="utility-button"
                                 data-testid="cross-link-privacy"
                             >
                                 <span>{isId ? "Lihat Kebijakan Privasi" : "View Privacy Policy"}</span>
@@ -778,7 +772,7 @@ export function TermsPage() {
                     {/* Sticky Left Sidebar (4 Columns) */}
                     <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6 print:hidden">
                         {/* Table of Contents */}
-                        <div className="tnl-card p-5 sm:p-6" data-testid="terms-toc">
+                        <div className="legal-note p-5 sm:p-6" data-testid="terms-toc">
                             <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                 {isId ? "DAFTAR ISI KETENTUAN" : "TABLE OF CONTENTS"}
                             </span>
@@ -790,9 +784,10 @@ export function TermsPage() {
                                         onClick={() => scrollToSection(sec.id)}
                                         className={`w-full text-left py-1.5 px-2.5 rounded-lg transition-colors flex items-center justify-between ${
                                             activeSection === sec.id
-                                                ? "bg-[#5D8A6B]/15 text-[#2E583A] dark:text-[#8AB597] font-bold"
+                                                ? "text-[var(--tnl-heading)] font-bold"
                                                 : "text-[var(--tnl-body)] hover:bg-black/[0.03] dark:hover:bg-white/[0.04] hover:text-[var(--tnl-heading)]"
                                         }`}
+                                        aria-current={activeSection === sec.id ? "location" : undefined}
                                         data-testid={`toc-link-${sec.id}`}
                                     >
                                         <span className="truncate">{isId ? sec.title_id : sec.title_en}</span>
@@ -803,33 +798,33 @@ export function TermsPage() {
                         </div>
 
                         {/* Quick Highlights / TL;DR Card */}
-                        <div className="tnl-card p-5 sm:p-6 space-y-3" data-testid="terms-highlights">
-                            <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">
+                        <div className="legal-note p-5 sm:p-6 space-y-3" data-testid="terms-highlights">
+                            <div className="flex items-center gap-2 text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">
                                 <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                                 <span>{isId ? "POIN UTAMA KETENTUAN" : "KEY HIGHLIGHTS"}</span>
                             </div>
                             <ul className="space-y-2.5 text-xs leading-relaxed text-[var(--tnl-body)]">
                                 <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-[var(--tnl-body)] shrink-0 mt-0.5" />
                                     <span>{isId ? "Tujuan murni akademik: materi dan layanan disediakan untuk menunjang tridarma perguruan tinggi di ITS." : "Purely academic purpose: resources support higher education tridarma mandates."}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-[var(--tnl-body)] shrink-0 mt-0.5" />
                                     <span>{isId ? "Integritas e-Sertifikat (/verify): sertifikat resmi hanya sah jika lolos validasi kode unik di portal verifikasi lab." : "e-Certificate integrity (/verify): authentic credentials validate exclusively via our verification portal."}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-[var(--tnl-body)] shrink-0 mt-0.5" />
                                     <span>{isId ? "Lisensi non-komersial: modul praktikum boleh diunduh untuk belajar, dilarang diperjualbelikan tanpa izin." : "Non-commercial licence: practicum modules may be downloaded for study, commercial resale strictly prohibited."}</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-[var(--tnl-body)] shrink-0 mt-0.5" />
                                     <span>{isId ? "Kepatuhan UU ITE: dilarang melakukan scraping berlebih, serangan siber, atau manipulasi data pendaftaran." : "Cyber law compliance: automated scraping, vulnerability scanning, or data falsification prohibited under UU ITE."}</span>
                                 </li>
                             </ul>
                         </div>
 
                         {/* Legal Help Card */}
-                        <div className="tnl-card p-5 sm:p-6 space-y-3" data-testid="terms-help-card">
+                        <div className="legal-note p-5 sm:p-6 space-y-3" data-testid="terms-help-card">
                             <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                 {isId ? "KONTAK ADMINISTRASI LAB" : "ADMINISTRATIVE DESK"}
                             </span>
@@ -840,7 +835,7 @@ export function TermsPage() {
                             </p>
                             <Link
                                 to="/contact"
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] p-2.5 text-xs font-semibold hover:border-[#5D8A6B] hover:text-[#5D8A6B] transition-colors"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] p-2.5 text-xs font-semibold hover:border-[#5D8A6B] hover:text-[var(--tnl-body)] transition-colors"
                             >
                                 <Mail className="h-3.5 w-3.5" />
                                 <span>{isId ? "Hubungi Ruang B-301" : "Contact Room B-301"}</span>
@@ -849,11 +844,11 @@ export function TermsPage() {
                     </aside>
 
                     {/* Main Content Column (8 Columns) */}
-                    <div className="lg:col-span-8 space-y-12 leading-relaxed text-[var(--tnl-body)]">
+                    <div className="legal-reading lg:col-span-8 space-y-12 leading-relaxed text-[var(--tnl-body)]">
                         {/* Section 1 */}
                         <section id="sec-1" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">BAGIAN 1 / PART 1</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">BAGIAN 1 / PART 1</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Penerimaan Ketentuan & Penyelenggara Layanan" : "Acceptance of Terms & Site Provider"}
                                 </h2>
@@ -865,7 +860,7 @@ export function TermsPage() {
                                         Fakultas Teknologi Elektro dan Informatika Cerdas (FTEIC), Institut Teknologi Sepuluh Nopember (ITS) Surabaya (<code>https://labtnl.site</code>).
                                         Dengan mengakses, menelusuri, mendaftar kegiatan, atau mengunduh materi dari situs ini, Anda menyatakan telah membaca, memahami,
                                         dan menyetujui untuk terikat secara hukum oleh <strong>Ketentuan Penggunaan</strong> ini serta{" "}
-                                        <Link to="/privacy" className="text-[#5D8A6B] dark:text-[#8AB597] underline">Kebijakan Privasi</Link> kami.
+                                        <Link to="/privacy" className="text-[var(--tnl-body)] underline">Kebijakan Privasi</Link> kami.
                                         Apabila Anda tidak menyetujui ketentuan ini, Anda disarankan untuk tidak melanjutkan penggunaan situs ini.
                                     </>
                                 ) : (
@@ -874,7 +869,7 @@ export function TermsPage() {
                                         Faculty of Intelligent Electrical and Informatics Technology (FTEIC), Institut Teknologi Sepuluh Nopember (ITS), Surabaya (<code>https://labtnl.site</code>).
                                         By accessing, browsing, registering for events, or downloading materials from this site, you acknowledge that you have read, understood,
                                         and agree to be bound by these <strong>Terms of Use</strong> and our{" "}
-                                        <Link to="/privacy" className="text-[#5D8A6B] dark:text-[#8AB597] underline">Privacy Policy</Link>.
+                                        <Link to="/privacy" className="text-[var(--tnl-body)] underline">Privacy Policy</Link>.
                                     </>
                                 )}
                             </p>
@@ -882,8 +877,8 @@ export function TermsPage() {
 
                         {/* Section 2 */}
                         <section id="sec-2" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">BAGIAN 2 / PART 2</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">BAGIAN 2 / PART 2</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Ruang Lingkup Layanan Situs" : "Scope of Website Services"}
                                 </h2>
@@ -905,8 +900,8 @@ export function TermsPage() {
 
                         {/* Section 3 */}
                         <section id="sec-3" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">BAGIAN 3 / PART 3</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">BAGIAN 3 / PART 3</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Penggunaan yang Diizinkan & Batasan Perilaku (UU ITE)" : "Acceptable Use Policy & Cyber Law Compliance"}
                                 </h2>
@@ -926,19 +921,19 @@ export function TermsPage() {
                                 )}
                             </p>
                             <div className="space-y-2 text-xs">
-                                <div className="tnl-card p-3 border-rose-500/20 bg-rose-500/5">
+                                <div className="legal-note p-3 border-rose-500/20 bg-rose-500/5">
                                     <strong>{isId ? "1. Peretasan & Pemindaian Ilegal:" : "1. Unauthorized Penetration & Scanning:"}</strong>{" "}
                                     {isId ? "Dilarang melakukan pemindaian kerentanan (vulnerability scanning), penetrasi tanpa izin tertulis, atau eksploitasi terhadap infrastruktur server klaster lab." : "Running automated vulnerability scans or unauthorized penetration attempts against the laboratory server cluster."}
                                 </div>
-                                <div className="tnl-card p-3 border-rose-500/20 bg-rose-500/5">
+                                <div className="legal-note p-3 border-rose-500/20 bg-rose-500/5">
                                     <strong>{isId ? "2. Serangan Penolakan Layanan (DoS/DDoS) & Spam:" : "2. Denial-of-Service & Spam Bots:"}</strong>{" "}
                                     {isId ? "Dilarang membanjiri request server, mengirimkan spam otomatis melalui formulir kontak/pendaftaran, atau mengakali mekanisme rate-limiting." : "Flooding server requests, deploying spam bots through forms, or circumventing rate limits."}
                                 </div>
-                                <div className="tnl-card p-3 border-rose-500/20 bg-rose-500/5">
+                                <div className="legal-note p-3 border-rose-500/20 bg-rose-500/5">
                                     <strong>{isId ? "3. Pengunggahan Berkas Berbahaya:" : "3. Malicious File Uploads:"}</strong>{" "}
                                     {isId ? "Dilarang mengunggah berkas yang mengandung skrip berbahaya, virus, trojan, atau berkas yang sengaja disamarkan (manipulasi MIME/ekstensi)." : "Uploading malicious payloads, embedded shell scripts, or falsified MIME binaries."}
                                 </div>
-                                <div className="tnl-card p-3 border-rose-500/20 bg-rose-500/5">
+                                <div className="legal-note p-3 border-rose-500/20 bg-rose-500/5">
                                     <strong>{isId ? "4. Pemalsuan Identitas & Data Akademik:" : "4. Identity Theft & Academic Falsification:"}</strong>{" "}
                                     {isId ? "Dilarang mendaftar menggunakan identitas (Nama/NRP) milik mahasiswa lain atau memalsukan bukti persyaratan." : "Registering with another student's credentials (Name/NRP) or submitting forged prerequisite documents."}
                                 </div>
@@ -947,8 +942,8 @@ export function TermsPage() {
 
                         {/* Section 4 */}
                         <section id="sec-4" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">BAGIAN 4 / PART 4</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">BAGIAN 4 / PART 4</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Pendaftaran Kegiatan, Praktikum, & Seleksi" : "Event Registration, Practicums & Selection"}
                                 </h2>
@@ -962,8 +957,8 @@ export function TermsPage() {
 
                         {/* Section 5 */}
                         <section id="sec-5" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">BAGIAN 5 / PART 5</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">BAGIAN 5 / PART 5</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Keabsahan Portal Verifikasi e-Sertifikat (/verify)" : "e-Certificate Authenticity & Verification Portal (/verify)"}
                                 </h2>
@@ -987,8 +982,8 @@ export function TermsPage() {
 
                         {/* Section 6 */}
                         <section id="sec-6" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">BAGIAN 6 / PART 6</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">BAGIAN 6 / PART 6</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Hak Kekayaan Intelektual & Lisensi Materi Praktikum" : "Intellectual Property & Practicum Materials Licence"}
                                 </h2>
@@ -1006,7 +1001,7 @@ export function TermsPage() {
                                     </>
                                 )}
                             </p>
-                            <div className="tnl-card p-4 space-y-2 text-xs">
+                            <div className="legal-note p-4 space-y-2 text-xs">
                                 <strong className="text-[var(--tnl-heading)]">{isId ? "Ketentuan Lisensi Pengunduhan Modul Praktikum:" : "Practicum Download Licence Terms:"}</strong>
                                 <ul className="list-disc pl-5 space-y-1.5 text-justify">
                                     <li>{isId ? "Modul praktikum (.pdf), simulasi Packet Tracer (.pkt), dan file konfigurasi disediakan gratis untuk tujuan pembelajaran, praktikum kurikulum, dan riset mandiri non-komersial." : "Practicum modules (.pdf), network simulations (.pkt), and config files are provided free exclusively for educational, curriculum, and non-commercial academic research."}</li>
@@ -1018,8 +1013,8 @@ export function TermsPage() {
 
                         {/* Section 7 */}
                         <section id="sec-7" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">BAGIAN 7 / PART 7</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">BAGIAN 7 / PART 7</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Layanan & Tautan Pihak Ketiga" : "Third-Party Services & External Links"}
                                 </h2>
@@ -1033,8 +1028,8 @@ export function TermsPage() {
 
                         {/* Section 8 */}
                         <section id="sec-8" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">BAGIAN 8 / PART 8</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">BAGIAN 8 / PART 8</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Penafian Jaminan & Batasan Tanggung Jawab" : "Disclaimer of Warranties & Limitation of Liability"}
                                 </h2>
@@ -1048,8 +1043,8 @@ export function TermsPage() {
 
                         {/* Section 9 */}
                         <section id="sec-9" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">BAGIAN 9 / PART 9</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">BAGIAN 9 / PART 9</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Hukum yang Berlaku & Penyelesaian Sengketa" : "Governing Law & Dispute Resolution"}
                                 </h2>
@@ -1063,8 +1058,8 @@ export function TermsPage() {
 
                         {/* Section 10 */}
                         <section id="sec-10" className="scroll-mt-28 space-y-4">
-                            <div className="border-l-2 border-[#5D8A6B] pl-4">
-                                <span className="text-xs font-mono font-bold text-[#5D8A6B] dark:text-[#8AB597] uppercase">BAGIAN 10 / PART 10</span>
+                            <div className="legal-section-heading">
+                                <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">BAGIAN 10 / PART 10</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
                                     {isId ? "Kontak Hukum & Administrasi Laboratorium" : "Legal & Administrative Inquiries"}
                                 </h2>
@@ -1080,12 +1075,12 @@ export function TermsPage() {
                                     </>
                                 )}
                             </p>
-                            <div className="tnl-card p-5 space-y-2 text-xs bg-black/[0.01] dark:bg-white/[0.02]">
+                            <div className="legal-note p-5 space-y-2 text-xs bg-black/[0.01] dark:bg-white/[0.02]">
                                 <p className="font-bold text-[var(--tnl-heading)]">Laboratorium Jaringan Telekomunikasi (Ruang B-301)</p>
                                 <p>Departemen Teknik Elektro, FTEIC - Institut Teknologi Sepuluh Nopember (ITS)</p>
                                 <p>Kampus ITS Sukolilo, Surabaya 60111, Jawa Timur, Indonesia</p>
                                 <p className="pt-2 text-xs font-mono text-[var(--tnl-tan-text)]">
-                                    Email Resmi: <strong>telconnetlab@gmail.com</strong> · Formulir Daring: <Link to="/contact" className="underline text-[#5D8A6B] dark:text-[#8AB597]">labtnl.site/contact</Link>
+                                    Email Resmi: <strong>telconnetlab@gmail.com</strong> · Formulir Daring: <Link to="/contact" className="underline text-[var(--tnl-body)]">labtnl.site/contact</Link>
                                 </p>
                             </div>
                         </section>

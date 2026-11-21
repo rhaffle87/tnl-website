@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, timezone
 from html import escape as html_escape
 from pathlib import Path
+from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
@@ -26,7 +27,8 @@ router = APIRouter(tags=["public"])
 
 # Fields that must never leave the server through the public event endpoints. The sheet webhook
 # is a write credential: anyone holding it can append rows to the registrant spreadsheet.
-EVENT_PRIVATE_PROJECTION = {"spreadsheet_webhook_url": 0}
+# The WhatsApp group invite URL must only be revealed upon successful registration.
+EVENT_PRIVATE_PROJECTION = {"spreadsheet_webhook_url": 0, "whatsapp_group_url": 0}
 
 
 async def check_maintenance(request: Request) -> None:
@@ -506,16 +508,34 @@ async def submit_registration(event_id: str, request: Request):
 
     name = next((v for v in data.values() if isinstance(v, str) and 2 < len(v) < 80), email)
     state = {"pending": "received and pending review", "waitlisted": "placed on the waiting list"}[status]
+
+    wa_url = (ev.get("whatsapp_group_url") or "").strip()
+    wa_email_html = ""
+    if wa_url.startswith("https://"):
+        safe_wa_url = html_escape(wa_url)
+        wa_email_html = (
+            f"<div style='margin-top: 20px; padding: 16px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;'>"
+            f"<p style='margin: 0 0 8px 0; font-weight: bold; color: #166534;'>Langkah Terakhir: Bergabung ke Grup WhatsApp Resmi Peserta</p>"
+            f"<p style='margin: 0 0 12px 0; font-size: 14px; color: #14532d;'>Seluruh pengumuman jadwal, ruang praktikum, dan panduan teknis akan dibagikan melalui grup resmi peserta:</p>"
+            f"<a href='{safe_wa_url}' style='display: inline-block; padding: 10px 18px; background-color: #15803d; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;'>Gabung Grup WhatsApp Sekarang &rarr;</a>"
+            f"<p style='margin: 10px 0 0 0; font-size: 12px; color: #4b5563;'>Atau salin tautan berikut: {safe_wa_url}</p>"
+            f"</div>"
+        )
+
     await send_email(
         email or "unknown@example.org",
         f"Registration received — {ev.get('title', '')}",
         f"<p>Hello {html_escape(str(name))},</p>"
         f"<p>Your registration for <b>{html_escape(ev.get('title', ''))}</b> has been {state}.</p>"
+        f"{wa_email_html}"
         f"<p>Telecommunication Network Laboratory — ITS</p>",
     )
     msg = ("Registration received. Please check your email for confirmation."
            if status == "pending" else "The event is full — you have been placed on the waiting list.")
-    return {"ok": True, "status": status, "message": msg}
+    response_payload: dict[str, Any] = {"ok": True, "status": status, "message": msg}
+    if wa_url.startswith("https://"):
+        response_payload["whatsapp_group_url"] = wa_url
+    return response_payload
 
 
 import unicodedata

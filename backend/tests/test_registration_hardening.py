@@ -9,13 +9,15 @@ import pytest
 import seed
 
 SECRET_WEBHOOK = "https://script.google.com/macros/s/SECRET_TEST_ID/exec"
+DUMMY_WA_GROUP = "https://chat.whatsapp.com/EXAMPLE_TEST_GROUP"
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 32
 
 NAME_FIELD = {"type": "text", "label": "Full name", "required": True, "options": []}
+EMAIL_FIELD = {"type": "email", "label": "Email", "required": True, "options": []}
 PROOF_FIELD = {"type": "file", "label": "Proof", "required": True, "options": []}
 
 
-def _event(slug, form_fields, webhook=None):
+def _event(slug, form_fields, webhook=None, whatsapp_group_url=None):
     today = date.today()
     return {
         "id": str(uuid4()), "slug": slug, "title": "Hardening <b>Test</b>", "title_id": "",
@@ -23,6 +25,7 @@ def _event(slug, form_fields, webhook=None):
         "start_date": str(today + timedelta(days=10)), "end_date": str(today + timedelta(days=11)),
         "reg_open_date": str(today - timedelta(days=2)), "reg_close_date": str(today + timedelta(days=5)),
         "form_fields": form_fields, "spreadsheet_webhook_url": webhook,
+        "whatsapp_group_url": whatsapp_group_url or "",
     }
 
 
@@ -241,3 +244,67 @@ async def test_seed_skips_demo_accounts_when_asked(mock_db, monkeypatch):
     finally:
         if original is not None:
             await mock_db.users.insert_one(original)
+
+
+@pytest.mark.asyncio
+async def test_public_and_v1_events_never_expose_whatsapp_group_url(async_client, mock_db):
+    slug = "wa-secrecy-" + uuid4().hex[:6]
+    await mock_db.events.insert_one(_event(slug, [NAME_FIELD], whatsapp_group_url=DUMMY_WA_GROUP))
+
+    # Public list & detail
+    listing = await async_client.get("/public/events")
+    assert listing.status_code == 200
+    assert DUMMY_WA_GROUP not in listing.text
+    assert all("whatsapp_group_url" not in e for e in listing.json())
+
+    single = await async_client.get(f"/public/events/{slug}")
+    assert single.status_code == 200
+    assert "whatsapp_group_url" not in single.json()
+    assert DUMMY_WA_GROUP not in single.text
+
+    # V1 list & detail
+    from routers.apiv1 import hash_key
+    raw = "tnl_test_" + uuid4().hex
+    await mock_db.api_keys.insert_one({
+        "id": str(uuid4()), "name": "hardening-test-wa", "scopes": ["read"], "key_hash": hash_key(raw),
+        "prefix": raw[:12], "active": True, "calls": 0,
+        "created_at": datetime.now(timezone.utc), "last_used_at": None,
+    })
+    v1_single = await async_client.get(f"/v1/events/{slug}", headers={"X-API-Key": raw})
+    assert v1_single.status_code == 200
+    assert "whatsapp_group_url" not in v1_single.json()
+    assert DUMMY_WA_GROUP not in v1_single.text
+
+
+@pytest.mark.asyncio
+async def test_registration_lifecycle_whatsapp_group_invite(async_client, mock_db):
+    slug = "wa-reg-lifecycle-" + uuid4().hex[:6]
+    ev = _event(slug, [NAME_FIELD, EMAIL_FIELD], whatsapp_group_url=DUMMY_WA_GROUP)
+    await mock_db.events.insert_one(ev)
+
+    # 1. Rejected registration (missing consent and name) does NOT leak WA url
+    rejected = await async_client.post(
+        f"/registrations/{ev['id']}",
+        data={"f_full-name": ""},
+    )
+    assert rejected.status_code in (400, 422)
+    assert DUMMY_WA_GROUP not in rejected.text
+
+    # 2. Valid registration returns the whatsapp_group_url
+    success = await async_client.post(
+        f"/registrations/{ev['id']}",
+        data={"consent": "1", "f_full-name": "Budi Participant", "f_email": "budi.part@example.com"},
+    )
+    assert success.status_code == 200, success.text
+    body = success.json()
+    assert body["ok"] is True
+    assert body.get("whatsapp_group_url") == DUMMY_WA_GROUP
+
+    # 3. Duplicate registration is rejected and does NOT leak WA url
+    dup = await async_client.post(
+        f"/registrations/{ev['id']}",
+        data={"consent": "1", "f_full-name": "Budi Participant", "f_email": "budi.part@example.com"},
+    )
+    assert dup.status_code == 409
+    assert DUMMY_WA_GROUP not in dup.text
+

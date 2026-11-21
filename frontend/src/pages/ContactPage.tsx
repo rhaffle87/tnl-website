@@ -17,6 +17,7 @@ import {
 import { apiPost, ApiError } from "@/lib/api";
 import { useLocale } from "@/lib/i18n";
 import { useSettings } from "@/lib/hooks";
+import "./editorial-content.css";
 
 interface ContactResponse {
     ok: boolean;
@@ -153,30 +154,25 @@ export default function ContactPage() {
     };
 
     return (
-        <div data-testid="contact-page" className="min-h-screen">
+        <div data-testid="contact-page" className="editorial-content editorial-contact min-h-screen">
             {/* 1. Compact Technical Inner Hero */}
-            <header className="tnl-hero-gradient relative border-b border-black/10 dark:border-white/10 py-12 md:py-16 overflow-hidden">
-                <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -top-24 right-1/4 h-72 w-96 rounded-full bg-[#5D8A6B]/20 blur-3xl dark:bg-[#43594A]/25"
-                />
+            <header className="editorial-contact-masthead py-12 md:py-16">
                 <div className="tnl-container relative z-10">
                     <div className="max-w-3xl">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-mono font-bold tracking-widest text-[#E6E8E6] uppercase backdrop-blur-md">
-                            <Sparkles className="h-3.5 w-3.5 text-[#C4B393]" aria-hidden="true" />
+                        <div className="editorial-eyebrow">
                             <span>ROOM B-301 · SURABAYA</span>
                         </div>
-                        <h1 className="mt-4 text-3xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
+                        <h1 className="editorial-contact-title">
                             {isId ? "Hubungi Kami" : "Contact the Lab"}
                         </h1>
-                        <p className="mt-4 text-base leading-relaxed text-[#D1D5DB] sm:text-lg">
+                        <p className="editorial-contact-intro">
                             {isId
                                 ? "Hubungi Laboratorium Jaringan Telekomunikasi ITS untuk kolaborasi riset, kemitraan industri, program pelatihan, praktikum, atau pertanyaan umum seputar fasilitas laboratorium kami."
                                 : "Reach out to the Telecommunication Network Laboratory at ITS for research collaborations, industry partnerships, training programmes, laboratory practicums, or general inquiries."}
                         </p>
 
                         {/* Quick Info Strip */}
-                        <div className="mt-8 flex flex-wrap items-center gap-3 text-xs sm:text-sm text-[#F4F4F0]">
+                        <div className="editorial-contact-strip">
                             <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.06] px-3 py-1.5 font-medium backdrop-blur-sm">
                                 <MapPin className="h-4 w-4 text-[#C4B393]" aria-hidden="true" />
                                 <span>Gedung B, Ruang B-301</span>
@@ -195,10 +191,10 @@ export default function ContactPage() {
             </header>
 
             {/* 2. Main 2-Column Asymmetric Content */}
-            <main className="tnl-container py-12 md:py-16">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-stretch">
+            <div className="tnl-container py-12 md:py-16">
+                <div className="editorial-contact-layout">
                     {/* Left Column (5 Cols): Direct Channels & Lab Desk Cards */}
-                    <div className="lg:col-span-5 flex flex-col gap-6 h-full">
+                    <div className="editorial-contact-directory">
                         {/* Card 1: Laboratory Address */}
                         <div className="tnl-card tnl-scroll-reveal overflow-hidden flex flex-col" data-testid="contact-address-card">
                             <div className="tnl-card-header flex items-center justify-between">
@@ -213,20 +209,20 @@ export default function ContactPage() {
 
                             <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between">
                                 <div>
-                                    <h2 className="text-xl font-bold tracking-tight text-[var(--tnl-heading)]">
+                                    <h2 className="text-xl font-bold tracking-tight text-[var(--foreground)]">
                                         Gedung B, Ruang B-301
                                     </h2>
-                                    <p className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)]">
+                                    <address className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)] not-italic">
                                         Departemen Teknik Elektro, Fakultas Teknologi Elektro dan Informatika Cerdas (FTEIC),
                                         Institut Teknologi Sepuluh Nopember (ITS), Keputih, Sukolilo, Surabaya 60111
-                                    </p>
+                                    </address>
                                 </div>
 
                                 <div className="border-t border-[var(--tnl-border)] pt-4 mt-5">
                                     <button
                                         type="button"
                                         onClick={handleCopyAddress}
-                                        className="inline-flex items-center gap-2 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3.5 py-2 text-xs font-semibold text-[var(--tnl-heading)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                        className="inline-flex items-center gap-2 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
                                         data-testid="copy-address-button"
                                     >
                                         {copiedAddress ? (
@@ -270,7 +266,7 @@ export default function ContactPage() {
                                             </span>
                                             <a
                                                 href={`mailto:${officialEmail}`}
-                                                className="text-sm font-semibold hover:underline text-[var(--tnl-heading)] truncate block"
+                                                className="text-sm font-semibold hover:underline text-[var(--foreground)] truncate block"
                                                 data-testid="official-email-link"
                                             >
                                                 {officialEmail}
@@ -280,19 +276,19 @@ export default function ContactPage() {
                                     <button
                                         type="button"
                                         onClick={handleCopyEmail}
-                                        aria-label="Salin email"
-                                        className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#131A16] px-3 py-1.5 text-xs font-semibold text-[var(--tnl-heading)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                        aria-label={isId ? "Salin email" : "Copy email"}
+                                        className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#131A16] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
                                         data-testid="copy-email-button"
                                     >
                                         {copiedEmail ? (
                                             <>
                                                 <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                                                <span className="text-emerald-700 dark:text-emerald-300">Tersalin</span>
+                                                <span className="text-emerald-700 dark:text-emerald-300">{isId ? "Tersalin" : "Copied"}</span>
                                             </>
                                         ) : (
                                             <>
                                                 <Copy className="h-3.5 w-3.5" />
-                                                <span>Salin</span>
+                                                <span>{isId ? "Salin" : "Copy"}</span>
                                             </>
                                         )}
                                     </button>
@@ -307,7 +303,7 @@ export default function ContactPage() {
                                             <span className="block text-[11px] font-mono uppercase tracking-wider text-[var(--tnl-tan-text)]">
                                                 Instagram Resmi
                                             </span>
-                                            <span className="text-sm font-semibold text-[var(--tnl-heading)] truncate block">
+                                            <span className="text-sm font-semibold text-[var(--foreground)] truncate block">
                                                 {igHandle}
                                             </span>
                                         </div>
@@ -316,10 +312,10 @@ export default function ContactPage() {
                                         href={igUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#131A16] px-3 py-1.5 text-xs font-semibold text-[var(--tnl-heading)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                        className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#131A16] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
                                         data-testid="official-instagram-link"
                                     >
-                                        <span>Buka</span>
+                                        <span>{isId ? "Buka" : "Open"}</span>
                                         <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                                     </a>
                                 </div>
@@ -345,15 +341,15 @@ export default function ContactPage() {
                                             <span className="text-xs sm:text-sm font-medium text-[var(--tnl-body)]">
                                                 {isId ? "Layanan Ruang B-301" : "Office Hours"}
                                             </span>
-                                            <span className="font-mono font-semibold text-xs sm:text-sm text-[var(--tnl-heading)]">
-                                                Senin – Jumat · 08:00 – 16:00 WIB
+                                            <span className="font-mono font-semibold text-xs sm:text-sm text-[var(--foreground)]">
+                                                {isId ? "Senin – Jumat" : "Monday – Friday"} · 08:00 – 16:00 WIB
                                             </span>
                                         </div>
                                         <div className="p-3.5 flex items-center justify-between gap-2">
                                             <span className="text-xs sm:text-sm font-medium text-[var(--tnl-body)]">
                                                 {isId ? "Sesi Praktikum & Riset" : "Practicum Sessions"}
                                             </span>
-                                            <span className="font-mono font-semibold text-xs sm:text-sm text-[var(--tnl-heading)]">
+                                            <span className="font-mono font-semibold text-xs sm:text-sm text-[var(--foreground)]">
                                                 16:00 – 20:00 WIB
                                             </span>
                                         </div>
@@ -369,23 +365,23 @@ export default function ContactPage() {
                                     <div className="flex flex-wrap gap-2 text-xs">
                                         <Link
                                             to="/open-house"
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--tnl-heading)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
                                         >
                                             <span>Open House</span>
                                             <ArrowUpRight className="h-3 w-3" />
                                         </Link>
                                         <Link
                                             to="/activity"
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--tnl-heading)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
                                         >
-                                            <span>Kegiatan & Riset</span>
+                                            <span>{isId ? "Kegiatan & Riset" : "Activities & Research"}</span>
                                             <ArrowUpRight className="h-3 w-3" />
                                         </Link>
                                         <Link
                                             to="/verify"
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--tnl-heading)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
                                         >
-                                            <span>Verifikasi Sertifikat</span>
+                                            <span>{isId ? "Verifikasi Sertifikat" : "Verify Certificate"}</span>
                                             <ArrowUpRight className="h-3 w-3" />
                                         </Link>
                                     </div>
@@ -395,7 +391,7 @@ export default function ContactPage() {
                     </div>
 
                     {/* Right Column (7 Cols): Revamped Message Form Card */}
-                    <div className="lg:col-span-7 h-full">
+                    <div className="editorial-contact-compose">
                         <div className="tnl-card tnl-scroll-reveal overflow-hidden flex flex-col h-full" data-testid="contact-form-container">
                             {/* Header Strip */}
                             <div className="tnl-card-header">
@@ -403,7 +399,7 @@ export default function ContactPage() {
                                     <Send className="h-3.5 w-3.5" aria-hidden="true" />
                                     <span>{isId ? "FORMULIR PESAN RESMI" : "OFFICIAL DIRECT INQUIRY"}</span>
                                 </div>
-                                <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
+                                <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-[var(--foreground)]">
                                     {isId ? "Kirim Pesan Langsung" : "Send a Direct Message"}
                                 </h2>
                                 <p className="mt-1 text-xs sm:text-sm text-[var(--tnl-body)] leading-relaxed">
@@ -420,7 +416,7 @@ export default function ContactPage() {
                                         <label className="block text-xs font-semibold text-[var(--tnl-tan-text)] uppercase tracking-wider mb-2.5">
                                             {isId ? "Pilih Topik Cepat (Opsional)" : "Quick Topic Selection (Optional)"}
                                         </label>
-                                        <div className="flex flex-wrap gap-2" role="group" aria-label="Topic Pills">
+                                        <div className="flex flex-wrap gap-2" role="group" aria-label={isId ? "Pilihan topik" : "Inquiry topics"}>
                                             {TOPIC_PILLS.map((pill) => {
                                                 const label = isId ? pill.label_id : pill.label_en;
                                                 const isSelected = activePill === pill.id;
@@ -429,10 +425,11 @@ export default function ContactPage() {
                                                         key={pill.id}
                                                         type="button"
                                                         onClick={() => handleSelectPill(pill)}
+                                                        aria-pressed={isSelected}
                                                         className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 py-1.5 text-xs transition-all ${
                                                             isSelected
                                                                 ? "bg-[#223027] text-white border border-[#223027] dark:bg-[#A8977B] dark:text-[#111613] dark:border-[#A8977B] font-semibold shadow-xs"
-                                                                : "border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] text-[var(--tnl-heading)] hover:border-[#223027] dark:hover:border-[#C4B393] font-medium shadow-2xs"
+                                                                : "border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] text-[var(--foreground)] hover:border-[#223027] dark:hover:border-[#C4B393] font-medium shadow-2xs"
                                                         }`}
                                                         data-testid={`topic-pill-${pill.id}`}
                                                     >
@@ -447,12 +444,13 @@ export default function ContactPage() {
                                         <div
                                             className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center space-y-4 animate-fade-in my-auto"
                                             data-testid="contact-form-success"
+                                            role="status"
                                         >
                                             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                                                 <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
                                             </div>
                                             <div>
-                                                <h3 className="text-xl font-bold text-[var(--tnl-heading)]">
+                                                <h3 className="text-xl font-bold text-[var(--foreground)]">
                                                     {isId ? "Pesan Berhasil Terkirim!" : "Message Successfully Sent!"}
                                                 </h3>
                                                 <p className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)] max-w-md mx-auto">
@@ -489,7 +487,7 @@ export default function ContactPage() {
                                             {/* Responsive 2-column Grid for Name & Email */}
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>
-                                                    <label htmlFor="contact-name" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
+                                                    <label htmlFor="contact-name" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--foreground)]">
                                                         {isId ? "Nama Lengkap" : "Full Name"}{" "}
                                                         <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
                                                     </label>
@@ -506,16 +504,18 @@ export default function ContactPage() {
                                                         className="tnl-input min-h-[44px]"
                                                         required
                                                         data-testid="contact-name-input"
+                                                        aria-invalid={!!errors.name}
+                                                        aria-describedby={errors.name ? "contact-name-error" : undefined}
                                                     />
                                                     {errors.name ? (
-                                                        <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-name-error">
+                                                        <p id="contact-name-error" className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-name-error">
                                                             {errors.name}
                                                         </p>
                                                     ) : null}
                                                 </div>
 
                                                 <div>
-                                                    <label htmlFor="contact-email" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
+                                                    <label htmlFor="contact-email" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--foreground)]">
                                                         {isId ? "Email Resmi / Institusi" : "Official / Personal Email"}{" "}
                                                         <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
                                                     </label>
@@ -532,9 +532,11 @@ export default function ContactPage() {
                                                         className="tnl-input min-h-[44px]"
                                                         required
                                                         data-testid="contact-email-input"
+                                                        aria-invalid={!!errors.email}
+                                                        aria-describedby={errors.email ? "contact-email-error" : undefined}
                                                     />
                                                     {errors.email ? (
-                                                        <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-email-error">
+                                                        <p id="contact-email-error" className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-email-error">
                                                             {errors.email}
                                                         </p>
                                                     ) : null}
@@ -543,7 +545,7 @@ export default function ContactPage() {
 
                                             {/* Subject */}
                                             <div>
-                                                <label htmlFor="contact-subject" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
+                                                <label htmlFor="contact-subject" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--foreground)]">
                                                     {isId ? "Subjek Pesan" : "Subject"}{" "}
                                                     <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
                                                 </label>
@@ -560,9 +562,11 @@ export default function ContactPage() {
                                                     className="tnl-input min-h-[44px]"
                                                     required
                                                     data-testid="contact-subject-input"
+                                                    aria-invalid={!!errors.subject}
+                                                    aria-describedby={errors.subject ? "contact-subject-error" : undefined}
                                                 />
                                                 {errors.subject ? (
-                                                    <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-subject-error">
+                                                    <p id="contact-subject-error" className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-subject-error">
                                                         {errors.subject}
                                                     </p>
                                                 ) : null}
@@ -571,7 +575,7 @@ export default function ContactPage() {
                                             {/* Message */}
                                             <div>
                                                 <div className="mb-1.5 flex items-center justify-between">
-                                                    <label htmlFor="contact-message" className="block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
+                                                    <label htmlFor="contact-message" className="block text-xs font-semibold tracking-wide text-[var(--foreground)]">
                                                         {isId ? "Isi Pesan" : "Message Body"}{" "}
                                                         <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
                                                     </label>
@@ -596,9 +600,11 @@ export default function ContactPage() {
                                                     className="tnl-input"
                                                     required
                                                     data-testid="contact-message-input"
+                                                    aria-invalid={!!errors.message}
+                                                    aria-describedby={errors.message ? "contact-message-error" : undefined}
                                                 />
                                                 {errors.message ? (
-                                                    <p className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-message-error">
+                                                    <p id="contact-message-error" className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-message-error">
                                                         {errors.message}
                                                     </p>
                                                 ) : null}
@@ -617,6 +623,8 @@ export default function ContactPage() {
                                                         }}
                                                         className="mt-1 h-4 w-4 rounded border-[#C5CDC2] text-[#223027] dark:text-[#A8977B] focus:ring-[#223027]"
                                                         data-testid="contact-pdp-consent-checkbox"
+                                                        aria-invalid={!!errors.consent}
+                                                        aria-describedby={errors.consent ? "contact-consent-error" : undefined}
                                                     />
                                                     <label htmlFor="contact-pdp-consent" className="text-xs leading-relaxed text-[var(--tnl-body)]">
                                                         {isId ? (
@@ -641,7 +649,7 @@ export default function ContactPage() {
                                                     </label>
                                                 </div>
                                                 {errors.consent ? (
-                                                    <p className="mt-2 text-xs font-medium text-rose-500 pl-7" data-testid="contact-consent-error">
+                                                    <p id="contact-consent-error" className="mt-2 text-xs font-medium text-rose-500 pl-7" data-testid="contact-consent-error">
                                                         {errors.consent}
                                                     </p>
                                                 ) : null}
@@ -683,7 +691,7 @@ export default function ContactPage() {
                                 <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#5D8A6B] dark:text-[#7EA88B]">
                                     INTERACTIVE LOCATION · GEDUNG B, B-301
                                 </span>
-                                <h3 className="text-xl font-bold tracking-tight text-[var(--tnl-heading)] mt-0.5">
+                                <h3 className="text-xl font-bold tracking-tight text-[var(--foreground)] mt-0.5">
                                     {isId ? "Kunjungi Ruang B-301" : "Visit Room B-301"}
                                 </h3>
                                 <p className="text-xs text-[var(--tnl-body)] mt-0.5">
@@ -697,10 +705,10 @@ export default function ContactPage() {
                                     href="https://maps.google.com/maps?q=Departemen+Teknik+Elektro+ITS+Surabaya"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#111613] px-3.5 py-2 text-xs font-semibold text-[var(--tnl-heading)] shadow-2xs transition-all hover:bg-[#F6F7F4] dark:hover:bg-white/[0.06]"
+                                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#111613] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] shadow-2xs transition-all hover:bg-[#F6F7F4] dark:hover:bg-white/[0.06]"
                                     data-testid="map-open-google-maps"
                                 >
-                                    <span>Buka di Google Maps</span>
+                                    <span>{isId ? "Buka di Google Maps" : "Open in Google Maps"}</span>
                                     <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                                 </a>
                                 <a
@@ -738,7 +746,7 @@ export default function ContactPage() {
                         </div>
                     </div>
                 </section>
-            </main>
+            </div>
         </div>
     );
 }

@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 def now_utc() -> datetime:
@@ -146,6 +146,7 @@ class Event(BaseModel):
     gallery_images: list[str] = []
     documentation: list[MediaItem] = []
     spreadsheet_webhook_url: str | None = None
+    whatsapp_group_url: str = ""
     start_date: str | None = None  # YYYY-MM-DD
     end_date: str | None = None
     reg_open_date: str | None = None
@@ -162,6 +163,18 @@ class Event(BaseModel):
     issues: list[dict] = []
     created_at: datetime = Field(default_factory=now_utc)
     updated_at: datetime = Field(default_factory=now_utc)
+
+    @field_validator("whatsapp_group_url", mode="before")
+    @classmethod
+    def validate_whatsapp_group_url(cls, v: Any) -> str:
+        if v is None:
+            return ""
+        val = str(v).strip()
+        if not val:
+            return ""
+        if not val.startswith("https://"):
+            raise ValueError("whatsapp_group_url must start with https://")
+        return val
 
 
 class Activity(BaseModel):

@@ -135,6 +135,7 @@ export interface LabEvent {
   poster_urls: string[];
   gallery_images?: string[];
   spreadsheet_webhook_url?: string | null;
+  whatsapp_group_url?: string | null;
   documentation: MediaItemRef[];
   start_date?: string | null;
   end_date?: string | null;

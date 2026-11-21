@@ -1,11 +1,12 @@
 // Utility public pages: legal pages (CMS-driven), certificate verification, 404.
 
 import { useEffect, useState } from "react";
+import "./utility-editorial.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { BadgeCheck, Download, QrCode, RotateCcw, Search, ShieldAlert, ShieldCheck } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { useLocale } from "@/lib/i18n";
-import { EmptyState, Spinner } from "@/components/site/Primitives";
+import { Spinner } from "@/components/site/Primitives";
 import { TnlLogo } from "@/components/site/TnlLogo";
 import { CmsPage } from "@/pages/Home";
 export { TermsPage, PrivacyPage } from "@/pages/LegalPages";
@@ -84,17 +85,17 @@ export function VerifyPage() {
     };
 
     return (
-        <div data-testid="verify-page">
-            <section className="tnl-hero-gradient">
-                <div className="tnl-container py-14 lg:py-16 text-center">
-                    <span className="tnl-eyebrow inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-white/10 border border-white/15 mb-3" style={{ color: "var(--tnl-tan,#C4B393)" }}>
+        <div className="utility-editorial verify-editorial" data-testid="verify-page">
+            <section className="utility-masthead">
+                <div className="tnl-container">
+                    <span className="utility-kicker inline-flex items-center gap-2 mb-5">
                         <ShieldCheck className="h-3.5 w-3.5" />
                         {locale === "id" ? "Portal Verifikasi Resmi" : "Official Verification Portal"}
                     </span>
-                    <h1 className="tnl-hero-title font-bold text-[28px] sm:text-[36px] text-white">
+                    <h1 className="utility-title">
                         {locale === "id" ? "Verifikasi e-Sertifikat Lab TNL" : "TNL Lab e-Certificate Verification"}
                     </h1>
-                    <p className="mt-3 text-sm sm:text-base text-gray-200 max-w-2xl mx-auto">
+                    <p className="verify-intro">
                         {locale === "id"
                             ? "Sistem validasi keaslian sertifikat kegiatan, pelatihan, dan praktikum resmi dari Laboratorium Jaringan Telekomunikasi ITS."
                             : "Authenticity validation system for official activity, training, and practicum certificates issued by Telecommunication Network Laboratory ITS."}
@@ -102,17 +103,19 @@ export function VerifyPage() {
                 </div>
             </section>
 
-            <section className="tnl-section" style={{ background: "var(--tnl-surface)" }}>
-                <div className="tnl-container max-w-xl">
+            <section className="utility-section">
+                <div className="tnl-container verify-desk">
                     {/* Search Form Card */}
-                    <div className="tnl-card p-6 sm:p-8 mb-6 shadow-sm">
+                    <div className="verify-search">
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-2">
+                                <label htmlFor="verify-code" className="block font-bold uppercase mb-2">
                                     {locale === "id" ? "Masukkan Kode Sertifikat / Hasil Scan QR" : "Enter Certificate Code / QR Scan"}
                                 </label>
                                 <div className="relative">
                                     <input
+                                        id="verify-code"
+                                        aria-describedby="verify-code-help"
                                         type="text"
                                         value={inputCode}
                                         onChange={(e) => setInputCode(e.target.value)}
@@ -121,9 +124,9 @@ export function VerifyPage() {
                                         aria-label="Certificate Code"
                                         data-testid="verify-input-code"
                                     />
-                                    <QrCode className="absolute right-3 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
+                                    <QrCode className="absolute right-3 top-3 h-5 w-5 text-[var(--tnl-body)] pointer-events-none" />
                                 </div>
-                                <p className="mt-1.5 text-[11px] text-gray-500">
+                                <p id="verify-code-help" className="mt-2 text-xs text-[var(--tnl-body)]">
                                     {locale === "id"
                                         ? "Kode tertera di bagian bawah lembar sertifikat fisik/PDF atau di URL hasil pemindaian QR code."
                                         : "The code is printed at the bottom of the certificate or inside the scanned QR code URL."}
@@ -133,7 +136,7 @@ export function VerifyPage() {
                             <button
                                 type="submit"
                                 disabled={!inputCode.trim() || loading}
-                                className="tnl-btn tnl-btn-primary w-full h-11 min-h-[44px] text-sm font-semibold flex items-center justify-center gap-2"
+                                className="utility-button utility-button-primary w-full"
                                 data-testid="verify-submit-button"
                             >
                                 <Search className="h-4 w-4" />
@@ -146,18 +149,18 @@ export function VerifyPage() {
 
                     {/* Result Card */}
                     {loading ? (
-                        <div className="py-8">
+                        <div role="status" aria-live="polite" className="verify-result">
                             <Spinner label={t("loading")} />
                         </div>
                     ) : searched && data ? (
                         data.valid ? (
-                            <div className="tnl-card p-8 text-center animate-fade-in shadow-md border-emerald-500/20" data-testid="verify-valid">
-                                <TnlLogo variant="auto" className="mx-auto mb-4 h-16 w-16" />
-                                <div className="inline-flex items-center gap-1.5 rounded-full bg-[#5D8A6B]/15 px-3 py-1 text-xs font-semibold text-[#2E583A] dark:text-[#8AB597]">
+                            <div role="status" aria-live="polite" className="verify-result" data-testid="verify-valid">
+                                <TnlLogo variant="auto" className="mb-4 h-12 w-12" />
+                                <div className="inline-flex items-center gap-1.5 rounded-full bg-[#5D8A6B]/15 px-3 py-1 text-xs font-semibold text-[var(--tnl-body)]">
                                     <BadgeCheck className="h-4 w-4" aria-hidden="true" />
                                     <span>{t("certificate_valid")}</span>
                                 </div>
-                                <p className="mt-4 text-xl font-bold" style={{ color: "var(--tnl-green)" }}>{data.name}</p>
+                                <p className="utility-record-name mt-4">{data.name}</p>
                                 <p className="mt-1 text-sm font-medium text-[var(--tnl-body)]">{data.event_title}</p>
                                 {data.event_date && (
                                     <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
@@ -165,14 +168,14 @@ export function VerifyPage() {
                                     </p>
                                 )}
                                 <div className="my-4 border-t border-dashed" style={{ borderColor: "var(--tnl-border)" }} />
-                                <p className="font-mono text-xs font-semibold tracking-wider text-[var(--tnl-tan)]">
+                                <p className="verify-record-code">
                                     {data.code}
                                 </p>
                                 <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
                                     <a
                                         href={`/api/certificates/${data.code}/pdf`}
                                         download
-                                        className="tnl-btn tnl-btn-primary inline-flex items-center gap-2 h-11 min-h-[44px]"
+                                        className="utility-button utility-button-primary"
                                         data-testid="download-certificate-btn"
                                     >
                                         <Download className="h-4 w-4" aria-hidden="true" />
@@ -181,7 +184,7 @@ export function VerifyPage() {
                                     <button
                                         type="button"
                                         onClick={handleReset}
-                                        className="tnl-btn tnl-btn-outline inline-flex items-center gap-1.5 h-11 min-h-[44px] text-xs font-medium"
+                                        className="utility-button"
                                     >
                                         <RotateCcw className="h-3.5 w-3.5" />
                                         {locale === "id" ? "Verifikasi Sertifikat Lain" : "Check Another Code"}
@@ -189,9 +192,9 @@ export function VerifyPage() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="tnl-card p-8 text-center animate-fade-in shadow-md border-red-500/20" data-testid="verify-invalid">
-                                <ShieldAlert className="mx-auto h-12 w-12 text-red-500" aria-hidden="true" />
-                                <h2 className="tnl-h5 mt-4 text-[20px] text-red-600 dark:text-red-400">
+                            <div role="status" aria-live="polite" className="verify-result" data-testid="verify-invalid">
+                                <ShieldAlert className="h-10 w-10 text-[var(--destructive)]" aria-hidden="true" />
+                                <h2 className="utility-title mt-4">
                                     {t("certificate_invalid")}
                                 </h2>
                                 <p className="mt-2 text-sm text-[var(--tnl-body)]">{data.message}</p>
@@ -199,7 +202,7 @@ export function VerifyPage() {
                                     <button
                                         type="button"
                                         onClick={handleReset}
-                                        className="tnl-btn tnl-btn-outline inline-flex items-center gap-1.5 text-xs font-medium"
+                                        className="utility-button"
                                     >
                                         <RotateCcw className="h-3.5 w-3.5" />
                                         {locale === "id" ? "Coba Kode Lain" : "Try Another Code"}
@@ -207,7 +210,17 @@ export function VerifyPage() {
                                 </div>
                             </div>
                         )
-                    ) : null}
+                    ) : (
+                        <div className="verify-idle">
+                            <p className="utility-kicker">TNL / ITS</p>
+                            <h2 className="mt-3 text-2xl font-medium">{locale === "id" ? "Cara memverifikasi" : "How to verify"}</h2>
+                            <ol className="mt-5 list-decimal pl-5 space-y-3 text-sm leading-relaxed">
+                                <li>{locale === "id" ? "Temukan kode unik pada sertifikat atau tautan QR." : "Find the unique code on your certificate or QR link."}</li>
+                                <li>{locale === "id" ? "Masukkan kode, lalu jalankan verifikasi." : "Enter the code and run verification."}</li>
+                                <li>{locale === "id" ? "Cocokkan nama, kegiatan, dan tanggal dengan dokumen Anda." : "Match the name, event, and date against your document."}</li>
+                            </ol>
+                        </div>
+                    )}
                 </div>
             </section>
         </div>
@@ -215,14 +228,23 @@ export function VerifyPage() {
 }
 
 export function NotFoundPage() {
-    const { t } = useLocale();
+    const { t, locale } = useLocale();
     return (
-        <div className="tnl-container tnl-section" data-testid="not-found-page">
-            <EmptyState title={t("not_found_title")} body={t("not_found_body")} testId="not-found-empty-state" />
-            <div className="mt-6 text-center">
-                <Link to="/" className="tnl-btn tnl-btn-primary" data-testid="not-found-home-button">
-                    {t("back_home")}
-                </Link>
+        <div className="utility-editorial not-found-editorial" data-testid="not-found-page">
+            <div className="tnl-container">
+                <p className="utility-kicker">404 / TNL · ITS</p>
+                <div data-testid="not-found-empty-state">
+                    <h1 className="utility-title">{t("not_found_title")}</h1>
+                    <p>{t("not_found_body")}</p>
+                </div>
+                <div className="not-found-actions">
+                    <Link to="/" className="utility-button utility-button-primary" data-testid="not-found-home-button">
+                        {t("back_home")}
+                    </Link>
+                    <Link to="/contact" className="utility-button">
+                        {locale === "id" ? "Hubungi laboratorium" : "Contact the laboratory"}
+                    </Link>
+                </div>
             </div>
         </div>
     );

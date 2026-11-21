@@ -29,7 +29,8 @@ import { useMembers, usePartners, usePosts, useSettings, useStats } from "@/lib/
 import { EmptyState, SectionHeading, formatDate } from "@/components/site/Primitives";
 import { MemberSections } from "@/components/site/MemberSections";
 import { ContactForm } from "@/components/site/ContactForm";
-import { TnlLogo } from "@/components/site/TnlLogo";
+import { SignalHero } from "@/components/site/SignalHero";
+import { SignalGallery } from "@/components/site/SignalGallery";
 import type { Block } from "@/lib/types";
 
 const ICONS = [Radio, Wrench, GraduationCap, Users, ActivityIcon];
@@ -61,135 +62,14 @@ function num(props: Record<string, unknown>, key: string, fallback: number): num
 
 // ---------------------------------------------------------------- hero
 function HeroBlock({ props }: { props: Record<string, unknown> }) {
-    const { locale, t } = useLocale();
-    const badge = str(props, "badge");
-
-    const handleHeroPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-        if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left - rect.width / 2;
-        const y = e.clientY - rect.top - rect.height / 2;
-        const tiltX = (x / (rect.width / 2)) * 6;
-        const tiltY = (y / (rect.height / 2)) * 6;
-        const rotX = (-y / (rect.height / 2)) * 3;
-        const rotY = (x / (rect.width / 2)) * 3;
-        e.currentTarget.style.setProperty("--tilt-x", `${tiltX.toFixed(2)}px`);
-        e.currentTarget.style.setProperty("--tilt-y", `${tiltY.toFixed(2)}px`);
-        e.currentTarget.style.setProperty("--tilt-rot-x", `${rotX.toFixed(2)}deg`);
-        e.currentTarget.style.setProperty("--tilt-rot-y", `${rotY.toFixed(2)}deg`);
-    };
-
-    const handleHeroPointerLeave = (e: React.PointerEvent<HTMLDivElement>) => {
-        e.currentTarget.style.setProperty("--tilt-x", "0px");
-        e.currentTarget.style.setProperty("--tilt-y", "0px");
-        e.currentTarget.style.setProperty("--tilt-rot-x", "0deg");
-        e.currentTarget.style.setProperty("--tilt-rot-y", "0deg");
-    };
-
-    return (
-        <section className="tnl-hero-gradient relative overflow-hidden" data-testid="block-hero">
-            <div className="tnl-hero-ambient" aria-hidden="true">
-                <span className="tnl-amb-dot" />
-                <span className="tnl-amb-dot" />
-                <span className="tnl-amb-dot" />
-                <span className="tnl-amb-dot" />
-                <span className="tnl-amb-dot" />
-                <span className="tnl-amb-dot" />
-            </div>
-            <div
-                className="tnl-hero-parallax-bg pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full opacity-20 blur-3xl"
-                style={{ background: "var(--tnl-tan)" }}
-                aria-hidden="true"
-            />
-            <div className="tnl-container relative grid items-center gap-12 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
-                <div className="animate-fade-up">
-                    {badge ? (
-                        <span
-                            className="tnl-eyebrow inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-bold tracking-wider"
-                            style={{ background: "rgba(168,151,123,0.18)", color: "var(--tnl-tan)" }}
-                            data-testid="hero-badge"
-                        >
-                            <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-                            {badge}
-                        </span>
-                    ) : null}
-                    <h1 className="tnl-hero-title mt-5 font-bold text-white" style={{ color: "#ffffff" }} data-testid="hero-title">
-                        {pickProp(locale, props, "title_before")}{" "}
-                        <span style={{ color: "var(--tnl-tan)" }}>{pickProp(locale, props, "title_accent")}</span>{" "}
-                        {pickProp(locale, props, "title_after")}
-                    </h1>
-                    <p className="mt-6 max-w-2xl text-base leading-relaxed sm:text-lg" style={{ color: "#dfe2e5" }} data-testid="hero-intro">
-                        {pickProp(locale, props, "intro")}
-                    </p>
-                    <div className="mt-8 flex flex-wrap gap-3">
-                        <Link
-                            to={str(props, "primary_url", "/activity")}
-                            viewTransition
-                            className="tnl-btn tnl-btn-tan text-[#111613]"
-                            data-testid="hero-primary-cta-button"
-                        >
-                            {pickProp(locale, props, "primary_label") || t("see_all")}
-                            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                        </Link>
-                        <Link
-                            to={str(props, "secondary_url", "/contact")}
-                            viewTransition
-                            className="tnl-btn tnl-btn-ghost-light"
-                            data-testid="hero-secondary-cta-button"
-                        >
-                            {pickProp(locale, props, "secondary_label") || t("join_us")}
-                        </Link>
-                    </div>
-                </div>
-
-                {/* Animated Floating TNL Emblem & Concentric Signal Waves with Subtle 3D Pointer Tilt */}
-                <div
-                    className="flex justify-center lg:justify-end"
-                    data-testid="hero-emblem-container"
-                    onPointerMove={handleHeroPointerMove}
-                    onPointerLeave={handleHeroPointerLeave}
-                >
-                    <div className="tnl-hero-tilt relative flex items-center justify-center p-4">
-                        {/* Ambient Radial Glow */}
-                        <div
-                            aria-hidden="true"
-                            className="pointer-events-none absolute h-64 w-64 md:h-80 md:w-80 rounded-full blur-3xl opacity-35"
-                            style={{
-                                background: "radial-gradient(circle, rgba(126,168,139,0.4) 0%, rgba(196,179,147,0.22) 50%, transparent 72%)"
-                            }}
-                        />
-
-                        {/* Animated Signal Pulse Rings (Concentric Waves) */}
-                        <div
-                            aria-hidden="true"
-                            className="pointer-events-none absolute h-52 w-52 md:h-72 md:w-72 rounded-full border border-[#7EA88B]/25 animate-signal-pulse-1 motion-reduce:animate-none"
-                        />
-                        <div
-                            aria-hidden="true"
-                            className="pointer-events-none absolute h-64 w-64 md:h-88 md:w-88 rounded-full border border-[#C4B393]/20 animate-signal-pulse-2 motion-reduce:animate-none"
-                        />
-
-                        {/* Floating Emblem */}
-                        <div className="relative z-10 animate-hero-float motion-reduce:animate-none">
-                            <TnlLogo
-                                variant="light"
-                                priority
-                                className="h-56 w-56 md:h-72 md:w-72 lg:h-80 lg:w-80"
-                                imgClassName="drop-shadow-[0_16px_36px_rgba(0,0,0,0.55)] select-none pointer-events-none"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    );
+    return <SignalHero props={props} />;
 }
 
 function InnerHeroBlock({ props }: { props: Record<string, unknown> }) {
     const { locale } = useLocale();
     const eyebrow = pickProp(locale, props, "eyebrow");
     return (
-        <section className="tnl-hero-gradient" data-testid="block-inner-hero">
+        <section className="signal-inner-hero" data-testid="block-inner-hero">
             <div className="tnl-container py-14 lg:py-20">
                 {eyebrow ? (
                     <p className="tnl-eyebrow mb-3 font-bold" style={{ color: "var(--tnl-tan)" }} data-testid="inner-hero-eyebrow">
@@ -242,12 +122,12 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
     const aboutIcons = [Target, Server, Radio, Building2];
 
     return (
-        <section className="tnl-section" data-testid="block-about">
+        <section className="tnl-section signal-about" data-testid="block-about">
             <div className="tnl-container">
                 <SectionHeading title={pickProp(locale, props, "heading")} testId="about-heading" />
-                <div className="grid items-start gap-10 lg:grid-cols-2">
+                <div className={`signal-about-layout ${list.length ? "has-tiles" : ""}`}>
                     <div className="flex flex-col justify-between space-y-6">
-                        <p className="text-base leading-[1.8] text-[var(--tnl-body)] sm:text-lg text-justify [hyphens:auto]" data-testid="about-body">
+                        <p className="signal-about-body" data-testid="about-body">
                             {pickProp(locale, props, "body")}
                         </p>
                         <div
@@ -260,7 +140,7 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                                     style={{ background: "color-mix(in srgb, var(--tnl-green) 12%, transparent)" }}
                                     aria-hidden="true"
                                 >
-                                    <MapPin className="h-5 w-5" style={{ color: "var(--tnl-green)" }} />
+                                    <MapPin className="h-5 w-5" style={{ color: "var(--tnl-link)" }} />
                                 </div>
                                 <div>
                                     <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
@@ -270,7 +150,7 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 border-t pt-2 text-xs font-medium text-[var(--tnl-muted)] sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
-                                <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: "var(--tnl-green)" }} />
+                                <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: "var(--tnl-link)" }} />
                                 <span>{locale === "id" ? "Departemen Teknik Elektro ITS" : "Dept. of Electrical Engineering"}</span>
                             </div>
                         </div>
@@ -282,9 +162,9 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                             return (
                                 <div
                                     key={tile.name ?? tile.title ?? i}
-                                    className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal border-l-4 p-6"
+                                    className="signal-about-tile"
                                     onPointerMove={handleSpotlightPointerMove}
-                                    style={{ borderLeftColor: i % 2 === 0 ? "var(--tnl-green)" : "var(--tnl-tan)" }}
+                                    
                                     data-testid={`about-tile-${i}`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -335,11 +215,11 @@ function FeatureTilesBlock({ props }: { props: Record<string, unknown> }) {
                         return (
                             <div
                                 key={i}
-                                className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal p-6"
+                                className="signal-feature-tile"
                                 onPointerMove={handleSpotlightPointerMove}
                                 data-testid={`feature-tile-${i}`}
                             >
-                                <Icon className="mb-3 h-6 w-6" style={{ color: "var(--tnl-green)" }} aria-hidden="true" />
+                                <Icon className="mb-3 h-6 w-6" style={{ color: "var(--tnl-link)" }} aria-hidden="true" />
                                 <h3 className="text-[18px] font-bold">{pick(locale, tile.title ?? tile.name, tile.title_id ?? tile.name_id)}</h3>
                                 <p className="mt-2 text-sm text-[var(--tnl-body)]">{pick(locale, tile.description, tile.description_id)}</p>
                             </div>
@@ -356,46 +236,18 @@ function NumberedCardsBlock({ props }: { props: Record<string, unknown> }) {
     const { locale, t } = useLocale();
     const cards = tiles(props, "cards");
     return (
-        <section className="tnl-section" style={{ background: "var(--tnl-surface)" }} data-testid="block-numbered-cards">
-            <div className="tnl-container">
-                <SectionHeading
-                    title={pickProp(locale, props, "heading")}
-                    count={cards.length}
-                    countLabel={locale === "id" ? "bidang" : "tracks"}
-                    testId="numbered-cards-heading"
-                />
-                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <section className="tnl-section signal-research" data-testid="block-numbered-cards">
+            <div className="tnl-container signal-research-layout">
+                <SectionHeading title={pickProp(locale, props, "heading")} count={cards.length} countLabel={locale === "id" ? "bidang" : "tracks"} testId="numbered-cards-heading" />
+                <div>
                     {cards.map((card, i) => (
-                        <article
-                            key={i}
-                            className="tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal border-l-4 p-6"
-                            onPointerMove={handleSpotlightPointerMove}
-                            style={{ borderLeftColor: "var(--tnl-tan)" }}
-                            data-testid={`numbered-card-${i}`}
-                        >
-                            <span className="block text-[34px] font-bold leading-none" style={{ color: "var(--tnl-tan)" }}>
-                                {String(i + 1).padStart(2, "0")}
-                            </span>
-                            <h3 className="mt-3 text-[19px] font-bold">{pick(locale, card.title ?? card.name, card.title_id ?? card.name_id)}</h3>
-                            <p className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)]">
-                                {pick(locale, card.description, card.description_id)}
-                            </p>
+                        <article key={i} className="signal-research-row" data-testid={`numbered-card-${i}`}>
+                            <span className="signal-research-index">{String(i + 1).padStart(2, "0")}</span>
+                            <div><h3>{pick(locale, card.title ?? card.name, card.title_id ?? card.name_id)}</h3><p>{pick(locale, card.description, card.description_id)}</p></div>
                         </article>
                     ))}
-                    <Link
-                        to={str(props, "see_all_url", "/activity")}
-                        viewTransition
-                        className="tnl-hero-gradient tnl-card tnl-card-hover tnl-card-spotlight tnl-scroll-reveal flex flex-col justify-between p-6"
-                        onPointerMove={handleSpotlightPointerMove}
-                        data-testid="numbered-cards-see-all-card"
-                    >
-                        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--tnl-tan)" }}>
-                            {t("see_all")}
-                        </span>
-                        <span className="mt-6 flex items-center gap-2 text-[19px] font-bold text-white" style={{ color: "#ffffff" }}>
-                            {pickProp(locale, props, "see_all_label") || t("see_all")}
-                            <ArrowRight className="h-5 w-5" aria-hidden="true" />
-                        </span>
+                    <Link to={str(props, "see_all_url", "/activity?tab=rd")} viewTransition className="signal-research-more" data-testid="numbered-cards-see-all-card">
+                        {pickProp(locale, props, "see_all_label") || t("see_all")}<ArrowRight className="h-5 w-5" aria-hidden="true" />
                     </Link>
                 </div>
             </div>
@@ -420,7 +272,7 @@ function CarouselBlock({ props }: { props: Record<string, unknown> }) {
                         <button
                             type="button"
                             onClick={() => go(-1)}
-                            className="flex h-11 w-11 items-center justify-center rounded-full border transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-green)]"
+                            className="flex h-11 w-11 items-center justify-center rounded-full border transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-link)]"
                             style={{ borderColor: "var(--tnl-border)" }}
                             aria-label="Previous slide"
                             data-testid="carousel-prev-button"
@@ -430,7 +282,7 @@ function CarouselBlock({ props }: { props: Record<string, unknown> }) {
                         <button
                             type="button"
                             onClick={() => go(1)}
-                            className="flex h-11 w-11 items-center justify-center rounded-full border transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-green)]"
+                            className="flex h-11 w-11 items-center justify-center rounded-full border transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-link)]"
                             style={{ borderColor: "var(--tnl-border)" }}
                             aria-label="Next slide"
                             data-testid="carousel-next-button"
@@ -439,7 +291,7 @@ function CarouselBlock({ props }: { props: Record<string, unknown> }) {
                         </button>
                     </div>
                 </div>
-                <div className="tnl-card overflow-hidden p-0" data-testid="carousel-slide">
+                <div className="signal-study-slide" data-testid="carousel-slide">
                     <div className="grid gap-0 md:grid-cols-[0.4fr_0.6fr]">
                         <div className="tnl-hero-gradient flex items-center justify-center p-10">
                             <span className="text-[64px] font-bold leading-none" style={{ color: "var(--tnl-tan)" }} aria-hidden="true">
@@ -491,14 +343,14 @@ function QuickLinksBlock({ props }: { props: Record<string, unknown> }) {
                         <Link
                             key={i}
                             to={card.url ?? "/"}
-                            className="tnl-card tnl-card-hover group flex flex-col p-7"
+                            className="signal-directory-link group"
                             data-testid={`quick-link-card-${i}`}
                         >
                             <h3 className="text-[21px] font-bold">{pick(locale, card.title, card.title_id)}</h3>
                             <p className="mt-2 flex-1 text-sm text-[var(--tnl-body)]">{pick(locale, card.description, card.description_id)}</p>
                             <span
                                 className="mt-5 inline-flex items-center gap-2 text-sm font-semibold transition-transform group-hover:translate-x-1"
-                                style={{ color: "var(--tnl-green)" }}
+                                style={{ color: "var(--tnl-link)" }}
                             >
                                 {t("read_more")} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                             </span>
@@ -623,7 +475,7 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                 {!isLoading && posts.length === 0 ? (
                     <EmptyState title={t("coming_soon")} body={t("empty_news")} testId="news-empty-state" />
                 ) : (
-                    <div className={`grid gap-5 md:grid-cols-2 lg:grid-cols-3 ${isFetching && !isLoading ? "opacity-80 transition-opacity" : "transition-opacity"}`}>
+                    <div className={`${showFilters ? "grid gap-5 md:grid-cols-2 lg:grid-cols-3" : "signal-news-grid"} ${isFetching && !isLoading ? "opacity-80 transition-opacity" : "transition-opacity"}`}>
                         {posts.map((post) => (
                             <Link
                                 key={post.id}
@@ -655,7 +507,7 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                                     <p className="mt-2 flex-1 text-sm text-[var(--tnl-body)]">{pick(locale, post.excerpt, post.excerpt_id)}</p>
                                     <span
                                         className="mt-4 inline-flex items-center gap-2 text-sm font-semibold transition-transform group-hover:translate-x-1"
-                                        style={{ color: "var(--tnl-green)" }}
+                                        style={{ color: "var(--tnl-link)" }}
                                     >
                                         {t("read_more")} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                                     </span>
@@ -802,7 +654,7 @@ function ContactPanelBlock() {
                             style={{ background: "color-mix(in srgb, var(--tnl-green) 12%, transparent)" }}
                             aria-hidden="true"
                         >
-                            <Icon className="h-5 w-5" style={{ color: "var(--tnl-green)" }} />
+                            <Icon className="h-5 w-5" style={{ color: "var(--tnl-link)" }} />
                         </div>
                         <div>
                             <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
@@ -837,9 +689,9 @@ function MapBlock({ props }: { props: Record<string, unknown> }) {
                     className="tnl-card tnl-card-hover flex flex-col items-center justify-center gap-3 px-6 py-16 text-center"
                     data-testid="map-open-link"
                 >
-                    <MapPin className="h-8 w-8" style={{ color: "var(--tnl-green)" }} aria-hidden="true" />
+                    <MapPin className="h-8 w-8" style={{ color: "var(--tnl-link)" }} aria-hidden="true" />
                     <span className="text-[17px] font-bold">{label}</span>
-                    <span className="text-sm" style={{ color: "var(--tnl-green)" }}>
+                    <span className="text-sm" style={{ color: "var(--tnl-link)" }}>
                         Google Maps <ArrowRight className="inline h-4 w-4" aria-hidden="true" />
                     </span>
                 </a>
@@ -881,87 +733,7 @@ function ImageBlock({ props }: { props: Record<string, unknown> }) {
 }
 
 function GalleryBlock({ props }: { props: Record<string, unknown> }) {
-    const { locale } = useLocale();
-    const images = Array.isArray(props.images) ? (props.images as { url: string; alt: string; caption?: string; caption_id?: string }[]) : [];
-    const [lightbox, setLightbox] = useState<number | null>(null);
-    if (!images.length) return null;
-
-    const gridCols =
-        images.length === 4
-            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2"
-            : images.length % 3 === 0
-              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-              : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2";
-
-    return (
-        <section className="tnl-section" data-testid="block-gallery">
-            <div className="tnl-container">
-                {pickProp(locale, props, "heading") ? (
-                    <SectionHeading title={pickProp(locale, props, "heading")} testId="gallery-heading" />
-                ) : null}
-                <div className={`grid gap-5 ${gridCols}`}>
-                    {images.map((img, i) => {
-                        const label = pick(locale, img.caption || img.alt, img.caption_id || img.alt);
-                        return (
-                            <button
-                                key={i}
-                                type="button"
-                                onClick={() => setLightbox(i)}
-                                className="group relative overflow-hidden rounded-[18px] border bg-[#141C17] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl text-left"
-                                style={{ borderColor: "var(--tnl-border)" }}
-                                data-testid={`gallery-item-${i}`}
-                            >
-                                <img
-                                    src={img.url}
-                                    alt={label}
-                                    className="h-64 w-full object-cover transition-transform duration-500 group-hover:scale-105 sm:h-72"
-                                    loading="lazy"
-                                    onError={(e) => {
-                                        const target = e.currentTarget;
-                                        if (!target.dataset.retried) {
-                                            target.dataset.retried = "true";
-                                            target.src = target.src + (target.src.includes("?") ? "&" : "?") + "retry=" + Date.now();
-                                        } else {
-                                            target.style.display = "none";
-                                        }
-                                    }}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 transition-opacity group-hover:opacity-95" />
-                                
-                                {/* Clean Pill Badge on Bottom Left */}
-                                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-2">
-                                    <span className="inline-flex items-center rounded-full bg-black/60 px-3 py-1.5 text-xs font-bold tracking-wide text-white backdrop-blur-md border border-white/20 shadow-sm">
-                                        {label}
-                                    </span>
-                                    <span className="text-[11px] font-medium text-white/70 opacity-0 transition-opacity group-hover:opacity-100 hidden sm:inline-block">
-                                        {locale === "id" ? "Klik perbesar" : "Click to view"}
-                                    </span>
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-            {lightbox !== null ? (
-                <div
-                    className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 p-4"
-                    role="dialog"
-                    aria-modal="true"
-                    onClick={() => setLightbox(null)}
-                    data-testid="gallery-lightbox"
-                >
-                    <img
-                        src={images[lightbox].url}
-                        alt={pick(locale, images[lightbox].caption || images[lightbox].alt, images[lightbox].caption_id || images[lightbox].alt)}
-                        className="max-h-[80vh] max-w-full rounded-[15px] object-contain shadow-2xl"
-                    />
-                    <div className="mt-4 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-sm text-white border border-white/20 backdrop-blur-md">
-                        {pick(locale, images[lightbox].caption || images[lightbox].alt, images[lightbox].caption_id || images[lightbox].alt)}
-                    </div>
-                </div>
-            ) : null}
-        </section>
-    );
+    return <SignalGallery props={props} />;
 }
 
 function VideoBlock({ props }: { props: Record<string, unknown> }) {
@@ -990,7 +762,7 @@ function TimelineBlock({ props }: { props: Record<string, unknown> }) {
     const steps = tiles(props, "steps");
     if (!steps.length) return null;
     return (
-        <section className="tnl-section" data-testid="block-timeline">
+        <section className="tnl-section signal-timeline" data-testid="block-timeline">
             <div className="tnl-container">
                 {pickProp(locale, props, "heading") ? <SectionHeading title={pickProp(locale, props, "heading")} testId="timeline-heading" /> : null}
                 <ol className="relative border-l-2 pl-8" style={{ borderColor: "var(--tnl-border)" }}>
@@ -1019,7 +791,7 @@ function AccordionBlock({ props }: { props: Record<string, unknown> }) {
     const [open, setOpen] = useState<number | null>(0);
     if (!items.length) return null;
     return (
-        <section className="tnl-section" data-testid="block-accordion">
+        <section className="tnl-section signal-accordion" data-testid="block-accordion">
             <div className="tnl-container max-w-3xl">
                 {pickProp(locale, props, "heading") ? <SectionHeading title={pickProp(locale, props, "heading")} testId="accordion-heading" /> : null}
                 <div className="space-y-3">
@@ -1033,7 +805,7 @@ function AccordionBlock({ props }: { props: Record<string, unknown> }) {
                                 data-testid={`accordion-trigger-${i}`}
                             >
                                 <span className="text-[17px] font-bold">{pick(locale, item.title, item.title_id)}</span>
-                                {open === i ? <Minus className="h-5 w-5 shrink-0" style={{ color: "var(--tnl-green)" }} /> : <Plus className="h-5 w-5 shrink-0" style={{ color: "var(--tnl-green)" }} />}
+                                {open === i ? <Minus className="h-5 w-5 shrink-0" style={{ color: "var(--tnl-link)" }} /> : <Plus className="h-5 w-5 shrink-0" style={{ color: "var(--tnl-link)" }} />}
                             </button>
                             {open === i ? (
                                 <div className="px-6 pb-5 text-sm leading-relaxed text-[var(--tnl-body)]">
@@ -1053,7 +825,7 @@ function DownloadListBlock({ props }: { props: Record<string, unknown> }) {
     const files = Array.isArray(props.files) ? (props.files as { label: string; url: string }[]) : [];
     if (!files.length) return null;
     return (
-        <section className="tnl-section" data-testid="block-download-list">
+        <section className="tnl-section signal-downloads" data-testid="block-download-list">
             <div className="tnl-container max-w-3xl">
                 {pickProp(locale, props, "heading") ? <SectionHeading title={pickProp(locale, props, "heading")} testId="downloads-heading" /> : null}
                 <ul className="space-y-3">
@@ -1065,7 +837,7 @@ function DownloadListBlock({ props }: { props: Record<string, unknown> }) {
                                 data-testid={`download-item-${i}`}
                             >
                                 <span className="font-medium">{file.label}</span>
-                                <Download className="h-5 w-5 shrink-0" style={{ color: "var(--tnl-green)" }} aria-hidden="true" />
+                                <Download className="h-5 w-5 shrink-0" style={{ color: "var(--tnl-link)" }} aria-hidden="true" />
                             </a>
                         </li>
                     ))}
