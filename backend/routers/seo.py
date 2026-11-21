@@ -154,6 +154,8 @@ async def render_ssr_shell(path: str = Query("/")) -> HTMLResponse:
 
         else:
             page_slug = clean_path.lstrip("/")
+            if page_slug.startswith("p/"):  # CMS pages are routed at /p/:slug in the SPA
+                page_slug = page_slug[2:]
             page = await db.pages.find_one({"slug": page_slug, "status": "published"})
             if page:
                 title = f"{page.get('title')} — Laboratorium Jaringan Telekomunikasi ITS"
@@ -165,10 +167,12 @@ async def render_ssr_shell(path: str = Query("/")) -> HTMLResponse:
     if image_url.startswith("/"):
         image_url = f"{base}{image_url}"
 
-    safe_title = html.escape(title)
-    safe_desc = html.escape(desc)
-    safe_img = html.escape(image_url)
-    safe_url = html.escape(canonical_url)
+    # "&#92;" instead of a raw backslash: these values are used as re.sub replacement strings,
+    # where a literal backslash (e.g. a title like C:\path) raises re.error and 500s the page.
+    safe_title = html.escape(title).replace("\\", "&#92;")
+    safe_desc = html.escape(desc).replace("\\", "&#92;")
+    safe_img = html.escape(image_url).replace("\\", "&#92;")
+    safe_url = html.escape(canonical_url).replace("\\", "&#92;")
 
     rendered = raw_html
 
@@ -274,12 +278,12 @@ async def sitemap():
         when = post.get("published_at")
         urls.append((f"/news/{post.get('slug')}",
                      when.date().isoformat() if hasattr(when, "date") else None))
-    for ev in await db.events.find({"status": "published"}, {"slug": 1}).to_list(500):
-        urls.append((f"/activity/event/{ev.get('slug')}", None))
+    # Events have no public detail route in the SPA (App.tsx only serves /activity), so they
+    # are intentionally not listed — a sitemap must not advertise URLs that render 404.
     for page in await db.pages.find({"status": "published"}, {"slug": 1}).to_list(200):
         slug = page.get("slug")
         if slug and slug not in ("home",):
-            urls.append((f"/{slug}", None))
+            urls.append((f"/p/{slug}", None))
 
     body = ['<?xml version="1.0" encoding="UTF-8"?>',
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
@@ -323,7 +327,7 @@ async def jsonld():
         "name": s.get("site_title"),
         "alternateName": s.get("short_name"),
         "url": base or None,
-        "logo": "https://labtnl.site/assets/brand/tnl-logo-badge.png",
+        "logo": f"{base}/assets/brand/tnl-logo-badge.png",
         "email": contact.get("email"),
         "sameAs": social,
         "parentOrganization": {

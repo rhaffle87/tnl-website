@@ -9,10 +9,10 @@ import os
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from lib.auth import (
-    audit, clear_session_cookie, client_ip, create_session, destroy_session,
+    aware, audit, clear_session_cookie, client_ip, create_session, destroy_session,
     hash_password, rate_limit, require, set_session_cookie, user_for_request,
     verify_password, verify_totp,
 )
@@ -24,6 +24,7 @@ from models.core import InviteAccept, LoginIn, UserCreate, UserUpdate
 router = APIRouter(tags=["auth"])
 
 VALID_ROLES = ("super_admin", "editor", "contributor", "registrar", "viewer")
+INVITE_TTL_DAYS = 7
 
 
 def public_user(u: dict) -> dict:
@@ -91,9 +92,14 @@ async def accept_invite(payload: InviteAccept, request: Request, response: Respo
     user = await db.users.find_one({"invite_token": payload.token})
     if not user:
         raise HTTPException(status_code=404, detail="This invitation link is no longer valid.")
+    # Invitations created before expiry existed carry no timestamp and stay valid until used.
+    expires = user.get("invite_expires_at")
+    if expires and aware(expires) < datetime.now(timezone.utc):
+        raise HTTPException(status_code=410, detail="This invitation link has expired. Ask a Super Admin for a new one.")
     await db.users.update_one(
         {"id": user["id"]},
-        {"$set": {"password_hash": hash_password(payload.password), "active": True, "invite_token": None}},
+        {"$set": {"password_hash": hash_password(payload.password), "active": True,
+                  "invite_token": None, "invite_expires_at": None}},
     )
     token = await create_session(user["id"])
     request.state.user = user
@@ -119,7 +125,7 @@ async def create_user(payload: UserCreate, request: Request):
     doc: dict = {
         "id": str(uuid4()), "name": payload.name.strip(), "email": email,
         "role": payload.role, "divisions": payload.divisions, "active": True,
-        "password_hash": "", "invite_token": None,
+        "password_hash": "", "invite_token": None, "invite_expires_at": None,
         "created_at": datetime.now(timezone.utc), "last_login_at": None,
     }
     if payload.password:
@@ -128,6 +134,7 @@ async def create_user(payload: UserCreate, request: Request):
         doc["password_hash"] = hash_password(payload.password)
     else:
         doc["invite_token"] = __import__("secrets").token_urlsafe(24)
+        doc["invite_expires_at"] = datetime.now(timezone.utc) + timedelta(days=INVITE_TTL_DAYS)
         base = os.environ.get("APP_URL", "").rstrip("/")
         link = f"{base}/admin/invite/{doc['invite_token']}" if base else f"/admin/invite/{doc['invite_token']}"
         await send_email(
@@ -160,6 +167,9 @@ async def update_user(user_id: str, payload: UserUpdate, request: Request):
         patch["password_hash"] = hash_password(patch.pop("password"))
     if patch:
         await db.users.update_one({"id": user_id}, {"$set": patch})
+    if "password_hash" in patch:
+        # A password change must end every existing session of that account.
+        await db.sessions.delete_many({"user_id": user_id})
     await audit(request, "update", "users", user_id, {k: v for k, v in patch.items() if k != "password_hash"})
     fresh = await db.users.find_one({"id": user_id}, {"password_hash": 0, "totp_secret": 0, "invite_token": 0})
     return public_user(fresh)

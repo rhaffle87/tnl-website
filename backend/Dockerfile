@@ -18,4 +18,4 @@ EXPOSE 8001
 HEALTHCHECK --interval=15s --timeout=5s --retries=5 \
     CMD curl -sf http://localhost:8001/api/health || exit 1
 
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001", "--proxy-headers", "--forwarded-allow-ips", "172.16.0.0/12"]

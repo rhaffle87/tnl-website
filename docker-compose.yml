@@ -21,31 +21,19 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+    # backend/.env is the single source of truth (see README). Only container-specific
+    # values are pinned here; do NOT re-declare ${VAR:-default} entries, because variables
+    # already present in the environment win over load_dotenv() and would silently shadow
+    # backend/.env (e.g. COOKIE_SECURE, SEED_ADMIN_PASSWORD).
+    env_file: ./backend/.env
     environment:
       MONGO_URL: mongodb://mongodb:27017
-      DB_NAME: ${DB_NAME:-tnl}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
-      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:3000}
-      APP_URL: ${PUBLIC_SITE_URL:-http://localhost:3000}
-      EMERGENT_LLM_KEY: ${EMERGENT_LLM_KEY:-}
-      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
       MEDIA_DIR: /data/media
-      GOOGLE_ALLOWED_DOMAINS: ${GOOGLE_ALLOWED_DOMAINS:-its.ac.id,student.its.ac.id}
-      GOOGLE_ALLOWED_EMAILS: ${GOOGLE_ALLOWED_EMAILS:-}
-      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@its.ac.id}
-      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-ChangeMe2026!}
-      COOKIE_SECURE: ${COOKIE_SECURE:-false}
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-TNL Studio <noreply@its.ac.id>}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
     volumes:
       - ./backend:/app
       - media-data:/data/media
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
 
   frontend:
     build:

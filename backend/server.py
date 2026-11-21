@@ -89,10 +89,22 @@ async def security_headers(request: Request, call_next):
 # Include the router in the main app — must stay the last registration.
 app.include_router(api_router)
 
+
+def _cors_origins() -> list[str]:
+    """Explicit allow-list only. Unset means same-origin only (no CORS headers): the site and
+    the API share one origin behind the reverse proxy, and the Vite dev server proxies /api.
+    A wildcard is never honoured because cookies are sent (allow_credentials=True)."""
+    origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
+    if "*" in origins:
+        logging.getLogger(__name__).warning("CORS_ORIGINS contains '*'; ignoring it (credentials are enabled).")
+        origins = [o for o in origins if o != "*"]
+    return origins
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_origins=_cors_origins(),
     allow_methods=["*"],
     allow_headers=["*"],
 )

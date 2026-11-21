@@ -1450,6 +1450,12 @@ async def seed_placeholder_avatar() -> None:
 async def main() -> None:
     reset = "--reset" in sys.argv
     if reset:
+        # --reset drops registrations (personal data), messages, media records, the audit log and
+        # API keys. Refuse to do that against a non-local site unless explicitly forced.
+        site = (os.environ.get("PUBLIC_SITE_URL") or "").lower()
+        local = any(h in site for h in ("localhost", "127.0.0.1", "0.0.0.0")) or not site
+        if not local and "--force" not in sys.argv:
+            sys.exit(f"Refusing --reset: PUBLIC_SITE_URL={site!r} is not local. Re-run with --reset --force if you really mean it.")
         for coll in ("pages", "posts", "members", "events", "activities", "projects", "publications",
                      "partners", "practicum", "equipment", "registrations", "messages", "media", "audit_log",
                      "saved_blocks", "collections_def", "collection_items", "outbox", "api_keys"):
@@ -1473,8 +1479,7 @@ async def main() -> None:
     await seed_unverified_drafts()
     await ensure_indexes()
     print("\nSeed complete.")
-    print(f"  Sign in at /admin/login as {os.environ.get('SEED_ADMIN_EMAIL')} "
-          f"/ {os.environ.get('SEED_ADMIN_PASSWORD')}")
+    print(f"  Sign in at /admin/login as {os.environ.get('SEED_ADMIN_EMAIL')} (password from SEED_ADMIN_PASSWORD)")
 
 
 if __name__ == "__main__":

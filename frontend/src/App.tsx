@@ -1,7 +1,9 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { LazyMotion, domAnimation } from "motion/react";
 import { Toaster } from "@/components/ui/sonner";
+import RouteErrorBoundary from "@/components/RouteErrorBoundary";
+import { lazyWithRetry as lazy } from "@/lib/lazy";
 import SiteLayout, { LocaleProvider } from "@/components/site/SiteLayout";
 import Home from "@/pages/Home";
 
@@ -66,6 +68,7 @@ export default function App() {
     return (
         <LocaleProvider>
             <LazyMotion features={domAnimation} strict>
+                <RouteErrorBoundary>
                 <Suspense fallback={<RouteFallback />}>
                     <Routes>
                     {/* Admin — TNL Studio */}
@@ -108,6 +111,7 @@ export default function App() {
                     </Route>
                 </Routes>
             </Suspense>
+            </RouteErrorBoundary>
             </LazyMotion>
             <Toaster richColors />
         </LocaleProvider>

@@ -1,14 +1,14 @@
-FROM node:24-slim AS build
+FROM node:22-slim AS build
 WORKDIR /app
 
 ARG NEXT_PUBLIC_BASE_PATH=""
 ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
 
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --network-timeout 300000
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY . .
-RUN yarn build
+RUN npm run build
 
 # Static bundle served by nginx, with /api proxied to the backend so the app
 # stays on a single origin (the /api proxy convention).

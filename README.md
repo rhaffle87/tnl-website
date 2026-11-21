@@ -20,6 +20,17 @@ docker compose exec backend python seed.py --reset
 
 Open <http://localhost:3000> for the site, <http://localhost:3000/admin/login> for the CMS.
 
+`backend/.env` is the **single source of truth** for backend settings: `docker-compose.yml`
+loads it with `env_file`. Do not re-declare those keys in the compose `environment:` block
+(variables already in the environment win over the file and would silently shadow it).
+Change `SEED_ADMIN_PASSWORD` from the example value before the first seed on any server
+reachable from outside your machine.
+
+> **`seed.py --reset` drops pages, news, members, events, registrations (personal data),
+> messages, media records, the audit log and API keys** (users and settings are kept). It now
+> refuses to run when `PUBLIC_SITE_URL` is not local unless you add `--force`. Never use it on a
+> live database.
+
 ### Creating the first admin account
 
 The seed script creates the Super Admin from `backend/.env`:
@@ -42,7 +53,7 @@ lock the laboratory out of its own site.
 
 ```bash
 cd backend  && uvicorn server:app --host 0.0.0.0 --port 8001 --reload
-cd frontend && yarn install && yarn dev          # http://localhost:3000
+cd frontend && npm install && npm run dev          # http://localhost:3000
 cd backend  && python seed.py --reset
 ```
 
@@ -86,17 +97,37 @@ CORS_ORIGINS=https://riset.its.ac.id
 
 `PUBLIC_SITE_URL` drives `sitemap.xml`, `robots.txt`, JSON-LD, OG tags, certificate
 verification links and invitation emails. Build the frontend with the deployment base
-path: `NEXT_PUBLIC_BASE_PATH=/lab-tnl yarn build`.
+path: `NEXT_PUBLIC_BASE_PATH=/lab-tnl npm run build`.
 
 Run the backend under systemd or supervisor, and restart after **any** `.env` change.
 
+`robots.txt`, `sitemap.xml` and the per-page Open Graph tags are served by the backend under
+`/api`, so the reverse proxy must route them explicitly or crawlers receive the SPA shell:
+
+```nginx
+location = /robots.txt  { proxy_pass http://127.0.0.1:8001/api/robots.txt; }
+location = /sitemap.xml { proxy_pass http://127.0.0.1:8001/api/sitemap.xml; }
+# Link-preview bots do not run JavaScript; hand them the server-rendered meta tags.
+location / {
+  if ($http_user_agent ~* "(facebookexternalhit|WhatsApp|Twitterbot|LinkedInBot|Slackbot|TelegramBot|Googlebot|bingbot)") {
+    rewrite ^ /api/seo/render?path=$uri break;
+    proxy_pass http://127.0.0.1:8001;
+  }
+  try_files $uri $uri/ /index.html;
+}
+```
+
+When the site is served under a sub-path, the router base and the `/api` prefix both follow
+`NEXT_PUBLIC_BASE_PATH` (it is read by `vite.config.ts` as the Vite `base`). Verify with
+`curl -s https://<host>/robots.txt | head` after every proxy change.
+
 ### Path B — static export of the public pages (host without Node)
 
-The public site is a client-rendered bundle, so `yarn build` produces a folder of static
+The public site is a client-rendered bundle, so `npm run build` produces a folder of static
 files you can upload anywhere:
 
 ```bash
-cd frontend && NEXT_PUBLIC_BASE_PATH=/lab-tnl yarn build   # → frontend/dist
+cd frontend && NEXT_PUBLIC_BASE_PATH=/lab-tnl npm run build   # → frontend/dist
 ```
 
 Upload `dist/` to the static host. The **admin runs elsewhere** (a small server or an
@@ -203,26 +234,58 @@ OpenAPI description: `GET /api/v1-docs/openapi`. Interactive FastAPI docs: `/doc
 
 ## Backup and restore
 
+With the Docker Compose stack, back up from the **host**: the backend image contains neither
+`scripts/` nor the MongoDB tools, but the `mongo:7` image ships `mongodump` / `mongorestore`.
+
 ```bash
-/app/scripts/backup.sh          # database + media, keeps 14 days in /app/backups
-0 2 * * * /app/scripts/backup.sh >> /var/log/tnl-backup.log 2>&1
+mkdir -p backups
+docker compose exec -T mongodb mongodump --db=tnl --archive --gzip > backups/db-$(date +%F).archive
+docker run --rm -v tnl-website_media-data:/data -v "$PWD/backups":/out alpine \
+  tar -czf /out/media-$(date +%F).tar.gz -C /data .
+# nightly: 0 2 * * *  cd /path/to/tnl-website && <the two commands above>
 ```
+
+`tnl-website_media-data` is `<compose project>_media-data`; confirm the name with
+`docker volume ls`. Replace `tnl` with `DB_NAME` if you changed it. Keep copies **off** the
+server, and test a restore at least once.
 
 Restore:
 
 ```bash
-mongorestore --uri="$MONGO_URL" --drop --archive=/app/backups/db-YYYY-MM-DD.archive --gzip
-tar -xzf /app/backups/media-YYYY-MM-DD.tar.gz -C /
+docker compose exec -T mongodb mongorestore --drop --archive --gzip < backups/db-YYYY-MM-DD.archive
+docker run --rm -v tnl-website_media-data:/data -v "$PWD/backups":/in alpine \
+  tar -xzf /in/media-YYYY-MM-DD.tar.gz -C /data
 ```
+
+`scripts/backup.sh` remains for the original single-container layout (`/app/backend/.env`,
+`mongodump` on the PATH); it does not run inside the Compose backend container.
 
 ---
 
 ## Tests
 
 ```bash
+cd backend && pip install -r requirements-dev.txt   # test tooling is not in requirements.txt
 cd backend && pytest                     # auth & permissions, registration uniqueness,
                                          # block renderer contract, quality gates
-cd frontend && yarn typecheck && yarn lint
+cd frontend && npm ci
+cd frontend && npm run typecheck && npm run lint && npm test
+```
+
+---
+
+## Production Deployment & Architecture (Proxmox LXC Cluster)
+
+In production at `https://labtnl.site`, the application runs across an isolated Proxmox LXC cluster networked over Tailscale:
+- **CT 102 (`labtnl-web` / `100.102.105.77`)**: Public entry point via Cloudflare Tunnel (`cloudflared`). Nginx terminates traffic, applies security headers, restores client IP via `CF-Connecting-IP`, and reverse proxies to CT 103.
+- **CT 103 (`labtnl-app` / `100.65.129.8`)**: FastAPI backend uvicorn on port 8001 (configured with `--proxy-headers --forwarded-allow-ips "100.102.105.77,127.0.0.1"`) and Nginx serving frontend dist on port 3000 with `@seo_shell` server-rendering.
+- **CT 116 (`labtnl-db` / `100.111.32.102`)**: MongoDB database service with automated nightly backup scripts (`/usr/local/bin/tnl-backup-db.sh`) and Prometheus node-exporter textfile metrics.
+- **CT 117 (`labtnl-monitor` / `100.114.215.48`)**: Prometheus & Grafana monitoring stack (`https://grafana.labtnl.site`).
+
+To deploy updates from the project root:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\deploy\deploy.ps1
+powershell -ExecutionPolicy Bypass -File scripts\deploy\health-check.ps1
 ```
 
 ---

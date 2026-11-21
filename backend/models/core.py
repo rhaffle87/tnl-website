@@ -27,6 +27,7 @@ class UserDoc(BaseModel):
     totp_secret: str | None = None
     totp_enabled: bool = False
     invite_token: str | None = None
+    invite_expires_at: datetime | None = None
     created_at: datetime = Field(default_factory=now_utc)
     last_login_at: datetime | None = None
 
