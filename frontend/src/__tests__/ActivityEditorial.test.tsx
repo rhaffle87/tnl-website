@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, it, expect, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
 import ActivityPage from "@/pages/ActivityPage";
@@ -15,6 +16,12 @@ vi.mock("@/lib/hooks", async (original) => ({
 }));
 
 describe("Activity editorial collection", () => {
+  it("uses semantic theme tokens rather than fixed colors or dark-green link text", () => {
+    for (const file of ["pages/ActivityPage.tsx", "components/site/MemberSections.tsx", "pages/activity-editorial.css"]) {
+      const source = readFileSync(`src/${file}`, "utf8");
+      expect(source.match(/#[0-9a-fA-F]{3,8}\b|(?:hover:)?text-\[var\(--tnl-green\)\]/), file).toBeNull();
+    }
+  });
   it("links each CMS event to a real detail URL using its slug or public ID", () => {
     renderWithProviders(<ActivityPage />, { route: "/activity?tab=events" });
     expect(screen.getByRole("link", { name: /CMS workshop/ })).toHaveAttribute("href", "/activity/events/cms-workshop");

@@ -83,7 +83,7 @@ describe("Preserved public data flows", () => {
     const get = vi.spyOn(api, "apiGet").mockImplementation((url) => url === "/public/pages/research-guide" ? pending as any : Promise.resolve({}) as any);
     renderWithProviders(<Routes><Route path="/page/:slug" element={<DynamicCmsPage />} /></Routes>, { route: "/page/research-guide" });
     expect(screen.getByTestId("cms-page-research-guide-loading")).toBeInTheDocument();
-    resolvePage({ slug: "research-guide", blocks: [{ id: "intro", type: "hero", props: { title: "Research Guide", title_id: "Panduan Riset" } }] });
+    resolvePage({ slug: "research-guide", blocks: [{ id: "intro", type: "hero", props: { title_before: "Research Guide", title_before_id: "Panduan Riset" } }] });
     expect(await screen.findByRole("heading", { level: 1, name: "Panduan Riset" })).toBeInTheDocument();
     expect(get).toHaveBeenCalledWith("/public/pages/research-guide");
     expect(screen.getByTestId("cms-page-research-guide")).toBeInTheDocument();

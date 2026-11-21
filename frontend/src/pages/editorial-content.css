@@ -1,6 +1,9 @@
 /* Public content only: the CMS and shared chrome retain their own styling. */
 .editorial-content { color: var(--foreground); background: var(--background); }
 .editorial-content :is(h1,h2,h3,h4) { color: var(--foreground); text-wrap: pretty; }
+.editorial-content [data-testid="breadcrumb"] ol { color: var(--tnl-body); }
+.editorial-content [data-testid="breadcrumb"] a { color: var(--tnl-link); }
+.editorial-content [data-testid="breadcrumb"] span { color: var(--tnl-tan-text) !important; }
 .editorial-content .editorial-eyebrow { color: var(--tnl-tan-text); font: 11px var(--font-mono,monospace); letter-spacing: .16em; text-transform: uppercase; margin-block: 1.5rem 1rem; }
 .editorial-meta { color: var(--tnl-body); font-size: .875rem; line-height: 1.7; }
 .editorial-masthead { background: var(--tnl-surface); border-bottom: 1px solid var(--tnl-border); }
@@ -53,7 +56,7 @@
 .editorial-contact .tnl-inset-tile { background: transparent; border: 0; border-bottom: 1px solid var(--tnl-border); border-radius: 0; box-shadow: none; padding: 1rem 0; }
 .editorial-contact .tnl-inset-tile > div > div:first-child { display: none; }
 .editorial-contact-directory :is(h2,h3) { color: var(--foreground); font-weight: 500; }
-.editorial-contact :is([class*="text-[var(--tnl-heading)]"]) { color: var(--foreground); }
+
 .editorial-contact-directory button, .editorial-contact-directory a:not([data-testid="official-email-link"]) { background: transparent; border: 0; border-bottom: 1px solid var(--tnl-border); border-radius: 0; box-shadow: none; color: var(--tnl-link); min-height: 44px; }
 .editorial-contact-directory a:hover, .editorial-contact-directory button:hover { background: transparent; color: var(--tnl-link); text-decoration: underline; text-underline-offset: 4px; }
 .editorial-contact [data-testid="official-email-link"] { color: var(--tnl-link); overflow-wrap: anywhere; white-space: normal; }
@@ -83,13 +86,13 @@
 @media (max-width: 767px) { .editorial-contact-layout { grid-template-columns: minmax(0,1fr); } .editorial-contact-masthead > .tnl-container > div { display: block; } .editorial-contact-intro { margin-top: 1.5rem; } .editorial-contact-strip { display: flex; } }
 @media (prefers-reduced-motion: reduce) { .editorial-content *, .editorial-content *::before { animation: none !important; transition: none !important; } }
 /* Bibliography: a narrow research index beside a ruled citation list. */
-.editorial-bibliography-layout { display: grid; grid-template-columns: minmax(180px,.65fr) minmax(0,2fr); column-gap: clamp(2rem,6vw,6rem); align-items: start; }
+.editorial-bibliography-layout { display: grid; grid-template-columns: minmax(180px,.65fr) minmax(0,2fr); grid-template-rows: auto 1fr; column-gap: clamp(2rem,6vw,6rem); align-items: start; }
 .editorial-bibliography-layout > [data-testid="publications-heading"] { grid-column: 1; margin-bottom: 1.5rem; }
 .editorial-bibliography-layout .tnl-accent-bar { display: none; }
 .editorial-bibliography-layout [data-testid="publications-heading"] h2 { font-size: 1.5rem; font-weight: 500; }
 .editorial-publication-filters { display: flex; flex-direction: column; gap: .8rem; grid-column: 1; }
 .editorial-publication-filters select { width: 100%; max-width: none; }
-.editorial-bibliography { grid-column: 2; grid-row: 1 / span 3; list-style: none; padding: 0; margin: 0; }
+.editorial-bibliography { grid-column: 2; grid-row: 1 / span 2; list-style: none; padding: 0; margin: 0; }
 .editorial-publication { padding: 1.8rem 0 2rem; border-top: 1px solid var(--tnl-border); }
 .editorial-publication h3 { font-size: clamp(1.3rem,2vw,1.7rem); font-weight: 500; line-height: 1.4; letter-spacing: -.025em; }
 .editorial-publication .tnl-count-chip { border: 0; border-radius: 0; background: transparent; color: var(--tnl-tan-text); padding-left: 0; text-transform: uppercase; font: 11px var(--font-mono,monospace); letter-spacing: .08em; }

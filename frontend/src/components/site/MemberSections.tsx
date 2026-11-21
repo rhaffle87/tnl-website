@@ -104,7 +104,7 @@ function SocialLinks({ member }: { member: Member }) {
                     href={url as string}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-green)]"
+                    className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-link)]"
                     style={{ borderColor: "var(--tnl-border)" }}
                     data-testid={`member-social-${label.toLowerCase().replace(/\s+/g, "-")}`}
                 >
@@ -237,7 +237,7 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
                                 <a
                                     href={`mailto:${member.email_public}`}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center gap-1 text-xs font-medium text-[var(--tnl-tan-text)] transition-colors hover:text-[var(--tnl-green)]"
+                                    className="inline-flex items-center gap-1 text-xs font-medium text-[var(--tnl-tan-text)] transition-colors hover:text-[var(--tnl-link)]"
                                     aria-label={`Email ${member.name}`}
                                     title={`Email ${member.name}`}
                                     data-testid={`member-card-email-${member.id}`}
@@ -470,7 +470,7 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                                                         href={`https://doi.org/${pub.doi}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-1 font-semibold text-[var(--tnl-green)] hover:underline"
+                                                        className="inline-flex items-center gap-1 font-semibold text-[var(--tnl-link)] hover:underline"
                                                     >
                                                         DOI <ExternalLink className="h-3 w-3" />
                                                     </a>

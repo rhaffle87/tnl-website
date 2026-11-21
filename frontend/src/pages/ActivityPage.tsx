@@ -451,8 +451,8 @@ function formatBytes(bytes?: number | null): string {
 function ResourceIcon({ type }: { type?: string }) {
     const t = (type || "").toLowerCase();
     if (t === "pdf") return <FileText className="h-4 w-4 shrink-0" style={{ color: "var(--tnl-link)" }} />;
-    if (t === "pkt") return <Layers className="h-4 w-4 shrink-0" style={{ color: "#0284c7" }} />;
-    if (t === "py" || t === "txt" || t === "json") return <FileCode className="h-4 w-4 shrink-0" style={{ color: "#10b981" }} />;
+    if (t === "pkt") return <Layers className="h-4 w-4 shrink-0" style={{ color: "var(--tnl-link)" }} />;
+    if (t === "py" || t === "txt" || t === "json") return <FileCode className="h-4 w-4 shrink-0" style={{ color: "var(--tnl-link)" }} />;
     return <Download className="h-4 w-4 shrink-0" style={{ color: "var(--tnl-link)" }} />;
 }
 

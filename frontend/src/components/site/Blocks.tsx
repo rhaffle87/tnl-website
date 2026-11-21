@@ -127,7 +127,7 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                 <SectionHeading title={pickProp(locale, props, "heading")} testId="about-heading" />
                 <div className={`signal-about-layout ${list.length ? "has-tiles" : ""}`}>
                     <div className="flex flex-col justify-between space-y-6">
-                        <p className="signal-about-body" data-testid="about-body">
+                        <p className="signal-about-body text-justify" data-testid="about-body">
                             {pickProp(locale, props, "body")}
                         </p>
                         <div

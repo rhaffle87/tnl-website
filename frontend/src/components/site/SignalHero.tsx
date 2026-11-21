@@ -14,7 +14,13 @@ export function SignalHero({ props }: { props: Record<string, unknown> }) {
             <div className="tnl-container signal-hero-layout">
                 <div className="signal-hero-copy">
                     {text(props, "badge") && <p className="tnl-eyebrow signal-kicker" data-testid="hero-badge"><span aria-hidden="true" />{pickProp(locale, props, "badge")}</p>}
-                    <h1 className="tnl-hero-title" data-testid="hero-title">{pickProp(locale, props, "title_before")}{" "}<em>{pickProp(locale, props, "title_accent")}</em>{" "}{pickProp(locale, props, "title_after")}</h1>
+                    <h1 className="tnl-hero-title" data-testid="hero-title">
+                        {pickProp(locale, props, "title_before") || pickProp(locale, props, "title_accent") || pickProp(locale, props, "title_after") ? (
+                            <>{pickProp(locale, props, "title_before")}{" "}<em>{pickProp(locale, props, "title_accent")}</em>{" "}{pickProp(locale, props, "title_after")}</>
+                        ) : (
+                            pickProp(locale, props, "title")
+                        )}
+                    </h1>
                     <p className="signal-hero-intro" data-testid="hero-intro">{pickProp(locale, props, "intro")}</p>
                     <div className="signal-hero-actions">
                         <Link to={text(props, "primary_url", "/activity")} viewTransition className="tnl-btn tnl-btn-tan" data-testid="hero-primary-cta-button">{pickProp(locale, props, "primary_label") || t("see_all")}<ArrowRight aria-hidden="true" className="h-4 w-4" /></Link>
