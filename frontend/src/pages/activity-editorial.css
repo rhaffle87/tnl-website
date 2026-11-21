@@ -18,13 +18,15 @@
 .activity-masthead .activity-kicker, .event-detail-kicker { font: 12px var(--font-mono); text-transform: uppercase; letter-spacing: .12em; color: var(--tnl-tan-text); }
 .activity-masthead h1 { font: 600 clamp(2.5rem, 6vw, 5rem)/1.05 var(--font-heading); letter-spacing: -.04em; margin-top: 1rem; max-width: 20ch; }
 .activity-masthead p:last-child { margin-top: 1rem; max-width: 48rem; line-height: 1.8; color: var(--tnl-body); }
+.activity-editorial .grid > *, .event-detail-editorial .grid > * { min-width: 0; }
+.activity-editorial .flex.items-baseline { flex-wrap: wrap; }
 .activity-editorial .activity-tabbar { border-block: 1px solid var(--tnl-border); background: var(--background); }
 .activity-tabbar [role="tab"] { min-height: 56px; color: var(--tnl-body); }
 .activity-tabbar [role="tab"][aria-selected="true"] { color: var(--foreground); font-weight: 700; }
 .activity-record { border-top: 1px solid var(--tnl-border); border-bottom: 1px solid var(--tnl-border); background: var(--background); color: var(--foreground); overflow: hidden; }
 .activity-record-header { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding: 1rem 1.5rem; background: var(--muted); color: var(--foreground); border-bottom: 1px solid var(--tnl-border); }
 .activity-editorial .project-record { padding: 1.5rem 0; border: 0; border-top: 1px solid var(--tnl-border); background: transparent; border-radius: 0; box-shadow: none; }
-.activity-editorial .equipment-record, .activity-editorial .practicum-record { border: 1px solid var(--tnl-border); background: var(--background); border-radius: 0; box-shadow: none; }
+.activity-editorial .equipment-record, .activity-editorial .practicum-record { min-width: 0; overflow-wrap: anywhere; border: 1px solid var(--tnl-border); background: var(--background); border-radius: 0; box-shadow: none; }
 .activity-editorial .practicum-record { padding: 1.5rem; }
 .activity-category { display: inline-flex; align-items: center; padding: .375rem .75rem; background: var(--muted); color: var(--foreground); border: 1px solid var(--tnl-border); font-size: .75rem; font-weight: 600; }
 .activity-detail-link { display: inline-flex; align-items: center; min-height: 44px; gap: .5rem; font-weight: 600; color: var(--tnl-link); text-decoration: underline; text-underline-offset: 4px; }

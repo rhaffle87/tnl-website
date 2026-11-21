@@ -10,6 +10,7 @@ import Home from "@/pages/Home";
 // Public secondary routes — code-split to keep initial landing bundle light
 const MemberPage = lazy(() => import("@/pages/MemberPage"));
 const ActivityPage = lazy(() => import("@/pages/ActivityPage"));
+const EventDetailPage = lazy(() => import("@/pages/EventDetailPage"));
 const NewsPage = lazy(() => import("@/pages/NewsPage"));
 const NewsArticlePage = lazy(() => import("@/pages/NewsPage").then((m) => ({ default: m.NewsArticlePage })));
 const PublicationsPage = lazy(() => import("@/pages/PublicationsPage"));
@@ -97,6 +98,7 @@ export default function App() {
                         <Route path="/" element={<Home />} />
                         <Route path="/member" element={<MemberPage />} />
                         <Route path="/activity" element={<ActivityPage />} />
+                        <Route path="/activity/events/:slug" element={<EventDetailPage />} />
                         <Route path="/open-house" element={<OpenHousePage />} />
                         <Route path="/news" element={<NewsPage />} />
                         <Route path="/news/:slug" element={<NewsArticlePage />} />
