@@ -5,7 +5,7 @@ import MemberPage from "@/pages/MemberPage";
 import { renderWithProviders } from "./test-utils";
 
 const { members } = vi.hoisted(() => ({ members: [
-  { id: "a1", name: "CMS Assistant", role: "assistant", status: "active", batch: "2027", division: "Research", position: "head", order: 0, nim: "PRIVATE-NIM", email_personal: "private@example.org", show_nim: false, show_personal_email: false, email_public: "public@example.org", social: {} },
+  { id: "a1", photo_url: undefined as string | undefined, name: "CMS Assistant", role: "assistant", status: "active", batch: "2027", division: "Research", position: "head", order: 0, nim: "PRIVATE-NIM", email_personal: "private@example.org", show_nim: false, show_personal_email: false, email_public: "public@example.org", social: {} },
   { id: "a2", name: "Unbatched Assistant", role: "assistant", status: "active", division: "Future Division", order: 1, social: {} },
 ] }));
 vi.mock("@/lib/hooks", async (original) => ({
@@ -16,6 +16,15 @@ vi.mock("@/lib/hooks", async (original) => ({
 }));
 
 describe("CMS member editorial directory", () => {
+  it("replaces failed CMS portraits with the existing accessible fallback", () => {
+    members[0].photo_url = "https://example.org/missing-portrait.jpg";
+    renderWithProviders(<MemberSections />);
+    const card = screen.getByTestId("assistant-card-a1");
+    fireEvent.error(within(card).getByRole("img"));
+    expect(within(card).queryByRole("img")).not.toBeInTheDocument();
+    expect(within(card).getByLabelText("Photo pending for CMS Assistant")).toBeInTheDocument();
+    members[0].photo_url = undefined;
+  });
   it("derives the active batch label from CMS records rather than a fixed year", () => {
     renderWithProviders(<MemberSections />);
     expect(screen.queryByText("Batch 2023 / 2024")).not.toBeInTheDocument();

@@ -15,7 +15,16 @@ No new package dependencies. Existing CMS block IDs, order, visibility, live dat
 
 ## Recovery
 
-Pre-change checkpoint: branch `backup/pre-signal-editorial-a6eb4bf`. Work is uncommitted for review. Do not reset unrelated user changes.
+Pre-change checkpoint: branch `backup/pre-signal-editorial-a6eb4bf`. Implementation has been committed to `main` and deployed through Tailscale; preserve unrelated user changes.
+
+## Live continuation verification
+
+- Public routes, including four activity tabs, news article and event detail, were checked on the live deployment: 16 routes × 2 themes × 2 viewport widths (390/1440) = 64 cases. No page errors, horizontal overflow or completed broken images were detected. This is not a complete accessibility audit; lazy images and animations require separate settled-state checks.
+- Continuation refines mobile member cards into horizontal directory rows, keeping full names and 44px actions readable, with an existing accessible placeholder when a CMS portrait request fails. No CMS records, privacy gates or registration contracts changed.
+- Hero inverse headings and configurable Contact button foreground/background pairs have regression coverage; prior contrast patch deployed as `82e7575`.
+- Docker preview is retired: `compose.local.yml` removed; production frontend releases use SSH/SCP to the app node through Tailscale, preserving backend/environment/database and creating frontend backups before publishing.
+- Original CMS-authored photos/captions are retained. Authentic equipment photography and editorial translations require content-owner review, not invented replacements.
+- Production contact/registration submissions and CMS edit/save remain deliberately unexercised to avoid real records and email side effects.
 
 ## Verification
 

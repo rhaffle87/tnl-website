@@ -38,7 +38,12 @@
 .member-editorial :is(button, a):focus-visible, .activity-editorial :is(button, a):focus-visible, .event-detail-editorial :is(button, a):focus-visible { outline: 2px solid var(--tnl-link); outline-offset: 4px; }
 .activity-editorial [role="tabpanel"], .member-editorial .tnl-container, .event-detail-editorial .tnl-container { min-width: 0; }
 @media (max-width: 640px) {
-  .member-directory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem 1rem; }
+  .member-directory-grid { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .member-directory-card { display: grid; grid-template-columns: minmax(90px, .36fr) minmax(0, 1fr); gap: 1rem; align-items: start; padding-block: 1rem; }
+  .member-directory-card > .tnl-parallax-media { aspect-ratio: 3 / 4; }
+  .member-directory-card > div:last-of-type { min-width: 0; padding: 0; }
+  .member-directory-card .member-photo-placeholder { padding: .5rem; }
+  .member-directory-card .member-photo-placeholder > div { width: 3rem; height: 3rem; }
   .member-directory-card h3 { font-size: 1rem; overflow-wrap: anywhere; }
   .member-head-feature { padding: 1.5rem 0; }
   .activity-record-header { padding-inline: 1rem; }

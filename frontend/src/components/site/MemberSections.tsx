@@ -185,6 +185,7 @@ function HeadBanner({ member, onOpen }: { member: Member; onOpen: () => void }) 
 function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => void; testId: string }) {
     const { locale, t } = useLocale();
     const chip = roleChip(member);
+    const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
     return (
         <article
             onClick={onOpen}
@@ -193,9 +194,10 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
             data-testid={testId}
         >
             <div className="tnl-parallax-media relative aspect-[3/4] w-full overflow-hidden bg-[var(--muted)]">
-                {member.photo_url ? (
+                {member.photo_url && failedPhoto !== member.photo_url ? (
                     <img
                         src={member.photo_url}
+                        onError={() => setFailedPhoto(member.photo_url!)}
                         alt={member.photo_alt || `Portrait of ${member.name}`}
                         className="h-full w-full object-cover object-top transition-transform duration-300 hover:scale-105"
                         loading="lazy"
