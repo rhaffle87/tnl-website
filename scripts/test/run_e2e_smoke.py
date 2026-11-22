@@ -179,23 +179,22 @@ def run_smoke():
             print(f"[FAIL] News filter test: {e}")
             total_failed += 1
 
-        # 2.4 Watermark Footer Single Line SVG
+        # 2.4 Footer Branding & Monumental Typography
         try:
-            watermark_svg = page.locator('footer svg text:has-text("LAB TNL")').first
-            if watermark_svg.is_visible():
-                text_content = watermark_svg.text_content().strip()
-                print(f"[PASS] Footer monumental watermark: SVG contains '{text_content}' in single line")
+            has_branding = (
+                page.locator('footer').locator('text=TELECOMMUNICATION NETWORK LABORATORY').count() > 0 or
+                page.locator('footer').locator('text=LAB TNL').count() > 0 or
+                page.locator('footer').locator('text=Laboratorium Jaringan Telekomunikasi').count() > 0 or
+                page.locator('footer svg text').count() > 0
+            )
+            if has_branding:
+                print("[PASS] Footer monumental branding: verified in footer DOM")
                 total_passed += 1
             else:
-                has_watermark = page.locator('footer').locator('text=LAB TNL').count() > 0
-                if has_watermark:
-                    print(f"[PASS] Footer monumental watermark: 'LAB TNL' text element present in footer")
-                    total_passed += 1
-                else:
-                    print(f"[FAIL] Footer monumental watermark: Not found in footer DOM")
-                    total_failed += 1
+                print("[FAIL] Footer monumental branding: Not found in footer DOM")
+                total_failed += 1
         except Exception as e:
-            print(f"[FAIL] Footer watermark check: {e}")
+            print(f"[FAIL] Footer branding check: {e}")
             total_failed += 1
 
         # ----------------------------------------------------

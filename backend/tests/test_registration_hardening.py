@@ -308,3 +308,39 @@ async def test_registration_lifecycle_whatsapp_group_invite(async_client, mock_d
     assert dup.status_code == 409
     assert DUMMY_WA_GROUP not in dup.text
 
+
+@pytest.mark.asyncio
+async def test_registration_quota_cutoff_and_wa_protection(async_client, mock_db):
+    slug = "quota-cutoff-" + uuid4().hex[:6]
+    ev = _event(slug, [NAME_FIELD, EMAIL_FIELD], whatsapp_group_url=DUMMY_WA_GROUP)
+    ev["capacity"] = 2
+    await mock_db.events.insert_one(ev)
+
+    # Participant 1 -> 200, accepted, returns WA URL
+    p1 = await async_client.post(
+        f"/registrations/{ev['id']}",
+        data={"consent": "1", "f_full-name": "Peserta Satu", "f_email": "satu@example.com"},
+    )
+    assert p1.status_code == 200
+    assert p1.json().get("status") == "accepted"
+    assert p1.json().get("whatsapp_group_url") == DUMMY_WA_GROUP
+
+    # Participant 2 -> 200, accepted, returns WA URL (capacity reached 2/2)
+    p2 = await async_client.post(
+        f"/registrations/{ev['id']}",
+        data={"consent": "1", "f_full-name": "Peserta Dua", "f_email": "dua@example.com"},
+    )
+    assert p2.status_code == 200
+    assert p2.json().get("status") == "accepted"
+
+    # Participant 3 (Quota Full) -> 409, detail indicates full, WA URL NEVER leaked!
+    p3 = await async_client.post(
+        f"/registrations/{ev['id']}",
+        data={"consent": "1", "f_full-name": "Peserta Tiga", "f_email": "tiga@example.com"},
+    )
+    assert p3.status_code == 409
+    assert "kuota" in p3.json().get("detail", "").lower()
+    assert DUMMY_WA_GROUP not in p3.text
+    assert "whatsapp_group_url" not in p3.json()
+
+

@@ -2,11 +2,13 @@ import { readFileSync } from "node:fs";
 import { describe, it, expect, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
 import ActivityPage from "@/pages/ActivityPage";
+import { SiteHeader } from "@/components/site/Chrome";
 import { renderWithProviders } from "./test-utils";
 
 vi.mock("@/components/site/Blocks", () => ({ BlockRenderer: ({ blocks }: { blocks: { id: string }[] }) => <>{blocks.map((block) => <p key={block.id}>CMS {block.id}</p>)}</> }));
 vi.mock("@/lib/hooks", async (original) => ({
   ...await original<typeof import("@/lib/hooks")>(),
+  useSettings: vi.fn(() => ({ data: {} })),
   usePage: vi.fn(() => ({ data: { blocks: [{ id: "intro", type: "inner_hero" }, { id: "notice", type: "rich_text" }] } })),
   useProjects: vi.fn(() => ({ data: [{ id: "rd1", title: "CMS research", kind: "rd" }, { id: "tb1", title: "CMS testbed", is_testbed: true }] })),
   useEquipment: vi.fn(() => ({ data: [{ id: "eq1", name: "CMS radio", category: "sdr", status: "available" }] })),
@@ -29,22 +31,52 @@ describe("Activity editorial collection", () => {
     expect(screen.getByTestId("event-register-button-cms-workshop")).toBeEnabled();
     expect(screen.getByTestId("event-register-button-event-without-slug")).toBeDisabled();
   });
-  it("retains authored CMS content and gives the four tabs labelled panels", () => {
-    renderWithProviders(<ActivityPage />);
+  it("keeps the upper header links as the only activity navigation, with no orphan tab semantics", () => {
+    renderWithProviders(<><SiteHeader /><ActivityPage /></>, { route: "/activity?tab=rd&source=header" });
     expect(screen.getByText("CMS notice")).toBeInTheDocument();
     expect(screen.getByText("CMS research")).toBeInTheDocument();
     expect(screen.getByText("CMS testbed")).toBeInTheDocument();
     expect(screen.getByText("CMS radio")).toBeInTheDocument();
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+    expect(screen.queryByRole("tabpanel")).not.toBeInTheDocument();
+    expect(screen.getByTestId("mobile-menu-button")).toHaveAttribute("aria-haspopup", "dialog");
     for (const key of ["practicum", "assistant", "events", "rd"]) {
-      const tab = screen.getByTestId(`activity-tab-${key}`);
-      fireEvent.click(tab);
-      expect(tab).toHaveAttribute("aria-controls", `activity-panel-${key}`);
-      expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", `activity-tab-${key}`);
+      const link = screen.getByTestId(`nav-${key}-link`);
+      fireEvent.click(link);
+      expect(link).toHaveAttribute("aria-current", "page");
+      const panel = screen.getByTestId(`activity-panel-${key}`);
+      expect(panel).toHaveAttribute("aria-label");
+      expect(panel).not.toHaveAttribute("aria-labelledby", `activity-tab-${key}`);
+      expect(screen.queryByTestId(`activity-tab-${key}`)).not.toBeInTheDocument();
       if (key === "practicum") {
         expect(screen.getByRole("link", { name: /CMS module/ })).toHaveAttribute("href", "/uploads/module.pdf");
         expect(screen.getByText("CMS coordinator")).toBeInTheDocument();
       }
       if (key === "assistant") expect(screen.getByText("CMS assistant activity")).toBeInTheDocument();
     }
+  });
+  it("keeps equipment deep links and exposes filter selection without a second page navigation", () => {
+    renderWithProviders(<ActivityPage />, { route: "/activity?tab=rd#equipment" });
+    expect(screen.getByTestId("lab-equipment-section")).toHaveAttribute("id", "equipment");
+    const all = screen.getByTestId("equipment-cat-filter-all");
+    const server = screen.getByTestId("equipment-cat-filter-server");
+    expect(all).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(server);
+    expect(server).toHaveAttribute("aria-pressed", "true");
+    expect(all).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByText("CMS radio")).not.toBeInTheDocument();
+    fireEvent.click(all);
+    expect(screen.getByText("CMS radio")).toBeInTheDocument();
+  });
+  it("names the practicum schedule for its CMS module", () => {
+    renderWithProviders(<ActivityPage />, { route: "/activity?tab=practicum" });
+    expect(screen.getByRole("table")).toHaveAccessibleName(/CMS practicum/);
+    expect(screen.getByRole("link", { name: /CMS module/ })).toHaveAttribute("download");
+  });
+  it.each(["rd", "practicum", "events", "assistant", "training", "unknown"])("supports direct ?tab=%s entry without lower tabs", (key) => {
+    renderWithProviders(<ActivityPage />, { route: `/activity?tab=${key}` });
+    const active = key === "training" ? "events" : key === "unknown" ? "rd" : key;
+    expect(screen.getByTestId(`activity-panel-${active}`)).toHaveAttribute("aria-label");
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
   });
 });

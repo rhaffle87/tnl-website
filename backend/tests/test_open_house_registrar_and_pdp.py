@@ -25,12 +25,12 @@ async def test_registration_validation_rules(async_client, mock_db):
         "f_what-do-you-hope-to-learn": "Routing & switching configuration hands-on.",
     }
 
-    # 1. Successful Registration
+    # 1. Successful Registration (Auto-accepted)
     res = await async_client.post(f"/registrations/{ev_id}", data=base_form)
     assert res.status_code == 200, res.text
     data = res.json()
     assert data.get("ok") is True
-    assert data.get("status") in ("pending", "waitlisted")
+    assert data.get("status") == "accepted"
 
     # 2. Duplicate registration rejection (same email + same event)
     dup_email_form = dict(base_form)

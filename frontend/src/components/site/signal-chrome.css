@@ -238,52 +238,52 @@
     margin-top: auto;
     background: var(--footer-surface);
     color: var(--footer-muted);
-    font-size: .9375rem;
-    line-height: 1.5;
+    font-size: 1rem;
+    line-height: 1.55;
     overflow-wrap: anywhere;
 }
 .signal-footer-entry {
     display: grid;
-    align-items: end;
-    gap: 1.2rem 2rem;
-    padding-block: clamp(2.25rem, 5vw, 4.75rem) clamp(1.6rem, 4vw, 3rem);
+    align-items: center;
+    gap: 1rem 2.5rem;
+    padding-block: clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 3vw, 2.5rem);
     border-bottom: 1px solid var(--footer-rule);
 }
 .signal-footer-home {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
-    gap: clamp(.75rem, 2vw, 1.5rem);
+    gap: clamp(.65rem, 1.5vw, 1.1rem);
     width: fit-content;
-    color: inherit;
+    color: var(--footer-ink);
 }
 .signal-footer-title {
     color: var(--footer-ink);
-    font-size: clamp(1.65rem, 4vw, 3.75rem);
-    font-weight: 680;
-    line-height: 1.02;
-    letter-spacing: -.045em;
+    font-size: clamp(1.35rem, 2.45vw, 2.15rem);
+    font-weight: 650;
+    line-height: 1.12;
+    letter-spacing: -.035em;
     text-wrap: balance;
 }
-.signal-footer-entry p { max-width: 38ch; }
+.signal-footer-entry p { max-width: 44ch; margin: 0; }
 .signal-footer-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem clamp(.8rem, 5vw, 4.5rem);
-    padding-block: clamp(1.75rem, 4vw, 3.5rem);
+    gap: 1.5rem clamp(1rem, 4vw, 3.5rem);
+    padding-block: clamp(1.5rem, 3vw, 2.5rem);
 }
 .signal-footer-group-label {
-    margin-bottom: .65rem;
+    margin-bottom: .7rem;
     color: var(--footer-accent);
-    font: 600 .72rem/1.4 var(--font-mono);
-    letter-spacing: .09em;
+    font: 600 .75rem/1.45 var(--font-mono);
+    letter-spacing: .075em;
 }
 .signal-footer-grid ul { list-style: none; padding: 0; margin: 0; }
 .signal-footer-contact { grid-column: 1 / -1; }
 .signal-footer-address,
 .signal-footer-icon-link,
 .signal-footer-top { display: flex; align-items: center; gap: .65rem; }
-.signal-footer-address { align-items: flex-start; max-width: 35ch; }
+.signal-footer-address { align-items: flex-start; max-width: 40ch; }
 .signal-footer-address svg { margin-top: .2em; }
 .signal-footer-contact a { width: fit-content; }
 .signal-footer-grid li a,
@@ -291,36 +291,41 @@
 .signal-footer-grid a,
 .signal-footer-legal a,
 .signal-footer-top { min-height: 44px; color: var(--footer-ink); }
+.signal-footer-home,
+.signal-footer-grid a,
+.signal-footer-legal a,
+.signal-footer-top {
+    text-decoration-color: transparent;
+    text-underline-offset: .22em;
+    transition: color 160ms ease, text-decoration-color 160ms ease;
+}
 .signal-footer-home:hover,
 .signal-footer-grid a:hover,
 .signal-footer-legal a:hover,
-.signal-footer-top:hover { text-decoration: underline; text-underline-offset: .22em; }
+.signal-footer-top:hover { text-decoration: underline; text-decoration-color: currentColor; }
 .signal-footer-address svg,
 .signal-footer-icon-link svg,
 .signal-footer-top svg { flex-shrink: 0; color: var(--footer-accent); }
-.signal-footer-wordmark {
-    display: block;
-    width: 100%;
-    height: auto;
-    color: var(--footer-accent);
-    border-top: 1px solid var(--footer-rule);
-    padding-block: clamp(.65rem, 2vw, 1.6rem);
-    font-family: var(--font-sans);
-}
+
 .signal-footer-utility,
 .signal-footer-legal { display: flex; align-items: center; flex-wrap: wrap; gap: .2rem 1.25rem; }
 .signal-footer-utility {
     justify-content: space-between;
     border-top: 1px solid var(--footer-rule);
     padding-block: .75rem calc(5rem + env(safe-area-inset-bottom));
-    font-size: .8125rem;
+    font-size: .875rem;
 }
 @media (min-width: 768px) {
-    .signal-collaboration-inner,
-    .signal-footer-entry { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); }
+    .signal-collaboration-inner { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); }
+    .signal-footer-entry { grid-template-columns: minmax(0, 1.25fr) minmax(16rem, .75fr); }
     .signal-collaboration-inner .signal-join { justify-self: end; }
     .signal-footer-grid { grid-template-columns: minmax(0, .8fr) minmax(0, 1fr) minmax(0, 1.3fr); }
     .signal-footer-contact { grid-column: auto; }
-    .signal-footer-grid li a { min-height: 36px; }
     .signal-footer-utility { padding-bottom: .75rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .signal-footer-home,
+    .signal-footer-grid a,
+    .signal-footer-legal a,
+    .signal-footer-top { transition: none; }
 }

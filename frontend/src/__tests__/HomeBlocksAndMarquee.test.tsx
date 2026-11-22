@@ -51,7 +51,7 @@ describe("Home Blocks & Marquee Components", () => {
     expect(heroTitle).toBeInTheDocument();
   });
 
-  it("AboutBlock applies text-justify styling for clean paragraph alignment", () => {
+  it("AboutBlock provides readable non-justified editorial copy", () => {
     const blocks = [
       {
         id: "about-1",
@@ -69,8 +69,9 @@ describe("Home Blocks & Marquee Components", () => {
     ];
 
     const { container } = renderWithProviders(<BlockRenderer blocks={blocks} />);
-    const justifiedText = container.querySelector(".text-justify");
-    expect(justifiedText).toBeInTheDocument();
+    const paragraph = container.querySelector(".signal-about-body");
+    expect(paragraph).toBeInTheDocument();
+    expect(paragraph).not.toHaveClass("text-justify");
   });
 
   it("PartnersBlock renders partner marquee container without truncation", () => {

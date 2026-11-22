@@ -79,18 +79,12 @@ describe("MediaCarousel & Activity Components", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("ActivityPage renders tab navigation and shift table correctly", () => {
+  it("ActivityPage uses deep-link navigation and preserves the shift table without duplicate tabs", () => {
     renderWithProviders(<ActivityPage />, { route: "/activity?tab=practicum" });
-
-    // Verify tabs rendered
-    expect(screen.getByTestId("activity-tab-rd")).toBeInTheDocument();
-    expect(screen.getByTestId("activity-tab-practicum")).toBeInTheDocument();
-    expect(screen.getByTestId("activity-tab-events")).toBeInTheDocument();
-
-    // Click on Practicum tab
-    fireEvent.click(screen.getByTestId("activity-tab-practicum"));
-
-    // Verify practicum shift table is visible
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+    expect(screen.queryByRole("tabpanel")).not.toBeInTheDocument();
+    expect(screen.getByTestId("activity-panel-practicum")).toHaveAttribute("role", "region");
+    expect(screen.getByRole("table")).toHaveAccessibleName(/Jaringan Komputer Lanjut/);
     expect(screen.getByText("Jaringan Komputer Lanjut")).toBeInTheDocument();
     expect(screen.getByText("Senin")).toBeInTheDocument();
     expect(screen.getByText("08:00 - 10:00")).toBeInTheDocument();

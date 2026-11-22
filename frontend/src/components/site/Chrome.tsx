@@ -452,7 +452,7 @@ export function SiteFooter({
                     <div className="signal-footer-entry">
                         <h2 className="signal-footer-title">
                             <Link to="/" viewTransition className="signal-footer-home">
-                                <span aria-hidden="true"><TnlLogo variant="light" className="h-11 w-11 md:h-16 md:w-16" /></span>
+                                <span aria-hidden="true"><TnlLogo variant="light" className="h-9 w-9 sm:h-10 sm:w-10" /></span>
                                 <span>{title}</span>
                             </Link>
                         </h2>
@@ -509,11 +509,7 @@ export function SiteFooter({
                         </div>
                     </div>
 
-                    <svg viewBox="0 0 760 100" className="signal-footer-wordmark" aria-hidden="true">
-                        <text x="380" y="81" textAnchor="middle" textLength="740" lengthAdjust="spacingAndGlyphs" fontSize="100" fontWeight="740" fill="currentColor">
-                            LAB TNL
-                        </text>
-                    </svg>
+
 
                     <div className="signal-footer-utility">
                         <p data-testid="footer-institution-line">
@@ -523,7 +519,10 @@ export function SiteFooter({
                             <Link to="/terms" data-testid="footer-terms-link">{t.terms}</Link>
                             <Link to="/privacy" data-testid="footer-privacy-link">{t.privacy}</Link>
                         </div>
-                        <button type="button" className="signal-footer-top" onClick={() => scrollTo(0, { duration: 0.8 })} data-testid="footer-back-to-top-button">
+                        <button type="button" className="signal-footer-top" onClick={() => scrollTo(0, {
+                            duration: 0.8,
+                            immediate: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
+                        })} data-testid="footer-back-to-top-button">
                             {t.backToTop} <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
                     </div>
@@ -615,7 +614,16 @@ export function MobileRegistrationBar() {
     const openHouse = list.find((e) => e.slug === "open-house-tnl" && e.status === "published");
     const activeEvent = openHouse || list.find((e) => e.status === "published");
 
-    if (!activeEvent) return null;
+    if (
+        !activeEvent ||
+        activeEvent.registration_closed ||
+        activeEvent.is_full ||
+        activeEvent.reg_status === "full" ||
+        activeEvent.reg_status === "closed" ||
+        activeEvent.reg_status === "past"
+    ) {
+        return null;
+    }
 
     const eventTitle = pick(locale, activeEvent.title, activeEvent.title_id) || "Open House TNL";
     const targetUrl = activeEvent.slug === "open-house-tnl" ? "/open-house" : "/activity?tab=events";

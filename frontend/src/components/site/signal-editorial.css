@@ -7,12 +7,35 @@
 .signal-timeline li h3 { font-size: clamp(1.25rem,2vw,1.75rem); font-weight: 500; letter-spacing: -.025em; }
 .signal-inner-hero { background: var(--gsm-obsidian); color: #F1F3EE; border-bottom: 1px solid var(--tnl-border); }
 .signal-inner-hero h1 { max-width: 19ch; font-weight: 500; letter-spacing: -.055em; text-wrap: balance; }
-.signal-about-layout { display: grid; grid-template-columns: minmax(0,1fr); gap: 3rem; }
-.signal-about-layout.has-tiles { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); }
-.signal-about-body { color: var(--tnl-body); max-width: 45rem; font-size: clamp(1.125rem,1.8vw,1.5rem); line-height: 1.85; text-wrap: pretty; }
-.signal-about-tile { padding: 1.5rem 0; border-top: 1px solid var(--tnl-border); }
-.signal-study-slide { border-block: 1px solid var(--tnl-border); overflow: hidden; background: var(--tnl-card); }
-.signal-study-slide > div > div:first-child { background: var(--gsm-obsidian); min-height: 15rem; }
+.signal-about-layout { display: grid; grid-template-columns: minmax(0,1fr); gap: clamp(2rem,5vw,4.5rem); align-items: start; }
+.signal-about-layout.has-tiles { grid-template-columns: minmax(0,1.1fr) minmax(0,1fr); }
+.signal-about-narrative { display: grid; gap: 1.75rem; }
+.signal-about-body { color: var(--tnl-body); max-width: 62ch; font-size: clamp(1.0625rem,1.45vw,1.25rem); line-height: 1.8; text-align: start; text-wrap: pretty; }
+.signal-about-location { display: grid; gap: 1rem; border-block: 1px solid var(--tnl-border); padding: 1.25rem 0; background: transparent !important; }
+.signal-about-location > div:last-child { border: 0; padding: 0; font-size: .8125rem; }
+.signal-about-topics { display: grid; gap: 1.5rem; align-content: start; }
+.signal-about-tile { padding: 1.25rem 0 0; border-top: 1px solid var(--tnl-border); }
+.signal-about-tile h3 { font-size: 1.25rem; font-weight: 500; letter-spacing: -.025em; }
+.signal-about-tile p { font-size: 1rem; line-height: 1.8; }
+.signal-study-layout { display: grid; grid-template-columns: minmax(0,.95fr) minmax(0,1.35fr); gap: clamp(2rem,5vw,5rem); align-items: start; }
+.signal-study-index { display: grid; }
+.signal-study-index button { display: grid; grid-template-columns: 2rem minmax(0,1fr) 1rem; align-items: center; gap: .75rem; text-align: start; min-height: 64px; padding: 1rem 0; border-top: 1px solid var(--tnl-border); color: var(--tnl-body); font-size: .9375rem; line-height: 1.5; transition: color .2s; }
+.signal-study-index button > span { color: var(--tnl-tan-text); font: 11px var(--font-mono); }
+.signal-study-index button[aria-pressed="true"] { color: var(--tnl-heading); font-weight: 600; border-color: var(--tnl-link); }
+.signal-study-index button:hover { color: var(--tnl-link); }
+.signal-study-reading { min-width: 0; border-top: 1px solid var(--tnl-border); }
+.signal-study-slide { padding-block: 1.5rem 2rem; min-height: 16rem; color: var(--tnl-heading); }
+.signal-study-slide h3 { font-size: clamp(1.6rem,3vw,2.75rem); font-weight: 500; line-height: 1.18; letter-spacing: -.04em; max-width: 24ch; margin-block: 1rem 1.25rem; text-wrap: balance; }
+.signal-study-slide p:last-child { max-width: 58ch; color: var(--tnl-body); font-size: 1.0625rem; line-height: 1.85; }
+.signal-study-kicker { color: var(--tnl-tan-text); font: 11px var(--font-mono); text-transform: uppercase; letter-spacing: .12em; }
+.signal-study-controls { display: flex; justify-content: space-between; align-items: center; border-block: 1px solid var(--tnl-border); padding-block: .75rem; }
+.signal-study-controls > span { font: 12px var(--font-mono); color: var(--tnl-tan-text); }
+.signal-study-controls > div { display: flex; gap: .5rem; }
+.signal-study-controls button { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--tnl-border); color: var(--tnl-link); transition: background .2s; }
+.signal-study-controls button:hover { background: var(--tnl-surface); }
+.signal-study :is(button,a):focus-visible { outline: 2px solid var(--tnl-link); outline-offset: 4px; }
+@media (max-width: 900px) { .signal-about-layout.has-tiles, .signal-study-layout { grid-template-columns: minmax(0,1fr); } .signal-about-location { border-bottom: 0; padding-bottom: 0; } .signal-study-slide { min-height: 0; } }
+@media (prefers-reduced-motion: reduce) { .signal-study button { transition: none; } }
 .signal-directory-link { display: flex; flex-direction: column; padding: 1.75rem 0; border-block: 1px solid var(--tnl-border); transition: border-color .2s; }
 .signal-directory-link h3 { font-size: clamp(1.5rem,2vw,2rem); font-weight: 500; letter-spacing: -.035em; }
 .signal-directory-link:hover { border-color: var(--tnl-link); }

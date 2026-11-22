@@ -128,7 +128,7 @@ def test_registration_is_unique_per_email_and_nim(client, open_event):
 
     first = client.post(f"/registrations/{open_event['id']}", data=_registration_form(email, nim))
     assert first.status_code == 200, first.text
-    assert first.json()["status"] in ("pending", "waitlisted")
+    assert first.json()["status"] in ("accepted", "pending", "waitlisted")
 
     # Same email, different NIM -> rejected.
     dup_email = client.post(f"/registrations/{open_event['id']}", data=_registration_form(email, f"08{stamp[-8:]}"))

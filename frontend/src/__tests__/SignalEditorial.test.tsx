@@ -54,6 +54,20 @@ describe("Signal Editorial CMS blocks", () => {
   expect(screen.getByTestId("carousel-slide")).toHaveClass("signal-study-slide");
   expect(screen.getByTestId("quick-link-card-0")).toHaveClass("signal-directory-link");
  });
+ it("uses readable About copy rather than forced justification", () => {
+  renderWithProviders(<BlockRenderer blocks={[{ id: "a", hidden: false, type: "about", props: { heading: "About", body: "CMS mission", tiles: [] } }]} />);
+  expect(screen.getByTestId("about-body")).not.toHaveClass("text-justify");
+ });
+ it("presents authored study tracks with accessible direct selection and compact position", async () => {
+  renderWithProviders(<BlockRenderer blocks={[{ id: "c", hidden: false, type: "carousel", props: { heading: "Study tracks", slides: [{ title: "Optical", description: "Fibre research" }, { title: "Wireless", description: "Radio research" }] } }]} />);
+  expect(screen.getByTestId("carousel-slide")).toHaveTextContent("Optical");
+  expect(screen.getByTestId("carousel-position")).toHaveTextContent("01 / 02");
+  await userEvent.click(screen.getByRole("button", { name: "Wireless" }));
+  expect(screen.getByTestId("carousel-slide")).toHaveTextContent("Radio research");
+  expect(screen.getByTestId("carousel-position")).toHaveTextContent("02 / 02");
+  await userEvent.click(screen.getByTestId("carousel-next-button"));
+  expect(screen.getByTestId("carousel-slide")).toHaveTextContent("Fibre research");
+ });
  it("renders CMS research descriptions as editorial rows", () => {
   renderWithProviders(<BlockRenderer blocks={[{ id: "r", hidden: false, type: "numbered_cards", props: { heading: "Research", cards: [{ name: "Cloud networking", description: "CMS controlled area", url: "/activity?tab=rd" }] } }]} />);
   expect(screen.getByText("CMS controlled area")).toBeInTheDocument();

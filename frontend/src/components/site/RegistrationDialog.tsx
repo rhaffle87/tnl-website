@@ -21,6 +21,13 @@ interface SubmitResult {
 
 export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClose: () => void }) {
     const { locale, t } = useLocale();
+    const isClosed = Boolean(
+        event.registration_closed ||
+        event.is_full ||
+        event.reg_status === "full" ||
+        event.reg_status === "closed" ||
+        event.reg_status === "past"
+    );
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState<SubmitResult | null>(null);
     const [copiedWa, setCopiedWa] = useState(false);
@@ -189,6 +196,22 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                                 {t("close")}
                             </button>
                         </div>
+                    </div>
+                ) : isClosed ? (
+                    <div className="px-7 py-10 text-center space-y-4" data-testid="registration-closed-dialog">
+                        <p className="text-base font-semibold text-red-600 dark:text-red-400">
+                            {event.is_full || event.reg_status === "full"
+                                ? (locale === "id" ? "Kuota pendaftaran untuk acara ini sudah penuh." : "Registration for this event is full.")
+                                : (locale === "id" ? "Pendaftaran untuk acara ini sedang ditutup." : "Registration for this event is closed.")}
+                        </p>
+                        <p className="text-xs text-[var(--tnl-body)]">
+                            {locale === "id"
+                                ? "Silakan pantau pengumuman lebih lanjut melalui media sosial atau hubungi kontak kami."
+                                : "Please check our announcements or contact us for further info."}
+                        </p>
+                        <button type="button" onClick={onClose} className="tnl-btn tnl-btn-outline" data-testid="registration-close-dialog-btn">
+                            {t("close")}
+                        </button>
                     </div>
                 ) : (
                     <form onSubmit={onSubmit} className="space-y-4 px-7 py-6" noValidate data-testid="registration-form">

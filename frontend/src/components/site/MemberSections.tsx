@@ -4,6 +4,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import "@/pages/activity-editorial.css";
+import "@/pages/member-profile.css";
 import { useSearchParams } from "react-router-dom";
 import { m, AnimatePresence } from "motion/react";
 import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
@@ -290,6 +291,7 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
 function MemberModal({ member, onClose }: { member: Member; onClose: () => void }) {
     const { locale, t } = useLocale();
     const chip = roleChip(member);
+    const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
     const { data: memberPubs } = usePublications({ member_id: member.id });
     const ig = formatInstagram(member.social?.instagram);
     const dialogRef = useRef<HTMLDivElement>(null);
@@ -304,7 +306,8 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                 const items = dialogRef.current?.querySelectorAll<HTMLElement>('button, a[href], [tabindex="0"]');
                 if (!items?.length) return;
                 const first = items[0], last = items[items.length - 1];
-                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+                if (!dialogRef.current?.contains(document.activeElement)) { event.preventDefault(); (event.shiftKey ? last : first).focus(); }
+                else if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
                 else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
             }
         };
@@ -316,19 +319,14 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
 
     return (
         <div
-            ref={dialogRef}
-            className="member-editorial fixed inset-0 z-[100] flex items-center justify-center p-4"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="member-modal-name"
-            data-testid="member-detail-modal"
+            className="member-profile-overlay"
         >
             <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                className="member-profile-backdrop"
                 onClick={onClose}
                 aria-hidden="true"
             />
@@ -337,73 +335,81 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.97 }}
                 transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                data-lenis-prevent
-                className="member-profile-sheet relative z-10 max-h-[88vh] w-full max-w-2xl overflow-y-auto p-0"
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="member-modal-name"
+                data-testid="member-detail-modal"
+                className="member-profile-dialog"
             >
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="member-modal-close absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center"
-                    aria-label={t("close")}
-                    data-testid="member-modal-close-button"
-                >
-                    <X className="h-4 w-4" style={{ color: "var(--foreground)" }} />
-                </button>
-                <div className="grid sm:grid-cols-[0.4fr_0.6fr]">
-                    <div className="aspect-[3/4] sm:aspect-auto w-full bg-[var(--muted)] overflow-hidden" style={{ minHeight: 240 }}>
-                        {member.photo_url ? (
+                <header className="member-profile-header" data-testid="member-profile-header">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="member-profile-close"
+                        aria-label={t("close")}
+                        data-testid="member-modal-close-button"
+                    >
+                        <X className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    <div className="member-profile-portrait">
+                        {member.photo_url && failedPhoto !== member.photo_url ? (
                             <img
                                 src={member.photo_url}
+                                onError={() => setFailedPhoto(member.photo_url!)}
                                 alt={member.photo_alt || `Portrait of ${member.name}`}
                                 className="h-full w-full object-cover object-top"
                             />
                         ) : (
-                            <LightPlaceholder member={member} isModal />
+                            <div className="member-profile-initials" aria-label={`Photo pending for ${member.name}`}>
+                                {getInitials(member.name)}
+                            </div>
                         )}
                     </div>
-                    <div className="p-6 sm:p-8">
-                        <span
-                            className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold"
-                            style={{ background: chip.bg, color: chip.fg }}
-                        >
+                    <div className="member-profile-identity">
+                        <span className="member-profile-role" style={{ background: chip.bg, color: chip.fg }}>
                             {chip.label}
                         </span>
-                        <h2 id="member-modal-name" className="tnl-h4 mt-3 text-[22px]">
-                            {member.name}
-                        </h2>
-                        {member.division ? (
-                            <p className="mt-1 text-sm font-medium" style={{ color: "var(--tnl-tan-text)" }}>
-                                {t("division")}: {member.division}
-                            </p>
-                        ) : null}
-                        {member.batch ? (
-                            <p className="text-sm" style={{ color: "var(--tnl-tan-text)" }}>
-                                {t("batch")}: {member.batch}
-                            </p>
-                        ) : null}
-                        {member.show_nim && member.nim ? (
-                            <p className="mt-1 text-sm font-mono text-[var(--tnl-body)]">
-                                {member.role === "lecturer" ? "NIP" : "NRP"}: {member.nim}
-                            </p>
-                        ) : null}
-                        <p className="mt-4 text-sm leading-relaxed text-[var(--tnl-body)]">
+                        <h2 id="member-modal-name" className="member-profile-name">{member.name}</h2>
+                    </div>
+                </header>
+                <div
+                    className="member-profile-body"
+                    data-testid="member-profile-body"
+                    data-lenis-prevent
+                    tabIndex={0}
+                    role="region"
+                    aria-label={locale === "id" ? "Detail profil" : "Profile details"}
+                >
+                    {member.division || member.batch || (member.show_nim && member.nim) ? (
+                        <div className="member-profile-meta">
+                            {member.division ? <p>{t("division")}: {member.division}</p> : null}
+                            {member.batch ? <p>{t("batch")}: {member.batch}</p> : null}
+                            {member.show_nim && member.nim ? (
+                                <p className="font-mono">{member.role === "lecturer" ? "NIP" : "NRP"}: {member.nim}</p>
+                            ) : null}
+                        </div>
+                    ) : null}
+                    <section className="member-profile-overview" aria-labelledby="member-profile-bio-title">
+                        <h3 id="member-profile-bio-title" className="member-profile-section-title">{locale === "id" ? "Profil" : "Profile"}</h3>
+                        <p className="member-profile-bio">
                             {pick(locale, member.bio, member.bio_id)}
                         </p>
                         {member.expertise?.length ? (
-                            <div className="mt-4">
-                                <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                            <div className="member-profile-expertise">
+                                <h4 className="member-profile-label">
                                     {t("expertise")}
-                                </div>
+                                </h4>
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {member.expertise.map((e) => (
-                                        <span key={e} className="tnl-count-chip">
+                                        <span key={e} className="member-profile-tag">
                                             {e}
                                         </span>
                                     ))}
                                 </div>
                             </div>
                         ) : null}
-                        <div className="mt-4 flex flex-col gap-2">
+                        <div className="member-profile-contacts">
                             {member.email_public ? (
                                 <a
                                     href={`mailto:${member.email_public}`}
@@ -454,17 +460,18 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                                 {t("cv")}
                             </a>
                         ) : null}
+                        </section>
                         {memberPubs && memberPubs.length > 0 ? (
-                            <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--tnl-border)" }} data-testid={`member-publications-${member.id}`}>
-                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                            <section className="member-profile-section" aria-labelledby="member-profile-publications-title" data-testid={`member-publications-${member.id}`}>
+                                <h3 id="member-profile-publications-title">
                                     <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
                                     Selected Publications at TNL ({memberPubs.length})
-                                </div>
-                                <div className="mt-2.5 space-y-2">
+                                </h3>
+                                <div className="member-profile-list">
                                     {memberPubs.map((pub) => (
-                                        <div key={pub.id} className="rounded-lg border p-2.5 text-xs transition-colors hover:border-[var(--tnl-green)]" style={{ borderColor: "var(--tnl-border)" }}>
-                                            <p className="font-semibold text-[var(--tnl-body)]">{pub.title}</p>
-                                            <div className="mt-1 flex flex-wrap items-center gap-2" style={{ color: "var(--tnl-tan-text)" }}>
+                                        <article key={pub.id} className="member-profile-record">
+                                            <h4>{pub.title}</h4>
+                                            <div className="member-profile-record-meta">
                                                 <span>{pub.year}</span>
                                                 {pub.venue && <span>· {pub.venue}</span>}
                                                 {pub.doi && (
@@ -478,54 +485,44 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                                                     </a>
                                                 )}
                                             </div>
-                                        </div>
+                                        </article>
                                     ))}
                                 </div>
-                            </div>
+                            </section>
                         ) : null}
                         {member.projects && member.projects.length > 0 ? (
-                            <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--tnl-border)" }} data-testid={`member-projects-${member.id}`}>
-                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                            <section className="member-profile-section" aria-labelledby="member-profile-projects-title" data-testid={`member-projects-${member.id}`}>
+                                <h3 id="member-profile-projects-title">
                                     <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
                                     {locale === "id" ? "Proyek Penelitian & Hibah" : "Research Projects & Grants"} ({member.projects.length})
-                                </div>
-                                <div className="mt-2.5 space-y-2.5">
+                                </h3>
+                                <div className="member-profile-list">
                                     {member.projects.map((proj, idx) => (
-                                        <div
+                                        <article
                                             key={idx}
-                                            className="rounded-lg border p-3 text-xs transition-colors hover:border-[var(--tnl-green)]"
-                                            style={{ borderColor: "var(--tnl-border)" }}
+                                            className="member-profile-record"
                                             data-testid={`member-project-item-${idx}`}
                                         >
-                                            <div className="flex items-start justify-between gap-2">
-                                                <p className="font-semibold text-[var(--tnl-body)]">{proj.title}</p>
+                                            <h4>{proj.title}</h4>
+                                            <div className="member-profile-record-meta">
                                                 {proj.year ? (
-                                                    <span className="shrink-0 font-mono text-[10px] text-[var(--tnl-tan-text)]">{proj.year}</span>
+                                                    <span>{proj.year}</span>
                                                 ) : null}
-                                            </div>
                                             {proj.funding ? (
-                                                <span
-                                                    className="mt-1.5 inline-block rounded px-2 py-0.5 text-[10px] font-semibold"
-                                                    style={{
-                                                        background: "color-mix(in srgb, var(--tnl-tan) 18%, transparent)",
-                                                        color: "var(--tnl-tan-text)",
-                                                    }}
-                                                >
-                                                    {proj.funding}
-                                                </span>
+                                                <span>{proj.funding}</span>
                                             ) : null}
+                                            </div>
                                             {proj.description ? (
-                                                <p className="mt-2 text-xs text-[var(--tnl-body)] opacity-90 leading-relaxed">
+                                                <p>
                                                     {proj.description}
                                                 </p>
                                             ) : null}
-                                        </div>
+                                        </article>
                                     ))}
                                 </div>
-                            </div>
+                            </section>
                         ) : null}
                         <SocialLinks member={member} />
-                    </div>
                 </div>
             </m.div>
         </div>

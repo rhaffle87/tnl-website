@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import { SiteHeader, SiteFooter, SiteCollaborationBand, MobileRegistrationBar } from "@/components/site/Chrome";
+import { SmoothScrollProvider } from "@/components/site/SmoothScrollProvider";
 import { renderWithProviders } from "./test-utils";
 
 vi.mock("@/lib/hooks", async (importOriginal) => {
@@ -49,20 +50,39 @@ describe("Chrome and Layout Components", () => {
     expect(screen.getByText(/Tertarik berkolaborasi|Interested in collaborating/i)).toBeInTheDocument();
   });
 
-  it("SiteFooter renders 4 informational columns and single-line LAB TNL SVG watermark", () => {
+  it("SiteFooter makes the lab identity the only brand headline and keeps both nav groups", () => {
     const { container } = renderWithProviders(<SiteFooter />, { route: "/" });
+    const footer = screen.getByTestId("site-footer");
 
-    // Verify 4 columns exist (About Lab, Divisions/Research, Quick links, Location/Contact)
     expect(screen.getByText(/Ruang B-301|Room B-301/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Departemen Teknik Elektro|Department of Electrical/i).length).toBeGreaterThan(0);
-
-    // Verify monumental SVG watermark contains LAB TNL in a single SVG text element
-    const watermarkText = container.querySelector("svg text");
-    expect(watermarkText).toBeInTheDocument();
-    expect(watermarkText?.textContent).toContain("LAB TNL");
+    expect(footer.querySelectorAll("h2")).toHaveLength(1);
+    expect(container.querySelector(".signal-footer-wordmark")).toBeNull();
+    expect(footer.querySelectorAll("svg text")).toHaveLength(0);
+    expect(footer.querySelectorAll("nav")).toHaveLength(2);
 
     // Ensure no old ITS dot gradient or floating pill remains
     expect(container.querySelector("#tnlDotGrad")).toBeNull();
+  });
+
+  it("uses an immediate back-to-top action when reduced motion is preferred", () => {
+    const matchMedia = vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+      matches: query === "(prefers-reduced-motion: reduce)",
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    try {
+      renderWithProviders(<SmoothScrollProvider><SiteFooter /></SmoothScrollProvider>);
+      screen.getByTestId("footer-back-to-top-button").click();
+      expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "instant" });
+    } finally {
+      matchMedia.mockRestore();
+    }
   });
 
   it("MobileRegistrationBar renders call-to-action bar on public routes", () => {

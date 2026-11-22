@@ -126,12 +126,12 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
             <div className="tnl-container">
                 <SectionHeading title={pickProp(locale, props, "heading")} testId="about-heading" />
                 <div className={`signal-about-layout ${list.length ? "has-tiles" : ""}`}>
-                    <div className="flex flex-col justify-between space-y-6">
-                        <p className="signal-about-body text-justify" data-testid="about-body">
+                    <div className="signal-about-narrative">
+                        <p className="signal-about-body" data-testid="about-body">
                             {pickProp(locale, props, "body")}
                         </p>
                         <div
-                            className="flex flex-col gap-3 rounded-[18px] border p-5 sm:flex-row sm:items-center sm:justify-between"
+                            className="signal-about-location"
                             style={{ borderColor: "var(--tnl-border)", background: "var(--tnl-surface)" }}
                         >
                             <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                                     <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
                                         {locale === "id" ? "Lokasi Fasilitas" : "Lab Location"}
                                     </div>
-                                    <div className="text-sm font-semibold">Gedung B Lt. 3, Ruang B-301</div>
+                                    <div className="text-sm font-semibold">{locale === "id" ? "Gedung B Lt. 3, Ruang B-301" : "Building B, 3rd Floor, Room B-301"}</div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 border-t pt-2 text-xs font-medium text-[var(--tnl-muted)] sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
@@ -156,7 +156,7 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                         </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-1">
+                    <div className="signal-about-topics">
                         {list.map((tile, i) => {
                             const Icon = aboutIcons[i % aboutIcons.length];
                             return (
@@ -180,7 +180,7 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                                         >
                                             <Icon
                                                 className="h-5 w-5"
-                                                style={{ color: i % 2 === 0 ? "var(--tnl-green)" : "var(--tnl-tan-text)" }}
+                                                style={{ color: i % 2 === 0 ? "var(--tnl-link)" : "var(--tnl-tan-text)" }}
                                             />
                                         </div>
                                         <h3 className="text-[18px] font-bold">
@@ -261,68 +261,37 @@ function CarouselBlock({ props }: { props: Record<string, unknown> }) {
     const slides = tiles(props, "slides");
     const [index, setIndex] = useState(0);
     if (!slides.length) return null;
-    const go = (delta: number) => setIndex((i) => (i + delta + slides.length) % slides.length);
-    const slide = slides[index];
+    const active = index % slides.length;
+    const slide = slides[active];
+    const go = (delta: number) => setIndex((active + delta + slides.length) % slides.length);
     return (
-        <section className="tnl-section" data-testid="block-carousel">
+        <section className="tnl-section signal-study" data-testid="block-carousel">
             <div className="tnl-container">
-                <div className="flex items-end justify-between gap-4">
-                    <SectionHeading title={pickProp(locale, props, "heading")} testId="carousel-heading" />
-                    <div className="mb-8 flex shrink-0 gap-2 sm:mb-10">
-                        <button
-                            type="button"
-                            onClick={() => go(-1)}
-                            className="flex h-11 w-11 items-center justify-center rounded-full border transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-link)]"
-                            style={{ borderColor: "var(--tnl-border)" }}
-                            aria-label="Previous slide"
-                            data-testid="carousel-prev-button"
-                        >
-                            <ChevronLeft className="h-5 w-5" />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => go(1)}
-                            className="flex h-11 w-11 items-center justify-center rounded-full border transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-link)]"
-                            style={{ borderColor: "var(--tnl-border)" }}
-                            aria-label="Next slide"
-                            data-testid="carousel-next-button"
-                        >
-                            <ChevronRight className="h-5 w-5" />
-                        </button>
-                    </div>
-                </div>
-                <div className="signal-study-slide" data-testid="carousel-slide">
-                    <div className="grid gap-0 md:grid-cols-[0.4fr_0.6fr]">
-                        <div className="tnl-hero-gradient flex items-center justify-center p-10">
-                            <span className="text-[64px] font-bold leading-none" style={{ color: "var(--tnl-tan)" }} aria-hidden="true">
-                                {String(index + 1).padStart(2, "0")}
-                            </span>
+                <SectionHeading title={pickProp(locale, props, "heading")} testId="carousel-heading" />
+                <div className="signal-study-layout">
+                    <nav className="signal-study-index" aria-label={locale === "id" ? "Pilih bidang keilmuan" : "Choose a study track"}>
+                        {slides.map((item, i) => (
+                            <button key={i} type="button" aria-pressed={i === active} onClick={() => setIndex(i)} data-testid={`carousel-dot-${i}`}>
+                                <span aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                                {pick(locale, item.title ?? item.name, item.title_id ?? item.name_id)}
+                                <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                            </button>
+                        ))}
+                    </nav>
+                    <div className="signal-study-reading">
+                        <div className="signal-study-slide" data-testid="carousel-slide" aria-live="polite" aria-atomic="true">
+                            <p className="signal-study-kicker">{locale === "id" ? "Bidang Keilmuan" : "Study track"}</p>
+                            <h3>{pick(locale, slide.title ?? slide.name, slide.title_id ?? slide.name_id)}</h3>
+                            <p>{pick(locale, slide.description, slide.description_id)}</p>
                         </div>
-                        <div className="p-8 sm:p-10">
-                            <h3 className="tnl-h4 text-[22px] sm:text-[25px]">{pick(locale, slide.title ?? slide.name, slide.title_id ?? slide.name_id)}</h3>
-                            <p className="mt-3 text-base leading-relaxed text-[var(--tnl-body)]">
-                                {pick(locale, slide.description, slide.description_id)}
-                            </p>
+                        <div className="signal-study-controls">
+                            <span data-testid="carousel-position">{String(active + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}</span>
+                            <div>
+                                <button type="button" aria-label={locale === "id" ? "Bidang sebelumnya" : "Previous slide"} onClick={() => go(-1)} data-testid="carousel-prev-button"><ChevronLeft aria-hidden="true" className="h-5 w-5" /></button>
+                                <button type="button" aria-label={locale === "id" ? "Bidang berikutnya" : "Next slide"} onClick={() => go(1)} data-testid="carousel-next-button"><ChevronRight aria-hidden="true" className="h-5 w-5" /></button>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div className="mt-5 flex justify-center gap-2" role="tablist" aria-label="Slides">
-                    {slides.map((_, i) => (
-                        <button
-                            key={i}
-                            type="button"
-                            role="tab"
-                            aria-selected={i === index}
-                            aria-label={`Go to slide ${i + 1}`}
-                            onClick={() => setIndex(i)}
-                            className="h-2.5 rounded-full transition-all duration-200"
-                            style={{
-                                width: i === index ? 28 : 10,
-                                background: i === index ? "var(--tnl-green)" : "var(--tnl-border)",
-                            }}
-                            data-testid={`carousel-dot-${i}`}
-                        />
-                    ))}
                 </div>
             </div>
         </section>

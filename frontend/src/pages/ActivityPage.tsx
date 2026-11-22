@@ -1,17 +1,15 @@
-// Activity page: tabs for R&D Projects, Practicum, Training/Events and Assistant
-// Activity. Event cards carry an automatic Open/Upcoming/Past status computed
+// Activity collections selected by the approved header's URL links.
+// Event cards carry an automatic Open/Upcoming/Past status computed
 // server-side, a poster carousel, module list, WhatsApp contact chips and a
 // registration button that disables itself after the close date.
 
-import { useEffect, useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import "@/pages/activity-editorial.css";
 import { Link, useSearchParams } from "react-router-dom";
-import { m } from "motion/react";
+
 import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
 import {
     Calendar,
-    ChevronLeft,
-    ChevronRight,
     Clock,
     Cpu,
     Download,
@@ -20,7 +18,6 @@ import {
     FileText,
     FlaskConical,
     GraduationCap,
-    HardDrive,
     Layers,
     MapPin,
     MessageCircle,
@@ -28,7 +25,6 @@ import {
     Server,
     Sparkles,
     Users,
-    Wrench,
 } from "lucide-react";
 import { useActivities, useEquipment, useEvents, usePage, usePracticum, useProjects } from "@/lib/hooks";
 import { pick, useLocale } from "@/lib/i18n";
@@ -40,12 +36,6 @@ import type { Activity, Equipment, LabEvent, PracticumModule, Project } from "@/
 
 type TabKey = "rd" | "practicum" | "events" | "assistant";
 
-const TABS: { key: TabKey; labelKey: "nav_rd" | "nav_practicum" | "nav_events" | "nav_assistant" }[] = [
-    { key: "rd", labelKey: "nav_rd" },
-    { key: "practicum", labelKey: "nav_practicum" },
-    { key: "events", labelKey: "nav_events" },
-    { key: "assistant", labelKey: "nav_assistant" },
-];
 
 function normalizeTab(raw: string | null): TabKey {
     if (raw === "training") return "events";
@@ -66,11 +56,18 @@ function waLink(phone: string): string {
 export function EventCard({ event, detail = false }: { event: LabEvent; detail?: boolean }) {
     const eventKey = event.slug || event.id;
     const Heading = detail ? "h1" : "h3";
+    const Subheading = detail ? "h2" : "h4";
+    const sectionId = useId();
     const { locale, t } = useLocale();
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const [registerOpen, setRegisterOpen] = useState(false);
     const status = event.reg_status ?? "closed";
-    const canRegister = status === "open" || status === "full";
+    const isClosed = Boolean(
+        event.registration_closed ||
+        status === "closed" ||
+        status === "past"
+    );
+    const canRegister = !isClosed && (status === "open" || status === "full");
 
     const eventImages: CarouselImage[] = useMemo(() => {
         const list: CarouselImage[] = [];
@@ -91,26 +88,35 @@ export function EventCard({ event, detail = false }: { event: LabEvent; detail?:
     }, [event, locale]);
 
     const statusLabel =
-        status === "open"
+        status === "open" && !isClosed
             ? t("reg_open")
             : status === "upcoming"
                 ? t("reg_upcoming")
-                : status === "full"
-                    ? t("reg_full")
+                : (status === "full" || event.is_full)
+                    ? (locale === "id" ? "KUOTA PENUH" : "QUOTA FULL")
                     : status === "past"
                         ? t("reg_past")
                         : t("reg_closed");
 
     const note =
-        status === "closed"
-            ? t("registration_closed_note")
-            : status === "upcoming"
-                ? t("registration_upcoming_note")
-                : status === "full"
-                    ? t("registration_full_note")
+        (status === "full" || event.is_full)
+            ? (locale === "id" ? "Kuota peserta telah terpenuhi." : t("registration_full_note"))
+            : status === "closed" || isClosed
+                ? t("registration_closed_note")
+                : status === "upcoming"
+                    ? t("registration_upcoming_note")
                     : status === "past"
                         ? t("reg_past")
                         : "";
+
+    const registerBtnLabel =
+        (status === "full" || event.is_full)
+            ? (locale === "id" ? "Kuota Penuh" : "Quota Full")
+            : (isClosed || status === "closed")
+                ? (locale === "id" ? "Pendaftaran Ditutup" : "Registration Closed")
+                : status === "upcoming"
+                    ? (locale === "id" ? "Belum Dibuka" : "Upcoming")
+                    : t("register_now");
 
     const eventTypeLabel = useMemo(() => {
         const raw = (event.type || "").toLowerCase();
@@ -126,7 +132,7 @@ export function EventCard({ event, detail = false }: { event: LabEvent; detail?:
 
     return (
         <article
-            className="activity-record"
+            className={`activity-record${detail ? " event-story" : ""}`}
             onPointerMove={handleSpotlightPointerMove}
             data-testid={`event-card-${eventKey}`}
         >
@@ -140,9 +146,17 @@ export function EventCard({ event, detail = false }: { event: LabEvent; detail?:
                 ) : null}
             </div>
 
-            <div className="grid gap-0 lg:grid-cols-[0.40fr_0.60fr]">
-                <div className="relative overflow-hidden" style={{ background: "var(--tnl-surface)", minHeight: 240 }}>
-                    {eventImages.length ? (
+            {detail ? (
+                <header className="event-story-heading">
+                    <Heading className="event-detail-title" data-testid={`event-title-${eventKey}`}>
+                        {pick(locale, event.title, event.title_id)}
+                    </Heading>
+                    <p className="event-intro">{pick(locale, event.description, event.description_id)}</p>
+                </header>
+            ) : null}
+
+            <div className={`event-record-layout${eventImages.length ? " has-media" : ""}`}>
+                {eventImages.length ? <div className="event-record-media">
                         <>
                             <FadeCarousel
                                 images={eventImages}
@@ -158,50 +172,66 @@ export function EventCard({ event, detail = false }: { event: LabEvent; detail?:
                                 />
                             ) : null}
                         </>
-                    ) : (
-                        <div className="flex h-full items-center justify-center p-8" aria-hidden="true">
-                            <GraduationCap className="h-12 w-12" style={{ color: "var(--tnl-tan-text)" }} />
-                        </div>
-                    )}
-                </div>
+                </div> : null}
 
-                <div className="p-6 sm:p-8">
-                    <Heading className={detail ? "event-detail-title" : "tnl-h4 text-[21px] sm:text-[25px]"} data-testid={`event-title-${eventKey}`}>
+                <div className="event-record-body">
+                    {!detail ? <>
+                    <Heading className="event-list-title" data-testid={`event-title-${eventKey}`}>
                         {pick(locale, event.title, event.title_id)}
                     </Heading>
-                    <p
-                        className="mt-3 whitespace-pre-line text-sm leading-relaxed text-[var(--tnl-body)]"
-                        style={{ borderColor: "var(--tnl-tan)" }}
-                    >
+                    <p className="event-intro">
                         {pick(locale, event.description, event.description_id)}
                     </p>
+                    </> : null}
 
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-[10px] border p-3" style={{ borderColor: "var(--tnl-border)" }}>
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                    <dl className="event-metadata">
+                        <div>
+                            <dt>
                                 <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
                                 {t("date")}
-                            </div>
-                            <div className="mt-1 text-sm font-medium" data-testid={`event-date-${eventKey}`}>
-                                {formatDate(event.start_date, locale)}
-                                {event.end_date && event.end_date !== event.start_date ? ` – ${formatDate(event.end_date, locale)}` : ""}
-                            </div>
+                            </dt>
+                            <dd data-testid={`event-date-${eventKey}`}>
+                                {event.start_date ? <time dateTime={event.start_date}>{formatDate(event.start_date, locale)}</time> : "—"}
+                                {event.end_date && event.end_date !== event.start_date ? <> – <time dateTime={event.end_date}>{formatDate(event.end_date, locale)}</time></> : null}
+                            </dd>
                         </div>
-                        <div className="rounded-[10px] border p-3" style={{ borderColor: "var(--tnl-border)" }}>
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                        <div>
+                            <dt>
                                 <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
                                 {t("location")}
-                            </div>
-                            <div className="mt-1 text-sm font-medium">{pick(locale, event.location, event.location_id) || "—"}</div>
+                            </dt>
+                            <dd>{pick(locale, event.location, event.location_id) || "—"}</dd>
                         </div>
+                    </dl>
+
+                    <div className="event-actions">
+                        {!detail ? <Link to={`/activity/events/${encodeURIComponent(eventKey)}`} className="activity-detail-link" data-testid={`event-detail-link-${eventKey}`}>
+                            {locale === "id" ? "Detail acara" : "Event details"}<span className="sr-only">: {pick(locale, event.title, event.title_id)}</span><span aria-hidden="true">→</span>
+                        </Link> : null}
+                        {event.slug === "open-house-tnl" ? (
+                            <Link to="/open-house" className="tnl-btn tnl-btn-tan inline-flex items-center gap-2" data-testid="open-house-portal-btn">
+                                <span>{locale === "id" ? "Portal Open House" : "Open House Portal"}</span>
+                                <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                            </Link>
+                        ) : null}
+                        <button
+                            type="button"
+                            onClick={() => setRegisterOpen(true)}
+                            disabled={!canRegister}
+                            className="tnl-btn tnl-btn-primary w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
+                            data-testid={`event-register-button-${eventKey}`}
+                        >
+                            {registerBtnLabel}
+                        </button>
+                        {note && !canRegister ? <p className="event-registration-note" data-testid={`event-reg-note-${eventKey}`}>{note}</p> : null}
                     </div>
 
                     {event.modules?.length ? (
-                        <div className="mt-5">
-                            <h4 className="mb-2 text-sm font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                        <section className="event-program" aria-labelledby={`${sectionId}-program`}>
+                            <Subheading id={`${sectionId}-program`} className="event-section-title">
                                 {t("modules")}
-                            </h4>
-                            <ol className="space-y-2">
+                            </Subheading>
+                            <ol>
                                 {event.modules.map((m, i) => (
                                     <li key={i} className="flex gap-3 text-sm" data-testid={`event-module-${eventKey}-${i}`}>
                                         <span className="font-bold" style={{ color: "var(--tnl-tan-text)" }}>
@@ -223,11 +253,11 @@ export function EventCard({ event, detail = false }: { event: LabEvent; detail?:
                                     </li>
                                 ))}
                             </ol>
-                        </div>
+                        </section>
                     ) : null}
 
                     {event.contacts?.length ? (
-                        <div className="mt-5 flex flex-wrap gap-2">
+                        <div className="event-contacts">
                             {event.contacts.map((c, i) =>
                                 c.phone ? (
                                     <a
@@ -235,7 +265,7 @@ export function EventCard({ event, detail = false }: { event: LabEvent; detail?:
                                         href={waLink(c.phone)}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors hover:border-[var(--tnl-green)]"
+                                        className="event-contact-link"
                                         style={{ borderColor: "var(--tnl-border)" }}
                                         data-testid={`event-contact-${eventKey}-${i}`}
                                     >
@@ -245,7 +275,7 @@ export function EventCard({ event, detail = false }: { event: LabEvent; detail?:
                                 ) : (
                                     <span
                                         key={i}
-                                        className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium"
+                                        className="event-contact-link"
                                         style={{ borderColor: "var(--tnl-border)" }}
                                         data-testid={`event-contact-${eventKey}-${i}`}
                                     >
@@ -257,61 +287,27 @@ export function EventCard({ event, detail = false }: { event: LabEvent; detail?:
                         </div>
                     ) : null}
 
-                    <div className="mt-6 flex flex-wrap items-center gap-3">
-                        {!detail ? <Link to={`/activity/events/${encodeURIComponent(eventKey)}`} className="activity-detail-link" data-testid={`event-detail-link-${eventKey}`}>
-                            {locale === "id" ? "Detail acara" : "Event details"}: {pick(locale, event.title, event.title_id)} →
-                        </Link> : null}
-                        {event.slug === "open-house-tnl" ? (
-                            <Link
-                                to="/open-house"
-                                className="tnl-btn tnl-btn-tan inline-flex items-center gap-2"
-                                data-testid="open-house-portal-btn"
-                            >
-                                <span>{locale === "id" ? "Portal Open House" : "Open House Portal"}</span>
-                                <ExternalLink className="h-4 w-4" />
-                            </Link>
-                        ) : null}
-                        <button
-                            type="button"
-                            onClick={() => setRegisterOpen(true)}
-                            disabled={!canRegister}
-                            className="tnl-btn tnl-btn-primary w-full sm:w-auto"
-                            data-testid={`event-register-button-${eventKey}`}
-                        >
-                            {status === "full" ? t("reg_full") : t("register_now")}
-                        </button>
-                        {note && !canRegister ? (
-                            <p className="mt-2 text-sm" style={{ color: "var(--tnl-tan-text)" }} data-testid={`event-reg-note-${eventKey}`}>
-                                {note}
-                            </p>
-                        ) : null}
-                        {status === "full" ? (
-                            <p className="mt-2 text-sm" style={{ color: "var(--tnl-tan-text)" }}>
-                                {t("registration_full_note")}
-                            </p>
-                        ) : null}
-                    </div>
                 </div>
             </div>
 
             {event.documentation?.length ? (
-                <div className="border-t px-6 py-6 sm:px-8" style={{ borderColor: "var(--tnl-border)" }}>
-                    <h4 className="mb-3 text-sm font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                <section className="event-documentation" aria-labelledby={`${sectionId}-documentation`}>
+                    <Subheading id={`${sectionId}-documentation`} className="event-section-title">
                         {t("documentation")}
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    </Subheading>
+                    <div className="event-documentation-grid">
                         {event.documentation.map((doc, i) => (
                             <img
                                 key={i}
                                 src={doc.url}
                                 alt={doc.alt}
-                                className="h-28 w-full rounded-[10px] object-cover"
+                                className="event-documentation-image"
                                 loading="lazy"
                                 data-testid={`event-doc-${eventKey}-${i}`}
                             />
                         ))}
                     </div>
-                </div>
+                </section>
             ) : null}
 
             {registerOpen ? <RegistrationDialog event={event} onClose={() => setRegisterOpen(false)} /> : null}
@@ -345,7 +341,7 @@ function ActivityRow({ activity, index }: { activity: Activity; index: number })
 
     return (
         <article
-            className="relative grid items-center gap-8 py-10 lg:grid-cols-2"
+            className="assistant-story relative grid items-center gap-8 py-10 lg:grid-cols-2"
             data-testid={`activity-row-${activity.id}`}
         >
             <div className={flip ? "lg:order-2" : ""}>
@@ -369,7 +365,7 @@ function ActivityRow({ activity, index }: { activity: Activity; index: number })
             </div>
 
             <div className={flip ? "lg:order-1" : ""}>
-                <div className="tnl-card relative overflow-hidden p-0" style={{ minHeight: 240 }}>
+                <div className="assistant-story-media relative overflow-hidden" style={{ minHeight: 240 }}>
                     {activityImages.length ? (
                         <>
                             <FadeCarousel
@@ -407,7 +403,7 @@ function ProjectCard({ project }: { project: Project }) {
             onPointerMove={handleSpotlightPointerMove}
             data-testid={`project-card-${project.id}`}
         >
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="project-metadata flex flex-wrap items-center gap-2">
                 {project.cluster ? <span className="tnl-count-chip">{project.cluster}</span> : null}
                 {project.year ? (
                     <span className="text-sm" style={{ color: "var(--tnl-body)" }}>
@@ -420,7 +416,7 @@ function ProjectCard({ project }: { project: Project }) {
                 {pick(locale, project.description, project.description_id)}
             </p>
             {project.tags?.length ? (
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="project-tags mt-4 flex flex-wrap gap-2">
                     {project.tags.map((tag) => (
                         <span
                             key={tag}
@@ -496,7 +492,7 @@ function EquipmentCard({ item }: { item: Equipment }) {
 
     return (
         <article
-            className="equipment-record flex flex-col justify-between overflow-hidden p-6"
+            className="equipment-record flex flex-col justify-between overflow-hidden"
             onPointerMove={handleSpotlightPointerMove}
             data-testid={`equipment-card-${item.id}`}
         >
@@ -592,7 +588,7 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
         >
             <div>
                 <div className="flex items-baseline justify-between gap-2">
-                    <span className="block text-[32px] font-bold leading-none" style={{ color: "var(--tnl-tan-text)" }}>
+                    <span className="practicum-index" aria-hidden="true">
                         {String(index + 1).padStart(2, "0")}
                     </span>
                     {mod.code ? (
@@ -640,13 +636,12 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
                                     download
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="group flex items-center justify-between gap-2 rounded-lg border p-2 text-xs transition-colors hover:border-[var(--tnl-tan)]"
-                                    style={{ background: "var(--background)", borderColor: "var(--tnl-border)" }}
+                                    className="practicum-resource-link group"
                                     data-testid={`practicum-resource-${mod.id}-${idx}`}
                                 >
                                     <div className="flex min-w-0 items-center gap-2">
                                         <ResourceIcon type={res.file_type} />
-                                        <span className="truncate font-medium group-hover:underline">{res.title}</span>
+                                        <span className="font-medium group-hover:underline">{res.title}</span>
                                     </div>
                                     <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-mono border" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-body)" }}>
                                         {res.file_type?.toUpperCase() || "FILE"}
@@ -665,13 +660,13 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
                             {t("shift_schedule")}
                         </h4>
                         <div className="overflow-x-auto">
-                            <table className="w-full border-collapse text-left text-xs">
+                            <table className="w-full border-collapse text-left text-sm" aria-label={`${t("shift_schedule")} — ${pick(locale, mod.name, mod.name_id)}`}>
                                 <thead>
                                     <tr className="border-b text-[11px] font-semibold" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-tan-text)" }}>
-                                        <th className="py-1.5 pr-2">{t("day")}</th>
-                                        <th className="py-1.5 px-2">{t("time_slot")}</th>
-                                        <th className="py-1.5 px-2">{t("coordinator")}</th>
-                                        <th className="py-1.5 pl-2">{t("room")}</th>
+                                        <th scope="col" className="py-1.5 pr-2">{t("day")}</th>
+                                        <th scope="col" className="py-1.5 px-2">{t("time_slot")}</th>
+                                        <th scope="col" className="py-1.5 px-2">{t("coordinator")}</th>
+                                        <th scope="col" className="py-1.5 pl-2">{t("room")}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y" style={{ borderColor: "var(--tnl-border)" }}>
@@ -695,21 +690,10 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
 
 export default function ActivityPage() {
     const { locale, t } = useLocale();
-    const [params, setParams] = useSearchParams();
-    const requested = params.get("tab");
-    const [tab, setTab] = useState<TabKey>(() => normalizeTab(requested));
+    const [params] = useSearchParams();
+    // The approved header owns navigation; the URL is the single selection source.
+    const tab = normalizeTab(params.get("tab"));
     const [equipCat, setEquipCat] = useState<string>("all");
-
-    useEffect(() => {
-        const raw = params.get("tab");
-        const norm = normalizeTab(raw);
-        if (norm !== tab) setTab(norm);
-    }, [params]);
-
-    const selectTab = (key: TabKey) => {
-        setTab(key);
-        setParams((previous) => { const next = new URLSearchParams(previous); next.set("tab", key); return next; }, { replace: true });
-    };
 
     const { data: page } = usePage("activity");
     const pageBlocks = page?.blocks ?? [];
@@ -748,48 +732,11 @@ export default function ActivityPage() {
                 </header>
             )}
 
-            <div className="activity-tabbar" style={{ background: "var(--background)", borderColor: "var(--tnl-border)" }}>
-                <div className="tnl-container flex gap-1 overflow-x-auto tnl-scroll-x" role="tablist" aria-label={t("nav_activity")}>
-                    {TABS.map((item) => (
-                        <button
-                            key={item.key}
-                            type="button"
-                            role="tab"
-                            id={`activity-tab-${item.key}`}
-                            aria-controls={`activity-panel-${item.key}`}
-                            tabIndex={tab === item.key ? 0 : -1}
-                            onKeyDown={(event) => {
-                                const index = TABS.findIndex((entry) => entry.key === item.key);
-                                const next = event.key === "ArrowRight" ? (index + 1) % TABS.length : event.key === "ArrowLeft" ? (index + TABS.length - 1) % TABS.length : event.key === "Home" ? 0 : event.key === "End" ? TABS.length - 1 : null;
-                                if (next === null) return;
-                                event.preventDefault();
-                                selectTab(TABS[next].key);
-                                document.getElementById(`activity-tab-${TABS[next].key}`)?.focus();
-                            }}
-                            aria-selected={tab === item.key}
-                            onClick={() => selectTab(item.key)}
-                            className="relative shrink-0 px-5 py-4 text-sm font-medium transition-colors"
-                            style={tab === item.key ? { color: "var(--foreground)" } : undefined}
-                            data-testid={`activity-tab-${item.key}`}
-                        >
-                            {t(item.labelKey)}
-                            {tab === item.key ? (
-                                <m.span
-                                    layoutId="activity-active-tab-indicator"
-                                    className="absolute inset-x-3 bottom-0 h-[3px] rounded-t-full"
-                                    style={{ background: "var(--tnl-link)" }}
-                                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                                />
-                            ) : null}
-                        </button>
-                    ))}
-                </div>
-            </div>
 
-            <section className="tnl-section" style={{ background: "var(--tnl-surface)" }}>
+            <section className="tnl-section activity-collection">
                 <div className="tnl-container">
                     {tab === "rd" ? (
-                        <div role="tabpanel" id="activity-panel-rd" aria-labelledby="activity-tab-rd" tabIndex={0} data-testid="activity-panel-rd">
+                        <div role="region" id="activity-panel-rd" aria-label={t("nav_rd")} data-testid="activity-panel-rd">
                             <SectionHeading
                                 title={t("research_clusters")}
                                 count={clusters.length}
@@ -806,7 +753,7 @@ export default function ActivityPage() {
                                     icon={<FlaskConical className="h-7 w-7" style={{ color: "var(--tnl-tan-text)" }} />}
                                 />
                             ) : (
-                                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                                <div className="research-collection">
                                     {clusters.map((p) => (
                                         <ProjectCard key={p.id} project={p} />
                                     ))}
@@ -816,7 +763,7 @@ export default function ActivityPage() {
                             {testbeds.length ? (
                                 <div className="mt-14">
                                     <SectionHeading title={t("testbeds")} count={testbeds.length} countLabel={t("testbeds").toLowerCase()} testId="testbeds-heading" />
-                                    <div className="grid gap-5 md:grid-cols-2">
+                                    <div className="research-collection research-testbeds">
                                         {testbeds.map((p) => (
                                             <ProjectCard key={p.id} project={p} />
                                         ))}
@@ -824,7 +771,7 @@ export default function ActivityPage() {
                                 </div>
                             ) : null}
 
-                            <div className="mt-16" data-testid="lab-equipment-section">
+                            <div className="activity-equipment-section" id="equipment" data-testid="lab-equipment-section">
                                 <SectionHeading
                                     title={t("lab_equipment")}
                                     count={filteredEquip.length}
@@ -835,13 +782,14 @@ export default function ActivityPage() {
                                     {t("equipment_subtitle")}
                                 </p>
 
-                                <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label={t("lab_equipment")}>
+                                <div className="equipment-filters" role="group" aria-label={t("lab_equipment")}>
                                     {EQUIP_CATEGORIES.map((cat) => (
                                         <button
                                             key={cat.key}
                                             type="button"
                                             onClick={() => setEquipCat(cat.key)}
-                                            className="rounded-full px-4 py-1.5 text-xs font-semibold transition-all border"
+                                            aria-pressed={equipCat === cat.key}
+                                            className="equipment-filter"
                                             style={
                                                 equipCat === cat.key
                                                     ? { background: "var(--primary)", color: "var(--primary-foreground)", borderColor: "var(--primary)" }
@@ -868,7 +816,7 @@ export default function ActivityPage() {
                                         />
                                     </div>
                                 ) : (
-                                    <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                                    <div className="equipment-collection">
                                         {filteredEquip.map((item) => (
                                             <EquipmentCard key={item.id} item={item} />
                                         ))}
@@ -879,7 +827,7 @@ export default function ActivityPage() {
                     ) : null}
 
                     {tab === "practicum" ? (
-                        <div role="tabpanel" id="activity-panel-practicum" aria-labelledby="activity-tab-practicum" tabIndex={0} data-testid="activity-panel-practicum">
+                        <div role="region" id="activity-panel-practicum" aria-label={t("nav_practicum")} data-testid="activity-panel-practicum">
                             <SectionHeading
                                 title={t("practicum_modules")}
                                 count={(practicum ?? []).length}
@@ -891,7 +839,7 @@ export default function ActivityPage() {
                             ) : (practicum ?? []).length === 0 ? (
                                 <EmptyState title={t("coming_soon")} body={t("coming_soon_body")} testId="practicum-empty-state" />
                             ) : (
-                                <div className="grid gap-6 md:grid-cols-2">
+                                <div className="practicum-collection">
                                     {(practicum ?? []).map((mod, i) => (
                                         <PracticumCard key={mod.id} mod={mod} index={i} />
                                     ))}
@@ -901,7 +849,7 @@ export default function ActivityPage() {
                     ) : null}
 
                     {tab === "events" ? (
-                        <div role="tabpanel" id="activity-panel-events" aria-labelledby="activity-tab-events" tabIndex={0} data-testid="activity-panel-events">
+                        <div role="region" id="activity-panel-events" aria-label={t("nav_events")} data-testid="activity-panel-events">
                             <SectionHeading
                                 title={t("events_heading")}
                                 count={(events ?? []).length}
@@ -921,7 +869,7 @@ export default function ActivityPage() {
                                     icon={<GraduationCap className="h-7 w-7" style={{ color: "var(--tnl-tan-text)" }} />}
                                 />
                             ) : (
-                                <div className="mt-6 space-y-8">
+                                <div className="event-collection">
                                     {(events ?? []).map((ev) => (
                                         <EventCard key={ev.id} event={ev} />
                                     ))}
@@ -931,7 +879,7 @@ export default function ActivityPage() {
                     ) : null}
 
                     {tab === "assistant" ? (
-                        <div role="tabpanel" id="activity-panel-assistant" aria-labelledby="activity-tab-assistant" tabIndex={0} data-testid="activity-panel-assistant">
+                        <div role="region" id="activity-panel-assistant" aria-label={t("nav_assistant")} data-testid="activity-panel-assistant">
                             <SectionHeading
                                 title={t("nav_assistant")}
                                 count={(activities ?? []).length}

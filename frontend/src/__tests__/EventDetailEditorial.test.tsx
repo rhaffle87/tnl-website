@@ -25,6 +25,27 @@ describe("CMS event detail route", () => {
     expect(screen.getByTestId("event-detail-back")).toHaveAttribute("href", "/activity?tab=events");
     expect(screen.queryByTestId("event-detail-link-cms-event")).not.toBeInTheDocument();
   });
+  it("presents dated metadata as a readable definition list with machine-readable dates", () => {
+    state.data!.start_date = "2026-12-01";
+    state.data!.end_date = "2026-12-03";
+    state.data!.location = "B-301";
+    const { container } = renderDetail();
+    const date = screen.getByTestId("event-date-cms-event");
+    expect(date.tagName).toBe("DD");
+    expect(date.closest("dl")).toBeInTheDocument();
+    expect(date.querySelectorAll("time")).toHaveLength(2);
+    expect(date.querySelector("time")).toHaveAttribute("dateTime", "2026-12-01");
+    expect(screen.getByText("B-301").tagName).toBe("DD");
+    expect(screen.getByText("CMS session").closest("section")).toHaveAccessibleName();
+    expect(container.querySelectorAll("h4")).toHaveLength(0);
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  });
+  it("places registration directly after key facts, before the curriculum", () => {
+    renderDetail();
+    const register = screen.getByTestId("event-register-button-cms-event");
+    const module = screen.getByText("CMS session");
+    expect(register.compareDocumentPosition(module) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
   it("opens the unchanged registration dialog with the public event ID", () => {
     renderDetail();
     fireEvent.click(screen.getByTestId("event-register-button-cms-event"));

@@ -3,6 +3,7 @@ event registration engine + certificate verification."""
 
 import os
 import re
+import secrets
 import uuid
 from datetime import datetime, timezone
 from html import escape as html_escape
@@ -44,34 +45,77 @@ def field_key(label: str) -> str:
     return f"f_{slug or 'field'}"
 
 
-def event_reg_status(ev: dict, today: str) -> dict:
-    open_d, close_d = ev.get("reg_open_date"), ev.get("reg_close_date")
-    end_d = ev.get("end_date") or ev.get("start_date")
-    if end_d and today > end_d:
-        status = "past"
-    elif close_d and today > close_d:
-        status = "closed"
-    elif open_d and today < open_d:
-        status = "upcoming"
-    elif open_d and today >= open_d:
-        status = "open"
+def _compute_event_availability(ev: dict, registered_count: int, today: str | None = None) -> dict:
+    if today is None:
+        today = today_iso()
+
+    cap = int(ev.get("capacity") or 0)
+    is_full = bool(cap > 0 and registered_count >= cap)
+    spots_left = max(0, cap - registered_count) if cap > 0 else None
+
+    # Dates
+    open_d = (ev.get("reg_open_date") or "").strip()
+    close_d = (ev.get("registration_deadline") or ev.get("reg_close_date") or "").strip()
+    end_d = (ev.get("end_date") or ev.get("start_date") or "").strip()
+
+    is_past = bool(end_d and today > end_d)
+    is_deadline_passed = bool(close_d and today > close_d)
+    is_upcoming = bool(open_d and today < open_d)
+    manual_closed = ev.get("registration_open") is False
+
+    # Detailed reason
+    if manual_closed:
+        closed_reason = "closed"
+    elif is_past:
+        closed_reason = "past"
+    elif is_upcoming:
+        closed_reason = "upcoming"
+    elif is_full:
+        closed_reason = "full"
+    elif is_deadline_passed:
+        closed_reason = "deadline"
     else:
-        status = "closed"
-    return {"reg_status": status}
+        closed_reason = None
+
+    registration_closed = bool(closed_reason in ("closed", "past", "upcoming", "full", "deadline"))
+
+    if is_past:
+        reg_status = "past"
+    elif manual_closed or is_deadline_passed:
+        reg_status = "closed"
+    elif is_upcoming:
+        reg_status = "upcoming"
+    elif is_full:
+        reg_status = "full"
+    elif open_d and today >= open_d:
+        reg_status = "open"
+    else:
+        reg_status = "open"
+
+    return {
+        "reg_status": reg_status,
+        "is_full": is_full,
+        "is_deadline_passed": is_deadline_passed,
+        "registration_closed": registration_closed,
+        "closed_reason": closed_reason,
+        "registered_count": registered_count,
+        "seats_left": spots_left,
+        "spots_left": spots_left,
+    }
+
+
+def event_reg_status(ev: dict, today: str) -> dict:
+    return _compute_event_availability(ev, 0, today)
 
 
 async def with_seats(evs: list[dict], today: str) -> list[dict]:
     for ev in evs:
-        ev.update(event_reg_status(ev, today))
-        cap = ev.get("capacity") or 0
-        if cap:
-            used = await db.registrations.count_documents(
-                {"event_id": ev["id"], "status": {"$in": ["pending", "accepted", "attended"]}})
-            ev["seats_left"] = max(0, cap - used)
-            if ev["reg_status"] == "open" and used >= cap:
-                ev["reg_status"] = "full"
-        else:
-            ev["seats_left"] = None
+        cap = int(ev.get("capacity") or 0)
+        used = await db.registrations.count_documents(
+            {"event_id": ev["id"], "status": {"$in": ["pending", "accepted", "attended"]}}
+        )
+        avail = _compute_event_availability(ev, used, today)
+        ev.update(avail)
     return evs
 
 
@@ -383,9 +427,18 @@ async def submit_registration(event_id: str, request: Request):
     actual_event_id = ev["id"]
 
     today = today_iso()
-    st = event_reg_status(ev, today)
-    if st["reg_status"] not in ("open", "full"):
-        raise HTTPException(status_code=400, detail=f"Registration is not open right now ({st['reg_status']}).")
+    cap = int(ev.get("capacity") or 0)
+    used = await db.registrations.count_documents(
+        {"event_id": actual_event_id, "status": {"$in": ["pending", "accepted", "attended"]}}
+    )
+    avail = _compute_event_availability(ev, used, today)
+
+    if avail["is_full"]:
+        raise HTTPException(status_code=409, detail="Kuota pendaftaran sudah penuh.")
+    if avail["is_deadline_passed"]:
+        raise HTTPException(status_code=409, detail="Batas waktu pendaftaran sudah berakhir.")
+    if avail["registration_closed"] or avail["reg_status"] != "open":
+        raise HTTPException(status_code=400, detail=f"Registration is not open right now ({avail['reg_status']}).")
 
     form = await request.form()
     if (form.get("company_website") or "").strip():
@@ -485,21 +538,26 @@ async def submit_registration(event_id: str, request: Request):
         _discard_uploads(saved_uploads)
         raise
 
-    cap = ev.get("capacity") or 0
-    used = await db.registrations.count_documents(
-        {"event_id": actual_event_id, "status": {"$in": ["pending", "accepted", "attended"]}})
-    status = "waitlisted" if (cap and used >= cap) else "pending"
-
     now_utc = datetime.now(timezone.utc)
+    cert_code = secrets.token_hex(4).upper()
     reg = {
         "id": str(uuid.uuid4()), "event_id": actual_event_id, "event_title": ev.get("title", ""),
-        "data": data, "email": email.lower(), "nim": nim, "status": status,
+        "data": data, "email": email.lower(), "nim": nim, "status": "accepted",
         "consent": True, "consent_timestamp": now_utc.isoformat(), "consent_policy_version": "2026.1",
-        "certificate_code": None, "notes": "",
+        "certificate_code": cert_code, "notes": "",
         "sheet_synced": False, "sheet_sync_error": None,
         "created_at": now_utc,
     }
     await db.registrations.insert_one(reg)
+
+    if cap > 0:
+        active_count = await db.registrations.count_documents(
+            {"event_id": actual_event_id, "status": {"$in": ["pending", "accepted", "attended"]}}
+        )
+        if active_count > cap:
+            await db.registrations.delete_one({"id": reg["id"]})
+            _discard_uploads(saved_uploads)
+            raise HTTPException(status_code=409, detail="Kuota pendaftaran sudah penuh.")
 
     webhook_url = ev.get("spreadsheet_webhook_url") or os.environ.get("OPEN_HOUSE_SHEET_WEBHOOK_URL")
     if webhook_url:
@@ -507,7 +565,7 @@ async def submit_registration(event_id: str, request: Request):
         asyncio.create_task(_sync_registration_to_sheet(reg["id"], webhook_url, ev, reg))
 
     name = next((v for v in data.values() if isinstance(v, str) and 2 < len(v) < 80), email)
-    state = {"pending": "received and pending review", "waitlisted": "placed on the waiting list"}[status]
+    state = "accepted and confirmed"
 
     wa_url = (ev.get("whatsapp_group_url") or "").strip()
     wa_email_html = ""
@@ -524,15 +582,14 @@ async def submit_registration(event_id: str, request: Request):
 
     await send_email(
         email or "unknown@example.org",
-        f"Registration received — {ev.get('title', '')}",
+        f"Registration confirmed — {ev.get('title', '')}",
         f"<p>Hello {html_escape(str(name))},</p>"
         f"<p>Your registration for <b>{html_escape(ev.get('title', ''))}</b> has been {state}.</p>"
         f"{wa_email_html}"
         f"<p>Telecommunication Network Laboratory — ITS</p>",
     )
-    msg = ("Registration received. Please check your email for confirmation."
-           if status == "pending" else "The event is full — you have been placed on the waiting list.")
-    response_payload: dict[str, Any] = {"ok": True, "status": status, "message": msg}
+    msg = "Pendaftaran berhasil diterima dan dikonfirmasi."
+    response_payload: dict[str, Any] = {"ok": True, "status": "accepted", "message": msg}
     if wa_url.startswith("https://"):
         response_payload["whatsapp_group_url"] = wa_url
     return response_payload

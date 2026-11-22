@@ -17,6 +17,7 @@ import {
 import { apiPost, ApiError } from "@/lib/api";
 import { useLocale } from "@/lib/i18n";
 import { useSettings } from "@/lib/hooks";
+import { getContactMapLinks } from "@/lib/contact-map";
 import "./editorial-content.css";
 
 interface ContactResponse {
@@ -35,6 +36,7 @@ export default function ContactPage() {
     const { locale } = useLocale();
     const { data: settings } = useSettings();
     const isId = locale === "id";
+    const mapLinks = getContactMapLinks(settings?.contact?.maps_url);
 
     // Form state
     const [name, setName] = useState("");
@@ -201,10 +203,12 @@ export default function ContactPage() {
                                 <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                     {isId ? "LOKASI LABORATORIUM" : "LABORATORY LOCATION"}
                                 </span>
-                                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#111613] px-2.5 py-0.5 text-[11px] font-mono text-[#5D8A6B] dark:text-[#7EA88B] shadow-2xs">
-                                    <MapPin className="h-3 w-3" aria-hidden="true" />
-                                    <span>7°17'02"S 112°47'47"E</span>
-                                </span>
+                                {mapLinks.coordinatesLabel && (
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#111613] px-2.5 py-0.5 text-[11px] font-mono text-[#5D8A6B] dark:text-[#7EA88B] shadow-2xs">
+                                        <MapPin className="h-3 w-3" aria-hidden="true" />
+                                        <span>{mapLinks.coordinatesLabel}</span>
+                                    </span>
+                                )}
                             </div>
 
                             <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between">
@@ -682,7 +686,7 @@ export default function ContactPage() {
                     </div>
                 </div>
 
-                {/* 3. Interactive Campus Map Section (Full-Width) */}
+                {/* 3. Interactive Laboratory Map Section (Full-Width) */}
                 <section className="mt-14" data-testid="contact-map-section">
                     <div className="tnl-card tnl-scroll-reveal overflow-hidden p-0 border border-[var(--tnl-border)] shadow-md">
                         {/* Map Header */}
@@ -702,7 +706,7 @@ export default function ContactPage() {
                             {/* Direct Action Buttons */}
                             <div className="flex flex-wrap items-center gap-2.5">
                                 <a
-                                    href="https://maps.google.com/maps?q=Departemen+Teknik+Elektro+ITS+Surabaya"
+                                    href={mapLinks.openUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#111613] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] shadow-2xs transition-all hover:bg-[#F6F7F4] dark:hover:bg-white/[0.06]"
@@ -712,7 +716,7 @@ export default function ContactPage() {
                                     <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                                 </a>
                                 <a
-                                    href="https://www.google.com/maps/dir/?api=1&destination=Departemen+Teknik+Elektro+ITS+Surabaya"
+                                    href={mapLinks.directionsUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-[#223027] hover:bg-[#18221c] text-white dark:bg-[#A8977B] dark:hover:bg-[#C2B091] dark:text-[#111613] px-4 py-2 text-xs font-semibold shadow-2xs transition-all"
@@ -728,7 +732,7 @@ export default function ContactPage() {
                         <div className="p-3 sm:p-4 bg-[#F6F7F4] dark:bg-[#0E1411]">
                             <div className="relative w-full rounded-xl overflow-hidden border border-[#C5CDC2] dark:border-white/15 shadow-inner">
                                 <iframe
-                                    src="https://maps.google.com/maps?q=Departemen+Teknik+Elektro+ITS+Surabaya&t=&z=17&ie=UTF8&iwloc=&output=embed"
+                                    src={mapLinks.embedUrl}
                                     title="Lokasi Laboratorium Jaringan Telekomunikasi ITS - Gedung B Ruang B-301"
                                     className="w-full h-[380px] md:h-[460px] border-0 dark:brightness-90 dark:contrast-105 transition-all duration-300 block"
                                     loading="lazy"

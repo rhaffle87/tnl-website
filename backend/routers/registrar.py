@@ -25,7 +25,7 @@ STATUSES = ("pending", "accepted", "rejected", "attended", "waitlisted")
 def _display_name(reg: dict) -> str:
     data = reg.get("data") or {}
     for key, value in data.items():
-        if isinstance(value, str) and "name" in key and value.strip():
+        if isinstance(value, str) and ("nama" in key.lower() or "name" in key.lower()) and value.strip():
             return value.strip()
     return reg.get("email") or "Participant"
 

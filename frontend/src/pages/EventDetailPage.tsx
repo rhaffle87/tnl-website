@@ -21,7 +21,7 @@ export default function EventDetailPage() {
                     <p className="event-detail-kicker mt-4">TNL / {t("nav_events")}</p>
                 </div>
             </header>
-            <section className="tnl-container tnl-section">
+            <section className="tnl-container tnl-section event-detail-content" aria-label={t("nav_events")} aria-busy={isLoading}>
                 {isLoading ? (
                     <div data-testid="event-detail-loading"><Spinner label={t("loading")} /></div>
                 ) : isError || !event ? (

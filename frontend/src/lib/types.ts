@@ -141,6 +141,8 @@ export interface LabEvent {
   end_date?: string | null;
   reg_open_date?: string | null;
   reg_close_date?: string | null;
+  registration_deadline?: string | null;
+  registration_open?: boolean;
   capacity: number;
   price: number;
   location?: string | null;
@@ -156,6 +158,12 @@ export interface LabEvent {
   // Computed server-side:
   reg_status?: "open" | "upcoming" | "closed" | "past" | "full";
   seats_left?: number | null;
+  spots_left?: number | null;
+  registered_count?: number;
+  is_full?: boolean;
+  is_deadline_passed?: boolean;
+  registration_closed?: boolean;
+  closed_reason?: "full" | "deadline" | "closed" | "upcoming" | "past" | null;
 }
 
 export interface Activity {

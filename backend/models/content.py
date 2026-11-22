@@ -151,6 +151,8 @@ class Event(BaseModel):
     end_date: str | None = None
     reg_open_date: str | None = None
     reg_close_date: str | None = None
+    registration_deadline: str | None = None
+    registration_open: bool = True
     capacity: int = 0  # 0 = unlimited
     price: int = 0  # IDR, 0 = free
     location: str | None = None

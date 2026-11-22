@@ -1221,10 +1221,10 @@ async def seed_events() -> None:
         title_id="Open House Laboratorium Jaringan Telekomunikasi",
         slug="open-house-tnl",
         type="recruitment",
-        description=("Annual Open House of the Telecommunication Network Laboratory (TNL) ITS. Explore advanced "
-                     "testbed facilities in Room B-301 including Proxmox clusters, USRP SDRs, Cisco core routers, "
-                     "and precision optical splicing labs. Meet lecturers and laboratory assistants directly."),
-        description_id=("Kunjungi dan kenali lebih dekat fasilitas riset, testbed 5G & serat optik di Ruang B-301, "
+        description=("Annual Open House of the Telecommunication Network Laboratory (TNL) ITS. Explore testbed "
+                     "facilities in Room B-301 including MikroTik routing, network firewalls, and optical communication "
+                     "labs. Meet lecturers and laboratory assistants directly."),
+        description_id=("Kunjungi dan kenali lebih dekat fasilitas riset, demo konfigurasi MikroTik & firewall di Ruang B-301, "
                         "serta temui langsung dosen dan asisten Laboratorium Jaringan Telekomunikasi."),
         cover_image="/api/media-files/illustrative/hero-network-rack.jpg",
         gallery_images=[
@@ -1233,17 +1233,18 @@ async def seed_events() -> None:
             "/api/media-files/illustrative/switch-ports.jpg",
             "/api/media-files/illustrative/sdr-spectrum-lab.jpg",
         ],
-        start_date=str(today + timedelta(days=21)),
-        end_date=str(today + timedelta(days=21)),
-        reg_open_date=str(today - timedelta(days=5)),
-        reg_close_date=str(today + timedelta(days=18)),
-        capacity=150,
+        start_date="2026-11-28",
+        end_date="2026-11-28",
+        reg_open_date="2026-11-14",
+        reg_close_date=None,
+        registration_deadline=None,
+        capacity=30,
         price=0,
         location="Ruang B-301, Gedung B, Departemen Teknik Elektro, ITS Surabaya",
         modules=[
-            {"title": "Tur Laboratorium B-301", "detail": "Demo perangkat server Proxmox, rack routing Cisco, dan instrumen RF/SDR.", "date": None},
-            {"title": "Sesi Pengenalan Divisi & Praktikum", "detail": "Paparan silabus praktikum jaringan dan divisi asisten lab.", "date": None},
-            {"title": "Sharing Session & Q&A Asisten", "detail": "Tanya jawab persiapan karir jaringan telekomunikasi dan rekrutmen asisten.", "date": None},
+            {"title": "Tur Laboratorium B-301", "detail": "Live MikroTik routing & network firewall demonstration, plus a guided tour of Room B-301 facilities.", "detail_id": "Demo konfigurasi MikroTik dan keamanan firewall jaringan, serta tur langsung fasilitas Ruang B-301.", "date": "2026-11-28"},
+            {"title": "Sesi Pengenalan Divisi & Praktikum", "detail": "Paparan silabus praktikum jaringan dan divisi asisten lab.", "date": "2026-11-28"},
+            {"title": "Sharing Session & Q&A Asisten", "detail": "Tanya jawab persiapan karir jaringan telekomunikasi dan rekrutmen asisten.", "date": "2026-11-28"},
         ],
         contacts=[{"name": "Panitia Open House TNL", "phone": None, "email": "telconnetlab@gmail.com"}],
         form_fields=[

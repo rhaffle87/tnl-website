@@ -254,7 +254,7 @@ export function RegistrarPage() {
         <div data-testid="registrar-page">
             <AdminHeader
                 title="Registrations"
-                help="Everyone who signed up for a programme. Accept or reject them, check people in at the door, sync to Google Sheets, and export the list."
+                help="Everyone who signed up for a programme. All valid registrations are automatically accepted. Check participants in at the door, cancel entries to free up quota, issue certificates, sync to Google Sheets, or export."
                 actions={
                     <div className="flex flex-wrap items-center gap-2">
                         <button
@@ -352,7 +352,11 @@ export function RegistrarPage() {
                             {items.map((reg) => (
                                 <tr key={reg.id} className="border-t" style={{ borderColor: "var(--tnl-border)" }} data-testid={`registration-row-${reg.id}`}>
                                     <td className="py-3 pr-4">
-                                        <span className="font-medium">{reg.display_name ?? reg.email}</span>
+                                        <span className="font-medium">
+                                            {reg.display_name && reg.display_name !== reg.email
+                                                ? reg.display_name
+                                                : ((reg.data && (reg.data["f_nama-lengkap"] || reg.data["f_full-name"] || reg.data["f_nama"])) as string) || reg.email}
+                                        </span>
                                         <span className="block text-xs" style={{ color: "var(--tnl-tan-text)" }}>{reg.email}</span>
                                     </td>
                                     <td className="py-3 pr-4">{reg.event_title}</td>
@@ -387,19 +391,35 @@ export function RegistrarPage() {
                                         )}
                                     </td>
                                     <td className="py-3">
-                                        <div className="flex flex-wrap gap-2">
-                                            {["accepted", "rejected", "attended"].map((next) => (
-                                                <button
-                                                    key={next}
-                                                    type="button"
-                                                    onClick={() => setRegStatus.mutate({ id: reg.id, next })}
-                                                    className="rounded-[6px] border px-2.5 py-1 text-xs font-medium capitalize"
-                                                    style={{ borderColor: "var(--tnl-border)" }}
-                                                    data-testid={`registration-${next}-${reg.id}`}
-                                                >
-                                                    {next}
-                                                </button>
-                                            ))}
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setRegStatus.mutate({ id: reg.id, next: "attended" })}
+                                                className={`rounded-[6px] border px-2.5 py-1 text-xs font-medium capitalize transition-colors ${
+                                                    reg.status === "attended"
+                                                        ? "bg-[var(--tnl-green)] text-white border-[var(--tnl-green)]"
+                                                        : "hover:border-[var(--tnl-green)] hover:text-[var(--tnl-green)]"
+                                                }`}
+                                                style={{ borderColor: reg.status === "attended" ? undefined : "var(--tnl-border)" }}
+                                                data-testid={`registration-attended-${reg.id}`}
+                                                title="Tandai peserta hadir (presensi hari-H)"
+                                            >
+                                                Attended
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setRegStatus.mutate({ id: reg.id, next: "rejected" })}
+                                                className={`rounded-[6px] border px-2.5 py-1 text-xs font-medium transition-colors ${
+                                                    reg.status === "rejected"
+                                                        ? "bg-red-600 text-white border-red-600"
+                                                        : "text-red-600 dark:text-red-400 hover:border-red-500 hover:bg-red-500/10"
+                                                }`}
+                                                style={{ borderColor: reg.status === "rejected" ? undefined : "var(--tnl-border)" }}
+                                                data-testid={`registration-rejected-${reg.id}`}
+                                                title="Batalkan pendaftaran dan kembalikan 1 kursi ke kuota"
+                                            >
+                                                Reject / Cancel
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>

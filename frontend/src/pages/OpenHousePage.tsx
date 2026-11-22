@@ -11,6 +11,9 @@ import {
     MessageCircle,
     Copy,
     Check,
+    Calendar,
+    XCircle,
+    Clock,
 } from "lucide-react";
 import { useEvent, useSubmitRegistration } from "@/lib/hooks";
 import { useLocale, pick } from "@/lib/i18n";
@@ -57,6 +60,17 @@ export default function OpenHousePage() {
     const motivationId = useId();
     const igFileId = useId();
     const consentId = useId();
+
+    const capacity = event?.capacity ?? 30;
+    const registeredCount = event?.registered_count ?? 1;
+    const spotsLeft = typeof event?.seats_left === "number" ? event.seats_left : Math.max(0, capacity - registeredCount);
+    const isClosed = Boolean(
+        event?.registration_closed ||
+        event?.is_full ||
+        event?.reg_status === "full" ||
+        event?.reg_status === "closed" ||
+        event?.reg_status === "past"
+    );
 
     const title = event
         ? pick(locale, event.title, event.title_id)
@@ -149,29 +163,63 @@ export default function OpenHousePage() {
                             </p>
 
                             {/* Meta Badges */}
-                            <div className="open-house-facts">
-                                <span className="inline-flex items-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 px-3 py-1.5 border border-black/5 dark:border-white/10">
+                            <div className="open-house-facts flex flex-wrap items-center gap-2.5">
+                                <span className="inline-flex items-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 px-3 py-1.5 border border-black/5 dark:border-white/10 text-xs">
                                     <MapPin className="h-4 w-4 text-[var(--tnl-body)]" />
                                     <span>Ruang B-301, Teknik Elektro ITS</span>
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 px-3 py-1.5 border border-black/5 dark:border-white/10">
+                                <span className="inline-flex items-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 px-3 py-1.5 border border-black/5 dark:border-white/10 text-xs">
+                                    <Calendar className="h-4 w-4 text-[var(--tnl-body)]" />
+                                    <span>{locale === "id" ? "Sabtu, 28 November 2026" : "Saturday, 28 November 2026"}</span>
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 px-3 py-1.5 border border-black/5 dark:border-white/10 text-xs">
                                     <Users className="h-4 w-4 text-[var(--tnl-body)]" />
                                     <span>Terbuka Mahasiswa Baru & Aktif</span>
                                 </span>
-                                <span className="utility-button">
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    <span>Gratis / Pendaftaran Terbuka</span>
-                                </span>
+                                {isClosed ? (
+                                    <span className="inline-flex items-center gap-2 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 px-3 py-1.5 border border-red-500/20 font-semibold text-xs" data-testid="open-house-status-closed">
+                                        <XCircle className="h-4 w-4" />
+                                        <span>
+                                            {event?.is_full || event?.reg_status === "full"
+                                                ? (locale === "id" ? `KUOTA PENUH (${capacity}/${capacity})` : `QUOTA FULL (${capacity}/${capacity})`)
+                                                : (locale === "id" ? "PENDAFTARAN DITUTUP" : "REGISTRATION CLOSED")}
+                                        </span>
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 border border-emerald-500/20 font-semibold text-xs" data-testid="open-house-status-open">
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        <span>
+                                            {locale === "id"
+                                                ? `Pendaftaran Terbuka · Sisa ${spotsLeft} Kursi`
+                                                : `Registration Open · ${spotsLeft} Spots Left`}
+                                        </span>
+                                    </span>
+                                )}
                             </div>
 
+                            <p className="text-xs text-[var(--tnl-body)] italic">
+                                {locale === "id"
+                                    ? `Ditutup otomatis saat kuota ${capacity} peserta terpenuhi.`
+                                    : `Automatically closes once all ${capacity} spots are filled.`}
+                            </p>
+
                             <div className="pt-2">
-                                <a
-                                    href="#form-section"
-                                    className="utility-button utility-button-primary"
-                                >
-                                    <span>Isi Formulir Pendaftaran</span>
-                                    <ArrowRight className="h-4 w-4" />
-                                </a>
+                                {isClosed ? (
+                                    <a
+                                        href="#form-section"
+                                        className="utility-button opacity-75"
+                                    >
+                                        <span>{locale === "id" ? "Pendaftaran Telah Ditutup" : "Registration Closed"}</span>
+                                    </a>
+                                ) : (
+                                    <a
+                                        href="#form-section"
+                                        className="utility-button utility-button-primary"
+                                    >
+                                        <span>Isi Formulir Pendaftaran</span>
+                                        <ArrowRight className="h-4 w-4" />
+                                    </a>
+                                )}
                             </div>
                         </div>
 
@@ -293,6 +341,43 @@ export default function OpenHousePage() {
                                 >
                                     Daftar Lagi untuk Rekan
                                 </button>
+                            </div>
+                        </div>
+                    ) : isClosed ? (
+                        <div role="status" className="open-house-success space-y-6 max-w-xl mx-auto py-8 text-center" data-testid="open-house-closed-banner">
+                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-600 dark:text-red-400 shadow-md">
+                                <XCircle className="h-8 w-8" />
+                            </div>
+                            <div className="space-y-2">
+                                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                                    {locale === "id" ? "Pendaftaran Telah Ditutup" : "Registration Closed"}
+                                </h2>
+                                <p className="text-sm sm:text-base text-[var(--tnl-body)] max-w-lg mx-auto leading-relaxed">
+                                    {event?.is_full || event?.reg_status === "full"
+                                        ? (locale === "id"
+                                            ? `Terima kasih atas antusiasme rekan-rekan mahasiswa. Kuota sebanyak ${capacity} peserta untuk Open House Laboratorium TNL 2026 telah terpenuhi.`
+                                            : `Thank you for the high enthusiasm. All ${capacity} participant spots for Open House TNL 2026 have been filled.`)
+                                        : (locale === "id"
+                                            ? "Batas waktu pendaftaran untuk kegiatan Open House telah berakhir."
+                                            : "The registration period for this Open House has ended.")}
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                                <a
+                                    href="https://www.instagram.com/tnlab_its/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="utility-button utility-button-primary"
+                                >
+                                    <Instagram className="h-4 w-4 mr-1.5" />
+                                    <span>{locale === "id" ? "Ikuti Instagram @tnlab_its" : "Follow @tnlab_its on Instagram"}</span>
+                                </a>
+                                <Link to="/contact" className="utility-button">
+                                    <span>{locale === "id" ? "Hubungi Panitia Lab" : "Contact Lab Team"}</span>
+                                </Link>
+                                <Link to="/activity" className="utility-button">
+                                    <span>{locale === "id" ? "Jelajahi Kegiatan Lain" : "Explore Other Activities"}</span>
+                                </Link>
                             </div>
                         </div>
                     ) : (
