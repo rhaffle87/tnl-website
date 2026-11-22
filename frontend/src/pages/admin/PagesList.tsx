@@ -18,6 +18,7 @@ import {
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import { AdminHeader, ConfirmButton, IssueList, Panel, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
+import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
 import type { Block, ListResponse, PageDoc, PageRevisionBrief, QualityIssue } from "@/lib/types";
 
 const BLOCK_LIBRARY: { type: string; label: string; description: string }[] = [
@@ -399,21 +400,77 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                             </div>
 
                             {editingBlock === block.id ? (
-                                <div className="mt-4">
-                                    <label htmlFor={`props-${block.id}`} className="mb-1.5 block text-sm font-medium">
-                                        Widget settings
-                                    </label>
-                                    <textarea
-                                        id={`props-${block.id}`}
-                                        className="tnl-field font-mono text-xs"
-                                        rows={10}
-                                        value={propsText}
-                                        onChange={(e) => setPropsText(e.target.value)}
-                                        data-testid={`block-props-${block.id}`}
-                                    />
-                                    <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
-                                        Text fields ending in <code>_id</code> hold the Indonesian version.
-                                    </p>
+                                <div className="mt-4 space-y-3">
+                                    {block.type === "image" && (
+                                        <InlineMediaField
+                                            label="Block Image"
+                                            value={(() => {
+                                                try {
+                                                    const p = JSON.parse(propsText);
+                                                    return p.url || "";
+                                                } catch {
+                                                    return "";
+                                                }
+                                            })()}
+                                            onChange={(newUrl) => {
+                                                try {
+                                                    const p = JSON.parse(propsText);
+                                                    p.url = newUrl;
+                                                    setPropsText(JSON.stringify(p, null, 2));
+                                                } catch {
+                                                    // ignore parse error
+                                                }
+                                            }}
+                                            defaultFolder="pages"
+                                            aspect="video"
+                                            testId={`block-image-picker-${block.id}`}
+                                        />
+                                    )}
+
+                                    {block.type === "gallery" && (
+                                        <MultiMediaField
+                                            label="Gallery Images"
+                                            value={(() => {
+                                                try {
+                                                    const p = JSON.parse(propsText);
+                                                    if (Array.isArray(p.images)) {
+                                                        return p.images.map((im: any) => (typeof im === "string" ? im : im.url)).filter(Boolean);
+                                                    }
+                                                    return [];
+                                                } catch {
+                                                    return [];
+                                                }
+                                            })()}
+                                            onChange={(newUrls: string[]) => {
+                                                try {
+                                                    const p = JSON.parse(propsText);
+                                                    p.images = newUrls.map((u) => ({ url: u, alt: "" }));
+                                                    setPropsText(JSON.stringify(p, null, 2));
+                                                } catch {
+                                                    // ignore parse error
+                                                }
+                                            }}
+                                            defaultFolder="pages"
+                                            testId={`block-gallery-picker-${block.id}`}
+                                        />
+                                    )}
+
+                                    <div>
+                                        <label htmlFor={`props-${block.id}`} className="mb-1.5 block text-sm font-medium">
+                                            Widget settings (JSON)
+                                        </label>
+                                        <textarea
+                                            id={`props-${block.id}`}
+                                            className="tnl-field font-mono text-xs"
+                                            rows={8}
+                                            value={propsText}
+                                            onChange={(e) => setPropsText(e.target.value)}
+                                            data-testid={`block-props-${block.id}`}
+                                        />
+                                        <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
+                                            Text fields ending in <code>_id</code> hold the Indonesian version.
+                                        </p>
+                                    </div>
                                     <button type="button" onClick={() => saveProps(block)} className="tnl-btn tnl-btn-primary mt-3 h-10 min-h-[40px] text-sm" data-testid={`block-props-save-${block.id}`}>
                                         <Save className="h-4 w-4" aria-hidden="true" />
                                         Save settings

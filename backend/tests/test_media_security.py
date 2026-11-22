@@ -75,3 +75,126 @@ async def test_media_path_traversal_strictly_rejected(async_client, temp_media_d
     for path in traversal_paths:
         res = await async_client.get(f"/media-files/{path}")
         assert res.status_code in (400, 403, 404), f"Path {path} did not reject traversal"
+
+
+@pytest.mark.asyncio
+async def test_media_upload_webp_optimization_and_scoped_attachment(async_client, admin_cookies, temp_media_dir):
+    # Valid PNG image bytes to optimize into WebP
+    from PIL import Image
+    buf = io.BytesIO()
+    img = Image.new("RGB", (2000, 1000), color=(0, 128, 255))
+    img.save(buf, format="PNG")
+    png_data = buf.getvalue()
+
+    files = {"file": ("banner_original.png", png_data, "image/png")}
+    data = {
+        "alt": "Open House Banner 2026",
+        "folder": "events",
+        "attached_resource": "events",
+        "attached_item_id": "event-open-house-2026",
+        "optimize": "true",
+    }
+    res = await async_client.post("/admin/media", data=data, files=files, cookies=admin_cookies)
+    assert res.status_code == 201, res.text
+    item = res.json()
+
+    assert item["kind"] == "image"
+    assert item["folder"] == "events"
+    assert item["filename"].endswith(".webp")
+    assert item["content_type"] == "image/webp"
+    assert item["original_name"] == "banner_original.png"
+    assert item["width"] == 1920
+    assert item["height"] == 960
+    assert item["size_bytes"] > 0
+    assert item["attached_to"] == {"resource": "events", "item_id": "event-open-house-2026"}
+    assert item["url"].startswith("/api/media-files/events/")
+    assert "uploads" not in item["url"]
+
+
+@pytest.mark.asyncio
+async def test_media_upload_folder_uploads_strictly_disallowed(async_client, admin_cookies, temp_media_dir):
+    from PIL import Image
+    buf = io.BytesIO()
+    img = Image.new("RGB", (100, 100), color=(10, 20, 30))
+    img.save(buf, format="PNG")
+    png_data = buf.getvalue()
+
+    # Attempting to upload to private "uploads" folder
+    files = {"file": ("exploit.png", png_data, "image/png")}
+    data = {"alt": "Disallowed folder upload", "folder": "uploads", "auto_alt": "true"}
+    res = await async_client.post("/admin/media", data=data, files=files, cookies=admin_cookies)
+    assert res.status_code == 422
+    assert "disallowed" in res.json().get("detail", "").lower()
+
+    # Attempting path traversal in folder name
+    data_traversal = {"alt": "Traversal upload", "folder": "../outside", "auto_alt": "true"}
+    res_traversal = await async_client.post("/admin/media", data=data_traversal, files=files, cookies=admin_cookies)
+    assert res_traversal.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_media_listing_search_and_pagination(async_client, admin_cookies, temp_media_dir):
+    from PIL import Image
+    # Create two test media files
+    buf1 = io.BytesIO()
+    Image.new("RGB", (50, 50), color=(255, 0, 0)).save(buf1, format="PNG")
+    await async_client.post(
+        "/admin/media",
+        data={"alt": "Antenna equipment photo", "folder": "equipment", "auto_alt": "false"},
+        files={"file": ("antenna_dish.png", buf1.getvalue(), "image/png")},
+        cookies=admin_cookies,
+    )
+
+    buf2 = io.BytesIO()
+    Image.new("RGB", (50, 50), color=(0, 255, 0)).save(buf2, format="PNG")
+    await async_client.post(
+        "/admin/media",
+        data={"alt": "Server rack cluster", "folder": "equipment", "auto_alt": "false"},
+        files={"file": ("server_rack.png", buf2.getvalue(), "image/png")},
+        cookies=admin_cookies,
+    )
+
+    # 1. Search by query
+    res = await async_client.get("/admin/media?q=Antenna", cookies=admin_cookies)
+    assert res.status_code == 200
+    body = res.json()
+    assert "items" in body
+    assert "folders" in body
+    assert "total" in body
+    assert any("antenna" in (it.get("alt", "") + it.get("original_name", "")).lower() for it in body["items"])
+
+    # 2. Filter by folder
+    res_folder = await async_client.get("/admin/media?folder=equipment", cookies=admin_cookies)
+    assert res_folder.status_code == 200
+    assert all(it["folder"] == "equipment" for it in res_folder.json()["items"])
+
+    # 3. Pagination limits
+    res_page = await async_client.get("/admin/media?limit=1&offset=0", cookies=admin_cookies)
+    assert res_page.status_code == 200
+    assert len(res_page.json()["items"]) <= 1
+    assert res_page.json()["limit"] == 1
+
+
+@pytest.mark.asyncio
+async def test_media_patch_alt_and_folder(async_client, admin_cookies, temp_media_dir):
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new("RGB", (50, 50), color=(100, 100, 100)).save(buf, format="PNG")
+    upload_res = await async_client.post(
+        "/admin/media",
+        data={"alt": "Initial alt text", "folder": "general"},
+        files={"file": ("test_patch.png", buf.getvalue(), "image/png")},
+        cookies=admin_cookies,
+    )
+    media_id = upload_res.json()["id"]
+
+    # Patch alt text and folder
+    patch_res = await async_client.patch(
+        f"/admin/media/{media_id}",
+        json={"alt": "Updated alt text description", "folder": "members"},
+        cookies=admin_cookies,
+    )
+    assert patch_res.status_code == 200
+    updated = patch_res.json()
+    assert updated["alt"] == "Updated alt text description"
+    assert updated["folder"] == "members"

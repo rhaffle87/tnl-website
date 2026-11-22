@@ -502,6 +502,7 @@ export interface Registration {
 export interface MediaAsset {
   id: string;
   filename: string;
+  original_name?: string;
   url: string;
   key: string;
   alt: string;
@@ -509,6 +510,7 @@ export interface MediaAsset {
   kind: "image" | "video" | "document";
   content_type: string;
   bytes: number;
+  size_bytes?: number;
   created_at: string;
   width?: number;
   height?: number;
@@ -517,6 +519,10 @@ export interface MediaAsset {
   youtube_id?: string;
   thumbnail?: string;
   used_in?: number;
+  attached_to?: {
+    resource: string;
+    item_id?: string | null;
+  } | null;
 }
 
 export interface ApiKeyRecord {

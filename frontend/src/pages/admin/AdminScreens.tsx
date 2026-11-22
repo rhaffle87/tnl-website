@@ -10,6 +10,7 @@ import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
 import { AdminHeader, ConfirmButton, Panel, adminError } from "@/pages/admin/AdminUI";
 import { useMe } from "@/lib/hooks";
 import { Spinner } from "@/components/site/Primitives";
+import { InlineMediaField } from "@/components/admin/media";
 import type {
     ApiKeyRecord,
     AuthUser,
@@ -960,6 +961,9 @@ export function SettingsPage() {
                 site_title: current.site_title,
                 site_title_id: current.site_title_id,
                 short_name: current.short_name,
+                logo_url: current.logo_url,
+                logo_url_dark: current.logo_url_dark,
+                its_logo_url: current.its_logo_url,
                 contact: current.contact,
                 social: current.social,
                 seo: current.seo,
@@ -1008,6 +1012,44 @@ export function SettingsPage() {
                                 <option value="en">English</option>
                             </select>
                         </div>
+                    </div>
+                </Panel>
+
+                <Panel>
+                    <h2 className="tnl-h5 text-[18px]">Logos & Brand Imagery</h2>
+                    <div className="mt-3 space-y-4">
+                        <InlineMediaField
+                            label="Primary Logo (Light mode)"
+                            value={current.logo_url}
+                            onChange={(url) => set({ logo_url: url })}
+                            defaultFolder="general"
+                            aspect="square"
+                            testId="settings-logo-url"
+                        />
+                        <InlineMediaField
+                            label="Dark Mode Logo"
+                            value={current.logo_url_dark}
+                            onChange={(url) => set({ logo_url_dark: url })}
+                            defaultFolder="general"
+                            aspect="square"
+                            testId="settings-logo-dark-url"
+                        />
+                        <InlineMediaField
+                            label="ITS Institution Logo"
+                            value={current.its_logo_url}
+                            onChange={(url) => set({ its_logo_url: url })}
+                            defaultFolder="general"
+                            aspect="square"
+                            testId="settings-its-logo-url"
+                        />
+                        <InlineMediaField
+                            label="Social Share Banner (OpenGraph Image)"
+                            value={current.seo?.og_image_url}
+                            onChange={(url) => set({ seo: { ...current.seo, og_image_url: url } })}
+                            defaultFolder="general"
+                            aspect="video"
+                            testId="settings-og-image-url"
+                        />
                     </div>
                 </Panel>
 

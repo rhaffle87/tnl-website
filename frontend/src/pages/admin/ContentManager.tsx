@@ -9,9 +9,10 @@ import { Download, Link2, Plus, Save, X } from "lucide-react";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
 import { AdminHeader, ConfirmButton, IssueList, Panel, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
+import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
 import type { ListResponse, Member, QualityIssue } from "@/lib/types";
 
-type FieldType = "text" | "textarea" | "html" | "number" | "select" | "checkbox" | "tags" | "date" | "json" | "member_multiselect";
+type FieldType = "text" | "textarea" | "html" | "number" | "select" | "checkbox" | "tags" | "date" | "json" | "member_multiselect" | "media" | "media_list";
 
 interface FieldSpec {
     key: string;
@@ -20,6 +21,9 @@ interface FieldSpec {
     help?: string;
     options?: string[];
     group?: string;
+    folder?: string;
+    aspect?: "square" | "video" | "auto";
+    accept?: "image" | "document" | "all";
 }
 
 interface ResourceSpec {
@@ -47,7 +51,7 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             ...BILINGUAL("body", "Article body", "html", "Basic formatting is allowed; anything unsafe is removed automatically."),
             { key: "category", label: "Category", type: "select", options: ["Announcement", "Activity Report", "Research", "Achievement", "Training"] },
             { key: "tags", label: "Tags", type: "tags", help: "Separate with commas." },
-            { key: "cover_url", label: "Cover image link", type: "text", help: "Copy a link from the Media library." },
+            { key: "cover_url", label: "Cover image", type: "media", folder: "posts", aspect: "video", help: "Upload or pick cover photo for news article." },
             { key: "cover_alt", label: "Cover image description", type: "text", help: "Required whenever there is a cover image." },
             { key: "author", label: "Written by", type: "text" },
             { key: "status", label: "Status", type: "select", options: ["draft", "published"] },
@@ -68,7 +72,7 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             ...BILINGUAL("bio", "Short biography", "textarea"),
             ...BILINGUAL("quote", "Quote", "textarea", "Shown on the Head of Laboratory banner."),
             { key: "email_public", label: "Public email", type: "text" },
-            { key: "photo_url", label: "Photo link", type: "text" },
+            { key: "photo_url", label: "Photo", type: "media", folder: "members", aspect: "square", help: "Profile photo of member or assistant." },
             { key: "photo_alt", label: "Photo description", type: "text" },
             { key: "expertise", label: "Areas of expertise", type: "tags" },
             { key: "social", label: "Profile links", type: "json", help: 'For example: {"scholar": "https://scholar.google.com/...", "linkedin": "https://linkedin.com/in/...", "instagram": "https://instagram.com/..."}' },
@@ -92,9 +96,9 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             ...BILINGUAL("title", "Title"),
             { key: "type", label: "Kind", type: "select", options: ["training", "recruitment", "workshop", "practicum", "social", "open_house"] },
             ...BILINGUAL("description", "Description", "textarea"),
-            { key: "cover_image", label: "Cover image URL", type: "text", help: "Main banner or poster image." },
-            { key: "poster_urls", label: "Poster links", type: "tags", help: "Separate with commas; several posters become a carousel." },
-            { key: "gallery_images", label: "Gallery image links", type: "tags", help: "Separate with commas; carousel images for event & open house." },
+            { key: "cover_image", label: "Cover image", type: "media", folder: "events", aspect: "video", help: "Main banner or poster image." },
+            { key: "poster_urls", label: "Poster links", type: "media_list", folder: "events", help: "Several posters become a carousel." },
+            { key: "gallery_images", label: "Gallery image links", type: "media_list", folder: "events", help: "Carousel images for event & open house." },
             { key: "spreadsheet_webhook_url", label: "Google Spreadsheet Webhook URL", type: "text", help: "Google Apps Script Web App URL to auto-sync registrations." },
             { key: "whatsapp_group_url", label: "Link Grup WhatsApp Pasca-Registrasi", type: "text", help: "Tautan undangan grup WhatsApp resmi (https://chat.whatsapp.com/...) yang hanya muncul di layar sukses dan email setelah pendaftaran berhasil." },
             { key: "start_date", label: "Starts on", type: "date" },
@@ -121,8 +125,8 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             { key: "category", label: "Category", type: "select", options: ["social", "internal", "academic"] },
             ...BILINGUAL("description", "Description", "textarea"),
             { key: "date", label: "Date", type: "date" },
-            { key: "cover_image", label: "Cover image URL", type: "text", help: "Main banner image." },
-            { key: "gallery_images", label: "Gallery image links", type: "tags", help: "Separate with commas; carousel images for this activity." },
+            { key: "cover_image", label: "Cover image", type: "media", folder: "events", aspect: "video", help: "Main banner image." },
+            { key: "gallery_images", label: "Gallery image links", type: "media_list", folder: "events", help: "Carousel images for this activity." },
             { key: "images", label: "Photos (JSON)", type: "json", help: 'For example: [{"url": "…", "alt": "…"}]' },
             { key: "order", label: "Display order", type: "number" },
             { key: "published", label: "Visible on the website", type: "checkbox" },
@@ -181,7 +185,7 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
         fields: [
             { key: "name", label: "Name", type: "text" },
             { key: "url", label: "Website", type: "text" },
-            { key: "logo_url", label: "Logo link", type: "text" },
+            { key: "logo_url", label: "Logo", type: "media", folder: "partners", aspect: "square", help: "Partner or institution logo." },
             { key: "order", label: "Display order", type: "number" },
             { key: "published", label: "Visible on the website", type: "checkbox" },
         ],
@@ -196,8 +200,8 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             ...BILINGUAL("name", "Module name"),
             ...BILINGUAL("description", "Description", "textarea"),
             { key: "semester", label: "Semester", type: "text" },
-            { key: "cover_image", label: "Cover image URL", type: "text", help: "Preview image for practicum card (e.g. /api/media-files/illustrative/...)." },
-            { key: "gallery_images", label: "Gallery image links", type: "tags", help: "Separate with commas; carousel images for this practicum module." },
+            { key: "cover_image", label: "Cover image", type: "media", folder: "practicum", aspect: "video", help: "Preview image for practicum card." },
+            { key: "gallery_images", label: "Gallery image links", type: "media_list", folder: "practicum", help: "Carousel images for this practicum module." },
             {
                 key: "resources",
                 label: "Downloadable Resources (PDF/PKT/PY/ZIP)",
@@ -228,9 +232,9 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
                 options: ["server", "sdr", "networking", "optical", "test_tool", "other"],
             },
             ...BILINGUAL("specs", "Technical specifications", "textarea", "Detailed hardware specs, RF coverage, ports, software integrations."),
-            { key: "photo_url", label: "Photo link", type: "text", help: "Upload or select from Media library." },
+            { key: "photo_url", label: "Photo", type: "media", folder: "equipment", aspect: "video", help: "Photo of equipment in room B-301." },
             { key: "photo_alt", label: "Photo description", type: "text" },
-            { key: "gallery_images", label: "Gallery image links", type: "tags", help: "Separate with commas; carousel images for this equipment." },
+            { key: "gallery_images", label: "Gallery image links", type: "media_list", folder: "equipment", help: "Carousel images for this equipment." },
             { key: "quantity", label: "Quantity", type: "number" },
             { key: "location", label: "Location", type: "text", help: "For example: Ruang B-301 (Server Rack 1)." },
             {
@@ -256,6 +260,8 @@ function emptyDraft(spec: ResourceSpec): Record<string, unknown> {
         if (field.type === "checkbox") draft[field.key] = field.key === "published";
         else if (field.type === "number") draft[field.key] = 0;
         else if (field.type === "tags") draft[field.key] = "";
+        else if (field.type === "media_list") draft[field.key] = [];
+        else if (field.type === "media") draft[field.key] = "";
         else if (field.type === "json") draft[field.key] = "";
         else if (field.type === "select") draft[field.key] = field.options?.[0] ?? "";
         else draft[field.key] = "";
@@ -268,6 +274,8 @@ function toForm(row: Row, spec: ResourceSpec): Record<string, unknown> {
     for (const field of spec.fields) {
         const value = row[field.key];
         if (field.type === "tags") out[field.key] = Array.isArray(value) ? value.join(", ") : (value ?? "");
+        else if (field.type === "media_list") out[field.key] = Array.isArray(value) ? value : (typeof value === "string" ? value.split(",").map((s) => s.trim()).filter(Boolean) : []);
+        else if (field.type === "media") out[field.key] = String(value ?? "");
         else if (field.type === "json") out[field.key] = value ? JSON.stringify(value, null, 2) : "";
         else if (field.type === "checkbox") out[field.key] = Boolean(value);
         else if (field.type === "number") out[field.key] = typeof value === "number" ? value : 0;
@@ -283,6 +291,11 @@ function toPayload(form: Record<string, unknown>, spec: ResourceSpec): Record<st
         if (field.type === "tags") {
             const text = String(value ?? "").trim();
             out[field.key] = text ? text.split(",").map((s) => s.trim()).filter(Boolean) : [];
+        } else if (field.type === "media_list") {
+            const list = Array.isArray(value) ? value : (typeof value === "string" ? value.split(",").map((s) => s.trim()).filter(Boolean) : []);
+            out[field.key] = list;
+        } else if (field.type === "media") {
+            out[field.key] = String(value ?? "").trim();
         } else if (field.type === "json") {
             const text = String(value ?? "").trim();
             if (!text) continue;
@@ -590,6 +603,26 @@ export default function ContentManager() {
                                                 })}
                                             </div>
                                         </div>
+                                    ) : field.type === "media" ? (
+                                        <InlineMediaField
+                                            value={String(value ?? "")}
+                                            onChange={(url) => setForm((f) => ({ ...f, [field.key]: url }))}
+                                            defaultFolder={field.folder || resource}
+                                            attachedTo={{ resource, item_id: editing && typeof editing === "object" ? editing.id : null }}
+                                            aspect={field.aspect || "video"}
+                                            accept={field.accept || "image"}
+                                            help={field.help}
+                                            testId={`content-field-${field.key}`}
+                                        />
+                                    ) : field.type === "media_list" ? (
+                                        <MultiMediaField
+                                            value={value as string[]}
+                                            onChange={(urls) => setForm((f) => ({ ...f, [field.key]: urls }))}
+                                            defaultFolder={field.folder || resource}
+                                            attachedTo={{ resource, item_id: editing && typeof editing === "object" ? editing.id : null }}
+                                            help={field.help}
+                                            testId={`content-field-${field.key}`}
+                                        />
                                     ) : (
                                         <input
                                             id={id}
@@ -602,7 +635,7 @@ export default function ContentManager() {
                                             data-testid={`content-field-${field.key}`}
                                         />
                                     )}
-                                    {field.help ? (
+                                    {field.help && field.type !== "media" && field.type !== "media_list" ? (
                                         <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
                                             {field.help}
                                         </p>
