@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { Routes, Route } from "react-router-dom";
 import AdminLogin from "@/pages/admin/AdminLogin";
+import ContentManager from "@/pages/admin/ContentManager";
 import { RegistrarPage, ThemePage } from "@/pages/admin/AdminScreens";
 import { renderWithProviders } from "./test-utils";
 import * as api from "@/lib/api";
@@ -10,6 +12,14 @@ vi.mock("@/lib/api", async () => {
   return {
     ...actual,
     apiGet: vi.fn().mockImplementation((url: string) => {
+      if (url.includes("/auth/me")) {
+        return Promise.resolve({
+          id: "u-admin",
+          name: "Super Admin",
+          email: "admin@its.ac.id",
+          role: "super_admin",
+        });
+      }
       if (url.includes("/admin/theme")) {
         return Promise.resolve({
           draft: {
@@ -52,13 +62,15 @@ vi.mock("@/lib/api", async () => {
       }
       if (url.includes("/admin/content/events")) {
         return Promise.resolve({
-          items: [{ id: "ev-1", title: "Open House TNL 2026" }],
+          items: [{ id: "ev-1", title: "Cisco Packet Tracer Training", status: "published" }],
           total: 1,
         });
       }
       return Promise.resolve({});
     }),
     apiPost: vi.fn().mockResolvedValue({ ok: true, synced: 1 }),
+    apiPut: vi.fn().mockResolvedValue({ id: "ev-1", status: "draft" }),
+    apiDelete: vi.fn().mockResolvedValue({ ok: true }),
   };
 });
 
@@ -98,5 +110,42 @@ describe("Admin CMS Components", () => {
     const accentInput = screen.getByTestId("theme-gsm-accent_color");
     expect(accentInput).toBeInTheDocument();
     expect(accentInput).toHaveValue("#a8977b");
+  });
+
+  it("RegistrarPage renders delete button for admin and confirms deletion", async () => {
+    renderWithProviders(<RegistrarPage />, { route: "/admin/registrations" });
+
+    const delBtn = await screen.findByTestId("registration-delete-reg-1");
+    expect(delBtn).toBeInTheDocument();
+
+    fireEvent.click(delBtn);
+
+    const confirmBtn = await screen.findByTestId("registration-delete-reg-1-confirm");
+    expect(confirmBtn).toBeInTheDocument();
+
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(api.apiDelete).toHaveBeenCalledWith("/admin/registrations/reg-1");
+    });
+  });
+
+  it("ContentManager renders 1-click Hide/Publish toggle for events and updates status", async () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/content/:resource" element={<ContentManager />} />
+      </Routes>,
+      { route: "/admin/content/events" }
+    );
+
+    const toggleBtn = await screen.findByTestId("content-toggle-publish-ev-1");
+    expect(toggleBtn).toBeInTheDocument();
+    expect(toggleBtn).toHaveTextContent("Hide");
+
+    fireEvent.click(toggleBtn);
+
+    await waitFor(() => {
+      expect(api.apiPut).toHaveBeenCalledWith("/admin/content/events/ev-1", { status: "draft" });
+    });
   });
 });

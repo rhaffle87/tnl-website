@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Award, Check, Copy, Download, FileJson, FileSpreadsheet, KeyRound, RefreshCw, Sparkles, Upload } from "lucide-react";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
 import { AdminHeader, ConfirmButton, Panel, adminError } from "@/pages/admin/AdminUI";
+import { useMe } from "@/lib/hooks";
 import { Spinner } from "@/components/site/Primitives";
 import type {
     ApiKeyRecord,
@@ -176,6 +177,8 @@ export function MediaLibrary() {
 // ---------------------------------------------------------------- registrar
 export function RegistrarPage() {
     const qc = useQueryClient();
+    const { data: me } = useMe();
+    const canDelete = ["super_admin", "admin", "registrar"].includes(me?.role ?? "");
     const [eventId, setEventId] = useState("");
     const [status, setStatus] = useState("");
     const [checkinCode, setCheckinCode] = useState("");
@@ -207,6 +210,15 @@ export function RegistrarPage() {
             toast.success("Updated.");
         },
         onError: (err) => toast.error(adminError(err, "Could not update.")),
+    });
+
+    const deleteReg = useMutation({
+        mutationFn: (id: string) => apiDelete<{ ok: boolean }>(`/admin/registrations/${id}`),
+        onSuccess: () => {
+            refresh();
+            toast.success("Registration deleted.");
+        },
+        onError: (err) => toast.error(adminError(err, "Could not delete registration.")),
     });
 
     const scoreAll = useMutation({
@@ -420,6 +432,15 @@ export function RegistrarPage() {
                                             >
                                                 Reject / Cancel
                                             </button>
+                                            {canDelete && (
+                                                <ConfirmButton
+                                                    label="Delete"
+                                                    confirmLabel="Delete entry"
+                                                    question={`Delete registration for ${reg.email}?`}
+                                                    onConfirm={() => deleteReg.mutate(reg.id)}
+                                                    testId={`registration-delete-${reg.id}`}
+                                                />
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

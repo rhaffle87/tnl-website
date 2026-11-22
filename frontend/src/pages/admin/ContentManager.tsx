@@ -396,6 +396,20 @@ export default function ContentManager() {
         onError: (err) => toast.error(adminError(err, "Could not delete this item.")),
     });
 
+    const togglePublishMutation = useMutation({
+        mutationFn: async ({ id, willPublish }: { id: string; willPublish: boolean }) => {
+            const patch = spec.publishField === "published"
+                ? { published: willPublish }
+                : { status: willPublish ? "published" : "draft" };
+            return apiPut<Row>(`/admin/content/${resource}/${id}`, patch);
+        },
+        onSuccess: (_res, variables) => {
+            invalidate();
+            toast.success(variables.willPublish ? "Published." : "Moved to draft / Hidden.");
+        },
+        onError: (err) => toast.error(adminError(err, "Could not update status.")),
+    });
+
     const bulkMutation = useMutation({
         mutationFn: (action: string) => apiPost<{ updated: number; skipped: { title: string; reason: string }[] }>(`/admin/content/${resource}/bulk`, { ids: selected, action }),
         onSuccess: (res) => {
@@ -699,6 +713,19 @@ export default function ContentManager() {
                                         </td>
                                         <td className="py-3">
                                             <div className="flex flex-wrap items-center gap-2">
+                                                {resource === "events" ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => togglePublishMutation.mutate({ id: row.id, willPublish: !published })}
+                                                        disabled={togglePublishMutation.isPending}
+                                                        className="rounded-[6px] border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-[var(--tnl-surface)]"
+                                                        style={{ borderColor: "var(--tnl-border)" }}
+                                                        data-testid={`content-toggle-publish-${row.id}`}
+                                                        title={published ? "Hide from website (set to draft)" : "Publish to website"}
+                                                    >
+                                                        {published ? "Hide" : "Publish"}
+                                                    </button>
+                                                ) : null}
                                                 <button
                                                     type="button"
                                                     onClick={() => {

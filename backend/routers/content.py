@@ -272,7 +272,7 @@ async def delete_item(resource: str, item_id: str, request: Request,
         count = await db.registrations.count_documents({"event_id": item_id})
         if count:
             raise HTTPException(status_code=400, detail=(
-                f"This event has {count} registration(s). Export them first, then delete the registrations."))
+                f"This event has {count} registration(s). Set status to Draft to hide it temporarily, or export and delete the registrations first before deleting permanently."))
     await db[resource].delete_one({"id": item_id})
     await audit(request, "delete", resource, item_id, {"title": doc.get(TITLE_FIELD[resource]), "restore": jsonable(doc)})
     return {"ok": True, "undo_token": item_id}

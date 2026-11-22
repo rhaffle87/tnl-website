@@ -130,3 +130,75 @@ async def test_uu_pdp_anonymization_and_retention_sweep(async_client, mock_db, a
     stale_record = await mock_db.registrations.find_one({"id": stale_id})
     assert stale_record["anonymized"] is True
     assert stale_record["email"] == ""
+
+
+@pytest.mark.asyncio
+async def test_delete_registration_and_audit(async_client, mock_db, admin_cookies):
+    reg_id = str(uuid4())
+    await mock_db.registrations.insert_one({
+        "id": reg_id,
+        "event_id": "test-event-delete",
+        "event_title": "Test Delete Event",
+        "email": "delete.me@its.ac.id",
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    res = await async_client.delete(f"/admin/registrations/{reg_id}", cookies=admin_cookies)
+    assert res.status_code == 200
+    assert res.json().get("ok") is True
+
+    # Confirm removed from db
+    check = await mock_db.registrations.find_one({"id": reg_id})
+    assert check is None
+
+    # Confirm audit log entry created
+    audit_entry = await mock_db.audit_log.find_one({"resource": "registrations", "target_id": reg_id, "action": "delete"})
+    assert audit_entry is not None
+
+
+@pytest.mark.asyncio
+async def test_event_draft_isolation_and_delete_constraint(async_client, mock_db, admin_cookies):
+    # 1. Insert draft event
+    event_id = str(uuid4())
+    draft_slug = f"draft-event-{event_id[:8]}"
+    await mock_db.events.insert_one({
+        "id": event_id,
+        "title": "Secret Draft Event",
+        "slug": draft_slug,
+        "type": "workshop",
+        "status": "draft",
+        "registration_open": False,
+        "capacity": 20,
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    # Public list should NOT include draft event
+    pub_res = await async_client.get("/public/events")
+    assert pub_res.status_code == 200
+    slugs = [e.get("slug") for e in pub_res.json()]
+    assert draft_slug not in slugs
+
+    # Public detail should return 404
+    detail_res = await async_client.get(f"/public/events/{draft_slug}")
+    assert detail_res.status_code == 404
+
+    # Public registration submission should return 404
+    reg_res = await async_client.post(f"/registrations/{event_id}", data={"consent": "1", "f_full-name": "Test"})
+    assert reg_res.status_code == 404
+
+    # 2. Add registration to test delete constraint
+    await mock_db.registrations.insert_one({
+        "id": str(uuid4()),
+        "event_id": event_id,
+        "email": "registrant@its.ac.id",
+        "status": "accepted",
+    })
+
+    # Attempting to delete event with existing registrations must fail with the helpful draft guidance
+    del_res = await async_client.delete(f"/admin/content/events/{event_id}", cookies=admin_cookies)
+    assert del_res.status_code == 400
+    err_detail = del_res.json().get("detail", "")
+    assert "Set status to Draft to hide it temporarily" in err_detail
+    assert "export and delete the registrations first before deleting permanently" in err_detail
+
