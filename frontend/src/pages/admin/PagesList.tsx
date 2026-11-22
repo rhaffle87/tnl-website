@@ -19,6 +19,7 @@ import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import { AdminHeader, ConfirmButton, IssueList, Panel, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
+import { KeyValueMapEditor } from "@/components/admin/repeaters";
 import type { Block, ListResponse, PageDoc, PageRevisionBrief, QualityIssue } from "@/lib/types";
 
 const BLOCK_LIBRARY: { type: string; label: string; description: string }[] = [
@@ -455,21 +456,22 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                         />
                                     )}
 
-                                    <div>
-                                        <label htmlFor={`props-${block.id}`} className="mb-1.5 block text-sm font-medium">
-                                            Widget settings (JSON)
-                                        </label>
-                                        <textarea
-                                            id={`props-${block.id}`}
-                                            className="tnl-field font-mono text-xs"
-                                            rows={8}
-                                            value={propsText}
-                                            onChange={(e) => setPropsText(e.target.value)}
-                                            data-testid={`block-props-${block.id}`}
+                                    <div className="pt-1">
+                                        <KeyValueMapEditor
+                                            label="Widget Settings & Properties"
+                                            value={(() => {
+                                                try {
+                                                    return JSON.parse(propsText);
+                                                } catch {
+                                                    return {};
+                                                }
+                                            })()}
+                                            onChange={(newObj) => {
+                                                setPropsText(JSON.stringify(newObj, null, 2));
+                                            }}
+                                            help="Text properties ending in _id hold the Indonesian version. Use </> Raw JSON for nested structures or raw view."
+                                            testId={`block-props-${block.id}`}
                                         />
-                                        <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
-                                            Text fields ending in <code>_id</code> hold the Indonesian version.
-                                        </p>
                                     </div>
                                     <button type="button" onClick={() => saveProps(block)} className="tnl-btn tnl-btn-primary mt-3 h-10 min-h-[40px] text-sm" data-testid={`block-props-save-${block.id}`}>
                                         <Save className="h-4 w-4" aria-hidden="true" />

@@ -1,0 +1,574 @@
+import { useState } from "react";
+import {
+    ChevronDown,
+    ChevronUp,
+    Copy,
+    Plus,
+    Trash2,
+    Code,
+    AlertCircle,
+    Eye,
+    EyeOff,
+    Lock,
+    Unlock,
+    HelpCircle,
+    ListFilter,
+    CheckSquare,
+    UploadCloud,
+    AlignLeft,
+    Type,
+    Mail,
+    Phone,
+    GraduationCap,
+} from "lucide-react";
+import type { FormField } from "@/lib/types";
+
+export interface FormFieldsBuilderProps {
+    label?: string;
+    value: FormField[] | string | null | undefined;
+    onChange: (fields: FormField[]) => void;
+    help?: string;
+    testId?: string;
+}
+
+const FIELD_TYPES: { value: string; label: string; icon: typeof Type }[] = [
+    { value: "text", label: "Short Text", icon: Type },
+    { value: "textarea", label: "Long Text / Paragraph", icon: AlignLeft },
+    { value: "email", label: "Email Address", icon: Mail },
+    { value: "nim", label: "NRP / NIM (Student ID)", icon: GraduationCap },
+    { value: "tel", label: "Phone / WhatsApp", icon: Phone },
+    { value: "select", label: "Dropdown Select", icon: ListFilter },
+    { value: "checkbox", label: "Checkbox (Yes / No)", icon: CheckSquare },
+    { value: "file", label: "File Upload (PDF / Image)", icon: UploadCloud },
+];
+
+function deriveKey(label: string): string {
+    const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return `f_${slug || "field"}`;
+}
+
+export function FormFieldsBuilder({
+    label = "Registration Form Fields",
+    value,
+    onChange,
+    help = "Configure questions asked during event registration. Google Sheets column headers match the field labels.",
+    testId = "form-fields-builder",
+}: FormFieldsBuilderProps) {
+    const [rawMode, setRawMode] = useState(false);
+    const [previewMode, setPreviewMode] = useState(false);
+    const [rawJsonText, setRawJsonText] = useState("");
+    const [jsonError, setJsonError] = useState<string | null>(null);
+    const [collapsedMap, setCollapsedMap] = useState<Record<number, boolean>>({});
+    const [unlockedKeys, setUnlockedKeys] = useState<Record<number, boolean>>({});
+
+    // Normalize value to FormField[]
+    const fields: FormField[] = (() => {
+        if (!value) return [];
+        if (typeof value === "string") {
+            try {
+                const parsed = JSON.parse(value);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch {
+                return [];
+            }
+        }
+        if (Array.isArray(value)) return value;
+        return [];
+    })();
+
+    const updateField = (idx: number, patch: Partial<FormField>) => {
+        const next = fields.map((f, i) => {
+            if (i === idx) {
+                return { ...f, ...patch };
+            }
+            return f;
+        });
+        onChange(next);
+    };
+
+    const addQuestion = () => {
+        const count = fields.length + 1;
+        const newField: FormField = {
+            type: "text",
+            label: `Pertanyaan Baru ${count}`,
+            required: false,
+            options: [],
+            show_if_field: null,
+            show_if_value: null,
+        };
+        onChange([...fields, newField]);
+    };
+
+    const duplicateQuestion = (idx: number) => {
+        const orig = fields[idx];
+        const clone: FormField = {
+            ...orig,
+            label: `${orig.label} (Copy)`,
+            options: [...(orig.options || [])],
+        };
+        const next = [...fields];
+        next.splice(idx + 1, 0, clone);
+        onChange(next);
+    };
+
+    const removeQuestion = (idx: number) => {
+        const next = fields.filter((_, i) => i !== idx);
+        onChange(next);
+    };
+
+    const moveQuestion = (idx: number, direction: "up" | "down") => {
+        const target = direction === "up" ? idx - 1 : idx + 1;
+        if (target < 0 || target >= fields.length) return;
+        const next = [...fields];
+        const [moved] = next.splice(idx, 1);
+        next.splice(target, 0, moved);
+        onChange(next);
+    };
+
+    const toggleCollapse = (idx: number) => {
+        setCollapsedMap((prev) => ({ ...prev, [idx]: !prev[idx] }));
+    };
+
+    const toggleLockKey = (idx: number) => {
+        setUnlockedKeys((prev) => ({ ...prev, [idx]: !prev[idx] }));
+    };
+
+    // Options sub-builder helpers for select fields
+    const addOption = (idx: number) => {
+        const f = fields[idx];
+        const opts = [...(f.options || [])];
+        opts.push(`Pilihan ${opts.length + 1}`);
+        updateField(idx, { options: opts });
+    };
+
+    const updateOption = (idx: number, optIdx: number, val: string) => {
+        const f = fields[idx];
+        const opts = [...(f.options || [])];
+        opts[optIdx] = val;
+        updateField(idx, { options: opts });
+    };
+
+    const removeOption = (idx: number, optIdx: number) => {
+        const f = fields[idx];
+        const opts = (f.options || []).filter((_, i) => i !== optIdx);
+        updateField(idx, { options: opts });
+    };
+
+    // Raw mode toggling
+    const toggleRawMode = () => {
+        if (!rawMode) {
+            setRawJsonText(JSON.stringify(fields, null, 2));
+            setJsonError(null);
+            setRawMode(true);
+            setPreviewMode(false);
+        } else {
+            try {
+                const parsed = rawJsonText.trim() ? JSON.parse(rawJsonText) : [];
+                if (!Array.isArray(parsed)) {
+                    setJsonError("Form fields must be an array of questions (e.g. [ { type, label, ... } ])");
+                    return;
+                }
+                onChange(parsed);
+                setJsonError(null);
+                setRawMode(false);
+            } catch (err: unknown) {
+                setJsonError((err as Error).message || "Invalid JSON syntax");
+            }
+        }
+    };
+
+    const handleRawTextChange = (text: string) => {
+        setRawJsonText(text);
+        try {
+            const parsed = text.trim() ? JSON.parse(text) : [];
+            if (Array.isArray(parsed)) {
+                setJsonError(null);
+                onChange(parsed);
+            } else {
+                setJsonError("Must be a JSON array of questions");
+            }
+        } catch (err: unknown) {
+            setJsonError((err as Error).message);
+        }
+    };
+
+    return (
+        <div className="space-y-3 rounded-xl border p-4 transition-colors" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} data-testid={testId}>
+            {/* Header row */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5" style={{ borderColor: "var(--tnl-border)" }}>
+                <div>
+                    <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-semibold tracking-tight">{label}</h4>
+                        <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ backgroundColor: "var(--tnl-bg)", color: "var(--tnl-gold)" }}>
+                            {fields.length} {fields.length === 1 ? "question" : "questions"}
+                        </span>
+                    </div>
+                    {help && <p className="text-xs mt-0.5" style={{ color: "var(--tnl-tan-text)" }}>{help}</p>}
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {!rawMode && (
+                        <button
+                            type="button"
+                            onClick={() => setPreviewMode(!previewMode)}
+                            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors hover:bg-neutral-500/10"
+                            style={{ color: previewMode ? "var(--tnl-gold)" : "var(--tnl-text)" }}
+                            data-testid={`${testId}-preview-toggle`}
+                        >
+                            {previewMode ? <EyeOff className="h-3.5 w-3.5" aria-hidden="true" /> : <Eye className="h-3.5 w-3.5" aria-hidden="true" />}
+                            <span>{previewMode ? "Close Preview" : "Preview Form"}</span>
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={toggleRawMode}
+                        className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-mono font-medium transition-colors hover:bg-neutral-500/10"
+                        style={{ color: rawMode ? "var(--tnl-gold)" : "var(--tnl-tan-text)" }}
+                        data-testid={`${testId}-raw-toggle`}
+                    >
+                        <Code className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>{rawMode ? "Visual Editor" : "</> Raw JSON"}</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Mode 1: Live Interactive Preview */}
+            {previewMode && (
+                <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }} data-testid={`${testId}-preview-pane`}>
+                    <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: "var(--tnl-border)" }}>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                            Pratinjau Formulir Pendaftar (Read-Only)
+                        </span>
+                        <span className="text-[11px] opacity-60">Sesuai tampilan di RegistrationDialog</span>
+                    </div>
+
+                    {fields.length === 0 ? (
+                        <p className="text-xs italic py-4 text-center opacity-60">Belum ada pertanyaan formulir.</p>
+                    ) : (
+                        <div className="space-y-3.5 max-w-xl mx-auto py-2">
+                            {fields.map((f, i) => (
+                                <div key={i} className="space-y-1.5">
+                                    <label className="block text-xs font-medium">
+                                        <span>{f.label || `Pertanyaan #${i + 1}`}</span>
+                                        {f.required && <span className="text-rose-500 ml-1">*</span>}
+                                    </label>
+
+                                    {f.type === "textarea" ? (
+                                        <textarea rows={3} disabled placeholder="Jawaban panjang Anda..." className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} />
+                                    ) : f.type === "select" ? (
+                                        <select disabled className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}>
+                                            <option>-- Pilih opsi --</option>
+                                            {(f.options || []).map((o, oi) => (
+                                                <option key={oi}>{o}</option>
+                                            ))}
+                                        </select>
+                                    ) : f.type === "checkbox" ? (
+                                        <label className="flex items-center gap-2 text-xs py-1 cursor-not-allowed opacity-75">
+                                            <input type="checkbox" disabled className="rounded border" />
+                                            <span>Ya, saya menyetujui / mengisi poin ini</span>
+                                        </label>
+                                    ) : f.type === "file" ? (
+                                        <div className="rounded-lg border border-dashed p-3 text-center text-xs opacity-75 cursor-not-allowed" style={{ borderColor: "var(--tnl-border)", backgroundColor: "var(--tnl-card-bg)" }}>
+                                            <UploadCloud className="mx-auto h-5 w-5 mb-1 opacity-50" aria-hidden="true" />
+                                            <span>Klik atau seret file PDF / Foto (Maks 10MB)</span>
+                                        </div>
+                                    ) : (
+                                        <input type="text" disabled placeholder={f.type === "email" ? "nama@domain.com" : f.type === "nim" ? "Contoh: 5024201001" : "Jawaban Anda..."} className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Mode 2: Raw JSON Editor */}
+            {rawMode && (
+                <div className="space-y-2">
+                    <textarea
+                        value={rawJsonText}
+                        onChange={(e) => handleRawTextChange(e.target.value)}
+                        rows={10}
+                        className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
+                        style={{ backgroundColor: "var(--tnl-bg)", borderColor: jsonError ? "var(--tnl-red)" : "var(--tnl-border)" }}
+                        data-testid={`${testId}-raw-textarea`}
+                    />
+                    {jsonError && (
+                        <div className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400">
+                            <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            <span>{jsonError}</span>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Mode 3: Visual Question Cards */}
+            {!rawMode && !previewMode && (
+                <div className="space-y-3">
+                    {fields.length === 0 ? (
+                        <div className="rounded-lg border border-dashed py-8 text-center text-xs" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-tan-text)" }}>
+                            <HelpCircle className="mx-auto h-6 w-6 opacity-40 mb-2" aria-hidden="true" />
+                            <p>Belum ada pertanyaan formulir. Klik tombol di bawah untuk menambahkan.</p>
+                        </div>
+                    ) : (
+                        fields.map((field, idx) => {
+                            const isCollapsed = Boolean(collapsedMap[idx]);
+                            const isKeyUnlocked = Boolean(unlockedKeys[idx]);
+                            const derivedSlug = deriveKey(field.label);
+                            const currentTypeObj = FIELD_TYPES.find((t) => t.value === field.type) || FIELD_TYPES[0];
+                            const TypeIcon = currentTypeObj.icon;
+
+                            return (
+                                <div
+                                    key={idx}
+                                    className="rounded-lg border transition-all"
+                                    style={{
+                                        backgroundColor: "var(--tnl-bg)",
+                                        borderColor: "var(--tnl-border)",
+                                    }}
+                                    data-testid={`${testId}-question-${idx}`}
+                                >
+                                    {/* Question Card Header */}
+                                    <div className="flex items-center justify-between px-3.5 py-2.5 select-none bg-neutral-500/5 rounded-t-lg">
+                                        <div
+                                            className="flex flex-1 items-center gap-2.5 cursor-pointer"
+                                            onClick={() => toggleCollapse(idx)}
+                                        >
+                                            <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
+                                                {String(idx + 1).padStart(2, "0")}
+                                            </span>
+                                            <TypeIcon className="h-3.5 w-3.5 text-neutral-400 shrink-0" aria-hidden="true" />
+                                            <span className="text-xs font-semibold truncate max-w-[240px] md:max-w-[380px]" data-testid={`${testId}-question-title-${idx}`}>
+                                                {field.label || `Untitled Question #${idx + 1}`}
+                                            </span>
+                                            {field.required && (
+                                                <span className="rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                                                    Wajib
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => moveQuestion(idx, "up")}
+                                                disabled={idx === 0}
+                                                className="rounded p-1 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-20"
+                                                title="Move up"
+                                                aria-label="Move question up"
+                                                data-testid={`${testId}-question-up-${idx}`}
+                                            >
+                                                <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => moveQuestion(idx, "down")}
+                                                disabled={idx === fields.length - 1}
+                                                className="rounded p-1 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-20"
+                                                title="Move down"
+                                                aria-label="Move question down"
+                                                data-testid={`${testId}-question-down-${idx}`}
+                                            >
+                                                <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => duplicateQuestion(idx)}
+                                                className="rounded p-1 text-neutral-400 hover:text-amber-600 hover:bg-amber-500/10"
+                                                title="Duplicate question"
+                                                aria-label="Duplicate question"
+                                                data-testid={`${testId}-question-dup-${idx}`}
+                                            >
+                                                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeQuestion(idx)}
+                                                className="rounded p-1 text-neutral-400 hover:text-rose-600 hover:bg-rose-500/10"
+                                                title="Delete question"
+                                                aria-label="Delete question"
+                                                data-testid={`${testId}-question-remove-${idx}`}
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleCollapse(idx)}
+                                                className="rounded p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 ml-1"
+                                                title={isCollapsed ? "Expand" : "Collapse"}
+                                                aria-label={isCollapsed ? "Expand question" : "Collapse question"}
+                                            >
+                                                {isCollapsed ? (
+                                                    <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                                                ) : (
+                                                    <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Question Card Body */}
+                                    {!isCollapsed && (
+                                        <div className="p-3.5 space-y-3.5 border-t" style={{ borderColor: "var(--tnl-border)" }}>
+                                            {/* Row 1: Label & Field Key */}
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                <div className="md:col-span-2 space-y-1">
+                                                    <label className="block text-xs font-medium">
+                                                        Label Pertanyaan
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={field.label}
+                                                        onChange={(e) => updateField(idx, { label: e.target.value })}
+                                                        placeholder="Contoh: Nama Lengkap / Bukti Follow Instagram"
+                                                        className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
+                                                        style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
+                                                        data-testid={`${testId}-label-${idx}`}
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="block text-xs font-medium">
+                                                            Field Key (Slug)
+                                                        </label>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleLockKey(idx)}
+                                                            className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 hover:underline"
+                                                            title={isKeyUnlocked ? "Kunci slug" : "Buka kunci untuk ubah slug"}
+                                                        >
+                                                            {isKeyUnlocked ? (
+                                                                <>
+                                                                    <Unlock className="h-3 w-3" aria-hidden="true" />
+                                                                    <span>Unlocked</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Lock className="h-3 w-3" aria-hidden="true" />
+                                                                    <span>Locked</span>
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        value={derivedSlug}
+                                                        readOnly={!isKeyUnlocked}
+                                                        disabled={!isKeyUnlocked}
+                                                        className="w-full rounded-lg border px-3 py-1.5 font-mono text-xs outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                                                        style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
+                                                        data-testid={`${testId}-key-${idx}`}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Row 2: Type, Required, Options */}
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                                                <div className="space-y-1 md:col-span-2">
+                                                    <label className="block text-xs font-medium">
+                                                        Tipe Input Pendaftar
+                                                    </label>
+                                                    <select
+                                                        value={field.type}
+                                                        onChange={(e) => updateField(idx, { type: e.target.value })}
+                                                        className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
+                                                        style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
+                                                        data-testid={`${testId}-type-${idx}`}
+                                                    >
+                                                        {FIELD_TYPES.map((t) => (
+                                                            <option key={t.value} value={t.value}>
+                                                                {t.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                <div className="pt-4">
+                                                    <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Boolean(field.required)}
+                                                            onChange={(e) => updateField(idx, { required: e.target.checked })}
+                                                            className="rounded border"
+                                                            data-testid={`${testId}-required-${idx}`}
+                                                        />
+                                                        <span>Wajib Diisi (Required)</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            {/* Options Sub-Builder (Conditional for select type) */}
+                                            {field.type === "select" && (
+                                                <div className="rounded-lg border p-3 space-y-2.5" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} data-testid={`${testId}-options-pane-${idx}`}>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                                                            Pilihan Dropdown (Options)
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => addOption(idx)}
+                                                            className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:underline"
+                                                            data-testid={`${testId}-add-option-${idx}`}
+                                                        >
+                                                            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                                                            <span>+ Tambah Opsi</span>
+                                                        </button>
+                                                    </div>
+
+                                                    {(field.options || []).length === 0 ? (
+                                                        <p className="text-xs italic opacity-60">Belum ada pilihan. Klik + Tambah Opsi di atas.</p>
+                                                    ) : (
+                                                        <div className="space-y-1.5">
+                                                            {(field.options || []).map((opt, optIdx) => (
+                                                                <div key={optIdx} className="flex items-center gap-2">
+                                                                    <span className="text-xs font-mono opacity-50 w-4 text-right">
+                                                                        {optIdx + 1}.
+                                                                    </span>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={opt}
+                                                                        onChange={(e) => updateOption(idx, optIdx, e.target.value)}
+                                                                        placeholder={`Opsi #${optIdx + 1}`}
+                                                                        className="flex-1 rounded-md border px-2.5 py-1 text-xs outline-none focus:ring-1 focus:ring-amber-500"
+                                                                        style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }}
+                                                                        data-testid={`${testId}-option-${idx}-${optIdx}`}
+                                                                    />
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => removeOption(idx, optIdx)}
+                                                                        className="rounded p-1 text-neutral-400 hover:text-rose-600 transition-colors"
+                                                                        aria-label={`Remove option ${opt}`}
+                                                                        data-testid={`${testId}-option-remove-${idx}-${optIdx}`}
+                                                                    >
+                                                                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                    )}
+
+                    {/* Add Question Button */}
+                    <button
+                        type="button"
+                        onClick={addQuestion}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-2 text-xs font-medium transition-colors hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400 w-full justify-center"
+                        style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-text)" }}
+                        data-testid={`${testId}-add-question`}
+                    >
+                        <Plus className="h-4 w-4" aria-hidden="true" />
+                        <span>+ Tambah Pertanyaan Formulir</span>
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}

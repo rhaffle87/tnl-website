@@ -10,9 +10,33 @@ import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
 import { AdminHeader, ConfirmButton, IssueList, Panel, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
-import type { ListResponse, Member, QualityIssue } from "@/lib/types";
+import {
+    TagChipsField,
+    KeyValueMapEditor,
+    ObjectListRepeater,
+    FormFieldsBuilder,
+    MEMBER_SOCIAL_PRESETS,
+    type RepeaterFieldSpec,
+    type PresetKeyConfig,
+} from "@/components/admin/repeaters";
+import type { FormField, ListResponse, Member, QualityIssue } from "@/lib/types";
 
-type FieldType = "text" | "textarea" | "html" | "number" | "select" | "checkbox" | "tags" | "date" | "json" | "member_multiselect" | "media" | "media_list";
+type FieldType =
+    | "text"
+    | "textarea"
+    | "html"
+    | "number"
+    | "select"
+    | "checkbox"
+    | "tags"
+    | "date"
+    | "json"
+    | "key_value"
+    | "repeater"
+    | "form_fields"
+    | "member_multiselect"
+    | "media"
+    | "media_list";
 
 interface FieldSpec {
     key: string;
@@ -24,6 +48,12 @@ interface FieldSpec {
     folder?: string;
     aspect?: "square" | "video" | "auto";
     accept?: "image" | "document" | "all";
+    presetKeys?: PresetKeyConfig[];
+    repeaterFields?: RepeaterFieldSpec[];
+    itemTitleField?: string;
+    itemSubtitleField?: string;
+    emptyMessage?: string;
+    addButtonLabel?: string;
 }
 
 interface ResourceSpec {
@@ -37,6 +67,50 @@ interface ResourceSpec {
 const BILINGUAL = (key: string, label: string, type: FieldType = "text", help?: string): FieldSpec[] => [
     { key, label: `${label} (English)`, type, help },
     { key: `${key}_id`, label: `${label} (Bahasa Indonesia)`, type },
+];
+
+const EVENT_MODULE_FIELDS: RepeaterFieldSpec[] = [
+    { key: "title", label: "Title (English)", type: "text", placeholder: "e.g. Introduction to Packet Tracer" },
+    { key: "title_id", label: "Title (Bahasa Indonesia)", type: "text", placeholder: "e.g. Pengenalan Cisco Packet Tracer" },
+    { key: "detail", label: "Detail (English)", type: "textarea", placeholder: "Syllabus topic details..." },
+    { key: "detail_id", label: "Detail (Bahasa Indonesia)", type: "textarea", placeholder: "Rincian silabus..." },
+    { key: "date", label: "Date (YYYY-MM-DD)", type: "text", placeholder: "e.g. 2026-11-28", width: "half" },
+];
+
+const EVENT_CONTACT_FIELDS: RepeaterFieldSpec[] = [
+    { key: "name", label: "Name / Division", type: "text", placeholder: "e.g. Training Division, TNL" },
+    { key: "email", label: "Email", type: "text", placeholder: "e.g. telconnetlab@gmail.com", width: "half" },
+    { key: "phone", label: "Phone / WhatsApp", type: "text", placeholder: "e.g. +6281234567890", width: "half" },
+];
+
+const MEDIA_ITEM_FIELDS: RepeaterFieldSpec[] = [
+    { key: "url", label: "Photo / Asset", type: "media", folder: "events", aspect: "video" },
+    { key: "alt", label: "Description / Alt text", type: "text", placeholder: "Short description of photo" },
+];
+
+const MEMBER_PROJECT_FIELDS: RepeaterFieldSpec[] = [
+    { key: "title", label: "Project Title (English)", type: "text" },
+    { key: "title_id", label: "Project Title (Bahasa Indonesia)", type: "text" },
+    { key: "year", label: "Year", type: "text", placeholder: "e.g. 2025", width: "half" },
+    { key: "role", label: "Role (English)", type: "text", placeholder: "e.g. Principal Investigator", width: "half" },
+    { key: "role_id", label: "Role (Bahasa Indonesia)", type: "text", placeholder: "e.g. Ketua Peneliti", width: "half" },
+    { key: "description", label: "Description (English)", type: "textarea" },
+    { key: "description_id", label: "Description (Bahasa Indonesia)", type: "textarea" },
+];
+
+const PRACTICUM_RESOURCE_FIELDS: RepeaterFieldSpec[] = [
+    { key: "title", label: "Resource Title", type: "text", placeholder: "e.g. Modul 01: Subnetting Guide (PDF)" },
+    { key: "file_url", label: "File Attachment", type: "media", folder: "academic", accept: "all" },
+    { key: "file_type", label: "File Format", type: "select", options: ["pdf", "pkt", "py", "zip", "docx", "other"], width: "half" },
+];
+
+const PRACTICUM_SHIFT_FIELDS: RepeaterFieldSpec[] = [
+    { key: "day", label: "Day", type: "select", options: ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"], width: "half" },
+    { key: "time_slot", label: "Time Slot", type: "text", placeholder: "e.g. 08:00 - 10:00 WIB", width: "half" },
+    { key: "coordinator_name", label: "PIC / Assistant in Charge", type: "text", placeholder: "e.g. Daffa & Fathur" },
+    { key: "quota", label: "Quota", type: "number", width: "half", defaultValue: 20 },
+    { key: "room", label: "Room", type: "text", placeholder: "Ruang B-301", width: "half", defaultValue: "Ruang B-301" },
+    { key: "notes", label: "Notes", type: "text", placeholder: "e.g. Shift A / B" },
 ];
 
 export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
@@ -74,9 +148,9 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             { key: "email_public", label: "Public email", type: "text" },
             { key: "photo_url", label: "Photo", type: "media", folder: "members", aspect: "square", help: "Profile photo of member or assistant." },
             { key: "photo_alt", label: "Photo description", type: "text" },
-            { key: "expertise", label: "Areas of expertise", type: "tags" },
-            { key: "social", label: "Profile links", type: "json", help: 'For example: {"scholar": "https://scholar.google.com/...", "linkedin": "https://linkedin.com/in/...", "instagram": "https://instagram.com/..."}' },
-            { key: "projects", label: "Research Projects", type: "json", help: 'List of research projects. Example: [{"title": "...", "year": "2024", "funding": "BOPTN ITS", "description": "..."}]' },
+            { key: "expertise", label: "Areas of expertise", type: "tags", help: "Type and press Enter or comma." },
+            { key: "social", label: "Profile links & Socials", type: "key_value", presetKeys: MEMBER_SOCIAL_PRESETS, help: "Add LinkedIn, Google Scholar, Scopus, SINTA, Instagram, GitHub, Website, etc." },
+            { key: "projects", label: "Research Projects", type: "repeater", repeaterFields: MEMBER_PROJECT_FIELDS, itemTitleField: "title", itemSubtitleField: "year", addButtonLabel: "+ Add Research Project", emptyMessage: "No research projects listed." },
             { key: "is_head", label: "This person is the Head of Laboratory", type: "checkbox" },
             { key: "status", label: "Active or alumni", type: "select", options: ["active", "alumni"] },
             { key: "nim", label: "NIM / NRP (private)", type: "text" },
@@ -108,10 +182,10 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             { key: "capacity", label: "Capacity", type: "number", help: "0 means no limit. Once full, registration automatically locks." },
             { key: "price", label: "Fee in rupiah", type: "number", help: "0 means free." },
             ...BILINGUAL("location", "Location"),
-            { key: "modules", label: "Modules", type: "json", help: 'For example: [{"title": "Introduction", "title_id": "Pengenalan", "detail": "…"}]' },
-            { key: "contacts", label: "Contact people", type: "json", help: 'For example: [{"name": "Training Division", "phone": "+628…"}]' },
-            { key: "form_fields", label: "Registration form", type: "json", help: 'For example: [{"type": "text", "label": "Full name", "required": true, "options": []}]' },
-            { key: "documentation", label: "Documentation photos", type: "json", help: 'For example: [{"url": "…", "alt": "…"}]' },
+            { key: "modules", label: "Agenda & Modules", type: "repeater", repeaterFields: EVENT_MODULE_FIELDS, itemTitleField: "title", itemSubtitleField: "date", addButtonLabel: "+ Add Agenda / Module", emptyMessage: "No agenda or module items yet." },
+            { key: "contacts", label: "Contact People", type: "repeater", repeaterFields: EVENT_CONTACT_FIELDS, itemTitleField: "name", itemSubtitleField: "phone", addButtonLabel: "+ Add Contact Person", emptyMessage: "No contact people listed." },
+            { key: "form_fields", label: "Registration Form", type: "form_fields", help: "Visual builder for registration questions. Real-time preview available." },
+            { key: "documentation", label: "Documentation Photos", type: "repeater", repeaterFields: MEDIA_ITEM_FIELDS, itemTitleField: "alt", addButtonLabel: "+ Add Photo", folder: "events", emptyMessage: "No documentation photos added." },
             { key: "status", label: "Status", type: "select", options: ["draft", "published"] },
         ],
     },
@@ -127,7 +201,7 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             { key: "date", label: "Date", type: "date" },
             { key: "cover_image", label: "Cover image", type: "media", folder: "events", aspect: "video", help: "Main banner image." },
             { key: "gallery_images", label: "Gallery image links", type: "media_list", folder: "events", help: "Carousel images for this activity." },
-            { key: "images", label: "Photos (JSON)", type: "json", help: 'For example: [{"url": "…", "alt": "…"}]' },
+            { key: "images", label: "Activity Photos", type: "repeater", repeaterFields: MEDIA_ITEM_FIELDS, itemTitleField: "alt", addButtonLabel: "+ Add Photo", folder: "events", emptyMessage: "No photos added." },
             { key: "order", label: "Display order", type: "number" },
             { key: "published", label: "Visible on the website", type: "checkbox" },
         ],
@@ -147,10 +221,10 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             { key: "year", label: "Year", type: "text" },
             { key: "location", label: "Location", type: "text" },
             { key: "participants", label: "Participants", type: "text" },
-            { key: "tags", label: "Tags", type: "tags" },
-            { key: "modules", label: "Modules", type: "json" },
-            { key: "impact", label: "Impact", type: "json" },
-            { key: "images", label: "Photos", type: "json" },
+            { key: "tags", label: "Tags", type: "tags", help: "Type and press Enter or comma." },
+            { key: "modules", label: "Modules", type: "repeater", repeaterFields: EVENT_MODULE_FIELDS, itemTitleField: "title", addButtonLabel: "+ Add Module", emptyMessage: "No project modules." },
+            { key: "impact", label: "Impact & Milestones", type: "repeater", repeaterFields: EVENT_MODULE_FIELDS, itemTitleField: "title", addButtonLabel: "+ Add Milestone", emptyMessage: "No impact milestones." },
+            { key: "images", label: "Project Photos", type: "repeater", repeaterFields: MEDIA_ITEM_FIELDS, itemTitleField: "alt", addButtonLabel: "+ Add Photo", folder: "general", emptyMessage: "No project photos." },
             { key: "is_testbed", label: "This is a testbed", type: "checkbox" },
             { key: "verified", label: "Details verified", type: "checkbox", help: "Tick only once someone has checked the facts." },
             { key: "verified_by", label: "Verified by (role)", type: "text" },
@@ -173,7 +247,7 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             { key: "doi", label: "DOI", type: "text" },
             { key: "url", label: "Link", type: "text" },
             { key: "abstract", label: "Abstract", type: "textarea" },
-            { key: "tags", label: "Tags", type: "tags" },
+            { key: "tags", label: "Tags", type: "tags", help: "Type and press Enter or comma." },
             { key: "status", label: "Status", type: "select", options: ["draft", "published"] },
         ],
     },
@@ -205,14 +279,23 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             {
                 key: "resources",
                 label: "Downloadable Resources (PDF/PKT/PY/ZIP)",
-                type: "json",
-                help: 'List of files. For example: [{"title": "Modul 01: Subnetting Guide (PDF)", "file_url": "/api/media-files/academic/modul-01.pdf", "file_type": "pdf"}]',
+                type: "repeater",
+                repeaterFields: PRACTICUM_RESOURCE_FIELDS,
+                itemTitleField: "title",
+                itemSubtitleField: "file_type",
+                addButtonLabel: "+ Add Resource File",
+                folder: "academic",
+                emptyMessage: "No downloadable resources added.",
             },
             {
                 key: "shifts",
                 label: "Shift Schedules (B-301)",
-                type: "json",
-                help: 'Shift timeslots and PIC assistants. For example: [{"day": "Senin", "time_slot": "08:00 - 10:00 WIB", "coordinator_name": "Daffa & Fathur", "quota": 24, "room": "Ruang B-301", "notes": "Shift A"}]',
+                type: "repeater",
+                repeaterFields: PRACTICUM_SHIFT_FIELDS,
+                itemTitleField: "day",
+                itemSubtitleField: "time_slot",
+                addButtonLabel: "+ Add Shift Schedule",
+                emptyMessage: "No shift schedules configured.",
             },
             { key: "order", label: "Display order", type: "number" },
             { key: "published", label: "Visible on the website", type: "checkbox" },
@@ -259,9 +342,11 @@ function emptyDraft(spec: ResourceSpec): Record<string, unknown> {
     for (const field of spec.fields) {
         if (field.type === "checkbox") draft[field.key] = field.key === "published";
         else if (field.type === "number") draft[field.key] = 0;
-        else if (field.type === "tags") draft[field.key] = "";
+        else if (field.type === "tags") draft[field.key] = [];
         else if (field.type === "media_list") draft[field.key] = [];
         else if (field.type === "media") draft[field.key] = "";
+        else if (field.type === "key_value") draft[field.key] = {};
+        else if (field.type === "repeater" || field.type === "form_fields") draft[field.key] = [];
         else if (field.type === "json") draft[field.key] = "";
         else if (field.type === "select") draft[field.key] = field.options?.[0] ?? "";
         else draft[field.key] = "";
@@ -273,13 +358,25 @@ function toForm(row: Row, spec: ResourceSpec): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const field of spec.fields) {
         const value = row[field.key];
-        if (field.type === "tags") out[field.key] = Array.isArray(value) ? value.join(", ") : (value ?? "");
-        else if (field.type === "media_list") out[field.key] = Array.isArray(value) ? value : (typeof value === "string" ? value.split(",").map((s) => s.trim()).filter(Boolean) : []);
-        else if (field.type === "media") out[field.key] = String(value ?? "");
-        else if (field.type === "json") out[field.key] = value ? JSON.stringify(value, null, 2) : "";
-        else if (field.type === "checkbox") out[field.key] = Boolean(value);
-        else if (field.type === "number") out[field.key] = typeof value === "number" ? value : 0;
-        else out[field.key] = value ?? "";
+        if (field.type === "tags") {
+            out[field.key] = Array.isArray(value) ? value : (typeof value === "string" ? value.split(",").map((s) => s.trim()).filter(Boolean) : []);
+        } else if (field.type === "media_list") {
+            out[field.key] = Array.isArray(value) ? value : (typeof value === "string" ? value.split(",").map((s) => s.trim()).filter(Boolean) : []);
+        } else if (field.type === "media") {
+            out[field.key] = String(value ?? "");
+        } else if (field.type === "key_value") {
+            out[field.key] = typeof value === "object" && value !== null ? value : {};
+        } else if (field.type === "repeater" || field.type === "form_fields") {
+            out[field.key] = Array.isArray(value) ? value : [];
+        } else if (field.type === "json") {
+            out[field.key] = value ? JSON.stringify(value, null, 2) : "";
+        } else if (field.type === "checkbox") {
+            out[field.key] = Boolean(value);
+        } else if (field.type === "number") {
+            out[field.key] = typeof value === "number" ? value : 0;
+        } else {
+            out[field.key] = value ?? "";
+        }
     }
     return out;
 }
@@ -289,13 +386,40 @@ function toPayload(form: Record<string, unknown>, spec: ResourceSpec): Record<st
     for (const field of spec.fields) {
         const value = form[field.key];
         if (field.type === "tags") {
-            const text = String(value ?? "").trim();
-            out[field.key] = text ? text.split(",").map((s) => s.trim()).filter(Boolean) : [];
+            const list = Array.isArray(value)
+                ? value
+                : String(value ?? "")
+                      .split(",")
+                      .map((s) => s.trim())
+                      .filter(Boolean);
+            out[field.key] = list;
         } else if (field.type === "media_list") {
-            const list = Array.isArray(value) ? value : (typeof value === "string" ? value.split(",").map((s) => s.trim()).filter(Boolean) : []);
+            const list = Array.isArray(value)
+                ? value
+                : typeof value === "string"
+                ? value.split(",").map((s) => s.trim()).filter(Boolean)
+                : [];
             out[field.key] = list;
         } else if (field.type === "media") {
             out[field.key] = String(value ?? "").trim();
+        } else if (field.type === "key_value") {
+            if (typeof value === "string") {
+                const text = value.trim();
+                out[field.key] = text ? JSON.parse(text) : {};
+            } else if (typeof value === "object" && value !== null) {
+                out[field.key] = value;
+            } else {
+                out[field.key] = {};
+            }
+        } else if (field.type === "repeater" || field.type === "form_fields") {
+            if (typeof value === "string") {
+                const text = value.trim();
+                out[field.key] = text ? JSON.parse(text) : [];
+            } else if (Array.isArray(value)) {
+                out[field.key] = value;
+            } else {
+                out[field.key] = [];
+            }
         } else if (field.type === "json") {
             const text = String(value ?? "").trim();
             if (!text) continue;
@@ -531,12 +655,30 @@ export default function ContentManager() {
                         {grouped.map((field) => {
                             const id = `field-${field.key}`;
                             const value = form[field.key];
-                            const wide = field.type === "textarea" || field.type === "html" || field.type === "json" || field.type === "member_multiselect";
+                            const wide =
+                                field.type === "textarea" ||
+                                field.type === "html" ||
+                                field.type === "json" ||
+                                field.type === "key_value" ||
+                                field.type === "repeater" ||
+                                field.type === "form_fields" ||
+                                field.type === "tags" ||
+                                field.type === "member_multiselect";
+                            const showOuterLabel =
+                                field.type !== "media" &&
+                                field.type !== "media_list" &&
+                                field.type !== "key_value" &&
+                                field.type !== "repeater" &&
+                                field.type !== "form_fields" &&
+                                field.type !== "tags";
+
                             return (
                                 <div key={field.key} className={wide ? "lg:col-span-2" : ""}>
-                                    <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
-                                        {field.label}
-                                    </label>
+                                    {showOuterLabel ? (
+                                        <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
+                                            {field.label}
+                                        </label>
+                                    ) : null}
                                     {field.type === "textarea" || field.type === "html" || field.type === "json" ? (
                                         <textarea
                                             id={id}
@@ -545,6 +687,45 @@ export default function ContentManager() {
                                             value={String(value ?? "")}
                                             onChange={(e) => setForm((f) => ({ ...f, [field.key]: e.target.value }))}
                                             data-testid={`content-field-${field.key}`}
+                                        />
+                                    ) : field.type === "tags" ? (
+                                        <TagChipsField
+                                            label={field.label}
+                                            value={value as string[]}
+                                            onChange={(tags) => setForm((f) => ({ ...f, [field.key]: tags }))}
+                                            help={field.help}
+                                            testId={`content-field-${field.key}`}
+                                        />
+                                    ) : field.type === "key_value" ? (
+                                        <KeyValueMapEditor
+                                            label={field.label}
+                                            value={value as Record<string, string>}
+                                            onChange={(val) => setForm((f) => ({ ...f, [field.key]: val }))}
+                                            presetKeys={field.presetKeys}
+                                            help={field.help}
+                                            testId={`content-field-${field.key}`}
+                                        />
+                                    ) : field.type === "repeater" ? (
+                                        <ObjectListRepeater
+                                            label={field.label}
+                                            value={value as Array<Record<string, unknown>>}
+                                            onChange={(items) => setForm((f) => ({ ...f, [field.key]: items }))}
+                                            fields={field.repeaterFields || []}
+                                            itemTitleField={field.itemTitleField}
+                                            itemSubtitleField={field.itemSubtitleField}
+                                            help={field.help}
+                                            emptyMessage={field.emptyMessage}
+                                            addButtonLabel={field.addButtonLabel}
+                                            defaultFolder={field.folder || resource}
+                                            testId={`content-field-${field.key}`}
+                                        />
+                                    ) : field.type === "form_fields" ? (
+                                        <FormFieldsBuilder
+                                            label={field.label}
+                                            value={value as FormField[]}
+                                            onChange={(fields) => setForm((f) => ({ ...f, [field.key]: fields }))}
+                                            help={field.help}
+                                            testId={`content-field-${field.key}`}
                                         />
                                     ) : field.type === "select" ? (
                                         <select
@@ -635,7 +816,7 @@ export default function ContentManager() {
                                             data-testid={`content-field-${field.key}`}
                                         />
                                     )}
-                                    {field.help && field.type !== "media" && field.type !== "media_list" ? (
+                                    {field.help && showOuterLabel ? (
                                         <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
                                             {field.help}
                                         </p>

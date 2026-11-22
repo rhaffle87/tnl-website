@@ -45,7 +45,7 @@ const FOLDERS = [
     { value: "equipment", label: "Lab Equipment" },
     { value: "pages", label: "Pages" },
     { value: "general", label: "General" },
-];
+].filter((f) => f.value !== "test");
 
 function formatBytes(bytes?: number): string {
     if (!bytes || bytes <= 0) return "0 B";
