@@ -449,17 +449,20 @@ export function SiteFooter({
             {showCollaborationBand && <SiteCollaborationBand lang={lang} />}
             <footer className="signal-footer" data-testid="site-footer">
                 <div className="tnl-container">
-                    <div className="signal-footer-entry">
-                        <h2 className="signal-footer-title">
-                            <Link to="/" viewTransition className="signal-footer-home">
-                                <span aria-hidden="true"><TnlLogo variant="light" className="h-9 w-9 sm:h-10 sm:w-10" /></span>
-                                <span>{title}</span>
-                            </Link>
-                        </h2>
-                        <p>{t.labShortDesc}</p>
-                    </div>
                     <div className="signal-footer-grid">
-                        <nav aria-label={t.exploreTitle}>
+                        <div className="signal-footer-brand">
+                            <h2 className="signal-footer-title">
+                                <Link to="/" viewTransition className="signal-footer-home">
+                                    <span className="signal-footer-mark" aria-hidden="true">
+                                        <TnlLogo variant="light" className="h-7 w-7" />
+                                    </span>
+                                    <span className="signal-footer-name">{title}</span>
+                                </Link>
+                            </h2>
+                            <p className="signal-footer-description">{t.labShortDesc}</p>
+                        </div>
+
+                        <nav className="signal-footer-group" aria-label={t.exploreTitle}>
                             <h3 className="signal-footer-group-label">{t.exploreTitle}</h3>
                             <ul>
                                 {t.navLinks.map((item) => (
@@ -467,6 +470,7 @@ export function SiteFooter({
                                         <Link
                                             to={item.to}
                                             viewTransition
+                                            className="signal-footer-link"
                                             data-testid={`footer-${item.to === "/" ? "home" : item.to.slice(1)}-link`}
                                         >
                                             {item.label}
@@ -476,11 +480,13 @@ export function SiteFooter({
                             </ul>
                         </nav>
 
-                        <nav aria-label={t.resourcesTitle}>
+                        <nav className="signal-footer-group" aria-label={t.resourcesTitle}>
                             <h3 className="signal-footer-group-label">{t.resourcesTitle}</h3>
                             <ul>
                                 {t.resourceLinks.map((item) => (
-                                    <li key={item.to}><Link to={item.to} viewTransition>{item.label}</Link></li>
+                                    <li key={item.to}>
+                                        <Link to={item.to} viewTransition className="signal-footer-link">{item.label}</Link>
+                                    </li>
                                 ))}
                             </ul>
                         </nav>
@@ -509,15 +515,13 @@ export function SiteFooter({
                         </div>
                     </div>
 
-
-
                     <div className="signal-footer-utility">
-                        <p data-testid="footer-institution-line">
+                        <p className="signal-footer-institution" data-testid="footer-institution-line">
                             © {new Date().getFullYear()} Departemen Teknik Elektro, ITS Surabaya.
                         </p>
                         <div className="signal-footer-legal">
-                            <Link to="/terms" data-testid="footer-terms-link">{t.terms}</Link>
-                            <Link to="/privacy" data-testid="footer-privacy-link">{t.privacy}</Link>
+                            <Link to="/terms" viewTransition className="signal-footer-link" data-testid="footer-terms-link">{t.terms}</Link>
+                            <Link to="/privacy" viewTransition className="signal-footer-link" data-testid="footer-privacy-link">{t.privacy}</Link>
                         </div>
                         <button type="button" className="signal-footer-top" onClick={() => scrollTo(0, {
                             duration: 0.8,

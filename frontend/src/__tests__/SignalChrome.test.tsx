@@ -145,4 +145,58 @@ describe("Signal Editorial chrome", () => {
     expect(footer.getByRole("heading", { level: 2, name: "Studio Riset Sinyal" })).toBeInTheDocument();
     expect(footer.getByTestId("footer-address")).toHaveTextContent("Gedung C");
   });
+
+  it("folds the lab identity and both nav groups into one four-column footer grid", () => {
+    renderWithProviders(<SiteFooter />, { route: "/" });
+    const footer = screen.getByTestId("site-footer");
+    const grid = footer.querySelector(".signal-footer-grid");
+    expect(grid).not.toBeNull();
+    const columns = Array.from(grid!.children);
+    expect(columns).toHaveLength(4);
+    expect(columns[0]).toHaveClass("signal-footer-brand");
+    expect(columns[1]).toHaveProperty("tagName", "NAV");
+    expect(columns[2]).toHaveProperty("tagName", "NAV");
+    expect(columns[3]).toHaveClass("signal-footer-contact");
+    expect(footer.querySelector(".signal-footer-entry")).toBeNull();
+    expect(footer.querySelector(".signal-footer-brand h2")).not.toBeNull();
+  });
+
+  it("keeps the brand lockup restrained to a mark, the CMS name and one description", () => {
+    renderWithProviders(<SiteFooter />, { route: "/" });
+    const footer = screen.getByTestId("site-footer");
+    const brand = footer.querySelector(".signal-footer-brand")!;
+    expect(brand.querySelector(".signal-footer-mark")).not.toBeNull();
+    expect(brand.querySelector(".signal-footer-name")?.textContent?.trim()).not.toBe("");
+    expect(brand.querySelectorAll("p")).toHaveLength(1);
+    expect(brand.querySelector("p")).toHaveClass("signal-footer-description");
+    expect(footer.querySelectorAll("h2")).toHaveLength(1);
+  });
+
+  it("gives every footer group the same label level and link hook", () => {
+    renderWithProviders(<SiteFooter />, { route: "/" });
+    const footer = screen.getByTestId("site-footer");
+    expect(footer.querySelectorAll("h3.signal-footer-group-label")).toHaveLength(3);
+    const links = footer.querySelectorAll("nav a");
+    expect(links.length).toBeGreaterThan(8);
+    for (const link of Array.from(links)) expect(link).toHaveClass("signal-footer-link");
+  });
+
+  it("orders the utility strip as institution, legal pair, back to top", () => {
+    renderWithProviders(<SiteFooter />, { route: "/" });
+    const utility = screen.getByTestId("site-footer").querySelector(".signal-footer-utility")!;
+    expect(Array.from(utility.children).map((child) => child.className.split(" ")[0])).toEqual([
+      "signal-footer-institution",
+      "signal-footer-legal",
+      "signal-footer-top",
+    ]);
+    expect(within(utility as HTMLElement).getAllByRole("link")).toHaveLength(2);
+  });
+
+  it("frames the location and desk details as a single contact column", () => {
+    renderWithProviders(<SiteFooter />, { route: "/" });
+    const contact = screen.getByTestId("site-footer").querySelector(".signal-footer-contact")!;
+    expect(contact.querySelector("h3.signal-footer-group-label")).not.toBeNull();
+    expect(contact.querySelector(".signal-footer-address [data-testid='footer-address']")).not.toBeNull();
+    expect(contact.querySelectorAll("a.signal-footer-icon-link")).toHaveLength(2);
+  });
 });
