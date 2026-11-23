@@ -72,6 +72,14 @@ jobs:
         run: |
           npm --prefix frontend run build
 
+      - name: Install Playwright Chromium
+        run: |
+          cd frontend && npx playwright install --with-deps chromium
+
+      - name: Playwright Layout Geometry Gate
+        run: |
+          npm --prefix frontend run test:geometry
+
   web-standards-guard:
     name: Web Standards & Security Guard
     runs-on: ubuntu-latest

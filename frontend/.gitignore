@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright geometry gate artifacts
+/test-results/
+/playwright-report/

@@ -198,6 +198,90 @@ def run_smoke():
             total_failed += 1
 
         # ----------------------------------------------------
+        # 2b. Announcement Popup Integrity (public surface)
+        # The popup is the loudest surface on the site: it must always offer an
+        # explicit close control, honour Escape, and carry a CTA label that
+        # matches the CMS instead of a hardcoded "Register now".
+        # ----------------------------------------------------
+        print("\n--- 2b. Announcement Popup Integrity ---")
+        try:
+            safe_goto(page, f"{BASE_URL}/member")
+            page.wait_for_timeout(1400)
+            popup = page.locator('[data-testid="announcement-popup"]').first
+            if popup.count() == 0 or not popup.is_visible():
+                print("[SKIP] Announcement popup not shown (disabled, or already dismissed for this version)")
+            else:
+                popup_style = popup.get_attribute("data-announcement-style") or "modal"
+                cta = page.locator('[data-testid="announcement-cta-button"]').first
+                cta_label = (cta.inner_text() or "").strip()
+                cta_href = cta.get_attribute("href") or ""
+
+                close = page.locator('[data-testid="announcement-close-button"]').first
+                close_visible = close.count() > 0 and close.is_visible()
+                close_box = close.bounding_box() if close_visible else None
+                close_size_ok = bool(
+                    close_box and close_box["width"] >= 32 and close_box["height"] >= 32
+                )
+
+                geometry = page.evaluate(
+                    """() => {
+                        const el = document.querySelector('[data-testid="announcement-popup"]');
+                        if (!el) return null;
+                        const surface = el.querySelector('div[class*="rounded-2xl"]') || el;
+                        const r = surface.getBoundingClientRect();
+                        return {
+                            width: Math.round(r.width),
+                            left: Math.round(r.left),
+                            right: Math.round(r.right),
+                            bottom: Math.round(r.bottom),
+                            vw: window.innerWidth,
+                            vh: window.innerHeight,
+                        };
+                    }"""
+                )
+                geometry_ok = bool(
+                    geometry
+                    and geometry["left"] >= -1
+                    and geometry["right"] <= geometry["vw"] + 1
+                    and geometry["bottom"] <= geometry["vh"] + 1
+                    and 260 <= geometry["width"] <= 700
+                )
+
+                # "Register now" is only honest when the target really registers.
+                label_honest = bool(cta_label) and not (
+                    cta_label.lower() in ("register now", "daftar sekarang") and "news" in cta_href
+                )
+
+                if close_size_ok and geometry_ok and label_honest:
+                    print(
+                        f"[PASS] Announcement popup: style={popup_style}, "
+                        f"close={int(close_box['width']) if close_box else 0}x{int(close_box['height']) if close_box else 0}px, "
+                        f"cta='{cta_label}' -> {cta_href}, "
+                        f"panel={geometry['width']}px inside {geometry['vw']}x{geometry['vh']}"
+                    )
+                    total_passed += 1
+                else:
+                    print(
+                        f"[FAIL] Announcement popup integrity: close_visible={close_visible} "
+                        f"close_size_ok={close_size_ok} geometry_ok={geometry_ok} "
+                        f"label_honest={label_honest} (cta='{cta_label}' -> {cta_href})"
+                    )
+                    total_failed += 1
+
+                if popup_style == "modal":
+                    page.keyboard.press("Escape")
+                    page.wait_for_timeout(500)
+                    if page.locator('[data-testid="announcement-popup"]').count() == 0:
+                        print("[PASS] Announcement popup: Escape dismisses the blocking dialog")
+                        total_passed += 1
+                    else:
+                        print("[FAIL] Announcement popup: Escape did not dismiss the blocking dialog")
+                        total_failed += 1
+        except Exception as e:
+            print(f"[FAIL] Announcement popup check: {e}")
+            total_failed += 1
+
+        # ----------------------------------------------------
         # 3. SEO & SSR Meta Tags Check
         # ----------------------------------------------------
         print("\n--- 3. SEO & Meta Tags Verification ---")
