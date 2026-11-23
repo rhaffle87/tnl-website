@@ -172,7 +172,7 @@ async def _crossref(params: dict) -> dict:
     return res.json().get("message", {})
 
 
-@router.get("/admin/publications/search", dependencies=[Depends(require("content:write"))])
+@router.get("/admin/publications/search", dependencies=[Depends(require("content:create"))])
 async def search_publications(q: str = "", author: str = "", year_from: int | None = None,
                               rows: int = 20):
     """Search Crossref by title text and/or author name. Results are marked when their DOI
@@ -207,7 +207,7 @@ async def search_publications(q: str = "", author: str = "", year_from: int | No
     return jsonable({"items": items, "total": message.get("total-results", len(items))})
 
 
-@router.post("/admin/publications/import", dependencies=[Depends(require("content:write"))])
+@router.post("/admin/publications/import", dependencies=[Depends(require("content:create"))])
 async def import_publications(payload: ImportRequest, request: Request):
     """Import the chosen DOIs as drafts. Each DOI is re-fetched from Crossref directly so
     the stored record always matches the registered metadata, not a stale search hit."""
@@ -268,7 +268,7 @@ async def import_publications(payload: ImportRequest, request: Request):
     })
 
 
-@router.post("/admin/publications/relink-authors", dependencies=[Depends(require("content:write"))])
+@router.post("/admin/publications/relink-authors", dependencies=[Depends(require("content:create"))])
 async def relink_publication_authors(request: Request):
     """Re-scan all publications and automatically match authors with internal lab members."""
     all_members = await db.members.find({}, {"id": 1, "name": 1}).to_list(1000)

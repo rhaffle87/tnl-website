@@ -54,9 +54,9 @@ export function Panel({ children, className = "" }: { children: ReactNode; class
 }
 
 const SEVERITY: Record<string, { Icon: typeof Info; color: string; label: string }> = {
-    error: { Icon: AlertTriangle, color: "#b91c1c", label: "Must fix before publishing" },
-    warning: { Icon: TriangleAlert, color: "#a16207", label: "Worth checking" },
-    info: { Icon: Info, color: "#43594A", label: "Suggestion" },
+    error: { Icon: AlertTriangle, color: "var(--tnl-danger)", label: "Must fix before publishing" },
+    warning: { Icon: TriangleAlert, color: "var(--tnl-warning)", label: "Worth checking" },
+    info: { Icon: Info, color: "var(--tnl-info)", label: "Suggestion" },
 };
 
 export function IssueList({ issues, testId }: { issues: QualityIssue[]; testId?: string }) {
@@ -112,7 +112,7 @@ export function ConfirmButton({
                 className="rounded-[6px] border px-3 py-1.5 text-xs font-medium transition-colors"
                 style={
                     variant === "destructive"
-                        ? { borderColor: "#fecaca", color: "#b91c1c" }
+                        ? { borderColor: "var(--tnl-danger-border)", color: "var(--tnl-danger)" }
                         : { borderColor: "var(--tnl-border)" }
                 }
                 data-testid={testId}
@@ -122,8 +122,8 @@ export function ConfirmButton({
         );
     }
     return (
-        <span className="inline-flex flex-wrap items-center gap-2 rounded-[6px] border px-3 py-1.5" style={{ borderColor: "#fecaca" }}>
-            <span className="text-xs" style={{ color: "#b91c1c" }}>
+        <span className="inline-flex flex-wrap items-center gap-2 rounded-[6px] border px-3 py-1.5" style={{ borderColor: "var(--tnl-danger-border)" }}>
+            <span className="text-xs" style={{ color: "var(--tnl-danger)" }}>
                 {question}
             </span>
             <button

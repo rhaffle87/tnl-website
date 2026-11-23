@@ -5,18 +5,24 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
     ArrowUpRight,
-    BookOpen,
     CalendarCheck,
+    CalendarDays,
     Camera,
     ChevronDown,
+    ClipboardCheck,
+    ClipboardList,
     Cpu,
     Download,
     FileStack,
-    FlaskConical,
+    FolderKanban,
+    GraduationCap,
+    Handshake,
     Image,
     Inbox,
     KeyRound,
     LayoutDashboard,
+    Library,
+    LifeBuoy,
     LogOut,
     Menu,
     Newspaper,
@@ -24,7 +30,7 @@ import {
     ScrollText,
     Search,
     Settings,
-    ShieldCheck,
+    UserCog,
     Users,
     X,
 } from "lucide-react";
@@ -70,8 +76,8 @@ export const NAV_GROUPS: NavGroup[] = [
             { to: "/admin/pages", label: "Pages", icon: FileStack, roles: ["super_admin", "editor"] },
             { to: "/admin/content/posts", label: "News", icon: Newspaper, roles: ["super_admin", "editor", "contributor", "viewer"] },
             { to: "/admin/content/members", label: "Members", icon: Users, roles: ["super_admin", "editor", "contributor", "viewer"] },
-            { to: "/admin/content/partners", label: "Partners", icon: ShieldCheck, roles: ["super_admin", "editor", "contributor", "viewer"] },
-            { to: "/admin/review", label: "Needs review", icon: ShieldCheck, roles: ["super_admin", "editor", "contributor", "viewer"] },
+            { to: "/admin/content/partners", label: "Partners", icon: Handshake, roles: ["super_admin", "editor", "contributor", "viewer"] },
+            { to: "/admin/review", label: "Needs review", icon: ClipboardCheck, roles: ["super_admin", "editor", "contributor", "viewer"] },
         ],
     },
     {
@@ -79,18 +85,18 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Academic & Events",
         items: [
             { to: "/admin/content/events", label: "Events & Programs", icon: CalendarCheck, roles: ["super_admin", "editor", "contributor", "viewer"] },
-            { to: "/admin/content/practicum", label: "Practicum", icon: BookOpen, roles: ["super_admin", "editor", "contributor", "viewer"] },
-            { to: "/admin/content/projects", label: "Projects", icon: FlaskConical, roles: ["super_admin", "editor", "contributor", "viewer"] },
-            { to: "/admin/content/publications", label: "Publications", icon: BookOpen, roles: ["super_admin", "editor", "contributor", "viewer"] },
+            { to: "/admin/content/practicum", label: "Practicum", icon: GraduationCap, roles: ["super_admin", "editor", "contributor", "viewer"] },
+            { to: "/admin/content/projects", label: "Projects", icon: FolderKanban, roles: ["super_admin", "editor", "contributor", "viewer"] },
+            { to: "/admin/content/publications", label: "Publications", icon: Library, roles: ["super_admin", "editor", "contributor", "viewer"] },
             { to: "/admin/publications/import", label: "Import papers", icon: Download, roles: ["super_admin", "editor", "contributor"] },
-            { to: "/admin/content/activities", label: "Activities", icon: FlaskConical, roles: ["super_admin", "editor", "contributor", "viewer"] },
+            { to: "/admin/content/activities", label: "Activities", icon: CalendarDays, roles: ["super_admin", "editor", "contributor", "viewer"] },
         ],
     },
     {
         id: "operations",
         label: "Operations",
         items: [
-            { to: "/admin/registrations", label: "Registrations", icon: CalendarCheck, roles: ["super_admin", "editor", "registrar", "viewer"] },
+            { to: "/admin/registrations", label: "Registrations", icon: ClipboardList, roles: ["super_admin", "editor", "registrar"] },
             { to: "/admin/inbox", label: "Contact inbox", icon: Inbox, roles: ["super_admin", "editor", "registrar"] },
         ],
     },
@@ -109,10 +115,10 @@ export const NAV_GROUPS: NavGroup[] = [
         items: [
             { to: "/admin/theme", label: "Colours & theme", icon: Palette, roles: ["super_admin", "editor"] },
             { to: "/admin/settings", label: "Site settings", icon: Settings, roles: ["super_admin", "editor"] },
-            { to: "/admin/users", label: "People & access", icon: Users, roles: ["super_admin"] },
+            { to: "/admin/users", label: "People & access", icon: UserCog, roles: ["super_admin"] },
             { to: "/admin/api-keys", label: "API keys", icon: KeyRound, roles: ["super_admin"] },
             { to: "/admin/audit", label: "Activity log", icon: ScrollText, roles: ["super_admin", "editor", "registrar", "viewer"] },
-            { to: "/admin/guide", label: "Maintainer guide", icon: BookOpen, roles: ["super_admin", "editor", "contributor", "registrar", "viewer"] },
+            { to: "/admin/guide", label: "Maintainer guide", icon: LifeBuoy, roles: ["super_admin", "editor", "contributor", "registrar", "viewer"] },
         ],
     },
 ];
@@ -139,6 +145,21 @@ export default function AdminLayout() {
 
     const mainScrollRef = useRef<HTMLElement>(null);
     const sidebarScrollRef = useRef<HTMLElement>(null);
+
+    // Mobile drawer a11y: focus the panel on open, hand focus back to the toggle on close.
+    // Without this, keyboard and screen-reader users are stranded behind the overlay.
+    const drawerRef = useRef<HTMLDivElement>(null);
+    const menuToggleRef = useRef<HTMLButtonElement>(null);
+    const drawerWasOpen = useRef(false);
+
+    useEffect(() => {
+        if (mobileOpen) {
+            drawerRef.current?.focus();
+        } else if (drawerWasOpen.current) {
+            menuToggleRef.current?.focus();
+        }
+        drawerWasOpen.current = mobileOpen;
+    }, [mobileOpen]);
 
     // Skip the guard while the Google callback is still exchanging its session id.
     const isAuthCallback = window.location.hash?.includes("session_id=");
@@ -427,7 +448,7 @@ export default function AdminLayout() {
 
             {/* Mobile Responsive Off-Canvas Drawer */}
             {mobileOpen && (
-                <div className="fixed inset-0 z-50 flex lg:hidden" role="dialog" aria-modal="true" data-testid="admin-mobile-drawer">
+                <div className="fixed inset-0 z-50 flex lg:hidden" role="dialog" aria-modal="true" aria-label="Admin navigation" data-testid="admin-mobile-drawer">
                     {/* Dark Backdrop */}
                     <div
                         className="fixed inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity"
@@ -436,7 +457,11 @@ export default function AdminLayout() {
                         data-testid="admin-mobile-backdrop"
                     />
                     {/* Drawer Content */}
-                    <div className="relative z-10 w-72 max-w-[85vw] h-full shadow-2xl flex flex-col">
+                    <div
+                        ref={drawerRef}
+                        tabIndex={-1}
+                        className="relative z-10 w-72 max-w-[85vw] h-full shadow-2xl flex flex-col focus:outline-none"
+                    >
                         {renderSidebarContent(true)}
                     </div>
                 </div>
@@ -451,6 +476,7 @@ export default function AdminLayout() {
                 >
                     <div className="flex items-center gap-3">
                         <button
+                            ref={menuToggleRef}
                             type="button"
                             onClick={() => setMobileOpen(true)}
                             className="rounded-md p-1.5 text-[var(--tnl-body)] hover:bg-[var(--tnl-surface)] hover:text-[var(--tnl-heading)] lg:hidden border border-[var(--tnl-border)]"

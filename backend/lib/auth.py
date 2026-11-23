@@ -162,6 +162,10 @@ def require(action: str):
             raise HTTPException(status_code=403, detail="Your role does not allow this action.")
         request.state.user = user
         return user
+
+    # Expose the required action on the dependency so route guards can be audited
+    # (see tests/test_permission_matrix.py: no permission may be granted to zero roles).
+    dep.permission = action
     return dep
 
 

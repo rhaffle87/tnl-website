@@ -216,4 +216,72 @@ describe("AdminLayout App Shell & Categorized Dual-Scroll Navigation", () => {
       expect(screen.queryByTestId("admin-mobile-drawer")).not.toBeInTheDocument();
     });
   });
+
+  it("gives every navigation item its own icon (no ambiguous glyph reuse)", () => {
+    const items = NAV_GROUPS.flatMap((group) => group.items);
+    const seen = new Map<unknown, string>();
+    const clashes: string[] = [];
+    for (const item of items) {
+      const previous = seen.get(item.icon);
+      if (previous) clashes.push(`${previous} / ${item.label}`);
+      else seen.set(item.icon, item.label);
+    }
+    expect(clashes).toEqual([]);
+  });
+
+  it("does not advertise Registrations to read-only viewers", () => {
+    const registrations = NAV_GROUPS.flatMap((group) => group.items).find(
+      (item) => item.to === "/admin/registrations"
+    );
+    expect(registrations?.roles).toEqual(["super_admin", "editor", "registrar"]);
+    expect(registrations?.roles ?? []).not.toContain("viewer");
+  });
+
+  it("hides Registrations from a viewer account but keeps the audit log", () => {
+    mockUser = {
+      id: "u-viewer",
+      name: "Read Only",
+      email: "viewer@its.ac.id",
+      role: "viewer",
+      divisions: [],
+      active: true,
+      totp_enabled: false,
+      created_at: new Date().toISOString(),
+    };
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/*" element={<AdminLayout />}>
+          <Route path="" element={<div>Dashboard</div>} />
+        </Route>
+      </Routes>,
+      { route: "/admin" }
+    );
+
+    expect(screen.queryByTestId("admin-nav-registrations")).not.toBeInTheDocument();
+    expect(screen.getByTestId("admin-nav-activity-log")).toBeInTheDocument();
+  });
+
+  it("labels the mobile drawer and moves focus into it, restoring focus on close", async () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/*" element={<AdminLayout />}>
+          <Route path="" element={<div>Dashboard</div>} />
+        </Route>
+      </Routes>,
+      { route: "/admin" }
+    );
+
+    const toggle = screen.getByTestId("admin-mobile-menu-toggle");
+    fireEvent.click(toggle);
+
+    const drawer = await screen.findByTestId("admin-mobile-drawer");
+    expect(drawer).toHaveAttribute("aria-label", "Admin navigation");
+    expect(drawer).toHaveAttribute("aria-modal", "true");
+    await waitFor(() => expect(drawer.contains(document.activeElement)).toBe(true));
+
+    fireEvent.click(screen.getByTestId("admin-mobile-drawer-close"));
+    await waitFor(() => expect(document.activeElement).toBe(toggle));
+  });
+
 });
