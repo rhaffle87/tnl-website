@@ -22,6 +22,7 @@ import {
     GraduationCap,
 } from "lucide-react";
 import type { FormField } from "@/lib/types";
+import { AdminSelect, AdminSwitch } from "@/components/admin/controls";
 
 export interface FormFieldsBuilderProps {
     label?: string;
@@ -253,6 +254,9 @@ export function FormFieldsBuilder({
                                         {f.required && <span className="text-rose-500 ml-1">*</span>}
                                     </label>
 
+                                    {/* Native controls on purpose: this pane previews what the
+                                        public registration form renders, so it must not adopt the
+                                        admin house style (AdminSelect / AdminSwitch). */}
                                     {f.type === "textarea" ? (
                                         <textarea rows={3} disabled placeholder="Jawaban panjang Anda..." className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} />
                                     ) : f.type === "select" ? (
@@ -469,11 +473,10 @@ export function FormFieldsBuilder({
                                                     <label className="block text-xs font-medium">
                                                         Tipe Input Pendaftar
                                                     </label>
-                                                    <select
+                                                    <AdminSelect
                                                         value={field.type}
                                                         onChange={(e) => updateField(idx, { type: e.target.value })}
-                                                        className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
-                                                        style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
+                                                        className="text-xs"
                                                         data-testid={`${testId}-type-${idx}`}
                                                     >
                                                         {FIELD_TYPES.map((t) => (
@@ -481,20 +484,17 @@ export function FormFieldsBuilder({
                                                                 {t.label}
                                                             </option>
                                                         ))}
-                                                    </select>
+                                                    </AdminSelect>
                                                 </div>
 
                                                 <div className="pt-4">
-                                                    <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={Boolean(field.required)}
-                                                            onChange={(e) => updateField(idx, { required: e.target.checked })}
-                                                            className="rounded border"
-                                                            data-testid={`${testId}-required-${idx}`}
-                                                        />
-                                                        <span>Wajib Diisi (Required)</span>
-                                                    </label>
+                                                    <AdminSwitch
+                                                        label="Wajib Diisi (Required)"
+                                                        description="Pendaftar tidak bisa mengirim formulir tanpa mengisi pertanyaan ini."
+                                                        checked={Boolean(field.required)}
+                                                        onCheckedChange={(next) => updateField(idx, { required: next })}
+                                                        testId={`${testId}-required-${idx}`}
+                                                    />
                                                 </div>
                                             </div>
 

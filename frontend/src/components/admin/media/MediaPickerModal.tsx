@@ -23,6 +23,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { AdminSelect, AdminSwitch } from "@/components/admin/controls";
 
 export interface MediaPickerModalProps {
     open: boolean;
@@ -407,11 +408,12 @@ export function MediaPickerModal({
                                 </div>
 
                                 {/* Folder Filter */}
-                                <select
+                                <AdminSelect
                                     value={folder}
                                     onChange={(e) => setFolder(e.target.value)}
                                     aria-label="Filter by folder"
-                                    className="tnl-field h-9 text-sm w-40"
+                                    className="text-sm"
+                                    wrapperClassName="w-40 shrink-0"
                                     data-testid="media-picker-folder"
                                 >
                                     {FOLDERS.map((f) => (
@@ -419,20 +421,21 @@ export function MediaPickerModal({
                                             {f.label}
                                         </option>
                                     ))}
-                                </select>
+                                </AdminSelect>
 
                                 {/* Kind Filter */}
-                                <select
+                                <AdminSelect
                                     value={kind}
                                     onChange={(e) => setKind(e.target.value)}
                                     aria-label="Filter by kind"
-                                    className="tnl-field h-9 text-sm w-32"
+                                    className="text-sm"
+                                    wrapperClassName="w-32 shrink-0"
                                     data-testid="media-picker-kind"
                                 >
                                     <option value="all">All kinds</option>
                                     <option value="image">Images</option>
                                     <option value="document">Docs</option>
-                                </select>
+                                </AdminSelect>
 
                                 {/* Refresh Button */}
                                 <button
@@ -693,10 +696,10 @@ export function MediaPickerModal({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-xs font-semibold block mb-1">Destination Folder</label>
-                                <select
+                                <AdminSelect
                                     value={uploadFolder}
                                     onChange={(e) => setUploadFolder(e.target.value)}
-                                    className="tnl-field text-xs h-9"
+                                    className="text-xs"
                                     data-testid="media-picker-upload-folder"
                                 >
                                     {FOLDERS.filter((f) => f.value !== "all").map((f) => (
@@ -704,7 +707,7 @@ export function MediaPickerModal({
                                             {f.label}
                                         </option>
                                     ))}
-                                </select>
+                                </AdminSelect>
                             </div>
 
                             <div>
@@ -720,19 +723,14 @@ export function MediaPickerModal({
                             </div>
                         </div>
 
-                        {/* Optimization checkbox */}
-                        <label className="flex items-center gap-2.5 text-xs cursor-pointer select-none">
-                            <input
-                                type="checkbox"
-                                checked={optimizeWebP}
-                                onChange={(e) => setOptimizeWebP(e.target.checked)}
-                                className="h-4 w-4 rounded border-gray-300 text-[var(--tnl-green)] focus:ring-[var(--tnl-green)]"
-                                data-testid="media-picker-optimize-check"
-                            />
-                            <span>
-                                <strong>Auto-optimize to WebP (recommended):</strong> Resizes camera photos to 1920px max and converts to light, crisp WebP.
-                            </span>
-                        </label>
+                        {/* Optimization toggle — house switch, not a raw checkbox */}
+                        <AdminSwitch
+                            label="Auto-optimize to WebP (recommended)"
+                            description="Resizes camera photos to 1920px max and converts to light, crisp WebP."
+                            checked={optimizeWebP}
+                            onCheckedChange={setOptimizeWebP}
+                            testId="media-picker-optimize-check"
+                        />
 
                         {/* Queue list */}
                         {uploadQueue.length > 0 && (

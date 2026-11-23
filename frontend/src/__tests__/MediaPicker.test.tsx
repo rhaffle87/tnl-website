@@ -210,10 +210,28 @@ describe("MediaPickerModal Component", () => {
             expect.objectContaining({ id: "media-1" }),
         ]);
 
+        // Design System v2: the library filters are house selects (h-9 +
+        // pinned chevron) — not the 46px `tnl-field` browser arrow.
+        const folderSelect = screen.getByTestId("media-picker-folder") as HTMLSelectElement;
+        expect(folderSelect.tagName).toBe("SELECT");
+        expect(folderSelect.className).toContain("appearance-none");
+        expect(folderSelect.className).toContain("h-9");
+        expect(folderSelect.parentElement?.className).toContain("w-40");
+        expect(folderSelect.parentElement?.querySelector("svg")).not.toBeNull();
+        expect((screen.getByTestId("media-picker-kind") as HTMLSelectElement).className).toContain("appearance-none");
+
         // Switch to Upload tab
         const uploadTab = screen.getByTestId("media-picker-tab-upload");
         await user.click(uploadTab);
         expect(screen.getByTestId("media-picker-dropzone")).toBeInTheDocument();
         expect(screen.getByTestId("media-picker-optimize-check")).toBeInTheDocument();
+
+        // …and the Auto-WebP boolean is a switch, not a raw checkbox.
+        const optimize = screen.getByTestId("media-picker-optimize-check");
+        expect(optimize).toHaveAttribute("role", "switch");
+        expect(optimize).toHaveAttribute("aria-checked", "true");
+        await user.click(optimize);
+        expect(optimize).toHaveAttribute("aria-checked", "false");
+        expect((screen.getByTestId("media-picker-upload-folder") as HTMLSelectElement).className).toContain("appearance-none");
     });
 });

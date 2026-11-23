@@ -14,7 +14,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, Save } from "lucide-react";
 import { apiGet, apiPost, apiPut } from "@/lib/api";
-import { AdminSwitch, IssueList, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
+import { AdminSelect, AdminSwitch, IssueList, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
 import { RichTextField } from "@/components/admin/editor";
@@ -268,10 +268,12 @@ function renderControl(field: FieldSpec, form: Record<string, unknown>, setField
             );
 
         case "select":
+            // House select: h-9, pinned chevron — never the 46px browser arrow
+            // that `tnl-field` leaves behind in the editor's dense columns.
             return (
-                <select
+                <AdminSelect
                     id={id}
-                    className="tnl-field font-sans text-sm"
+                    className="font-sans text-sm"
                     value={String(value ?? "")}
                     onChange={(e) => setField(field.key, e.target.value)}
                     data-testid={testId}
@@ -281,7 +283,7 @@ function renderControl(field: FieldSpec, form: Record<string, unknown>, setField
                             {opt}
                         </option>
                     ))}
-                </select>
+                </AdminSelect>
             );
 
         case "checkbox":

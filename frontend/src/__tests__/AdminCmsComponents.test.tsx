@@ -61,6 +61,24 @@ vi.mock("@/lib/api", async () => {
           counts: { pending: 0, accepted: 0, attended: 1 },
         });
       }
+      if (url.includes("/admin/content/members")) {
+        return Promise.resolve({
+          items: [
+            {
+              id: "m-1",
+              name: "Dr. Ir. Achmad Affandi, DEA.",
+              role: "lecturer",
+              position: "head",
+              division: "BPH",
+              status: "active",
+              is_head: true,
+              published: true,
+              show_nim: false,
+            },
+          ],
+          total: 1,
+        });
+      }
       if (url.includes("/admin/content/events")) {
         return Promise.resolve({
           items: [{ id: "ev-1", title: "Cisco Packet Tracer Training", status: "published" }],
@@ -313,5 +331,43 @@ describe("Admin CMS Components", () => {
     expect(await screen.findByTestId("content-add-button")).toBeInTheDocument();
 
     confirmSpy.mockRestore();
+  });
+
+  /* ---------------------------------------------------------------- *
+   * Design System v2 — house select & switch inside the editor      *
+   * ---------------------------------------------------------------- */
+
+  it("CMS select and boolean fields render the shared TNL Studio controls", async () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/content/:resource/:id" element={<ContentEditor />} />
+      </Routes>,
+      { route: "/admin/content/members/m-1" }
+    );
+
+    // Selects: house style (h-9, appearance-none) with the pinned chevron —
+    // never the 46px `tnl-field` browser arrow that broke the toolbar rows.
+    const position = (await screen.findByTestId("content-field-position")) as HTMLSelectElement;
+    expect(position.tagName).toBe("SELECT");
+    expect(position.className).toContain("appearance-none");
+    expect(position.className).toContain("h-9");
+    expect(position.parentElement?.className).toContain("relative");
+    expect(position.parentElement?.querySelector("svg")).not.toBeNull();
+    expect((screen.getByTestId("content-field-division") as HTMLSelectElement).className).toContain("appearance-none");
+
+    // Booleans: a real switch (role + aria-checked), not a raw Yes/No checkbox.
+    const head = screen.getByTestId("content-field-is_head");
+    expect(head).toHaveAttribute("role", "switch");
+    expect(head).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(head);
+    expect(head).toHaveAttribute("aria-checked", "false");
+
+    expect(screen.getByTestId("content-field-published")).toHaveAttribute("role", "switch");
+    expect(screen.getByTestId("content-field-show_nim")).toHaveAttribute("aria-checked", "false");
+
+    // The inspector sidebar holds zero raw checkboxes / unstyled selects.
+    const inspector = screen.getByTestId("content-inspector");
+    expect(inspector.querySelectorAll('input[type="checkbox"]').length).toBe(0);
+    expect(Array.from(inspector.querySelectorAll("select")).every((el) => el.className.includes("appearance-none"))).toBe(true);
   });
 });

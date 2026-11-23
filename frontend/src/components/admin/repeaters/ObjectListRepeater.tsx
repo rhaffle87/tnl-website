@@ -12,6 +12,7 @@ import {
     FileText,
 } from "lucide-react";
 import { InlineMediaField } from "@/components/admin/media";
+import { AdminSelect, AdminSwitch } from "@/components/admin/controls";
 import { TagChipsField } from "./TagChipsField";
 
 export interface RepeaterFieldSpec {
@@ -369,11 +370,10 @@ export function ObjectListRepeater({
                                                                 data-testid={`${testId}-item-${itemIdx}-${f.key}`}
                                                             />
                                                         ) : f.type === "select" ? (
-                                                            <select
+                                                            <AdminSelect
                                                                 value={String(val ?? "")}
                                                                 onChange={(e) => updateItemField(itemIdx, f.key, e.target.value)}
-                                                                className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
-                                                                style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
+                                                                className="text-xs"
                                                                 data-testid={`${testId}-item-${itemIdx}-${f.key}`}
                                                             >
                                                                 {(f.options || []).map((opt) => (
@@ -381,18 +381,14 @@ export function ObjectListRepeater({
                                                                         {opt}
                                                                     </option>
                                                                 ))}
-                                                            </select>
+                                                            </AdminSelect>
                                                         ) : f.type === "checkbox" ? (
-                                                            <label className="flex items-center gap-2 text-xs py-1 cursor-pointer">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={Boolean(val)}
-                                                                    onChange={(e) => updateItemField(itemIdx, f.key, e.target.checked)}
-                                                                    className="rounded border"
-                                                                    data-testid={`${testId}-item-${itemIdx}-${f.key}`}
-                                                                />
-                                                                <span>{f.placeholder || f.label}</span>
-                                                            </label>
+                                                            <AdminSwitch
+                                                                label={f.placeholder || f.label}
+                                                                checked={Boolean(val)}
+                                                                onCheckedChange={(next) => updateItemField(itemIdx, f.key, next)}
+                                                                testId={`${testId}-item-${itemIdx}-${f.key}`}
+                                                            />
                                                         ) : f.type === "media" ? (
                                                             <InlineMediaField
                                                                 value={String(val ?? "")}
