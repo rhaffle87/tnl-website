@@ -179,6 +179,9 @@
     --tnl-danger-border: #fecaca;
     --tnl-warning: #a16207;
     --tnl-info: #43594A;
+    /* Secondary surfaces (inputs, inset tiles). Theme-aware, never hardcoded white. */
+    --tnl-surface-2: var(--gsm-bg-elevated);
+    --tnl-surface-subtle: var(--gsm-bg-recessed);
     --tnl-radius-card: 16px;
     --tnl-radius-button: 10px;
     --tnl-section-spacing: 64px;
@@ -258,6 +261,9 @@
     --tnl-danger-border: rgba(248, 113, 113, 0.45);
     --tnl-warning: #FBBF24;
     --tnl-info: #9EC4AE;
+    /* Secondary surfaces (inputs, inset tiles). Theme-aware, never hardcoded white. */
+    --tnl-surface-2: var(--gsm-bg-elevated);
+    --tnl-surface-subtle: var(--gsm-bg-recessed);
 
     --background: var(--gsm-bg-page);
     --foreground: var(--gsm-text-primary);

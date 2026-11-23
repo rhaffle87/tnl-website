@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { apiGet } from "@/lib/api";
-import { AdminHeader, IssueList, Panel } from "@/pages/admin/AdminUI";
+import { AdminPageHeader, AdminSectionHeader, IssueList, Panel } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import type { AuditEntry, DashboardStats, ListResponse, ReviewQueueItem } from "@/lib/types";
 
@@ -25,9 +25,9 @@ export default function AdminDashboard() {
 
     return (
         <div data-testid="admin-dashboard">
-            <AdminHeader
+            <AdminPageHeader
                 title="Dashboard"
-                help="A quick look at the website. Click any number to go straight to that part of the site."
+                description="A quick look at the website. Click any number to go straight to that part of the site."
                 testId="dashboard-header"
             />
             {isLoading ? (
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
 
             <div className="mt-8 grid gap-4 lg:grid-cols-2">
                 <Panel>
-                    <h2 className="tnl-h5 text-[18px]">Common jobs</h2>
+                    <AdminSectionHeader title="Common jobs" />
                     <ul className="mt-3 space-y-2 text-sm">
                         {[
                             { to: "/admin/content/posts", label: "Write a news article" },
@@ -82,7 +82,7 @@ export default function AdminDashboard() {
                     </ul>
                 </Panel>
                 <Panel>
-                    <h2 className="tnl-h5 text-[18px]">Before you publish</h2>
+                    <AdminSectionHeader title="Before you publish" />
                     <p className="mt-2 text-sm text-[var(--tnl-body)]">
                         TNL Studio checks every item before it goes live: placeholder text, empty links, images without a
                         description, phone numbers that are not in +62 format, social links that do not match their platform,
@@ -108,9 +108,9 @@ export function ReviewQueuePage() {
 
     return (
         <div data-testid="review-queue-page">
-            <AdminHeader
+            <AdminPageHeader
                 title="Needs review"
-                help="These items cannot be published until the problems below are fixed. Open the item, correct it, then publish."
+                description="These items cannot be published until the problems below are fixed. Open the item, correct it, then publish."
                 testId="review-queue-header"
             />
             {isLoading ? (
@@ -159,9 +159,9 @@ export function AuditLogPage() {
 
     return (
         <div data-testid="audit-log-page">
-            <AdminHeader
+            <AdminPageHeader
                 title="Activity log"
-                help="Every change made in TNL Studio, with who made it and when. Useful when handing the site to the next batch."
+                description="Every change made in TNL Studio, with who made it and when. Useful when handing the site to the next batch."
                 actions={
                     <a href="/api/admin/audit/export" className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="audit-export-button">
                         Export to spreadsheet
@@ -313,17 +313,15 @@ const GUIDE = [
 export function MaintainerGuidePage() {
     return (
         <div data-testid="maintainer-guide-page">
-            <AdminHeader
+            <AdminPageHeader
                 title="Maintainer guide"
-                help="Everything an incoming assistant needs, in plain language. No coding knowledge required."
+                description="Everything an incoming assistant needs, in plain language. No coding knowledge required."
                 testId="guide-header"
             />
             <div className="grid gap-4 lg:grid-cols-2">
                 {GUIDE.map((section, i) => (
                     <Panel key={section.title}>
-                        <h2 className="tnl-h5 text-[18px]" data-testid={`guide-section-${i}`}>
-                            {section.title}
-                        </h2>
+                        <AdminSectionHeader title={section.title} testId={`guide-section-${i}`} />
                         <ol className="mt-3 space-y-2 text-sm text-[var(--tnl-body)]">
                             {section.steps.map((step, j) => (
                                 <li key={j} className="flex gap-3">

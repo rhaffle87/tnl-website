@@ -1,28 +1,20 @@
-// Generic content manager: one screen serves every content type. Fields are
-// declared per resource so admins see plain-language labels, not raw JSON.
+// Generic content manager — LIST VIEW ONLY. One screen serves every content
+// type. Fields are declared per resource so admins see plain-language labels,
+// not raw JSON. The dedicated create/edit form lives in ContentEditor.tsx and
+// is mounted on its own routes (/new and /:id).
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Download, Link2, Plus, Save, X } from "lucide-react";
+import { Download, Link2, Plus, Search } from "lucide-react";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
-import { AdminHeader, ConfirmButton, IssueList, Panel, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
+import { AdminHeader, ConfirmButton, Panel, StatusPill, adminError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
-import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
-import { RichTextField } from "@/components/admin/editor";
-import {
-    TagChipsField,
-    KeyValueMapEditor,
-    ObjectListRepeater,
-    FormFieldsBuilder,
-    MEMBER_SOCIAL_PRESETS,
-    type RepeaterFieldSpec,
-    type PresetKeyConfig,
-} from "@/components/admin/repeaters";
-import type { FormField, ListResponse, Member, QualityIssue } from "@/lib/types";
+import { MEMBER_SOCIAL_PRESETS, type RepeaterFieldSpec, type PresetKeyConfig } from "@/components/admin/repeaters";
+import type { ListResponse, QualityIssue } from "@/lib/types";
 
-type FieldType =
+export type FieldType =
     | "text"
     | "textarea"
     | "html"
@@ -39,7 +31,7 @@ type FieldType =
     | "media"
     | "media_list";
 
-interface FieldSpec {
+export interface FieldSpec {
     key: string;
     label: string;
     type: FieldType;
@@ -58,7 +50,7 @@ interface FieldSpec {
     addButtonLabel?: string;
 }
 
-interface ResourceSpec {
+export interface ResourceSpec {
     label: string;
     help: string;
     titleField: string;
@@ -82,7 +74,7 @@ const EVENT_MODULE_FIELDS: RepeaterFieldSpec[] = [
 const EVENT_CONTACT_FIELDS: RepeaterFieldSpec[] = [
     { key: "name", label: "Name / Division", type: "text", placeholder: "e.g. Training Division, TNL" },
     { key: "email", label: "Email", type: "text", placeholder: "e.g. telconnetlab@gmail.com", width: "half" },
-    { key: "phone", label: "Phone / WhatsApp", type: "text", placeholder: "e.g. +6281234567890", width: "half" },
+    { key: "phone", label: "Phone / WhatsApp", type: "text", placeholder: "e.g. +628****7890", width: "half" },
 ];
 
 const MEDIA_ITEM_FIELDS: RepeaterFieldSpec[] = [
@@ -249,7 +241,7 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             { key: "doi", label: "DOI", type: "text" },
             { key: "url", label: "Link", type: "text" },
             { key: "abstract", label: "Abstract", type: "textarea" },
-            { key: "tags", label: "Tags", type: "tags", help: "Type and press Enter or comma." },
+            { key: "tags", label: "Tags", type: "tags", help: "Type with commas." },
             { key: "status", label: "Status", type: "select", options: ["draft", "published"] },
         ],
     },
@@ -337,9 +329,9 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
     },
 };
 
-type Row = Record<string, unknown> & { id: string; issues?: QualityIssue[]; needs_review?: boolean };
+export type Row = Record<string, unknown> & { id: string; issues?: QualityIssue[]; needs_review?: boolean };
 
-function emptyDraft(spec: ResourceSpec): Record<string, unknown> {
+export function emptyDraft(spec: ResourceSpec): Record<string, unknown> {
     const draft: Record<string, unknown> = {};
     for (const field of spec.fields) {
         if (field.type === "checkbox") draft[field.key] = field.key === "published";
@@ -356,7 +348,7 @@ function emptyDraft(spec: ResourceSpec): Record<string, unknown> {
     return draft;
 }
 
-function toForm(row: Row, spec: ResourceSpec): Record<string, unknown> {
+export function toForm(row: Row, spec: ResourceSpec): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const field of spec.fields) {
         const value = row[field.key];
@@ -383,7 +375,7 @@ function toForm(row: Row, spec: ResourceSpec): Record<string, unknown> {
     return out;
 }
 
-function toPayload(form: Record<string, unknown>, spec: ResourceSpec): Record<string, unknown> {
+export function toPayload(form: Record<string, unknown>, spec: ResourceSpec): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const field of spec.fields) {
         const value = form[field.key];
@@ -441,22 +433,19 @@ function toPayload(form: Record<string, unknown>, spec: ResourceSpec): Record<st
     return out;
 }
 
+// Collections that carry a cover/photo for the 36×36 thumbnail column.
+const PHOTO_KEYS = ["photo_url", "cover_url", "cover_image", "logo_url"];
+
+type StatusTab = "all" | "published" | "draft";
+
 export default function ContentManager() {
     const { resource = "posts" } = useParams<{ resource: string }>();
     const spec = RESOURCE_SPECS[resource];
     const qc = useQueryClient();
-    const [params, setParams] = useSearchParams();
+    const [params] = useSearchParams();
     const [search, setSearch] = useState("");
-    const [editing, setEditing] = useState<Row | "new" | null>(null);
-    const [form, setForm] = useState<Record<string, unknown>>({});
-    const [issues, setIssues] = useState<QualityIssue[]>([]);
+    const [tab, setTab] = useState<StatusTab>("all");
     const [selected, setSelected] = useState<string[]>([]);
-
-    const { data: membersList } = useQuery({
-        queryKey: ["admin", "members-lookup"],
-        queryFn: () => apiGet<Member[]>("/public/members"),
-        retry: false,
-    });
 
     const relinkMutation = useMutation({
         mutationFn: () => apiPost<{ ok: boolean; updated: number; total_with_links: number; total: number }>("/admin/publications/relink-authors"),
@@ -475,18 +464,6 @@ export default function ContentManager() {
     });
 
     const rows = useMemo(() => data?.items ?? [], [data]);
-    const editId = params.get("edit");
-
-    useEffect(() => {
-        if (editId && rows.length) {
-            const row = rows.find((r) => r.id === editId);
-            if (row && spec) {
-                setEditing(row);
-                setForm(toForm(row, spec));
-                setIssues((row.issues as QualityIssue[]) ?? []);
-            }
-        }
-    }, [editId, rows, spec]);
 
     const invalidate = () => {
         void qc.invalidateQueries({ queryKey: ["admin", "content", resource] });
@@ -494,25 +471,6 @@ export default function ContentManager() {
         void qc.invalidateQueries({ queryKey: ["admin", "review-queue"] });
         void qc.invalidateQueries({ queryKey: ["public"] });
     };
-
-    const saveMutation = useMutation({
-        mutationFn: async (payload: Record<string, unknown>) => {
-            if (editing && editing !== "new") return apiPut<Row>(`/admin/content/${resource}/${editing.id}`, payload);
-            return apiPost<Row>(`/admin/content/${resource}`, payload);
-        },
-        onSuccess: (row) => {
-            toast.success("Saved.");
-            setIssues((row.issues as QualityIssue[]) ?? []);
-            setEditing(row);
-            setForm(toForm(row, spec!));
-            invalidate();
-        },
-        onError: (err) => {
-            const found = issuesFromError(err);
-            if (found.length) setIssues(found);
-            toast.error(adminError(err, "Could not save. Please check the fields."));
-        },
-    });
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => apiDelete<{ ok: boolean }>(`/admin/content/${resource}/${id}`),
@@ -537,7 +495,7 @@ export default function ContentManager() {
 
     const togglePublishMutation = useMutation({
         mutationFn: async ({ id, willPublish }: { id: string; willPublish: boolean }) => {
-            const patch = spec.publishField === "published"
+            const patch = spec!.publishField === "published"
                 ? { published: willPublish }
                 : { status: willPublish ? "published" : "draft" };
             return apiPut<Row>(`/admin/content/${resource}/${id}`, patch);
@@ -560,6 +518,13 @@ export default function ContentManager() {
         onError: (err) => toast.error(adminError(err, "Could not complete that action.")),
     });
 
+    // Backwards compatibility: the dashboard still deep-links to
+    // /admin/content/:resource?edit=<id>. Forward it to the editor route.
+    const legacyEditId = params.get("edit");
+    if (spec && legacyEditId) {
+        return <Navigate to={`/admin/content/${resource}/${legacyEditId}`} replace />;
+    }
+
     if (!spec) {
         return (
             <div data-testid="content-unknown">
@@ -568,28 +533,36 @@ export default function ContentManager() {
         );
     }
 
-    const startNew = () => {
-        setEditing("new");
-        setForm(emptyDraft(spec));
-        setIssues([]);
-        setParams({}, { replace: true });
+    const isPublished = (row: Row) =>
+        spec.publishField === "published" ? Boolean(row.published) : row.status === "published";
+
+    const publishedCount = rows.filter(isPublished).length;
+    const draftCount = rows.length - publishedCount;
+
+    const visibleRows = rows.filter((row) => {
+        if (tab === "all") return true;
+        if (tab === "published") return isPublished(row);
+        return !isPublished(row);
+    });
+
+    const photoKey = PHOTO_KEYS.find((k) => spec.fields.some((f) => f.key === k));
+
+    const metaFor = (row: Row): string => {
+        const candidates = ["authors", "venue", "year", "position_label", "role", "division", "category", "type", "kind", "start_date", "date", "location", "code", "semester"];
+        const parts = candidates
+            .map((k) => row[k])
+            .filter((v) => v !== undefined && v !== null && String(v).trim() !== "")
+            .map((v) => String(v));
+        return parts.slice(0, 3).join(" · ");
     };
 
-    const closeEditor = () => {
-        setEditing(null);
-        setIssues([]);
-        setParams({}, { replace: true });
-    };
+    const tabs: { id: StatusTab; label: string; count: number }[] = [
+        { id: "all", label: "All", count: rows.length },
+        { id: "published", label: "Published", count: publishedCount },
+        { id: "draft", label: "Draft", count: draftCount },
+    ];
 
-    const submit = () => {
-        try {
-            saveMutation.mutate(toPayload(form, spec));
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Please check the fields.");
-        }
-    };
-
-    const grouped = spec.fields;
+    const allVisibleSelected = visibleRows.length > 0 && visibleRows.every((r) => selected.includes(r.id));
 
     return (
         <div data-testid={`content-manager-${resource}`}>
@@ -609,7 +582,7 @@ export default function ContentManager() {
                                     title="Auto-match author names in papers with TNL members"
                                 >
                                     <Link2 className="h-4 w-4" aria-hidden="true" />
-                                    {relinkMutation.isPending ? "Matching…" : "Re-link Authors"}
+                                    {relinkMutation.isPending ? "Matching..." : "Re-link Authors"}
                                 </button>
                                 <Link
                                     to="/admin/publications/import"
@@ -628,247 +601,69 @@ export default function ContentManager() {
                         >
                             Export
                         </a>
-                        <button type="button" onClick={startNew} className="tnl-btn tnl-btn-primary h-10 min-h-[40px] text-sm" data-testid="content-add-button">
+                        <Link
+                            to={`/admin/content/${resource}/new`}
+                            className="tnl-btn tnl-btn-primary h-10 min-h-[40px] text-sm"
+                            data-testid="content-add-button"
+                        >
                             <Plus className="h-4 w-4" aria-hidden="true" />
                             Add new
-                        </button>
+                        </Link>
                     </>
                 }
                 testId={`content-header-${resource}`}
             />
 
-            {editing ? (
-                <Panel className="mb-6">
-                    <div className="mb-4 flex items-center justify-between gap-4">
-                        <h2 className="tnl-h5 text-[19px]">{editing === "new" ? `New ${spec.label.toLowerCase()}` : "Edit item"}</h2>
-                        <button type="button" onClick={closeEditor} className="flex h-9 w-9 items-center justify-center rounded-full border" style={{ borderColor: "var(--tnl-border)" }} aria-label="Close editor" data-testid="content-editor-close">
-                            <X className="h-4 w-4" />
-                        </button>
-                    </div>
+            {/* One-row filter bar: status tabs + search + bulk actions */}
+            <div className="mb-4 flex flex-wrap items-center gap-3" data-testid="content-filter-bar">
+                <div
+                    className="inline-flex items-center gap-1 rounded-[10px] border p-1"
+                    style={{ borderColor: "var(--tnl-border)", background: "var(--tnl-surface)" }}
+                >
+                    {tabs.map((t) => {
+                        const active = tab === t.id;
+                        return (
+                            <button
+                                key={t.id}
+                                type="button"
+                                onClick={() => setTab(t.id)}
+                                aria-pressed={active}
+                                className="rounded-[8px] px-3 py-1.5 text-sm font-medium transition-colors"
+                                style={active ? { background: "var(--tnl-green)", color: "#fff" } : { color: "var(--tnl-body)" }}
+                                data-testid={`content-tab-${t.id}`}
+                            >
+                                {t.label} ({t.count})
+                            </button>
+                        );
+                    })}
+                </div>
 
-                    {issues.length ? (
-                        <div className="mb-5">
-                            <p className="mb-2 text-sm font-semibold">Content checks</p>
-                            <IssueList issues={issues} testId="content-editor-issues" />
-                        </div>
-                    ) : null}
+                <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--tnl-body)]" aria-hidden="true" />
+                    <input
+                        type="search"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder={`Search ${spec.label.toLowerCase()}...`}
+                        className="tnl-field pl-9 sm:w-72"
+                        aria-label="Search"
+                        data-testid="content-search-input"
+                    />
+                </div>
 
-                    <div className="grid gap-4 lg:grid-cols-2">
-                        {grouped.map((field) => {
-                            const id = `field-${field.key}`;
-                            const value = form[field.key];
-                            const wide =
-                                field.type === "textarea" ||
-                                field.type === "html" ||
-                                field.type === "json" ||
-                                field.type === "key_value" ||
-                                field.type === "repeater" ||
-                                field.type === "form_fields" ||
-                                field.type === "tags" ||
-                                field.type === "member_multiselect";
-                            const showOuterLabel =
-                                field.type !== "media" &&
-                                field.type !== "media_list" &&
-                                field.type !== "key_value" &&
-                                field.type !== "repeater" &&
-                                field.type !== "form_fields" &&
-                                field.type !== "tags";
-
-                            return (
-                                <div key={field.key} className={wide ? "lg:col-span-2" : ""}>
-                                    {showOuterLabel ? (
-                                        <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
-                                            {field.label}
-                                        </label>
-                                    ) : null}
-                                    {field.type === "html" ? (
-                                        <RichTextField
-                                            id={id}
-                                            value={String(value ?? "")}
-                                            onChange={(html) => setForm((f) => ({ ...f, [field.key]: html }))}
-                                            placeholder={field.placeholder || "Write the article…"}
-                                            defaultFolder={resource}
-                                            attachedTo={{ resource, item_id: editing && typeof editing === "object" ? editing.id : null }}
-                                            testId={`content-field-${field.key}`}
-                                        />
-                                    ) : field.type === "textarea" || field.type === "json" ? (
-                                        <textarea
-                                            id={id}
-                                            className="tnl-field font-mono text-sm"
-                                            rows={field.type === "json" ? 6 : 5}
-                                            value={String(value ?? "")}
-                                            onChange={(e) => setForm((f) => ({ ...f, [field.key]: e.target.value }))}
-                                            data-testid={`content-field-${field.key}`}
-                                        />
-                                    ) : field.type === "tags" ? (
-                                        <TagChipsField
-                                            label={field.label}
-                                            value={value as string[]}
-                                            onChange={(tags) => setForm((f) => ({ ...f, [field.key]: tags }))}
-                                            help={field.help}
-                                            testId={`content-field-${field.key}`}
-                                        />
-                                    ) : field.type === "key_value" ? (
-                                        <KeyValueMapEditor
-                                            label={field.label}
-                                            value={value as Record<string, string>}
-                                            onChange={(val) => setForm((f) => ({ ...f, [field.key]: val }))}
-                                            presetKeys={field.presetKeys}
-                                            help={field.help}
-                                            testId={`content-field-${field.key}`}
-                                        />
-                                    ) : field.type === "repeater" ? (
-                                        <ObjectListRepeater
-                                            label={field.label}
-                                            value={value as Array<Record<string, unknown>>}
-                                            onChange={(items) => setForm((f) => ({ ...f, [field.key]: items }))}
-                                            fields={field.repeaterFields || []}
-                                            itemTitleField={field.itemTitleField}
-                                            itemSubtitleField={field.itemSubtitleField}
-                                            help={field.help}
-                                            emptyMessage={field.emptyMessage}
-                                            addButtonLabel={field.addButtonLabel}
-                                            defaultFolder={field.folder || resource}
-                                            testId={`content-field-${field.key}`}
-                                        />
-                                    ) : field.type === "form_fields" ? (
-                                        <FormFieldsBuilder
-                                            label={field.label}
-                                            value={value as FormField[]}
-                                            onChange={(fields) => setForm((f) => ({ ...f, [field.key]: fields }))}
-                                            help={field.help}
-                                            testId={`content-field-${field.key}`}
-                                        />
-                                    ) : field.type === "select" ? (
-                                        <select
-                                            id={id}
-                                            className="tnl-field"
-                                            value={String(value ?? "")}
-                                            onChange={(e) => setForm((f) => ({ ...f, [field.key]: e.target.value }))}
-                                            data-testid={`content-field-${field.key}`}
-                                        >
-                                            {field.options?.map((opt) => (
-                                                <option key={opt} value={opt}>
-                                                    {opt}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    ) : field.type === "checkbox" ? (
-                                        <label className="flex h-[50px] items-center gap-3 text-sm">
-                                            <input
-                                                id={id}
-                                                type="checkbox"
-                                                className="h-5 w-5"
-                                                checked={Boolean(value)}
-                                                onChange={(e) => setForm((f) => ({ ...f, [field.key]: e.target.checked }))}
-                                                data-testid={`content-field-${field.key}`}
-                                            />
-                                            <span>{Boolean(value) ? "Yes" : "No"}</span>
-                                        </label>
-                                    ) : field.type === "member_multiselect" ? (
-                                        <div id={id} className="rounded-lg border p-3" style={{ borderColor: "var(--tnl-border)" }} data-testid={`content-field-${field.key}`}>
-                                            <p className="mb-2 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
-                                                Select laboratory members who co-authored this publication:
-                                            </p>
-                                            <div className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
-                                                {(membersList ?? []).map((m) => {
-                                                    const selectedIds = Array.isArray(value) ? (value as string[]) : [];
-                                                    const checked = selectedIds.includes(m.id);
-                                                    return (
-                                                        <label key={m.id} className="flex cursor-pointer items-center gap-2.5 rounded px-2 py-1 text-xs hover:bg-[var(--tnl-surface)]">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={checked}
-                                                                onChange={(e) => {
-                                                                    const next = e.target.checked
-                                                                        ? [...selectedIds, m.id]
-                                                                        : selectedIds.filter((x) => x !== m.id);
-                                                                    setForm((f) => ({ ...f, [field.key]: next }));
-                                                                }}
-                                                                className="h-3.5 w-3.5 rounded"
-                                                            />
-                                                            <span className="font-medium">{m.name}</span>
-                                                            <span className="rounded bg-[rgba(67,89,74,0.1)] px-1.5 py-0.5 text-[10px] text-[var(--tnl-green)]">
-                                                                {m.role}{m.division ? ` · ${m.division}` : ""}
-                                                            </span>
-                                                        </label>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    ) : field.type === "media" ? (
-                                        <InlineMediaField
-                                            value={String(value ?? "")}
-                                            onChange={(url) => setForm((f) => ({ ...f, [field.key]: url }))}
-                                            defaultFolder={field.folder || resource}
-                                            attachedTo={{ resource, item_id: editing && typeof editing === "object" ? editing.id : null }}
-                                            aspect={field.aspect || "video"}
-                                            accept={field.accept || "image"}
-                                            help={field.help}
-                                            testId={`content-field-${field.key}`}
-                                        />
-                                    ) : field.type === "media_list" ? (
-                                        <MultiMediaField
-                                            value={value as string[]}
-                                            onChange={(urls) => setForm((f) => ({ ...f, [field.key]: urls }))}
-                                            defaultFolder={field.folder || resource}
-                                            attachedTo={{ resource, item_id: editing && typeof editing === "object" ? editing.id : null }}
-                                            help={field.help}
-                                            testId={`content-field-${field.key}`}
-                                        />
-                                    ) : (
-                                        <input
-                                            id={id}
-                                            type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
-                                            className="tnl-field"
-                                            value={String(value ?? "")}
-                                            onChange={(e) =>
-                                                setForm((f) => ({ ...f, [field.key]: field.type === "number" ? Number(e.target.value) : e.target.value }))
-                                            }
-                                            data-testid={`content-field-${field.key}`}
-                                        />
-                                    )}
-                                    {field.help && showOuterLabel ? (
-                                        <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
-                                            {field.help}
-                                        </p>
-                                    ) : null}
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    <div className="mt-6 flex flex-wrap gap-3">
-                        <button type="button" onClick={submit} className="tnl-btn tnl-btn-primary" disabled={saveMutation.isPending} data-testid="content-save-button">
-                            <Save className="h-4 w-4" aria-hidden="true" />
-                            {saveMutation.isPending ? "Saving…" : "Save"}
-                        </button>
-                        <button type="button" onClick={closeEditor} className="tnl-btn tnl-btn-outline" data-testid="content-cancel-button">
-                            Cancel
-                        </button>
-                    </div>
-                </Panel>
-            ) : null}
-
-            <div className="mb-4 flex flex-wrap items-center gap-3">
-                <input
-                    type="search"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder={`Search ${spec.label.toLowerCase()}…`}
-                    className="tnl-field sm:max-w-sm"
-                    aria-label="Search"
-                    data-testid="content-search-input"
-                />
                 {selected.length ? (
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div
+                        className="flex flex-wrap items-center gap-2 rounded-[10px] border px-3 py-1.5"
+                        style={{ borderColor: "var(--tnl-border)", background: "var(--tnl-surface)" }}
+                        data-testid="content-bulk-bar"
+                    >
                         <span className="text-sm" style={{ color: "var(--tnl-tan-text)" }}>
                             {selected.length} selected
                         </span>
-                        <button type="button" onClick={() => bulkMutation.mutate("publish")} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="bulk-publish-button">
+                        <button type="button" onClick={() => bulkMutation.mutate("publish")} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-sm" data-testid="bulk-publish-button">
                             Publish
                         </button>
-                        <button type="button" onClick={() => bulkMutation.mutate("unpublish")} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="bulk-unpublish-button">
+                        <button type="button" onClick={() => bulkMutation.mutate("unpublish")} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-sm" data-testid="bulk-unpublish-button">
                             Unpublish
                         </button>
                         <ConfirmButton
@@ -883,11 +678,13 @@ export default function ContentManager() {
             </div>
 
             {isLoading ? (
-                <Spinner label="Loading…" />
-            ) : rows.length === 0 ? (
+                <Spinner label="Loading..." />
+            ) : visibleRows.length === 0 ? (
                 <Panel>
                     <p className="text-sm text-[var(--tnl-body)]" data-testid="content-empty">
-                        Nothing here yet. Click “Add new” to create the first one.
+                        {rows.length === 0
+                            ? "Nothing here yet. Click “Add new” to create the first one."
+                            : "No items match this filter."}
                     </p>
                 </Panel>
             ) : (
@@ -899,26 +696,36 @@ export default function ContentManager() {
                                     <input
                                         type="checkbox"
                                         aria-label="Select all"
-                                        checked={selected.length === rows.length && rows.length > 0}
-                                        onChange={(e) => setSelected(e.target.checked ? rows.map((r) => r.id) : [])}
+                                        checked={allVisibleSelected}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setSelected((s) => Array.from(new Set([...s, ...visibleRows.map((r) => r.id)])));
+                                            } else {
+                                                const visibleIds = new Set(visibleRows.map((r) => r.id));
+                                                setSelected((s) => s.filter((id) => !visibleIds.has(id)));
+                                            }
+                                        }}
                                         data-testid="content-select-all"
                                     />
                                 </th>
+                                {photoKey ? <th className="pb-2 pr-4 font-semibold">Preview</th> : null}
                                 <th className="pb-2 pr-4 font-semibold">Title</th>
                                 <th className="pb-2 pr-4 font-semibold">Status</th>
                                 <th className="pb-2 font-semibold">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {rows.map((row) => {
-                                const published =
-                                    spec.publishField === "published" ? Boolean(row.published) : row.status === "published";
+                            {visibleRows.map((row) => {
+                                const published = isPublished(row);
+                                const title = String(row[spec.titleField] ?? "(untitled)");
+                                const meta = metaFor(row);
+                                const thumb = photoKey ? String(row[photoKey] ?? "") : "";
                                 return (
-                                    <tr key={row.id} className="border-t" style={{ borderColor: "var(--tnl-border)" }} data-testid={`content-row-${row.id}`}>
+                                    <tr key={row.id} className="border-t align-top" style={{ borderColor: "var(--tnl-border)" }} data-testid={`content-row-${row.id}`}>
                                         <td className="py-3 pr-3">
                                             <input
                                                 type="checkbox"
-                                                aria-label={`Select ${String(row[spec.titleField] ?? "")}`}
+                                                aria-label={`Select ${title}`}
                                                 checked={selected.includes(row.id)}
                                                 onChange={(e) =>
                                                     setSelected((s) => (e.target.checked ? [...s, row.id] : s.filter((x) => x !== row.id)))
@@ -926,46 +733,61 @@ export default function ContentManager() {
                                                 data-testid={`content-select-${row.id}`}
                                             />
                                         </td>
+                                        {photoKey ? (
+                                            <td className="py-3 pr-4">
+                                                <Link
+                                                    to={`/admin/content/${resource}/${row.id}`}
+                                                    className="block h-9 w-9 shrink-0 overflow-hidden rounded-lg border"
+                                                    style={{ borderColor: "var(--tnl-border)", background: "var(--tnl-surface)" }}
+                                                    data-testid={`content-thumb-${row.id}`}
+                                                >
+                                                    {thumb ? (
+                                                        <img src={thumb} alt="" className="h-full w-full object-cover" loading="lazy" />
+                                                    ) : (
+                                                        <span className="flex h-full w-full items-center justify-center text-[10px] text-[var(--tnl-body)]">—</span>
+                                                    )}
+                                                </Link>
+                                            </td>
+                                        ) : null}
                                         <td className="py-3 pr-4">
-                                            <span className="font-medium">{String(row[spec.titleField] ?? "(untitled)")}</span>
+                                            <Link
+                                                to={`/admin/content/${resource}/${row.id}`}
+                                                className="font-medium text-[var(--tnl-heading)] underline-offset-2 hover:underline"
+                                                data-testid={`content-open-${row.id}`}
+                                            >
+                                                {title}
+                                            </Link>
                                             {row.needs_review ? (
                                                 <span className="ml-2 rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ background: "#fef3c7", color: "#92400e" }}>
                                                     Needs review
                                                 </span>
                                             ) : null}
+                                            {meta ? <p className="mt-0.5 text-xs text-[var(--tnl-body)]">{meta}</p> : null}
                                         </td>
                                         <td className="py-3 pr-4">
                                             <StatusPill published={published} testId={`content-status-${row.id}`} />
                                         </td>
                                         <td className="py-3">
                                             <div className="flex flex-wrap items-center gap-2">
-                                                {resource === "events" ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => togglePublishMutation.mutate({ id: row.id, willPublish: !published })}
-                                                        disabled={togglePublishMutation.isPending}
-                                                        className="rounded-[6px] border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-[var(--tnl-surface)]"
-                                                        style={{ borderColor: "var(--tnl-border)" }}
-                                                        data-testid={`content-toggle-publish-${row.id}`}
-                                                        title={published ? "Hide from website (set to draft)" : "Publish to website"}
-                                                    >
-                                                        {published ? "Hide" : "Publish"}
-                                                    </button>
-                                                ) : null}
                                                 <button
                                                     type="button"
-                                                    onClick={() => {
-                                                        setEditing(row);
-                                                        setForm(toForm(row, spec));
-                                                        setIssues((row.issues as QualityIssue[]) ?? []);
-                                                        window.scrollTo({ top: 0, behavior: "smooth" });
-                                                    }}
+                                                    onClick={() => togglePublishMutation.mutate({ id: row.id, willPublish: !published })}
+                                                    disabled={togglePublishMutation.isPending}
+                                                    className="rounded-[6px] border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-[var(--tnl-surface)]"
+                                                    style={{ borderColor: "var(--tnl-border)" }}
+                                                    data-testid={`content-toggle-publish-${row.id}`}
+                                                    title={published ? "Hide from website (set to draft)" : "Publish to website"}
+                                                >
+                                                    {published ? "Hide" : "Publish"}
+                                                </button>
+                                                <Link
+                                                    to={`/admin/content/${resource}/${row.id}`}
                                                     className="rounded-[6px] border px-3 py-1.5 text-xs font-medium"
                                                     style={{ borderColor: "var(--tnl-border)" }}
                                                     data-testid={`content-edit-${row.id}`}
                                                 >
                                                     Edit
-                                                </button>
+                                                </Link>
                                                 <ConfirmButton
                                                     label="Delete"
                                                     confirmLabel="Delete it"

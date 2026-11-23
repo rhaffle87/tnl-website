@@ -3,6 +3,7 @@ import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { Routes, Route } from "react-router-dom";
 import AdminLogin from "@/pages/admin/AdminLogin";
 import ContentManager from "@/pages/admin/ContentManager";
+import ContentEditor from "@/pages/admin/ContentEditor";
 import { RegistrarPage, ThemePage } from "@/pages/admin/AdminScreens";
 import { renderWithProviders } from "./test-utils";
 import * as api from "@/lib/api";
@@ -65,6 +66,12 @@ vi.mock("@/lib/api", async () => {
           items: [{ id: "ev-1", title: "Cisco Packet Tracer Training", status: "published" }],
           total: 1,
         });
+      }
+      if (url.includes("/admin/media")) {
+        return Promise.resolve({ items: [], total: 0, assets: [] });
+      }
+      if (url.includes("/public/members")) {
+        return Promise.resolve([]);
       }
       return Promise.resolve({});
     }),
@@ -164,5 +171,147 @@ describe("Admin CMS Components", () => {
     await waitFor(() => expect(badge).toHaveTextContent("Live paused"));
     expect(screen.getByTestId("registrations-live-toggle")).toHaveTextContent("Resume");
     expect(screen.getByTestId("registration-delete-reg-1")).toBeInTheDocument();
+  });
+
+  /* ---------------------------------------------------------------- *
+   * List View vs dedicated Editor View (route split)                 *
+   * ---------------------------------------------------------------- */
+
+  it("ContentManager list view renders no inline edit form and links into the editor route", async () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/content/:resource" element={<ContentManager />} />
+      </Routes>,
+      { route: "/admin/content/events" }
+    );
+
+    // Row + row actions still present.
+    expect(await screen.findByTestId("content-toggle-publish-ev-1")).toBeInTheDocument();
+    expect(screen.getByTestId("content-edit-ev-1")).toHaveAttribute("href", "/admin/content/events/ev-1");
+    expect(screen.getByTestId("content-add-button")).toHaveAttribute("href", "/admin/content/events/new");
+
+    // The old inline "Edit item" form must be gone from the list view.
+    expect(screen.queryByTestId("content-save-button")).toBeNull();
+    expect(screen.queryByTestId("content-cancel-button")).toBeNull();
+
+    // One-row filter bar with counts.
+    expect(screen.getByTestId("content-filter-bar")).toBeInTheDocument();
+    expect(screen.getByTestId("content-tab-all")).toHaveTextContent("All (1)");
+    expect(screen.getByTestId("content-tab-draft")).toHaveTextContent("Draft (0)");
+    expect(screen.getByTestId("content-search-input")).toBeInTheDocument();
+    expect(screen.getByTestId("content-table")).toBeInTheDocument();
+  });
+
+  it("ContentEditor create route renders the sticky action bar with 'Create & Publish'", async () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/content/:resource/new" element={<ContentEditor />} />
+      </Routes>,
+      { route: "/admin/content/events/new" }
+    );
+
+    const bar = screen.getByTestId("content-editor-bar");
+    expect(bar.className).toContain("sticky");
+    expect(bar.className).toContain("top-0");
+    expect(bar.className).toContain("z-20");
+
+    expect(screen.getByTestId("content-editor-title")).toHaveTextContent("New Event");
+    expect(screen.getByTestId("content-editor-back")).toHaveAttribute("href", "/admin/content/events");
+    expect(screen.getByTestId("content-editor-status")).toHaveTextContent("Draft");
+    expect(screen.getByTestId("content-save-button")).toHaveTextContent("Create & Publish");
+
+    // Bilingual tab switcher present, EN active by default.
+    expect(screen.getByTestId("content-lang-en")).toBeInTheDocument();
+    expect(screen.getByTestId("content-lang-id")).toBeInTheDocument();
+
+    // Two-column editor body + sticky inspector.
+    expect(screen.getByTestId("content-inspector")).toBeInTheDocument();
+    expect(screen.getByTestId("content-section-publish")).toBeInTheDocument();
+  });
+
+  it("ContentEditor edit route loads the item, flags dirty state and saves via apiPut", async () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/content/:resource/:id" element={<ContentEditor />} />
+      </Routes>,
+      { route: "/admin/content/events/ev-1" }
+    );
+
+    expect(await screen.findByTestId("content-editor-title")).toHaveTextContent("Cisco Packet Tracer Training");
+    expect(screen.getByTestId("content-editor-status")).toHaveTextContent("Published");
+    expect(screen.queryByTestId("content-dirty-badge")).toBeNull();
+
+    fireEvent.change(screen.getByTestId("content-field-title"), { target: { value: "Updated title" } });
+
+    expect(await screen.findByTestId("content-dirty-badge")).toHaveTextContent("Unsaved changes");
+    expect(screen.getByTestId("content-save-button")).toHaveTextContent("Save changes");
+
+    fireEvent.click(screen.getByTestId("content-save-button"));
+
+    await waitFor(() => {
+      expect(api.apiPut).toHaveBeenCalledWith(
+        "/admin/content/events/ev-1",
+        expect.objectContaining({ title: "Updated title" })
+      );
+    });
+  });
+
+  it("EN/ID tabs keep BOTH language values in state and mark the inactive tab", async () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/content/:resource/:id" element={<ContentEditor />} />
+      </Routes>,
+      { route: "/admin/content/events/ev-1" }
+    );
+
+    const enField = (await screen.findByTestId("content-field-title")) as HTMLInputElement;
+    fireEvent.change(enField, { target: { value: "English headline" } });
+
+    // Switch to Bahasa Indonesia and fill the sibling field.
+    fireEvent.click(screen.getByTestId("content-lang-id"));
+    const idField = screen.getByTestId("content-field-title_id") as HTMLInputElement;
+    expect(idField.value).toBe("");
+    fireEvent.change(idField, { target: { value: "Judul Bahasa Indonesia" } });
+
+    // Back to English: the original value survived, and the ID tab now shows a dot.
+    fireEvent.click(screen.getByTestId("content-lang-en"));
+    expect((screen.getByTestId("content-field-title") as HTMLInputElement).value).toBe("English headline");
+    expect(screen.getByTestId("content-lang-dot-id")).toBeInTheDocument();
+
+    // Saving emits both values.
+    fireEvent.click(screen.getByTestId("content-save-button"));
+    await waitFor(() => {
+      expect(api.apiPut).toHaveBeenCalledWith(
+        "/admin/content/events/ev-1",
+        expect.objectContaining({ title: "English headline", title_id: "Judul Bahasa Indonesia" })
+      );
+    });
+  });
+
+  it("leaving the editor with unsaved changes asks for confirmation", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/content/:resource" element={<ContentManager />} />
+        <Route path="/admin/content/:resource/:id" element={<ContentEditor />} />
+      </Routes>,
+      { route: "/admin/content/events/ev-1" }
+    );
+
+    fireEvent.change(await screen.findByTestId("content-field-title"), { target: { value: "Dirty title" } });
+    await screen.findByTestId("content-dirty-badge");
+
+    // Declining the confirm keeps us in the editor.
+    fireEvent.click(screen.getByTestId("content-cancel-button"));
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(screen.getByTestId("content-editor-events")).toBeInTheDocument();
+
+    // Accepting it navigates to the list view.
+    confirmSpy.mockReturnValue(true);
+    fireEvent.click(screen.getByTestId("content-cancel-button"));
+    expect(await screen.findByTestId("content-add-button")).toBeInTheDocument();
+
+    confirmSpy.mockRestore();
   });
 });

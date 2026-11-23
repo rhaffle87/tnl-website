@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Award, Check, Copy, Download, FileJson, FileSpreadsheet, KeyRound, RefreshCw, Sparkles, Upload } from "lucide-react";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
-import { AdminHeader, ConfirmButton, Panel, adminError } from "@/pages/admin/AdminUI";
+import { AdminCard, AdminPageHeader, AdminSectionHeader, AdminSelect, AdminStatusBadge, AdminSwitch, ConfirmButton, Panel, adminError } from "@/pages/admin/AdminUI";
 import { useMe } from "@/lib/hooks";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField } from "@/components/admin/media";
@@ -88,14 +88,14 @@ export function MediaLibrary() {
 
     return (
         <div data-testid="media-library-page">
-            <AdminHeader
+            <AdminPageHeader
                 title="Media library"
-                help="Upload pictures and documents once, then paste their link wherever you need them. Every image needs a description."
+                description="Upload pictures and documents once, then paste their link wherever you need them. Every image needs a description."
                 testId="media-header"
             />
 
             <Panel className="mb-6">
-                <h2 className="tnl-h5 text-[18px]">Upload a file</h2>
+                <AdminSectionHeader title="Upload a file" />
                 <div className="mt-3 grid gap-3 lg:grid-cols-4">
                     <input type="file" className="tnl-field pt-3" onChange={(e) => setFile(e.target.files?.[0] ?? null)} aria-label="Choose file" data-testid="media-file-input" />
                     <input className="tnl-field" placeholder="What does it show?" value={alt} onChange={(e) => setAlt(e.target.value)} aria-label="Description" data-testid="media-alt-input" />
@@ -270,9 +270,9 @@ export function RegistrarPage() {
 
     return (
         <div data-testid="registrar-page">
-            <AdminHeader
+            <AdminPageHeader
                 title="Registrations"
-                help="Everyone who signed up for a programme. All valid registrations are automatically accepted. Check participants in at the door, cancel entries to free up quota, issue certificates, sync to Google Sheets, or export."
+                description="Everyone who signed up for a programme. All valid registrations are automatically accepted. Check participants in at the door, cancel entries to free up quota, issue certificates, sync to Google Sheets, or export."
                 actions={
                     <div className="flex flex-wrap items-center gap-2">
                         <div
@@ -333,22 +333,22 @@ export function RegistrarPage() {
 
             <Panel className="mb-5">
                 <div className="grid gap-3 lg:grid-cols-3">
-                    <select className="tnl-field" value={eventId} onChange={(e) => setEventId(e.target.value)} aria-label="Event" data-testid="registrations-event-filter">
+                    <AdminSelect value={eventId} onChange={(e) => setEventId(e.target.value)} aria-label="Event" data-testid="registrations-event-filter">
                         <option value="">All events</option>
                         {(events?.items ?? []).map((ev) => (
                             <option key={ev.id} value={ev.id}>
                                 {ev.title}
                             </option>
                         ))}
-                    </select>
-                    <select className="tnl-field" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status" data-testid="registrations-status-filter">
+                    </AdminSelect>
+                    <AdminSelect value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status" data-testid="registrations-status-filter">
                         <option value="">All statuses</option>
                         {["pending", "accepted", "rejected", "attended", "waitlisted"].map((s) => (
                             <option key={s} value={s}>
                                 {s} {data?.counts?.[s] !== undefined ? `(${data.counts[s]})` : ""}
                             </option>
                         ))}
-                    </select>
+                    </AdminSelect>
                     <button
                         type="button"
                         onClick={() => scoreAll.mutate()}
@@ -520,9 +520,9 @@ export function InboxPage() {
 
     return (
         <div data-testid="inbox-page">
-            <AdminHeader
+            <AdminPageHeader
                 title="Contact inbox"
-                help="Messages sent through the contact form. Use “Sort messages” to group them by topic and urgency."
+                description="Messages sent through the contact form. Use “Sort messages” to group them by topic and urgency."
                 actions={
                     <button type="button" onClick={() => triageAll.mutate()} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" disabled={triageAll.isPending} data-testid="inbox-triage-button">
                         <Sparkles className="h-4 w-4" aria-hidden="true" />
@@ -554,9 +554,7 @@ export function InboxPage() {
                                             <span className="tnl-count-chip" data-testid={`message-category-${msg.id}`}>{msg.triage.category}</span>
                                             <span className="tnl-count-chip">{msg.triage.urgency_label}</span>
                                             {(msg.triage.spam_probability ?? 0) > 0.7 ? (
-                                                <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={{ background: "#fee2e2", color: "#b91c1c" }}>
-                                                    likely spam
-                                                </span>
+                                                <AdminStatusBadge variant="error">likely spam</AdminStatusBadge>
                                             ) : null}
                                         </>
                                     ) : null}
@@ -690,9 +688,9 @@ export function ThemePage() {
 
     return (
         <div data-testid="theme-page" className="space-y-6">
-            <AdminHeader
+            <AdminPageHeader
                 title="Colours & theme (GSM)"
-                help="Standarisasi identitas visual GSM Laboratorium Jaringan Telekomunikasi. Pengaturan ini menjamin konsistensi lintas kepengurusan."
+                description="Standarisasi identitas visual GSM Laboratorium Jaringan Telekomunikasi. Pengaturan ini menjamin konsistensi lintas kepengurusan."
                 actions={
                     <>
                         <button type="button" onClick={resetToGsmStandard} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-xs font-semibold" data-testid="theme-reset-gsm-button">
@@ -714,12 +712,10 @@ export function ThemePage() {
 
             <Panel>
                 <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                        <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Edisi Panduan Standar Grafis (GSM)</h2>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            Label kepengurusan atau manual identitas visual yang sedang aktif di website labtnl.site.
-                        </p>
-                    </div>
+                    <AdminSectionHeader
+                        title="Edisi Panduan Standar Grafis (GSM)"
+                        description="Label kepengurusan atau manual identitas visual yang sedang aktif di website labtnl.site."
+                    />
                     <div className="w-full sm:w-80">
                         <input
                             type="text"
@@ -735,17 +731,16 @@ export function ThemePage() {
 
             <div className="grid gap-6 lg:grid-cols-2">
                 <Panel>
-                    <div className="border-b pb-3 mb-4 border-gray-200 dark:border-white/10">
-                        <h2 className="tnl-h5 text-[18px]">Token Inti GSM (Cross-Period)</h2>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            5 warna pokok yang mengontrol identitas hero, navbar, logo watermark, tombol CTA, dan aksen gelombang.
-                        </p>
-                    </div>
+                    <AdminSectionHeader
+                        className="mb-4 border-b border-[var(--tnl-border)] pb-3"
+                        title="Token Inti GSM (Cross-Period)"
+                        description="5 warna pokok yang mengontrol identitas hero, navbar, logo watermark, tombol CTA, dan aksen gelombang."
+                    />
                     <div className="space-y-3.5">
                         {gsmKeys.map(({ key, label, desc, fallback }) => {
                             const val = String(tokens[key] || fallback);
                             return (
-                                <div key={key} className="flex items-center gap-3 rounded-lg border p-2.5 border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02]">
+                                <AdminCard key={key} className="flex items-center gap-3 p-2.5 sm:p-2.5">
                                     <input
                                         type="color"
                                         value={val}
@@ -757,17 +752,17 @@ export function ThemePage() {
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center justify-between">
                                             <label className="block text-sm font-semibold">{label}</label>
-                                            <span className="font-mono text-xs uppercase px-1.5 py-0.5 rounded bg-gray-200 dark:bg-white/10 text-gray-800 dark:text-gray-200">{val}</span>
+                                            <span className="font-mono text-xs uppercase px-1.5 py-0.5 rounded bg-[var(--tnl-surface-2)] text-[var(--tnl-body)]">{val}</span>
                                         </div>
                                         <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">{desc}</p>
                                     </div>
-                                </div>
+                                </AdminCard>
                             );
                         })}
                     </div>
 
                     <div className="border-t pt-4 mt-6 border-gray-200 dark:border-white/10">
-                        <h3 className="text-sm font-bold mb-3 text-gray-700 dark:text-gray-300">Warna Pendukung & Kompatibilitas</h3>
+                        <AdminSectionHeader className="mb-3" title="Warna Pendukung & Kompatibilitas" />
                         <div className="space-y-2">
                             {colorKeys.map((key) => (
                                 <div key={key} className="flex items-center gap-3">
@@ -791,10 +786,10 @@ export function ThemePage() {
 
                 <div className="space-y-6">
                     <Panel>
-                        <h2 className="tnl-h5 text-[18px]">Pratinjau Langsung (Side-by-Side)</h2>
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Simulasi komponen publik di Light Mode dan Dark Mode dengan token yang dipilih.
-                        </p>
+                        <AdminSectionHeader
+                            title="Pratinjau Langsung (Side-by-Side)"
+                            description="Simulasi komponen publik di Light Mode dan Dark Mode dengan token yang dipilih."
+                        />
 
                         <div className="grid gap-3.5 mt-4 sm:grid-cols-2">
                             <div
@@ -881,10 +876,10 @@ export function ThemePage() {
                     </Panel>
 
                     <Panel>
-                        <h2 className="tnl-h5 text-[18px]">Uji Kontras & Aksesibilitas (WCAG 2.1 AA)</h2>
-                        <p className="mt-1 text-sm text-[var(--tnl-body)]">
-                            Setiap pasangan warna wajib memenuhi rasio kontras minimum sebelum tema dapat dipublikasikan ke publik.
-                        </p>
+                        <AdminSectionHeader
+                            title="Uji Kontras & Aksesibilitas (WCAG 2.1 AA)"
+                            description="Setiap pasangan warna wajib memenuhi rasio kontras minimum sebelum tema dapat dipublikasikan ke publik."
+                        />
                         <ul className="mt-4 space-y-2" data-testid="theme-contrast-list">
                             {(data?.contrast ?? []).map((check) => (
                                 <li
@@ -1013,9 +1008,9 @@ export function SettingsPage() {
 
     return (
         <div data-testid="settings-page">
-            <AdminHeader
+            <AdminPageHeader
                 title="Site settings"
-                help="The one place for the laboratory's name, contact details and social links. The footer and the contact page both read from here, so they can never disagree."
+                description="The one place for the laboratory's name, contact details and social links. The footer and the contact page both read from here, so they can never disagree."
                 actions={
                     <button type="button" onClick={() => save.mutate()} className="tnl-btn tnl-btn-primary h-10 min-h-[40px] text-sm" data-testid="settings-save-button">
                         Save settings
@@ -1026,23 +1021,29 @@ export function SettingsPage() {
 
             <div className="grid gap-4 lg:grid-cols-2">
                 <Panel>
-                    <h2 className="tnl-h5 text-[18px]">Laboratory identity</h2>
+                    <AdminSectionHeader title="Laboratory identity" />
                     <div className="mt-3 space-y-3">
                         <Field label="Name (English)" value={current.site_title} onChange={(v) => set({ site_title: v })} testId="settings-title-en" />
                         <Field label="Name (Bahasa Indonesia)" value={current.site_title_id} onChange={(v) => set({ site_title_id: v })} testId="settings-title-id" />
                         <Field label="Short name" value={current.short_name} onChange={(v) => set({ short_name: v })} testId="settings-short-name" />
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium">Default language</label>
-                            <select className="tnl-field" value={current.language_default} onChange={(e) => set({ language_default: e.target.value })} data-testid="settings-language">
-                                <option value="id">Bahasa Indonesia</option>
-                                <option value="en">English</option>
-                            </select>
+                            <label className="block text-sm font-medium">
+                                <span className="mb-1.5 block">Default language</span>
+                                <AdminSelect
+                                    value={current.language_default}
+                                    onChange={(e) => set({ language_default: e.target.value })}
+                                    data-testid="settings-language"
+                                >
+                                    <option value="id">Bahasa Indonesia</option>
+                                    <option value="en">English</option>
+                                </AdminSelect>
+                            </label>
                         </div>
                     </div>
                 </Panel>
 
                 <Panel>
-                    <h2 className="tnl-h5 text-[18px]">Logos & Brand Imagery</h2>
+                    <AdminSectionHeader title="Logos & Brand Imagery" />
                     <div className="mt-3 space-y-4">
                         <InlineMediaField
                             label="Primary Logo (Light mode)"
@@ -1080,7 +1081,7 @@ export function SettingsPage() {
                 </Panel>
 
                 <Panel>
-                    <h2 className="tnl-h5 text-[18px]">Contact details</h2>
+                    <AdminSectionHeader title="Contact details" />
                     <div className="mt-3 space-y-3">
                         <Field label="Email" value={current.contact?.email ?? ""} onChange={(v) => set({ contact: { ...current.contact, email: v } })} testId="settings-contact-email" />
                         <Field label="Phone" value={current.contact?.phone ?? ""} onChange={(v) => set({ contact: { ...current.contact, phone: v } })} help="Use the +62 format." testId="settings-contact-phone" />
@@ -1092,17 +1093,35 @@ export function SettingsPage() {
                 </Panel>
 
                 <Panel>
-                    <h2 className="tnl-h5 text-[18px]">Announcement popup</h2>
+                    <AdminSectionHeader title="Announcement popup" />
                     <div className="mt-3 space-y-3">
-                        <label className="flex items-center gap-3 text-sm">
-                            <input
-                                type="checkbox"
-                                className="h-5 w-5"
-                                checked={Boolean(current.announcement?.enabled)}
-                                onChange={(e) => set({ announcement: { ...current.announcement, enabled: e.target.checked } })}
-                                data-testid="settings-announcement-enabled"
-                            />
-                            Show the popup to visitors
+                        <AdminSwitch
+                            label="Show the popup to visitors"
+                            checked={Boolean(current.announcement?.enabled)}
+                            onCheckedChange={(next) => set({ announcement: { ...current.announcement, enabled: next } })}
+                            testId="settings-announcement-enabled"
+                        />
+                        <label className="block">
+                            <span className="mb-1 block text-sm font-medium text-[var(--tnl-heading)]">Presentation</span>
+                            <AdminSelect
+                                value={current.announcement?.style ?? "modal"}
+                                onChange={(e) =>
+                                    set({
+                                        announcement: {
+                                            ...current.announcement,
+                                            style: e.target.value === "card" ? "card" : "modal",
+                                        },
+                                    })
+                                }
+                                data-testid="settings-announcement-style"
+                            >
+                                <option value="modal">Blocking dialog — centre of the screen</option>
+                                <option value="card">Floating card — corner, page stays usable</option>
+                            </AdminSelect>
+                            <span className="mt-1 block text-xs text-[var(--tnl-body)]">
+                                A blocking dialog suits time-critical news. A floating card never covers the page and
+                                leaves Escape and background clicks alone.
+                            </span>
                         </label>
                         <Field label="Title (English)" value={current.announcement?.title ?? ""} onChange={(v) => set({ announcement: { ...current.announcement, title: v } })} testId="settings-announcement-title" />
                         <Field label="Title (Bahasa Indonesia)" value={current.announcement?.title_id ?? ""} onChange={(v) => set({ announcement: { ...current.announcement, title_id: v } })} testId="settings-announcement-title-id" />
@@ -1112,7 +1131,7 @@ export function SettingsPage() {
                 </Panel>
 
                 <Panel>
-                    <h2 className="tnl-h5 text-[18px]">Search, privacy and maintenance</h2>
+                    <AdminSectionHeader title="Search, privacy and maintenance" />
                     <div className="mt-3 space-y-3">
                         <Field label="Search description" value={current.seo?.default_description ?? ""} onChange={(v) => set({ seo: { ...current.seo, default_description: v } })} testId="settings-seo-description" />
                         <Field
@@ -1126,17 +1145,19 @@ export function SettingsPage() {
                             <label className="mb-1.5 block text-sm font-medium">Analytics snippet</label>
                             <textarea className="tnl-field font-mono text-xs" rows={4} value={current.analytics_snippet ?? ""} onChange={(e) => set({ analytics_snippet: e.target.value })} data-testid="settings-analytics" />
                         </div>
-                        <label className="flex items-center gap-3 text-sm">
-                            <input type="checkbox" className="h-5 w-5" checked={Boolean(current.maintenance_mode)} onChange={(e) => set({ maintenance_mode: e.target.checked })} data-testid="settings-maintenance" />
-                            Maintenance mode — visitors see a notice instead of the site
-                        </label>
+                        <AdminSwitch
+                            label="Maintenance mode — visitors see a notice instead of the site"
+                            checked={Boolean(current.maintenance_mode)}
+                            onCheckedChange={(next) => set({ maintenance_mode: next })}
+                            testId="settings-maintenance"
+                        />
                     </div>
                 </Panel>
 
                 <Panel>
-                    <h2 className="tnl-h5 text-[18px]">Visual Identity & GSM Standards</h2>
+                    <AdminSectionHeader title="Visual Identity & GSM Standards" />
                     <div className="mt-3 space-y-3">
-                        <div className="rounded-lg border p-3 border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02]">
+                        <AdminCard className="p-3 sm:p-3">
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Edisi GSM Aktif:</span>
                                 <span className="px-2 py-0.5 rounded text-xs font-bold bg-[#5D8A6B] text-white">
@@ -1155,7 +1176,7 @@ export function SettingsPage() {
                             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                                 Pengaturan token warna global, kontras aksesibilitas WCAG, dan pratinjau live mode terang/gelap dikelola secara terpusat di halaman Tema.
                             </p>
-                        </div>
+                        </AdminCard>
                         <Link
                             to="/admin/theme"
                             className="tnl-btn tnl-btn-outline inline-flex items-center justify-center w-full h-10 min-h-[40px] text-xs font-semibold"
@@ -1170,7 +1191,7 @@ export function SettingsPage() {
                 <Panel>
                     <div className="flex items-center gap-2">
                         <FileJson className="h-5 w-5 text-[var(--gsm-accent,#A8977B)]" />
-                        <h2 className="tnl-h5 text-[18px]">Import dari Figma Tokens (JSON)</h2>
+                        <AdminSectionHeader title="Import dari Figma Tokens (JSON)" />
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         Unggah file <code className="font-mono text-[11px]">.json</code> hasil ekspor plugin <strong>Tokens Studio for Figma</strong> atau W3C Design Tokens untuk sinkronisasi warna GSM secara instan.
@@ -1228,14 +1249,14 @@ export function SettingsPage() {
                 <Panel>
                     <div className="flex items-center gap-2">
                         <KeyRound className="h-5 w-5 text-[var(--gsm-emerald,#5D8A6B)]" />
-                        <h2 className="tnl-h5 text-[18px]">Koneksi Plugin Figma (TNL CMS Sync)</h2>
+                        <AdminSectionHeader title="Koneksi Plugin Figma (TNL CMS Sync)" />
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         Gunakan plugin privat <strong>TNL Studio CMS Sync</strong> di Figma untuk mengirim seleksi frame langsung menjadi draf halaman di CMS.
                     </p>
 
                     <div className="mt-3 space-y-3">
-                        <div className="rounded-lg border p-3 border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02] text-xs space-y-1.5">
+                        <AdminCard className="p-3 sm:p-3 text-xs space-y-1.5">
                             <div className="flex items-center justify-between">
                                 <span className="text-gray-500">Status Token:</span>
                                 <span className={`font-bold px-2 py-0.5 rounded text-[11px] ${figmaStatus?.configured ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"}`}>
@@ -1244,11 +1265,11 @@ export function SettingsPage() {
                             </div>
                             <div className="flex flex-col gap-0.5">
                                 <span className="text-gray-500">Endpoint Frame Sync:</span>
-                                <code className="font-mono text-[10px] break-all p-1 bg-black/5 dark:bg-white/5 rounded">
+                                <code className="font-mono text-[10px] break-all p-1 bg-[var(--tnl-surface-2)] rounded">
                                     {figmaStatus?.endpoint_sync_frame || "https://labtnl.site/api/admin/figma/sync-frame"}
                                 </code>
                             </div>
-                        </div>
+                        </AdminCard>
 
                         {generatedToken && (
                             <div className="rounded-lg border p-3 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/50">
@@ -1263,7 +1284,7 @@ export function SettingsPage() {
                                         type="text"
                                         readOnly
                                         value={generatedToken}
-                                        className="tnl-field font-mono text-xs flex-1 bg-white dark:bg-black/40"
+                                        className="tnl-field font-mono text-xs flex-1"
                                     />
                                     <button
                                         type="button"
@@ -1348,24 +1369,24 @@ export function UsersPage() {
 
     return (
         <div data-testid="users-page">
-            <AdminHeader
+            <AdminPageHeader
                 title="People & access"
-                help="Who can sign in to TNL Studio and what they may do. The last active Super Admin can never be removed, so nobody gets locked out."
+                description="Who can sign in to TNL Studio and what they may do. The last active Super Admin can never be removed, so nobody gets locked out."
                 testId="users-header"
             />
 
             <Panel className="mb-6">
-                <h2 className="tnl-h5 text-[18px]">Invite someone</h2>
+                <AdminSectionHeader title="Invite someone" />
                 <div className="mt-3 grid gap-3 lg:grid-cols-4">
                     <input className="tnl-field" placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} aria-label="Name" data-testid="invite-name-input" />
                     <input className="tnl-field" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email" data-testid="invite-email-input" />
-                    <select className="tnl-field" value={role} onChange={(e) => setRole(e.target.value)} aria-label="Role" data-testid="invite-role-select">
+                    <AdminSelect value={role} onChange={(e) => setRole(e.target.value)} aria-label="Role" data-testid="invite-role-select">
                         {["super_admin", "editor", "contributor", "registrar", "viewer"].map((r) => (
                             <option key={r} value={r}>
                                 {r.replace("_", " ")}
                             </option>
                         ))}
-                    </select>
+                    </AdminSelect>
                     <button type="button" onClick={() => invite.mutate()} className="tnl-btn tnl-btn-primary" disabled={!name.trim() || !email.trim()} data-testid="invite-submit">
                         Send invitation
                     </button>
@@ -1396,9 +1417,7 @@ export function UsersPage() {
                                     <td className="py-3 pr-4">{user.active ? "Yes" : "No"}</td>
                                     <td className="py-3">
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <select
-                                                className="rounded-[6px] border px-2 py-1.5 text-xs"
-                                                style={{ borderColor: "var(--tnl-border)" }}
+                                            <AdminSelect
                                                 value={user.role}
                                                 onChange={(e) => update.mutate({ id: user.id, patch: { role: e.target.value } })}
                                                 aria-label={`Role for ${user.name}`}
@@ -1409,7 +1428,7 @@ export function UsersPage() {
                                                         {r.replace("_", " ")}
                                                     </option>
                                                 ))}
-                                            </select>
+                                            </AdminSelect>
                                             <button
                                                 type="button"
                                                 onClick={() => update.mutate({ id: user.id, patch: { active: !user.active } })}
@@ -1465,9 +1484,9 @@ export function ApiKeysPage() {
 
     return (
         <div data-testid="api-keys-page">
-            <AdminHeader
+            <AdminPageHeader
                 title="API keys"
-                help="Keys let other programs read the website's content, or publish news and members automatically."
+                description="Keys let other programs read the website's content, or publish news and members automatically."
                 actions={
                     <a href="/api/v1-docs/openapi" target="_blank" rel="noopener noreferrer" className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="api-docs-link">
                         API documentation
@@ -1479,10 +1498,13 @@ export function ApiKeysPage() {
             <Panel className="mb-6">
                 <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto]">
                     <input className="tnl-field" placeholder="What is this key for?" value={name} onChange={(e) => setName(e.target.value)} aria-label="Key name" data-testid="api-key-name-input" />
-                    <label className="flex h-[50px] items-center gap-2 text-sm">
-                        <input type="checkbox" className="h-5 w-5" checked={write} onChange={(e) => setWrite(e.target.checked)} data-testid="api-key-write-checkbox" />
-                        Allow publishing
-                    </label>
+                    <AdminSwitch
+                        className="items-center"
+                        label="Allow publishing"
+                        checked={write}
+                        onCheckedChange={setWrite}
+                        testId="api-key-write-checkbox"
+                    />
                     <button type="button" onClick={() => create.mutate()} className="tnl-btn tnl-btn-primary" disabled={!name.trim()} data-testid="api-key-create-button">
                         Create key
                     </button>

@@ -31,6 +31,7 @@ const AuditLogPage = lazy(() => import("@/pages/admin/AdminDashboard").then((m) 
 const MaintainerGuidePage = lazy(() => import("@/pages/admin/AdminDashboard").then((m) => ({ default: m.MaintainerGuidePage })));
 const ReviewQueuePage = lazy(() => import("@/pages/admin/AdminDashboard").then((m) => ({ default: m.ReviewQueuePage })));
 const ContentManager = lazy(() => import("@/pages/admin/ContentManager"));
+const ContentEditor = lazy(() => import("@/pages/admin/ContentEditor"));
 const PagesList = lazy(() => import("@/pages/admin/PagesList"));
 const AuthCallback = lazy(() => import("@/pages/admin/AuthCallback"));
 const LabPhotosPage = lazy(() => import("@/pages/admin/LabConsentScreens").then((m) => ({ default: m.LabPhotosPage })));
@@ -79,6 +80,8 @@ export default function App() {
                         <Route index element={<AdminDashboard />} />
                         <Route path="pages" element={<PagesList />} />
                         <Route path="content/:resource" element={<ContentManager />} />
+                        <Route path="content/:resource/new" element={<ContentEditor />} />
+                        <Route path="content/:resource/:id" element={<ContentEditor />} />
                         <Route path="publications/import" element={<PublicationImportPage />} />
                         <Route path="media" element={<MediaLibrary />} />
                         <Route path="lab-photos" element={<LabPhotosPage />} />

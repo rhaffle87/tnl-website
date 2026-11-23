@@ -16,7 +16,7 @@ import {
     Trash2,
 } from "lucide-react";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
-import { AdminHeader, ConfirmButton, IssueList, Panel, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
+import { AdminPageHeader, AdminSectionHeader, AdminStatusBadge, ConfirmButton, IssueList, Panel, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
 import { KeyValueMapEditor } from "@/components/admin/repeaters";
@@ -79,14 +79,14 @@ export default function PagesList() {
 
     return (
         <div data-testid="pages-list-page">
-            <AdminHeader
+            <AdminPageHeader
                 title="Pages"
-                help="Every page on the public site is built from widgets. Click a page to change what is on it."
+                description="Every page on the public site is built from widgets. Click a page to change what is on it."
                 testId="pages-header"
             />
 
             <Panel className="mb-6">
-                <h2 className="tnl-h5 text-[18px]">Create a new page</h2>
+                <AdminSectionHeader title="Create a new page" />
                 <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
                     <input
                         className="tnl-field"
@@ -131,7 +131,7 @@ export default function PagesList() {
                         >
                             <div className="flex items-center justify-between gap-3">
                                 <h3 className="text-[18px] font-bold">{page.title}</h3>
-                                <StatusPill published={page.status === "published"} />
+                                <AdminStatusBadge variant={page.status === "published" ? "published" : "draft"} />
                             </div>
                             <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
                                 /{page.slug === "home" ? "" : page.slug}
@@ -223,9 +223,9 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
 
     return (
         <div data-testid={`page-builder-${page.slug}`}>
-            <AdminHeader
+            <AdminPageHeader
                 title={page.title}
-                help={`Widgets on /${page.slug === "home" ? "" : page.slug}. Changes are saved as you go, and every save keeps a version you can restore.`}
+                description={`Widgets on /${page.slug === "home" ? "" : page.slug}. Changes are saved as you go, and every save keeps a version you can restore.`}
                 actions={
                     <>
                         <button type="button" onClick={onBack} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="page-back-button">
@@ -272,7 +272,7 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
 
             {showRevisions ? (
                 <Panel className="mb-5">
-                    <h2 className="tnl-h5 text-[18px]">Revisions</h2>
+                    <AdminSectionHeader title="Revisions" />
                     <ul className="mt-3 space-y-2 text-sm">
                         {(revisions?.items ?? []).map((rev) => (
                             <li
@@ -313,7 +313,7 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
 
             {showLibrary ? (
                 <Panel className="mb-5">
-                    <h2 className="tnl-h5 text-[18px]">Choose a widget</h2>
+                    <AdminSectionHeader title="Choose a widget" />
                     <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {BLOCK_LIBRARY.map((item) => (
                             <button

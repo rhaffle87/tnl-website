@@ -18,6 +18,10 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/__tests__/setup.ts"],
     pool: "forks",
+    // e2e/ belongs to Playwright (npm run test:geometry): its specs fail on
+    // vitest's collection pass because test.beforeEach has no Playwright suite.
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["node_modules/**", "dist/**", "e2e/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

@@ -248,3 +248,115 @@ test.describe("Announcement popup", () => {
         expect(probe.ctaLabel).toContain("Latest news");
     });
 });
+
+test.describe("CMS list vs editor geometry", () => {
+    /**
+     * Screenshots 093128/093140 showed the edit form rendered *above* the table,
+     * with "Search members..." and the whole roster still hanging underneath.
+     * These gates measure the real admin shell: if the two views ever share a
+     * route again, the table count below stops being zero.
+     */
+    const openAdminRoute = async (page: import("@playwright/test").Page, url: string) => {
+        await page.goto(url);
+        // Gate on shell furniture that exists in BOTH viewports. The account footer
+        // (`admin-current-user`) lives in the desktop sidebar only — on mobile it sits
+        // inside the closed drawer, so gating on it made the mobile gate fail.
+        await expect(page.locator('[data-testid="admin-root-shell"]')).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('[data-testid="admin-topbar"]')).toBeVisible({ timeout: 15000 });
+    };
+
+    test("desktop: the editor route renders no collection table, and Save needs no scrolling", async ({ page }, testInfo) => {
+        test.skip(testInfo.project.name !== "desktop", "desktop project only");
+        await openAdminRoute(page, "/geom.html?only=editor&route=/admin/content/members/m-1");
+
+        const bar = page.locator('[data-testid="content-editor-bar"]');
+        await expect(bar).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('[data-testid="content-editor-title"]')).toContainText("Achmad Affandi");
+
+        // The regression: list furniture must not exist on the editor route.
+        await expect(page.locator('[data-testid="content-table"]')).toHaveCount(0);
+        await expect(page.locator("table")).toHaveCount(0);
+        await expect(page.locator('[data-testid="content-search-input"]')).toHaveCount(0);
+        await expect(page.locator('[data-testid="content-add-button"]')).toHaveCount(0);
+
+        // Save/Publish lives in the sticky bar, reachable without scrolling to the bottom.
+        const viewport = page.viewportSize()!;
+        const save = await page.locator('[data-testid="content-save-button"]').boundingBox();
+        expect(save!.y).toBeLessThan(140);
+        expect(save!.y + save!.height).toBeLessThanOrEqual(viewport.height);
+
+        // Two columns: 320px inspector to the right of the canvas, both on screen.
+        const columns = await page.evaluate(() => {
+            const inspector = document.querySelector('[data-testid="content-inspector"]') as HTMLElement;
+            const canvas = inspector.previousElementSibling as HTMLElement;
+            const i = inspector.getBoundingClientRect();
+            const c = canvas.getBoundingClientRect();
+            return {
+                inspectorW: inspector.offsetWidth,
+                inspectorLeft: Math.round(i.left),
+                canvasRight: Math.round(c.right),
+                canvasW: canvas.offsetWidth,
+                viewportW: innerWidth,
+            };
+        });
+        expect(columns.inspectorW).toBeGreaterThanOrEqual(280);
+        expect(columns.inspectorW).toBeLessThanOrEqual(340);
+        expect(columns.inspectorLeft).toBeGreaterThanOrEqual(columns.canvasRight);
+        expect(columns.canvasW).toBeGreaterThan(columns.inspectorW);
+        expect(columns.canvasRight).toBeLessThanOrEqual(columns.viewportW);
+
+        // Sticky truth: scrolling the admin main region must not carry the bar away.
+        const before = (await bar.boundingBox())!;
+        await page.locator("main").evaluate((el) => {
+            el.scrollTop = 700;
+        });
+        await page.waitForTimeout(120);
+        const after = (await bar.boundingBox())!;
+        expect(after.y).toBeGreaterThanOrEqual(-1);
+        expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(4);
+
+        // Editorial text must not be monospace source-code.
+        const bioFont = await page
+            .locator("textarea")
+            .first()
+            .evaluate((el) => getComputedStyle(el).fontFamily.toLowerCase());
+        expect(bioFont).not.toContain("mono");
+    });
+
+    test("desktop: the list route keeps the table and shows no editor form", async ({ page }, testInfo) => {
+        test.skip(testInfo.project.name !== "desktop", "desktop project only");
+        await openAdminRoute(page, "/geom.html?only=editor&route=/admin/content/members");
+
+        await expect(page.locator('[data-testid="content-table"]')).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('[data-testid="content-search-input"]')).toBeVisible();
+        await expect(page.locator('[data-testid="content-add-button"]')).toBeVisible();
+        // Nothing below the table: no form, no save bar, no textareas at all.
+        await expect(page.locator('[data-testid="content-editor-bar"]')).toHaveCount(0);
+        await expect(page.locator('[data-testid="content-save-button"]')).toHaveCount(0);
+        await expect(page.locator("textarea")).toHaveCount(0);
+        await expect(page.locator('[data-testid="content-table"]')).toContainText("Achmad Affandi");
+    });
+
+    test("mobile: the editor stacks to one column with no horizontal overflow", async ({ page }, testInfo) => {
+        test.skip(testInfo.project.name !== "mobile", "mobile project only");
+        await openAdminRoute(page, "/geom.html?only=editor&route=/admin/content/members/m-1");
+        await expect(page.locator('[data-testid="content-editor-bar"]')).toBeVisible({ timeout: 15000 });
+
+        const stacked = await page.evaluate(() => {
+            const inspector = document.querySelector('[data-testid="content-inspector"]') as HTMLElement;
+            const canvas = inspector.previousElementSibling as HTMLElement;
+            const i = inspector.getBoundingClientRect();
+            const c = canvas.getBoundingClientRect();
+            return {
+                sameColumn: Math.abs(Math.round(i.left) - Math.round(c.left)) <= 2,
+                belowCanvas: i.top >= c.bottom - 1,
+                overflow: document.documentElement.scrollWidth - innerWidth,
+            };
+        });
+        expect(stacked.sameColumn).toBe(true);
+        expect(stacked.belowCanvas).toBe(true);
+        expect(stacked.overflow).toBeLessThanOrEqual(1);
+
+        await expect(page.locator('[data-testid="content-table"]')).toHaveCount(0);
+    });
+});
