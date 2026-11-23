@@ -536,6 +536,14 @@ export function SiteFooter({
     );
 }
 
+// The label has to match the destination: "Register now" is only honest when the
+// button actually opens a registration page. An announcement whose CMS label was
+// left blank must not promise sign-ups on a page that has none.
+export function isRegistrationTarget(target: string): boolean {
+    const path = (target || "").split("?")[0].replace(/\/+$/, "");
+    return /^\/(?:activity|events|join|open-house)(?:\/|$)/i.test(path);
+}
+
 export function AnnouncementPopup() {
     const { t, locale } = useLocale();
     const { data: settings } = useSettings();
@@ -551,6 +559,11 @@ export function AnnouncementPopup() {
     }, [announcement?.enabled, key]);
 
     if (!announcement?.enabled || !open) return null;
+
+    const ctaTarget = announcement.url || "/activity?tab=events";
+    const ctaLabel =
+        pick(locale, announcement.cta_label, announcement.cta_label_id) ||
+        (isRegistrationTarget(ctaTarget) ? t("register_now") : t("read_more"));
 
     const dismiss = () => {
         if (key) localStorage.setItem(key, "dismissed");
@@ -582,11 +595,11 @@ export function AnnouncementPopup() {
                     </p>
                     <div className="mt-6 flex flex-wrap gap-3">
                         <Link
-                            to={announcement.url || "/activity?tab=events"}
+                            to={ctaTarget}
                             className="tnl-btn tnl-btn-primary flex-1"
                             data-testid="announcement-cta-button"
                         >
-                            {pick(locale, announcement.cta_label, announcement.cta_label_id) || t("register_now")}
+                            {ctaLabel}
                         </Link>
                         <button type="button" onClick={dismiss} className="tnl-btn tnl-btn-outline" data-testid="announcement-dismiss-button">
                             {t("dismiss")}

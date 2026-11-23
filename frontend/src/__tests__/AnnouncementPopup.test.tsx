@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, screen } from "@testing-library/react";
-import { AnnouncementPopup } from "@/components/site/Chrome";
+import { AnnouncementPopup, isRegistrationTarget } from "@/components/site/Chrome";
 import { useSettings } from "@/lib/hooks";
 import { renderWithProviders } from "./test-utils";
 
@@ -94,5 +94,36 @@ describe("AnnouncementPopup CMS content", () => {
 
     showPopup({ enabled: true, title: "Bumped version", version: 5 });
     expect(screen.getByTestId("announcement-popup")).toBeInTheDocument();
+  });
+
+  it("never labels a non-registration target \"Register now\"", () => {
+    showPopup({ enabled: true, title: "Open House is full", body: "See the news page.", url: "/news", version: 3 });
+    const cta = screen.getByTestId("announcement-cta-button");
+    expect(cta).toHaveAttribute("href", "/news");
+    expect(cta).toHaveTextContent("Read more");
+    expect(cta).not.toHaveTextContent("Register now");
+  });
+
+  it("uses the Indonesian neutral label for a news target", () => {
+    showPopup({ enabled: true, title: "Kuota penuh", body: "Lihat berita.", url: "/news", version: 3 }, "id");
+    expect(screen.getByTestId("announcement-cta-button")).toHaveTextContent("Selengkapnya");
+  });
+
+  it("keeps \"Register now\" when the target really is a registration page", () => {
+    showPopup({ enabled: true, title: "Cisco training", body: "Room B-301.", url: "/activity?tab=events", version: 6 });
+    const cta = screen.getByTestId("announcement-cta-button");
+    expect(cta).toHaveTextContent("Register now");
+    expect(cta).toHaveAttribute("href", "/activity?tab=events");
+  });
+});
+
+describe("isRegistrationTarget", () => {
+  it("only accepts registration destinations", () => {
+    for (const yes of ["/activity", "/activity?tab=events", "/events", "/join", "/open-house/"]) {
+      expect(isRegistrationTarget(yes), yes).toBe(true);
+    }
+    for (const no of ["/news", "/news/cisco", "/member", "/contact", "https://labtnl.site/news", ""]) {
+      expect(isRegistrationTarget(no), no).toBe(false);
+    }
   });
 });
