@@ -101,6 +101,10 @@ class Announcement(BaseModel):
     cta_label: str | None = None
     cta_label_id: str | None = None
     url: str | None = None
+    # Presentation. "modal" blocks the page (the historical behaviour);
+    # "card" floats a non-blocking panel that never intercepts scroll or clicks,
+    # for low-urgency notes. Defaulted so every stored document is unchanged.
+    style: Literal["modal", "card"] = "modal"
     version: int = 0
 
     @field_validator("url")

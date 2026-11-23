@@ -1,6 +1,6 @@
 // Public chrome uses CMS settings with static-preview-safe defaults.
 
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import type { KeyboardEvent, RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
@@ -550,6 +550,9 @@ export function AnnouncementPopup() {
     const announcement = settings?.announcement;
     const key = announcement ? `tnl-announcement-${announcement.version}` : "";
     const [open, setOpen] = useState(false);
+    // A floating card is not a dialog: it must never swallow Escape, block the
+    // page behind it, or blur the content the visitor came for.
+    const asCard = announcement?.style === "card";
 
     useEffect(() => {
         if (!announcement?.enabled || !key) return;
@@ -558,17 +561,106 @@ export function AnnouncementPopup() {
         return () => window.clearTimeout(timer);
     }, [announcement?.enabled, key]);
 
+    const dismiss = useCallback(() => {
+        if (key) localStorage.setItem(key, "dismissed");
+        setOpen(false);
+    }, [key]);
+
+    // Escape is the third exit path a blocking dialog owes the visitor
+    // (alongside the close button and the backdrop).
+    useEffect(() => {
+        if (!open || asCard) return;
+        const onKeyDown = (event: globalThis.KeyboardEvent) => {
+            if (event.key === "Escape") dismiss();
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [open, asCard, dismiss]);
+
     if (!announcement?.enabled || !open) return null;
 
     const ctaTarget = announcement.url || "/activity?tab=events";
     const ctaLabel =
         pick(locale, announcement.cta_label, announcement.cta_label_id) ||
         (isRegistrationTarget(ctaTarget) ? t("register_now") : t("read_more"));
+    const title = pick(locale, announcement.title, announcement.title_id);
+    const body = pick(locale, announcement.body, announcement.body_id);
 
-    const dismiss = () => {
-        if (key) localStorage.setItem(key, "dismissed");
-        setOpen(false);
-    };
+    // One continuous editorial surface — no hard two-tone split, one accent rule.
+    const panel = (
+        <div className="relative z-10 w-full max-w-[460px] overflow-hidden rounded-2xl border border-[var(--tnl-border)] bg-[var(--tnl-surface)] shadow-2xl animate-pop">
+            <span
+                aria-hidden="true"
+                className="absolute inset-x-0 top-0 h-[3px]"
+                style={{ background: "linear-gradient(90deg, var(--tnl-green), #3D6B52)" }}
+            />
+
+            <div className="flex items-start justify-between gap-4 px-6 pt-6 sm:px-7">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--tnl-body)]">
+                    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[var(--tnl-green)]" />
+                    {t("announcement")}
+                </span>
+                <button
+                    type="button"
+                    onClick={dismiss}
+                    aria-label={pick(locale, "Close announcement", "Tutup pengumuman")}
+                    className="-mr-2 -mt-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--tnl-body)] transition-colors hover:bg-[var(--tnl-surface-2)] hover:text-[var(--tnl-heading)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tnl-green)]"
+                    data-testid="announcement-close-button"
+                >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+            </div>
+
+            <div className="px-6 pb-6 pt-4 sm:px-7 sm:pb-7">
+                <h2
+                    id="announcement-title"
+                    className="text-xl font-semibold leading-snug tracking-tight text-[var(--tnl-heading)]"
+                >
+                    {title}
+                </h2>
+                {body && (
+                    <p className="mt-3 text-sm leading-relaxed text-[var(--tnl-body)]">
+                        {body}
+                    </p>
+                )}
+
+                <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-end">
+                    <button
+                        type="button"
+                        onClick={dismiss}
+                        className="tnl-btn tnl-btn-outline w-full sm:w-auto"
+                        data-testid="announcement-dismiss-button"
+                    >
+                        {t("dismiss")}
+                    </button>
+                    <Link
+                        to={ctaTarget}
+                        viewTransition
+                        className="tnl-btn tnl-btn-primary inline-flex w-full items-center justify-center gap-1.5 sm:w-auto"
+                        data-testid="announcement-cta-button"
+                    >
+                        {ctaLabel}
+                        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    </Link>
+                </div>
+            </div>
+        </div>
+    );
+
+    if (asCard) {
+        return (
+            <aside
+                className="pointer-events-none fixed inset-x-3 bottom-3 z-[95] flex justify-end sm:inset-x-auto sm:right-6 sm:bottom-6"
+                aria-live="polite"
+                data-testid="announcement-popup"
+                data-announcement-style="card"
+            >
+                <div className="pointer-events-auto w-full max-w-[400px] animate-fade-up">
+                    {panel}
+                </div>
+            </aside>
+        );
+    }
 
     return (
         <div
@@ -577,36 +669,11 @@ export function AnnouncementPopup() {
             aria-modal="true"
             aria-labelledby="announcement-title"
             data-testid="announcement-popup"
+            data-announcement-style="modal"
             data-lenis-prevent
         >
-            <div className="absolute inset-0 bg-black/55 backdrop-blur-sm animate-fade-in" onClick={dismiss} aria-hidden="true" />
-            <div className="tnl-card relative z-10 w-full max-w-lg overflow-hidden p-0 animate-pop">
-                <div className="tnl-hero-gradient px-7 py-6">
-                    <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--tnl-tan)" }}>
-                        {t("announcement")}
-                    </span>
-                    <h2 id="announcement-title" className="tnl-h4 mt-2 text-[22px] text-white" style={{ color: "#ffffff" }}>
-                        {pick(locale, announcement.title, announcement.title_id)}
-                    </h2>
-                </div>
-                <div className="px-7 py-6">
-                    <p className="text-sm leading-relaxed text-[var(--tnl-body)]">
-                        {pick(locale, announcement.body, announcement.body_id)}
-                    </p>
-                    <div className="mt-6 flex flex-wrap gap-3">
-                        <Link
-                            to={ctaTarget}
-                            className="tnl-btn tnl-btn-primary flex-1"
-                            data-testid="announcement-cta-button"
-                        >
-                            {ctaLabel}
-                        </Link>
-                        <button type="button" onClick={dismiss} className="tnl-btn tnl-btn-outline" data-testid="announcement-dismiss-button">
-                            {t("dismiss")}
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <div className="absolute inset-0 bg-black/45 backdrop-blur-[3px] animate-fade-in" onClick={dismiss} aria-hidden="true" />
+            {panel}
         </div>
     );
 }

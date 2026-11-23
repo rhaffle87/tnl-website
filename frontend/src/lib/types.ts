@@ -375,6 +375,8 @@ export interface AnnouncementSettings {
   cta_label?: string | null;
   cta_label_id?: string | null;
   url?: string | null;
+  /** "modal" blocks the page; "card" floats without intercepting scroll or clicks. */
+  style?: "modal" | "card";
   version: number;
 }
 
