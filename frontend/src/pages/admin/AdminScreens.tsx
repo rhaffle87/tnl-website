@@ -190,13 +190,18 @@ export function RegistrarPage() {
         retry: false,
     });
 
-    const { data, isLoading } = useQuery({
+    const [isLive, setIsLive] = useState(true);
+    const { data, isLoading, dataUpdatedAt } = useQuery({
         queryKey: ["admin", "registrations", eventId, status],
         queryFn: () =>
             apiGet<{ items: Registration[]; total: number; counts: Record<string, number> }>(
                 `/admin/registrations?limit=200${eventId ? `&event_id=${eventId}` : ""}${status ? `&status=${status}` : ""}`,
             ),
         retry: false,
+        // Check-in desk at the Open House watches this list: poll every 15s while the
+        // tab is in the foreground, and stop completely when it is not (saves CT 103).
+        refetchInterval: isLive ? 15_000 : false,
+        refetchIntervalInBackground: false,
     });
 
     const refresh = () => {
@@ -270,6 +275,27 @@ export function RegistrarPage() {
                 help="Everyone who signed up for a programme. All valid registrations are automatically accepted. Check participants in at the door, cancel entries to free up quota, issue certificates, sync to Google Sheets, or export."
                 actions={
                     <div className="flex flex-wrap items-center gap-2">
+                        <div
+                            className="flex h-10 items-center gap-2 rounded-full border px-3"
+                            style={{ borderColor: "var(--tnl-border)" }}
+                            data-testid="registrations-live-badge"
+                        >
+                            <span className={`tnl-admin-live-badge-dot${isLive ? "" : " is-paused"}`} aria-hidden="true" />
+                            <span className="text-xs font-medium">{isLive ? "Live · 15s" : "Live paused"}</span>
+                            <button
+                                type="button"
+                                onClick={() => setIsLive((v) => !v)}
+                                className="text-xs underline"
+                                style={{ color: "var(--tnl-link)" }}
+                                data-testid="registrations-live-toggle"
+                                aria-pressed={isLive}
+                            >
+                                {isLive ? "Pause" : "Resume"}
+                            </button>
+                            <span className="text-xs text-[var(--tnl-muted)]" data-testid="registrations-last-updated">
+                                {dataUpdatedAt ? `Updated ${new Date(dataUpdatedAt).toLocaleTimeString()}` : "Waiting…"}
+                            </span>
+                        </div>
                         <button
                             type="button"
                             onClick={() => syncSheet.mutate()}

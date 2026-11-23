@@ -148,4 +148,21 @@ describe("Admin CMS Components", () => {
       expect(api.apiPut).toHaveBeenCalledWith("/admin/content/events/ev-1", { status: "draft" });
     });
   });
+
+  it("RegistrarPage shows the live 15s badge and can pause polling", async () => {
+    renderWithProviders(<RegistrarPage />, { route: "/admin/registrations" });
+
+    const badge = await screen.findByTestId("registrations-live-badge");
+    expect(badge).toHaveTextContent("Live · 15s");
+    expect(screen.getByTestId("registrations-last-updated")).toBeInTheDocument();
+
+    // Check-in keeps working: the delete affordance is still rendered while live.
+    expect(await screen.findByTestId("registration-delete-reg-1")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("registrations-live-toggle"));
+
+    await waitFor(() => expect(badge).toHaveTextContent("Live paused"));
+    expect(screen.getByTestId("registrations-live-toggle")).toHaveTextContent("Resume");
+    expect(screen.getByTestId("registration-delete-reg-1")).toBeInTheDocument();
+  });
 });

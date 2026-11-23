@@ -35,6 +35,26 @@ Object.defineProperty(window, "scrollTo", {
   value: vi.fn(),
 });
 
+// ProseMirror (Tiptap's editor core) measures text ranges to scroll the caret into
+// view; jsdom ships neither Range.getClientRects nor elementFromPoint, so the calls
+// would throw. Stub the geometry here instead of weakening the editor component.
+if (typeof Range !== "undefined" && !Range.prototype.getClientRects) {
+  Range.prototype.getClientRects = function getClientRects() {
+    return { length: 0, item: () => null, [Symbol.iterator]: function* () {} } as unknown as DOMRectList;
+  };
+}
+if (typeof Range !== "undefined" && !Range.prototype.getBoundingClientRect) {
+  Range.prototype.getBoundingClientRect = function getBoundingClientRect() {
+    return { x: 0, y: 0, top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, toJSON: () => ({}) } as DOMRect;
+  };
+}
+if (typeof document !== "undefined" && !document.elementFromPoint) {
+  document.elementFromPoint = (() => null) as typeof document.elementFromPoint;
+}
+if (typeof document !== "undefined" && !document.caretRangeFromPoint) {
+  (document as Document & { caretRangeFromPoint?: () => Range | null }).caretRangeFromPoint = () => null;
+}
+
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
   readonly root: Element | null = null;

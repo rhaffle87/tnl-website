@@ -10,6 +10,7 @@ import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
 import { AdminHeader, ConfirmButton, IssueList, Panel, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
+import { RichTextField } from "@/components/admin/editor";
 import {
     TagChipsField,
     KeyValueMapEditor,
@@ -43,6 +44,7 @@ interface FieldSpec {
     label: string;
     type: FieldType;
     help?: string;
+    placeholder?: string;
     options?: string[];
     group?: string;
     folder?: string;
@@ -679,7 +681,17 @@ export default function ContentManager() {
                                             {field.label}
                                         </label>
                                     ) : null}
-                                    {field.type === "textarea" || field.type === "html" || field.type === "json" ? (
+                                    {field.type === "html" ? (
+                                        <RichTextField
+                                            id={id}
+                                            value={String(value ?? "")}
+                                            onChange={(html) => setForm((f) => ({ ...f, [field.key]: html }))}
+                                            placeholder={field.placeholder || "Write the article…"}
+                                            defaultFolder={resource}
+                                            attachedTo={{ resource, item_id: editing && typeof editing === "object" ? editing.id : null }}
+                                            testId={`content-field-${field.key}`}
+                                        />
+                                    ) : field.type === "textarea" || field.type === "json" ? (
                                         <textarea
                                             id={id}
                                             className="tnl-field font-mono text-sm"

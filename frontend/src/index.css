@@ -744,6 +744,71 @@ html.lenis, html.lenis body {
   background-color: rgba(255, 255, 255, 0.32);
 }
 
+/* 10. Admin rich-text editor (Tiptap) — mirrors the public .tnl-prose typography */
+.tnl-rich-text .ProseMirror {
+  min-height: 220px;
+  padding: 0.75rem 0.9rem;
+  outline: none;
+  color: var(--tnl-body);
+}
+.tnl-rich-text .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--tnl-muted);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+.tnl-rich-text .ProseMirror img {
+  max-width: 100%;
+  border-radius: var(--tnl-radius-card);
+  margin-block: 0.75rem;
+}
+.tnl-rich-text .ProseMirror blockquote {
+  border-left: 3px solid var(--tnl-tan);
+  margin-left: 0;
+  padding-left: 0.9rem;
+  color: var(--tnl-muted);
+}
+.tnl-rich-text .ProseMirror hr {
+  border: 0;
+  border-top: 1px solid var(--tnl-border);
+  margin-block: 1.25rem;
+}
+.tnl-rich-text .ProseMirror code {
+  background: color-mix(in srgb, var(--tnl-tan) 16%, transparent);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.9em;
+}
+.tnl-rich-text .ProseMirror a {
+  color: var(--tnl-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.tnl-admin-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.tnl-admin-live-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+  animation: tnl-live-pulse 2s ease-out infinite;
+}
+.tnl-admin-live-badge-dot.is-paused {
+  background: var(--tnl-muted);
+  animation: none;
+  box-shadow: none;
+}
+@keyframes tnl-live-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); }
+  70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
