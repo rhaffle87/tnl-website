@@ -39,21 +39,43 @@ function DialogOverlay({
     )
 }
 
+/**
+ * Explicit size contract. Before this existed the popup carried a hardcoded
+ * `sm:max-w-sm` (384px) and any caller passing `max-w-4xl` silently lost at
+ * >=640px viewports — that is exactly how the media picker ended up crushed.
+ * `size` is merged through twMerge, so the winning width class is always the
+ * size's, never a leftover base class.
+ */
+type DialogSize = "sm" | "md" | "lg" | "xl" | "media"
+
+const DIALOG_SIZE_CLASS: Record<DialogSize, string> = {
+    sm: "sm:max-w-sm",
+    md: "sm:max-w-lg",
+    lg: "sm:max-w-2xl",
+    xl: "sm:max-w-4xl",
+    // Widescreen asset browser: fixed chrome, internal scrolling, no padding.
+    media: "w-[95vw] max-w-[min(1160px,95vw)] sm:max-w-[1160px] h-[min(86vh,780px)] p-0 gap-0 overflow-hidden flex flex-col",
+}
+
 function DialogContent({
     className,
     children,
     showCloseButton = true,
+    size = "sm",
     ...props
 }: DialogPrimitive.Popup.Props & {
     showCloseButton?: boolean
+    size?: DialogSize
 }) {
     return (
         <DialogPortal>
             <DialogOverlay />
             <DialogPrimitive.Popup
                 data-slot="dialog-content"
+                data-dialog-size={size}
                 className={cn(
-                    "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+                    "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+                    DIALOG_SIZE_CLASS[size],
                     className
                 )}
                 {...props}
@@ -158,3 +180,4 @@ export {
     DialogTitle,
     DialogTrigger,
 }
+export type { DialogSize }

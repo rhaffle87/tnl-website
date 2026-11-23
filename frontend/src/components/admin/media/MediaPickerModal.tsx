@@ -317,73 +317,89 @@ export function MediaPickerModal({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="max-w-4xl w-[94vw] h-[88vh] max-h-[850px] p-0 flex flex-col overflow-hidden bg-[var(--tnl-surface)] border border-[var(--tnl-border)] text-[var(--tnl-heading)] shadow-2xl rounded-2xl"
+                size="media"
+                showCloseButton={false}
+                className="bg-[var(--tnl-surface)] border border-[var(--tnl-border)] text-[var(--tnl-heading)] shadow-2xl rounded-2xl"
                 data-testid="media-picker-modal"
             >
-                {/* Header */}
-                <DialogHeader className="px-5 py-4 border-b border-[var(--tnl-border)] flex flex-row items-center justify-between gap-4 shrink-0">
-                    <div>
-                        <DialogTitle className="text-base font-bold flex items-center gap-2">
-                            <ImageIcon className="h-4 w-4 text-[var(--tnl-green)]" />
-                            <span>Media Picker</span>
-                            <span className="text-xs px-2 py-0.5 rounded-full font-normal bg-black/5 dark:bg-white/10 text-[var(--tnl-body)]">
-                                {mode === "single" ? "Single select" : "Multi select"}
-                            </span>
+                {/* Zone 1 — single-row chrome: identity | tab switcher | explicit close */}
+                <DialogHeader className="shrink-0 h-14 px-5 border-b border-[var(--tnl-border)] flex flex-row items-center justify-between gap-4 space-y-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <DialogTitle className="text-base font-bold flex items-center gap-2 whitespace-nowrap">
+                            <ImageIcon className="h-4 w-4 shrink-0 text-[var(--tnl-green)]" />
+                            <span>Media Library</span>
                         </DialogTitle>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap border border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] text-[var(--tnl-body)]">
+                            {mode === "single" ? "Single select" : "Multi select"}
+                        </span>
                     </div>
 
-                    {/* Tab Navigation */}
-                    <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-lg">
+                    <div className="flex items-center gap-3 shrink-0">
+                        {/* Tab Navigation */}
+                        <div className="flex items-center gap-1 bg-[var(--tnl-surface-2)] border border-[var(--tnl-border)] p-1 rounded-lg">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("library")}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors ${
+                                    activeTab === "library"
+                                        ? "bg-[var(--tnl-surface)] text-[var(--tnl-heading)] shadow-xs"
+                                        : "text-[var(--tnl-body)] hover:text-[var(--tnl-heading)]"
+                                }`}
+                                data-testid="media-picker-tab-library"
+                            >
+                                Browse Library
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("upload")}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors ${
+                                    activeTab === "upload"
+                                        ? "bg-[var(--tnl-surface)] text-[var(--tnl-heading)] shadow-xs"
+                                        : "text-[var(--tnl-body)] hover:text-[var(--tnl-heading)]"
+                                }`}
+                                data-testid="media-picker-tab-upload"
+                            >
+                                Upload New
+                            </button>
+                        </div>
+
                         <button
                             type="button"
-                            onClick={() => setActiveTab("library")}
-                            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                                activeTab === "library"
-                                    ? "bg-[var(--tnl-surface)] text-[var(--tnl-heading)] shadow-xs"
-                                    : "text-[var(--tnl-body)] hover:text-[var(--tnl-heading)]"
-                            }`}
-                            data-testid="media-picker-tab-library"
+                            onClick={() => onOpenChange(false)}
+                            aria-label="Close media picker"
+                            title="Close"
+                            className="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg border border-[var(--tnl-border)] text-[var(--tnl-body)] hover:text-[var(--tnl-heading)] hover:bg-[var(--tnl-surface-2)] transition-colors"
+                            data-testid="media-picker-close"
                         >
-                            Media Library
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab("upload")}
-                            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                                activeTab === "upload"
-                                    ? "bg-[var(--tnl-surface)] text-[var(--tnl-heading)] shadow-xs"
-                                    : "text-[var(--tnl-body)] hover:text-[var(--tnl-heading)]"
-                            }`}
-                            data-testid="media-picker-tab-upload"
-                        >
-                            Upload New
+                            <X className="h-4 w-4" />
                         </button>
                     </div>
                 </DialogHeader>
 
-                {/* Tab 1: Media Library */}
+                {/* Zone 2 — Tab 1: browse library, two independently scrolling columns */}
                 {activeTab === "library" && (
-                    <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
-                        {/* Main Grid View */}
-                        <div className="flex-1 flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r border-[var(--tnl-border)]">
-                            {/* Toolbar */}
-                            <div className="p-3 border-b border-[var(--tnl-border)] flex flex-wrap items-center gap-2 bg-black/[0.02] dark:bg-white/[0.02] shrink-0">
+                    <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+                        {/* Left column — asset browser */}
+                        <div className="flex-1 min-w-0 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-[var(--tnl-border)]">
+                            {/* Filter toolbar — one row, wraps instead of collapsing into a column */}
+                            <div className="shrink-0 px-5 py-3 border-b border-[var(--tnl-border)] flex flex-wrap items-center gap-2.5">
                                 {/* Search */}
-                                <div className="relative flex-1 min-w-[180px]">
-                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
+                                <div className="relative flex-1 min-w-[200px]">
+                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--tnl-body)] opacity-60" />
                                     <input
                                         type="text"
                                         placeholder="Search by filename or alt..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="tnl-field pl-8 h-8 text-xs py-1"
+                                        className="tnl-field pl-8 h-9 text-sm w-full"
                                         data-testid="media-picker-search"
                                     />
                                     {searchQuery && (
                                         <button
                                             type="button"
                                             onClick={() => setSearchQuery("")}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                                            aria-label="Clear search"
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--tnl-body)] hover:text-[var(--tnl-heading)]"
                                         >
                                             <X className="h-3.5 w-3.5" />
                                         </button>
@@ -394,7 +410,8 @@ export function MediaPickerModal({
                                 <select
                                     value={folder}
                                     onChange={(e) => setFolder(e.target.value)}
-                                    className="tnl-field h-8 text-xs py-1 w-36"
+                                    aria-label="Filter by folder"
+                                    className="tnl-field h-9 text-sm w-40"
                                     data-testid="media-picker-folder"
                                 >
                                     {FOLDERS.map((f) => (
@@ -408,7 +425,8 @@ export function MediaPickerModal({
                                 <select
                                     value={kind}
                                     onChange={(e) => setKind(e.target.value)}
-                                    className="tnl-field h-8 text-xs py-1 w-28"
+                                    aria-label="Filter by kind"
+                                    className="tnl-field h-9 text-sm w-32"
                                     data-testid="media-picker-kind"
                                 >
                                     <option value="all">All kinds</option>
@@ -421,8 +439,9 @@ export function MediaPickerModal({
                                     type="button"
                                     onClick={() => void refetch()}
                                     disabled={isRefetching}
-                                    className="h-8 w-8 flex items-center justify-center rounded-md border border-[var(--tnl-border)] hover:bg-white/[0.05] transition-colors"
+                                    className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--tnl-border)] text-[var(--tnl-body)] hover:text-[var(--tnl-heading)] hover:bg-[var(--tnl-surface-2)] transition-colors"
                                     title="Refresh library"
+                                    aria-label="Refresh library"
                                     data-testid="media-picker-refresh"
                                 >
                                     <RefreshCw className={`h-3.5 w-3.5 ${isRefetching ? "animate-spin" : ""}`} />
@@ -431,7 +450,7 @@ export function MediaPickerModal({
 
                             {/* Assets Grid */}
                             <div
-                                className="flex-1 min-h-0 overflow-y-auto p-3"
+                                className="flex-1 min-h-0 overflow-y-auto p-5"
                                 data-testid="media-picker-grid"
                             >
                                 {isLoading ? (
@@ -440,67 +459,78 @@ export function MediaPickerModal({
                                     </div>
                                 ) : items.length === 0 ? (
                                     <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[var(--tnl-body)]">
-                                        <Folder className="h-10 w-10 stroke-1 mb-2 text-white/30" />
+                                        <Folder className="h-10 w-10 stroke-1 mb-2 opacity-40" />
                                         <p className="text-sm font-semibold">No media assets found</p>
-                                        <p className="text-xs text-white/50 mt-1">
+                                        <p className="text-xs opacity-70 mt-1">
                                             Try adjusting your search terms or upload new assets.
                                         </p>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(144px,1fr))] gap-3.5">
                                         {items.map((asset) => {
                                             const active = isSelected(asset.id);
                                             const isImg = asset.kind === "image";
+                                            const ext = (asset.content_type?.split("/")[1] || asset.filename.split(".").pop() || "file").toUpperCase();
                                             return (
                                                 <button
                                                     key={asset.id}
                                                     type="button"
                                                     onClick={() => handleSelectAsset(asset)}
-                                                    className={`group relative flex flex-col rounded-xl overflow-hidden border text-left transition-all aspect-square bg-black/[0.04] dark:bg-white/[0.02] focus:outline-hidden ${
+                                                    className={`group relative flex flex-col rounded-xl overflow-hidden border text-left transition-all bg-[var(--tnl-surface-2)] focus:outline-hidden ${
                                                         active
                                                             ? "ring-2 ring-[var(--tnl-green)] border-[var(--tnl-green)] shadow-md"
-                                                            : "border-[var(--tnl-border)] hover:border-white/30"
+                                                            : "border-[var(--tnl-border)] hover:border-[var(--tnl-green)]/60"
                                                     }`}
                                                     data-testid={`media-item-${asset.id}`}
                                                 >
-                                                    {isImg ? (
-                                                        <img
-                                                            src={asset.webp_url || asset.url}
-                                                            alt={asset.alt || asset.filename}
-                                                            loading="lazy"
-                                                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center">
-                                                            {asset.filename.endsWith(".pdf") ? (
-                                                                <FileText className="h-8 w-8 text-rose-500 mb-1" />
-                                                            ) : asset.filename.endsWith(".pkt") || asset.filename.endsWith(".py") ? (
-                                                                <FileCode className="h-8 w-8 text-amber-500 mb-1" />
-                                                            ) : (
-                                                                <FileIcon className="h-8 w-8 text-sky-500 mb-1" />
-                                                            )}
-                                                            <span className="text-[10px] font-mono truncate max-w-full px-1">
-                                                                {asset.original_name || asset.filename}
+                                                    <span className="relative block aspect-square w-full overflow-hidden">
+                                                        {isImg ? (
+                                                            <img
+                                                                src={asset.webp_url || asset.url}
+                                                                alt={asset.alt || asset.filename}
+                                                                loading="lazy"
+                                                                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                            />
+                                                        ) : (
+                                                            <span className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-2 text-center">
+                                                                {asset.filename.endsWith(".pdf") ? (
+                                                                    <FileText className="h-8 w-8 text-rose-500" />
+                                                                ) : asset.filename.endsWith(".pkt") || asset.filename.endsWith(".py") ? (
+                                                                    <FileCode className="h-8 w-8 text-amber-500" />
+                                                                ) : (
+                                                                    <FileIcon className="h-8 w-8 text-sky-500" />
+                                                                )}
+                                                                <span className="text-[10px] font-mono line-clamp-2 break-all">
+                                                                    {asset.original_name || asset.filename}
+                                                                </span>
                                                             </span>
-                                                        </div>
-                                                    )}
+                                                        )}
 
-                                                    {/* Selection indicator checkmark */}
-                                                    {active && (
-                                                        <div className="absolute top-1.5 right-1.5 h-5 w-5 rounded-full bg-[var(--tnl-green)] text-white flex items-center justify-center shadow-xs">
-                                                            <Check className="h-3.5 w-3.5 stroke-[3]" />
-                                                        </div>
-                                                    )}
+                                                        {/* Extension badge */}
+                                                        <span className="absolute top-1.5 left-1.5 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-white backdrop-blur-xs">
+                                                            {ext}
+                                                        </span>
 
-                                                    {/* Bottom badge */}
-                                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-1.5 pt-4 text-white text-[9px] truncate">
-                                                        <span className="font-semibold block truncate">
+                                                        {/* Selection indicator */}
+                                                        {active && (
+                                                            <span className="absolute top-1.5 right-1.5 h-5 w-5 rounded-full bg-[var(--tnl-green)] text-white flex items-center justify-center shadow-xs">
+                                                                <Check className="h-3.5 w-3.5 stroke-[3]" />
+                                                            </span>
+                                                        )}
+                                                    </span>
+
+                                                    {/* Card caption — readable, one line, never crushed */}
+                                                    <span className="block w-full px-2.5 py-2 border-t border-[var(--tnl-border)]">
+                                                        <span
+                                                            className="block truncate text-[11px] font-medium text-[var(--tnl-heading)]"
+                                                            title={asset.original_name || asset.filename}
+                                                        >
                                                             {asset.original_name || asset.filename}
                                                         </span>
-                                                        <span className="text-white/70">
-                                                            {asset.content_type?.split("/")[1]?.toUpperCase() || "FILE"} · {formatBytes(asset.size_bytes || asset.bytes)}
+                                                        <span className="block text-[10px] text-[var(--tnl-body)] opacity-70">
+                                                            {formatBytes(asset.size_bytes || asset.bytes)}
                                                         </span>
-                                                    </div>
+                                                    </span>
                                                 </button>
                                             );
                                         })}
@@ -509,16 +539,16 @@ export function MediaPickerModal({
                             </div>
                         </div>
 
-                        {/* Side Detail Pane */}
-                        <div className="w-full lg:w-72 shrink-0 p-4 flex flex-col justify-between overflow-y-auto bg-black/[0.01] dark:bg-white/[0.01]">
+                        {/* Right column — asset inspector */}
+                        <div className="hidden md:flex w-[320px] shrink-0 border-l border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] flex-col overflow-hidden">
                             {focusedAsset ? (
-                                <div className="space-y-3">
-                                    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--tnl-body)]">
+                                <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
+                                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-[var(--tnl-body)]">
                                         Asset Details
                                     </h3>
 
-                                    {/* Preview container */}
-                                    <div className="w-full aspect-video rounded-lg overflow-hidden border border-[var(--tnl-border)] bg-black/20 flex items-center justify-center">
+                                    {/* Preview container — object-contain so nothing is cropped */}
+                                    <div className="w-full aspect-[4/3] rounded-lg overflow-hidden border border-[var(--tnl-border)] bg-[var(--tnl-surface)] flex items-center justify-center">
                                         {focusedAsset.kind === "image" ? (
                                             <img
                                                 src={focusedAsset.webp_url || focusedAsset.url}
@@ -526,77 +556,81 @@ export function MediaPickerModal({
                                                 className="w-full h-full object-contain"
                                             />
                                         ) : (
-                                            <FileText className="h-10 w-10 text-white/50" />
+                                            <FileText className="h-10 w-10 text-[var(--tnl-body)] opacity-50" />
                                         )}
                                     </div>
 
-                                    {/* Metadata text */}
-                                    <div className="text-xs space-y-1 text-[var(--tnl-body)]">
-                                        <p className="font-semibold text-[var(--tnl-heading)] truncate" title={focusedAsset.original_name || focusedAsset.filename}>
-                                            {focusedAsset.original_name || focusedAsset.filename}
-                                        </p>
-                                        <p>
-                                            <strong>Folder:</strong> <span className="capitalize">{focusedAsset.folder}</span>
-                                        </p>
-                                        <p>
-                                            <strong>Size:</strong> {formatBytes(focusedAsset.size_bytes || focusedAsset.bytes)}
-                                        </p>
-                                        {focusedAsset.width && focusedAsset.height && (
-                                            <p>
-                                                <strong>Dimensions:</strong> {focusedAsset.width} × {focusedAsset.height} px
-                                            </p>
-                                        )}
-                                        {focusedAsset.used_in !== undefined && (
-                                            <p>
-                                                <strong>Used in:</strong> {focusedAsset.used_in} place(s)
-                                            </p>
-                                        )}
+                                    {/* Structured metadata */}
+                                    <div className="text-xs space-y-2 text-[var(--tnl-body)]">
+                                        <div>
+                                            <span className="block text-[10px] uppercase tracking-wider opacity-60">Filename</span>
+                                            <span
+                                                className="block font-semibold text-[var(--tnl-heading)] break-all"
+                                                title={focusedAsset.original_name || focusedAsset.filename}
+                                            >
+                                                {focusedAsset.original_name || focusedAsset.filename}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <span className="block text-[10px] uppercase tracking-wider opacity-60">Folder</span>
+                                                <span className="capitalize">{focusedAsset.folder}</span>
+                                            </div>
+                                            <div>
+                                                <span className="block text-[10px] uppercase tracking-wider opacity-60">Size</span>
+                                                <span>{formatBytes(focusedAsset.size_bytes || focusedAsset.bytes)}</span>
+                                            </div>
+                                            {focusedAsset.width && focusedAsset.height && (
+                                                <div>
+                                                    <span className="block text-[10px] uppercase tracking-wider opacity-60">Dimensions</span>
+                                                    <span>{focusedAsset.width} × {focusedAsset.height} px</span>
+                                                </div>
+                                            )}
+                                            {focusedAsset.used_in !== undefined && (
+                                                <div>
+                                                    <span className="block text-[10px] uppercase tracking-wider opacity-60">Used in</span>
+                                                    <span>{focusedAsset.used_in} place(s)</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    {/* Quick edit alt text */}
-                                    <div className="space-y-1.5 pt-2 border-t border-[var(--tnl-border)]">
-                                        <label className="text-[11px] font-semibold text-[var(--tnl-heading)] block">
-                                            Alt text (screen readers):
+                                    {/* Accessibility: alt text */}
+                                    <div className="space-y-2 pt-3 border-t border-[var(--tnl-border)]">
+                                        <label
+                                            htmlFor="media-picker-alt"
+                                            className="text-[11px] font-semibold text-[var(--tnl-heading)] block"
+                                        >
+                                            Alt text (screen readers)
                                         </label>
                                         <textarea
+                                            id="media-picker-alt"
                                             value={altDraft}
                                             onChange={(e) => setAltDraft(e.target.value)}
-                                            rows={2}
-                                            className="tnl-field text-xs py-1.5"
-                                            placeholder="Describe image..."
+                                            rows={3}
+                                            className="tnl-field font-sans text-sm w-full"
+                                            placeholder="Describe this asset for screen readers..."
                                             data-testid="media-picker-alt-input"
                                         />
                                         <button
                                             type="button"
                                             onClick={handleQuickSaveAlt}
                                             disabled={isSavingAlt || altDraft.trim() === focusedAsset.alt}
-                                            className="tnl-btn tnl-btn-secondary text-[11px] py-1 px-2.5 h-auto w-full disabled:opacity-40"
+                                            className="tnl-btn tnl-btn-secondary text-xs py-2 w-full disabled:opacity-40"
                                             data-testid="media-picker-save-alt"
                                         >
-                                            {isSavingAlt ? "Saving..." : "Update Alt Text"}
+                                            {isSavingAlt ? "Saving..." : "Save Alt Text"}
                                         </button>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="h-40 flex items-center justify-center text-center text-xs text-[var(--tnl-body)]">
-                                    Click an asset to view details and select it.
+                                <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-2 p-6 text-center">
+                                    <ImageIcon className="h-8 w-8 text-[var(--tnl-body)] opacity-30" />
+                                    <p className="text-xs text-[var(--tnl-body)]">
+                                        Select an asset to view details
+                                    </p>
                                 </div>
                             )}
-
-                            {/* Insertion action footer */}
-                            <div className="pt-4 border-t border-[var(--tnl-border)] mt-4">
-                                <button
-                                    type="button"
-                                    onClick={handleConfirmSelection}
-                                    disabled={selectedItems.length === 0}
-                                    className="tnl-btn tnl-btn-primary w-full text-xs py-2 disabled:opacity-40"
-                                    data-testid="media-picker-insert-button"
-                                >
-                                    {mode === "single"
-                                        ? "Use Selected Image"
-                                        : `Insert ${selectedItems.length} Selected`}
-                                </button>
-                            </div>
                         </div>
                     </div>
                 )}
@@ -629,7 +663,7 @@ export function MediaPickerModal({
                             className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${
                                 isDragging
                                     ? "border-[var(--tnl-green)] bg-[var(--tnl-green)]/10"
-                                    : "border-[var(--tnl-border)] hover:border-white/40 bg-black/[0.01] dark:bg-white/[0.01]"
+                                    : "border-[var(--tnl-border)] hover:border-[var(--tnl-green)]/60 bg-[var(--tnl-surface-2)]"
                             }`}
                             data-testid="media-picker-dropzone"
                         >
@@ -745,7 +779,8 @@ export function MediaPickerModal({
                                                 <button
                                                     type="button"
                                                     onClick={() => handleRemoveFromQueue(item.id)}
-                                                    className="text-white/40 hover:text-white p-1"
+                                                    aria-label={`Remove ${item.file.name} from queue`}
+                                                    className="p-1 text-[var(--tnl-body)] hover:text-[var(--tnl-heading)]"
                                                 >
                                                     <X className="h-3.5 w-3.5" />
                                                 </button>
@@ -756,8 +791,47 @@ export function MediaPickerModal({
                             </div>
                         )}
 
-                        {/* Submit button */}
-                        <div className="pt-3 flex justify-end">
+                    </div>
+                )}
+
+                {/* Zone 3 — sticky modal footer: summary | Cancel | primary action */}
+                <div className="shrink-0 px-5 py-3 border-t border-[var(--tnl-border)] bg-[var(--tnl-surface)] flex flex-wrap items-center justify-between gap-3">
+                    <p
+                        className="text-xs text-[var(--tnl-body)] min-w-0 truncate"
+                        data-testid="media-picker-summary"
+                    >
+                        {activeTab === "library"
+                            ? mode === "single"
+                                ? selectedItems[0]
+                                    ? `Selected: ${selectedItems[0].original_name || selectedItems[0].filename} · ${formatBytes(selectedItems[0].size_bytes || selectedItems[0].bytes)}`
+                                    : "Nothing selected yet"
+                                : `${selectedItems.length} asset(s) selected`
+                            : `${uploadQueue.length} file(s) queued`}
+                    </p>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => onOpenChange(false)}
+                            className="tnl-btn tnl-btn-secondary text-xs py-2 px-4"
+                            data-testid="media-picker-cancel"
+                        >
+                            Cancel
+                        </button>
+
+                        {activeTab === "library" ? (
+                            <button
+                                type="button"
+                                onClick={handleConfirmSelection}
+                                disabled={selectedItems.length === 0}
+                                className="tnl-btn tnl-btn-primary text-xs py-2 px-5 disabled:opacity-40"
+                                data-testid="media-picker-insert-button"
+                            >
+                                {mode === "single"
+                                    ? "Use Selected Image"
+                                    : `Insert ${selectedItems.length} Images`}
+                            </button>
+                        ) : (
                             <button
                                 type="button"
                                 onClick={handleBatchUpload}
@@ -773,9 +847,9 @@ export function MediaPickerModal({
                                     "Upload & Insert"
                                 )}
                             </button>
-                        </div>
+                        )}
                     </div>
-                )}
+                </div>
             </DialogContent>
         </Dialog>
     );
