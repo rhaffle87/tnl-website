@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from models.content import now_utc
 
@@ -95,7 +95,29 @@ class Announcement(BaseModel):
     title_id: str | None = None
     body: str | None = None
     body_id: str | None = None
+    # Call to action. Optional: with no `url` the popup falls back to the events tab,
+    # with no labels it falls back to the generic "Register now" button — so every
+    # announcement written before these fields existed keeps behaving the same.
+    cta_label: str | None = None
+    cta_label_id: str | None = None
+    url: str | None = None
     version: int = 0
+
+    @field_validator("url")
+    @classmethod
+    def _safe_url(cls, value: str | None) -> str | None:
+        """Only a site path or an explicit http(s)/mailto link may be rendered."""
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            return None
+        if value.startswith("//"):
+            # Protocol-relative — the browser would treat this as a cross-origin URL.
+            raise ValueError("announcement url must be a site path (/) or an http(s)/mailto link")
+        if value.startswith("/") or value.startswith(("https://", "http://", "mailto:")):
+            return value
+        raise ValueError("announcement url must be a site path (/) or an http(s)/mailto link")
 
 
 class ThemeTokens(BaseModel):

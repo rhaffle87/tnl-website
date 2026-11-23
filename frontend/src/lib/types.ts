@@ -371,6 +371,10 @@ export interface AnnouncementSettings {
   title_id?: string | null;
   body?: string | null;
   body_id?: string | null;
+  /** Optional CTA. Empty label -> generic "Register now"; empty url -> events tab. */
+  cta_label?: string | null;
+  cta_label_id?: string | null;
+  url?: string | null;
   version: number;
 }
 

@@ -581,8 +581,12 @@ export function AnnouncementPopup() {
                         {pick(locale, announcement.body, announcement.body_id)}
                     </p>
                     <div className="mt-6 flex flex-wrap gap-3">
-                        <Link to="/activity?tab=events" className="tnl-btn tnl-btn-primary flex-1" data-testid="announcement-cta-button">
-                            {t("register_now")}
+                        <Link
+                            to={announcement.url || "/activity?tab=events"}
+                            className="tnl-btn tnl-btn-primary flex-1"
+                            data-testid="announcement-cta-button"
+                        >
+                            {pick(locale, announcement.cta_label, announcement.cta_label_id) || t("register_now")}
                         </Link>
                         <button type="button" onClick={dismiss} className="tnl-btn tnl-btn-outline" data-testid="announcement-dismiss-button">
                             {t("dismiss")}
