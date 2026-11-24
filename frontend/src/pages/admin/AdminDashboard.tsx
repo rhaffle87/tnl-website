@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { ArrowUpRight, Calendar, CheckCircle2, Clock, FileText, Image, MessageSquare, Plus, QrCode, ScrollText, Users } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { AdminPageHeader, AdminSectionHeader, IssueList, Panel } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
@@ -14,6 +15,12 @@ export default function AdminDashboard() {
         retry: false,
     });
 
+    const { data: auditData } = useQuery({
+        queryKey: ["admin", "recent-audit"],
+        queryFn: () => apiGet<{ items: AuditEntry[]; total: number }>("/admin/audit?limit=6"),
+        retry: false,
+    });
+
     const cards = [
         { label: "Published articles", value: data?.published_posts, total: data?.posts, to: "/admin/content/posts", key: "posts" },
         { label: "Members", value: data?.members, to: "/admin/content/members", key: "members" },
@@ -23,34 +30,62 @@ export default function AdminDashboard() {
         { label: "Needs review", value: data?.needs_review, to: "/admin/review", key: "review" },
     ];
 
+    const quickActions = [
+        { label: "New News", to: "/admin/content/posts/new", icon: Plus, primary: true },
+        { label: "New Event", to: "/admin/content/events/new", icon: Calendar },
+        { label: "Door Check-in Desk", to: "/admin/registrations", icon: QrCode },
+        { label: "Upload Media", to: "/admin/media", icon: Image },
+    ];
+
     return (
-        <div data-testid="admin-dashboard">
-            <AdminPageHeader
-                title="Dashboard"
-                description="A quick look at the website. Click any number to go straight to that part of the site."
-                testId="dashboard-header"
-            />
+        <div data-testid="admin-dashboard" className="space-y-6">
+            {/* Layer 1: Header + Quick Action Command Bar */}
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <AdminPageHeader
+                    title="Dashboard"
+                    description="TNL Studio command center. Click any metric to manage live resources."
+                    testId="dashboard-header"
+                    className="!mb-0"
+                />
+                <div className="flex flex-wrap items-center gap-2" data-testid="dashboard-quick-actions">
+                    {quickActions.map((qa) => {
+                        const Icon = qa.icon;
+                        return (
+                            <Link
+                                key={qa.to}
+                                to={qa.to}
+                                className={qa.primary ? "tnl-btn tnl-btn-primary h-9 text-xs" : "tnl-btn tnl-btn-outline h-9 text-xs"}
+                            >
+                                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                                <span>{qa.label}</span>
+                            </Link>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Layer 2: Metric Cards Grid */}
             {isLoading ? (
                 <Spinner label="Loading…" />
             ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="dashboard-metrics-grid">
                     {cards.map((card) => (
                         <Link
                             key={card.key}
                             to={card.to}
-                            className="tnl-card tnl-card-hover p-6"
+                            className="tnl-card tnl-card-hover p-5 transition-all duration-200"
                             data-testid={`dashboard-card-${card.key}`}
                         >
-                            <div className="text-[40px] font-bold leading-none" style={{ color: "var(--tnl-green)" }}>
+                            <div className="text-[36px] font-bold leading-none" style={{ color: "var(--tnl-green)" }}>
                                 {card.value ?? 0}
                                 {typeof card.total === "number" ? (
-                                    <span className="text-[18px] font-medium" style={{ color: "var(--tnl-tan-text)" }}>
+                                    <span className="text-[16px] font-medium" style={{ color: "var(--tnl-tan-text)" }}>
                                         {" "}
                                         / {card.total}
                                     </span>
                                 ) : null}
                             </div>
-                            <div className="mt-2 text-sm font-medium">{card.label}</div>
+                            <div className="mt-2 text-sm font-medium text-[var(--tnl-heading)]">{card.label}</div>
                             {typeof card.extra === "number" && card.extra > 0 ? (
                                 <div className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
                                     {card.extra} waiting for a decision
@@ -61,38 +96,94 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            <div className="mt-8 grid gap-4 lg:grid-cols-2">
+            {/* Layer 3: 2-Column Operational Grid */}
+            <div className="grid gap-6 lg:grid-cols-2">
+                {/* Left: Recent Activity Feed */}
                 <Panel>
-                    <AdminSectionHeader title="Common jobs" />
-                    <ul className="mt-3 space-y-2 text-sm">
-                        {[
-                            { to: "/admin/content/posts", label: "Write a news article" },
-                            { to: "/admin/content/members", label: "Add or update a member" },
-                            { to: "/admin/content/events", label: "Open a registration" },
-                            { to: "/admin/registrations", label: "Export registrants to a spreadsheet" },
-                            { to: "/admin/theme", label: "Change the site colours" },
-                            { to: "/admin/guide", label: "Read the maintainer guide" },
-                        ].map((item) => (
-                            <li key={item.to}>
-                                <Link to={item.to} className="font-medium hover:underline" style={{ color: "var(--tnl-green)" }}>
-                                    {item.label}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                </Panel>
-                <Panel>
-                    <AdminSectionHeader title="Before you publish" />
-                    <p className="mt-2 text-sm text-[var(--tnl-body)]">
-                        TNL Studio checks every item before it goes live: placeholder text, empty links, images without a
-                        description, phone numbers that are not in +62 format, social links that do not match their platform,
-                        and statistics that nobody has verified yet. Anything that fails is listed under{" "}
-                        <Link to="/admin/review" className="font-medium underline" style={{ color: "var(--tnl-green)" }}>
-                            Needs review
+                    <div className="flex items-center justify-between">
+                        <AdminSectionHeader title="Recent Activity" />
+                        <Link to="/admin/audit" className="text-xs font-medium text-[var(--tnl-green)] hover:underline inline-flex items-center gap-1">
+                            <span>View all log</span>
+                            <ArrowUpRight className="h-3 w-3" />
                         </Link>
-                        .
-                    </p>
+                    </div>
+                    <div className="mt-4 space-y-3" data-testid="dashboard-recent-activity">
+                        {auditData?.items?.length ? (
+                            auditData.items.slice(0, 5).map((entry) => (
+                                <div key={entry.id} className="flex items-start justify-between gap-3 text-xs border-b border-[var(--tnl-border)] pb-2.5 last:border-0 last:pb-0">
+                                    <div className="min-w-0">
+                                        <p className="font-medium text-[var(--tnl-heading)] truncate">
+                                            {entry.action} <span className="text-[var(--tnl-muted)] font-mono">[{entry.resource}]</span>
+                                        </p>
+                                        <p className="text-[11px] text-[var(--tnl-body)] truncate">{entry.actor_email}</p>
+                                    </div>
+                                    <span className="shrink-0 text-[11px] text-[var(--tnl-muted)] font-mono">
+                                        {new Date(entry.created_at).toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                    </span>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-xs text-[var(--tnl-muted)]">No recent changes recorded.</p>
+                        )}
+                    </div>
                 </Panel>
+
+                {/* Right: Content Health & Quick Links */}
+                <div className="space-y-6">
+                    <Panel>
+                        <AdminSectionHeader title="Content Health & Alerts" />
+                        <div className="mt-3 space-y-2 text-sm">
+                            <div className="flex items-center justify-between text-xs py-1">
+                                <span className="text-[var(--tnl-body)]">Open House 2026:</span>
+                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">30 / 30 Quota Filled</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs py-1">
+                                <span className="text-[var(--tnl-body)]">Needs Review Queue:</span>
+                                <span className="font-medium">
+                                    {data?.needs_review ? (
+                                        <Link to="/admin/review" className="text-amber-600 dark:text-amber-400 underline">
+                                            {data.needs_review} item(s) pending
+                                        </Link>
+                                    ) : (
+                                        <span className="text-[var(--tnl-muted)]">All items passed checks</span>
+                                    )}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs py-1">
+                                <span className="text-[var(--tnl-body)]">Contact Inbox:</span>
+                                <span className="font-medium">
+                                    {data?.new_messages ? (
+                                        <Link to="/admin/inbox" className="text-[var(--tnl-green)] underline">
+                                            {data.new_messages} unread message(s)
+                                        </Link>
+                                    ) : (
+                                        <span className="text-[var(--tnl-muted)]">0 unread</span>
+                                    )}
+                                </span>
+                            </div>
+                        </div>
+                    </Panel>
+
+                    <Panel>
+                        <AdminSectionHeader title="Common Tasks" />
+                        <ul className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            {[
+                                { to: "/admin/content/posts", label: "Write a news article" },
+                                { to: "/admin/content/members", label: "Add or update a member" },
+                                { to: "/admin/content/events", label: "Open a registration" },
+                                { to: "/admin/registrations", label: "Export registrations (.xlsx)" },
+                                { to: "/admin/theme", label: "Change site colours" },
+                                { to: "/admin/guide", label: "Read maintainer guide" },
+                            ].map((item) => (
+                                <li key={item.to}>
+                                    <Link to={item.to} className="font-medium hover:underline text-[var(--tnl-green)] block truncate">
+                                        • {item.label}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </Panel>
+                </div>
             </div>
         </div>
     );

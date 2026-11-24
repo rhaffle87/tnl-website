@@ -223,19 +223,31 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
 
     return (
         <div data-testid={`page-builder-${page.slug}`}>
-            <AdminPageHeader
-                title={page.title}
-                description={`Widgets on /${page.slug === "home" ? "" : page.slug}. Changes are saved as you go, and every save keeps a version you can restore.`}
-                actions={
-                    <>
-                        <button type="button" onClick={onBack} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="page-back-button">
+            {/* Sticky Action Bar */}
+            <div
+                className="sticky top-0 z-20 -mx-4 -mt-4 mb-6 border-b px-4 py-3 backdrop-blur-md sm:-mx-6 sm:-mt-6 sm:px-6 lg:-mx-8 lg:-mt-8 lg:px-8"
+                style={{ borderColor: "var(--tnl-border)", background: "color-mix(in srgb, var(--tnl-surface) 88%, transparent)" }}
+                data-testid="page-builder-sticky-bar"
+            >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        <h1 className="truncate text-lg font-semibold text-[var(--tnl-heading)]" data-testid="page-builder-title">
+                            {page.title}
+                        </h1>
+                        <p className="text-xs text-[var(--tnl-body)] truncate">
+                            /{page.slug === "home" ? "" : page.slug} · Status: <span className="font-semibold capitalize">{page.status}</span>
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button type="button" onClick={onBack} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs" data-testid="page-back-button">
                             All pages
                         </button>
                         <a
                             href={`/${page.slug === "home" ? "" : page.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm"
+                            className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs"
                             data-testid="page-preview-link"
                         >
                             Preview
@@ -243,25 +255,24 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                         <button
                             type="button"
                             onClick={() => setShowRevisions((v) => !v)}
-                            className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm"
+                            className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs"
                             data-testid="page-revisions-button"
                         >
-                            <History className="h-4 w-4" aria-hidden="true" />
+                            <History className="h-3.5 w-3.5" aria-hidden="true" />
                             Revisions
                         </button>
                         {page.status === "published" ? (
-                            <button type="button" onClick={() => publish("draft")} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="page-unpublish-button">
+                            <button type="button" onClick={() => publish("draft")} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs" data-testid="page-unpublish-button">
                                 Unpublish
                             </button>
                         ) : (
-                            <button type="button" onClick={() => publish("published")} className="tnl-btn tnl-btn-primary h-10 min-h-[40px] text-sm" data-testid="page-publish-button">
+                            <button type="button" onClick={() => publish("published")} className="tnl-btn tnl-btn-primary h-9 min-h-[36px] text-xs" data-testid="page-publish-button">
                                 Publish
                             </button>
                         )}
-                    </>
-                }
-                testId="page-builder-header"
-            />
+                    </div>
+                </div>
+            </div>
 
             {issues.length ? (
                 <Panel className="mb-5">
