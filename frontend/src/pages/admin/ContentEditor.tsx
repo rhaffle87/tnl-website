@@ -12,13 +12,14 @@ import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "r
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Eye, Monitor, RotateCcw, Save, Smartphone } from "lucide-react";
 import { apiGet, apiPost, apiPut } from "@/lib/api";
 import { AdminSelect, AdminSwitch, IssueList, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
 import { RichTextField } from "@/components/admin/editor";
 import { TagChipsField, KeyValueMapEditor, ObjectListRepeater, FormFieldsBuilder } from "@/components/admin/repeaters";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
     RESOURCE_SPECS,
     emptyDraft,
@@ -478,6 +479,16 @@ export default function ContentEditor() {
     const [snapshot, setSnapshot] = useState<string | null>(null);
     const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
+    // Autosave & Recovery states
+    const draftKey = useMemo(() => `tnl-draft:${resource}:${routeId ?? "new"}`, [resource, routeId]);
+    const [localDraftInfo, setLocalDraftInfo] = useState<{ timestamp: string; form: Record<string, unknown> } | null>(null);
+    const [lastAutosaved, setLastAutosaved] = useState<string | null>(null);
+
+    // Live preview states
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+    const [previewLang, setPreviewLang] = useState<"en" | "id">("en");
+
     const needsMembers = Boolean(spec?.fields.some((f) => f.type === "member_multiselect"));
     const { data: membersList } = useQuery({
         queryKey: ["admin", "members-lookup"],
@@ -520,7 +531,42 @@ export default function ContentEditor() {
         }
     }, [spec, isNew, routeId, row, loadedKey]);
 
+    // Check for existing local autosave on hydration
+    useEffect(() => {
+        if (!loadedKey) return;
+        try {
+            const raw = localStorage.getItem(draftKey);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed?.form && snapshot && JSON.stringify(parsed.form) !== snapshot) {
+                    setLocalDraftInfo({
+                        timestamp: parsed.timestamp || new Date().toISOString(),
+                        form: parsed.form,
+                    });
+                }
+            }
+        } catch {
+            /* ignore localStorage errors */
+        }
+    }, [loadedKey, draftKey, snapshot]);
+
     const dirty = snapshot !== null && JSON.stringify(form) !== snapshot;
+
+    // Debounced autosave effect (5s after last keystroke when dirty)
+    useEffect(() => {
+        if (!dirty || !loadedKey) return;
+        const timer = setTimeout(() => {
+            try {
+                const now = new Date().toISOString();
+                localStorage.setItem(draftKey, JSON.stringify({ timestamp: now, form }));
+                const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                setLastAutosaved(timeStr);
+            } catch {
+                /* ignore quota */
+            }
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [form, dirty, loadedKey, draftKey]);
 
     const setField: SetField = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -537,6 +583,13 @@ export default function ContentEditor() {
             return apiPost<Row>(`/admin/content/${resource}`, payload);
         },
         onSuccess: (saved) => {
+            try {
+                localStorage.removeItem(draftKey);
+            } catch {
+                /* ignore */
+            }
+            setLastAutosaved(null);
+            setLocalDraftInfo(null);
             toast.success("Saved.");
             invalidate();
             setIssues((saved?.issues as QualityIssue[]) ?? []);
@@ -664,6 +717,20 @@ export default function ContentEditor() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {lastAutosaved ? (
+                            <span className="hidden sm:inline text-xs text-[var(--tnl-body)] mr-1" data-testid="content-autosave-indicator">
+                                Autosaved locally {lastAutosaved}
+                            </span>
+                        ) : null}
+                        <button
+                            type="button"
+                            onClick={() => setPreviewOpen(true)}
+                            className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm"
+                            data-testid="content-preview-button"
+                        >
+                            <Eye className="h-4 w-4" aria-hidden="true" />
+                            Preview
+                        </button>
                         <button
                             type="button"
                             onClick={onCancel}
@@ -685,6 +752,49 @@ export default function ContentEditor() {
                     </div>
                 </div>
             </div>
+
+            {localDraftInfo ? (
+                <div
+                    className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-[var(--tnl-heading)]"
+                    data-testid="content-draft-banner"
+                >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                        <span className="truncate">
+                            Draf lokal tersimpan pada {new Date(localDraftInfo.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setForm(localDraftInfo.form);
+                                setLocalDraftInfo(null);
+                                toast.success("Draf lokal dipulihkan.");
+                            }}
+                            className="font-medium underline hover:text-amber-600 dark:hover:text-amber-400 text-sm"
+                            data-testid="content-restore-draft-btn"
+                        >
+                            Pulihkan draf
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                try {
+                                    localStorage.removeItem(draftKey);
+                                } catch {
+                                    /* ignore */
+                                }
+                                setLocalDraftInfo(null);
+                            }}
+                            className="text-xs text-[var(--tnl-body)] hover:underline"
+                            data-testid="content-discard-draft-btn"
+                        >
+                            Abaikan
+                        </button>
+                    </div>
+                </div>
+            ) : null}
 
             {issues.length ? (
                 <div className="mb-6">
@@ -795,6 +905,114 @@ export default function ContentEditor() {
                     ) : null}
                 </div>
             </div>
+
+            {/* Modal: Preview as Visitor */}
+            <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+                <DialogContent size="xl" className="max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0" data-testid="content-preview-modal">
+                    <div className="flex flex-wrap items-center justify-between border-b px-6 py-4 bg-[var(--tnl-surface)]" style={{ borderColor: "var(--tnl-border)" }}>
+                        <div className="flex items-center gap-3">
+                            <DialogTitle className="text-base font-semibold text-[var(--tnl-heading)]">Preview as Visitor</DialogTitle>
+                            <span className="rounded bg-[var(--muted)] px-2 py-0.5 text-xs text-[var(--tnl-body)] font-mono">
+                                /{resource}/{String(form.slug || routeId || "preview")}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="inline-flex items-center rounded-lg border p-1" style={{ borderColor: "var(--tnl-border)" }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setPreviewDevice("desktop")}
+                                    className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                                        previewDevice === "desktop" ? "bg-[var(--tnl-green)] text-white" : "text-[var(--tnl-body)] hover:text-[var(--tnl-heading)]"
+                                    }`}
+                                    data-testid="content-preview-device-desktop"
+                                >
+                                    <Monitor className="h-3.5 w-3.5" /> Desktop
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setPreviewDevice("mobile")}
+                                    className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                                        previewDevice === "mobile" ? "bg-[var(--tnl-green)] text-white" : "text-[var(--tnl-body)] hover:text-[var(--tnl-heading)]"
+                                    }`}
+                                    data-testid="content-preview-device-mobile"
+                                >
+                                    <Smartphone className="h-3.5 w-3.5" /> Mobile (390px)
+                                </button>
+                            </div>
+                            <div className="inline-flex items-center rounded-lg border p-1" style={{ borderColor: "var(--tnl-border)" }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setPreviewLang("en")}
+                                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                                        previewLang === "en" ? "bg-[var(--tnl-green)] text-white" : "text-[var(--tnl-body)] hover:text-[var(--tnl-heading)]"
+                                    }`}
+                                    data-testid="content-preview-lang-en"
+                                >
+                                    EN
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setPreviewLang("id")}
+                                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                                        previewLang === "id" ? "bg-[var(--tnl-green)] text-white" : "text-[var(--tnl-body)] hover:text-[var(--tnl-heading)]"
+                                    }`}
+                                    data-testid="content-preview-lang-id"
+                                >
+                                    ID
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-6 bg-black/[0.02] dark:bg-white/[0.02]" data-testid="content-preview-body">
+                        <div className={previewDevice === "mobile" ? "w-[390px] mx-auto rounded-2xl border shadow-xl bg-[var(--card)] p-5 overflow-hidden transition-all" : "max-w-3xl mx-auto bg-[var(--card)] rounded-xl border p-8 shadow-sm"}>
+                            {resource === "posts" ? (
+                                <article className="space-y-4">
+                                    <h1 className="tnl-h2 text-2xl sm:text-3xl font-bold">
+                                        {String(previewLang === "id" && form.title_id ? form.title_id : form.title || "Untitled Article")}
+                                    </h1>
+                                    {form.image_url ? (
+                                        <div className="aspect-video w-full rounded-xl overflow-hidden border">
+                                            <img src={String(form.image_url)} alt="Cover" className="h-full w-full object-cover" />
+                                        </div>
+                                    ) : null}
+                                    <div
+                                        className="tnl-prose editorial-prose max-w-none pt-4"
+                                        dangerouslySetInnerHTML={{
+                                            __html: String(
+                                                previewLang === "id" && form.body_id ? form.body_id : form.body || "<p>No content written yet.</p>"
+                                            ),
+                                        }}
+                                    />
+                                </article>
+                            ) : resource === "events" ? (
+                                <div className="space-y-4">
+                                    <div className="text-xs uppercase font-mono tracking-wider text-[var(--tnl-muted)]">Event Preview</div>
+                                    <h1 className="tnl-h2 text-2xl font-bold">
+                                        {String(previewLang === "id" && form.title_id ? form.title_id : form.title || "Untitled Event")}
+                                    </h1>
+                                    {form.cover_image ? (
+                                        <div className="aspect-video w-full rounded-xl overflow-hidden border">
+                                            <img src={String(form.cover_image)} alt="Event Cover" className="h-full w-full object-cover" />
+                                        </div>
+                                    ) : null}
+                                    <p className="text-sm leading-relaxed text-[var(--tnl-body)]">
+                                        {String(previewLang === "id" && form.description_id ? form.description_id : form.description || "")}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="text-xs uppercase font-mono tracking-wider text-[var(--tnl-muted)]">{spec.label} Preview</div>
+                                    <h1 className="tnl-h2 text-2xl font-bold">{title}</h1>
+                                    <p className="text-sm leading-relaxed text-[var(--tnl-body)]">
+                                        {String(previewLang === "id" && form.description_id ? form.description_id : form.description || "Previewing content.")}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

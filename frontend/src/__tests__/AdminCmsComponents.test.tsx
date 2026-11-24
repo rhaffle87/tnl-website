@@ -370,4 +370,55 @@ describe("Admin CMS Components", () => {
     expect(inspector.querySelectorAll('input[type="checkbox"]').length).toBe(0);
     expect(Array.from(inspector.querySelectorAll("select")).every((el) => el.className.includes("appearance-none"))).toBe(true);
   });
+
+  /* ---------------------------------------------------------------- *
+   * Draft Autosave, Recovery & Live Preview                         *
+   * ---------------------------------------------------------------- */
+
+  it("ContentEditor offers Live Preview modal with device and language switchers", async () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/content/:resource/new" element={<ContentEditor />} />
+      </Routes>,
+      { route: "/admin/content/posts/new" }
+    );
+
+    const previewBtn = screen.getByTestId("content-preview-button");
+    expect(previewBtn).toBeInTheDocument();
+
+    fireEvent.click(previewBtn);
+    expect(await screen.findByTestId("content-preview-modal")).toBeInTheDocument();
+    expect(screen.getByTestId("content-preview-device-desktop")).toBeInTheDocument();
+    expect(screen.getByTestId("content-preview-device-mobile")).toBeInTheDocument();
+    expect(screen.getByTestId("content-preview-lang-en")).toBeInTheDocument();
+    expect(screen.getByTestId("content-preview-lang-id")).toBeInTheDocument();
+
+    // Toggle device
+    fireEvent.click(screen.getByTestId("content-preview-device-mobile"));
+    expect(screen.getByTestId("content-preview-body").querySelector(".w-\\[390px\\]")).not.toBeNull();
+  });
+
+  it("ContentEditor displays draft recovery banner when existing local draft is found", async () => {
+    localStorage.setItem(
+      "tnl-draft:events:new",
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        form: { title: "Restored Event Draft", title_id: "Draf Acara" },
+      })
+    );
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/content/:resource/new" element={<ContentEditor />} />
+      </Routes>,
+      { route: "/admin/content/events/new" }
+    );
+
+    expect(await screen.findByTestId("content-draft-banner")).toBeInTheDocument();
+    const restoreBtn = screen.getByTestId("content-restore-draft-btn");
+    fireEvent.click(restoreBtn);
+
+    expect(screen.queryByTestId("content-draft-banner")).toBeNull();
+    localStorage.removeItem("tnl-draft:events:new");
+  });
 });
