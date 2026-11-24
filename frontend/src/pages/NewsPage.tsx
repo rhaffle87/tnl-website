@@ -1,7 +1,8 @@
 // News index and article pages.
 
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { Link, useLocation, useParams } from "react-router-dom";
+import { ArrowLeft, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { usePost } from "@/lib/hooks";
 import { pick, useLocale } from "@/lib/i18n";
 import { Breadcrumb, EmptyState, Spinner, formatDate } from "@/components/site/Primitives";
@@ -14,6 +15,7 @@ export default function NewsPage() {
 
 export function NewsArticlePage() {
     const { slug } = useParams<{ slug: string }>();
+    const location = useLocation();
     const { locale, t } = useLocale();
     const { data: post, isLoading, isError } = usePost(slug);
 
@@ -42,6 +44,16 @@ export function NewsArticlePage() {
     const title = pick(locale, post.title, post.title_id);
     const body = locale === "id" ? post.body_id || post.body : post.body || post.body_id;
 
+    const copyLink = async () => {
+        try {
+            const canonical = `${window.location.origin}${location.pathname}`;
+            await navigator.clipboard.writeText(canonical);
+            toast.success(locale === "id" ? "Tautan artikel disalin." : "Article link copied.");
+        } catch {
+            toast.error(locale === "id" ? "Gagal menyalin tautan." : "Failed to copy link.");
+        }
+    };
+
     return (
         <article className="editorial-content editorial-article" data-testid="news-article-page">
             <header className="editorial-masthead">
@@ -57,6 +69,16 @@ export function NewsArticlePage() {
                         {t("published_on")} <time dateTime={post.published_at || undefined}>{formatDate(post.published_at, locale)}</time>
                         {post.author ? ` · ${post.author}` : ""}
                     </p>
+                    <button
+                        type="button"
+                        onClick={copyLink}
+                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold"
+                        style={{ color: "var(--tnl-link)" }}
+                        data-testid="article-copy-link-button"
+                    >
+                        <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                        {locale === "id" ? "Salin tautan" : "Copy link"}
+                    </button>
                 </div>
             </header>
 

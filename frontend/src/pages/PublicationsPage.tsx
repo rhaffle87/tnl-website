@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, FileText, Users } from "lucide-react";
+import { ExternalLink, FileText, Copy, Users } from "lucide-react";
+import { toast } from "sonner";
 import { usePublications } from "@/lib/hooks";
+import type { Publication } from "@/lib/types";
 import { useLocale } from "@/lib/i18n";
 import { EmptyState, SectionHeading, Spinner } from "@/components/site/Primitives";
 
@@ -32,6 +34,20 @@ export default function PublicationsPage() {
     // Built as single strings: a multi-expression child inside <option> is invalid HTML.
     const yearAllLabel = `${t("year")}: ${t("all_categories")}`;
     const typeAllLabel = `${t("category")}: ${t("all_categories")}`;
+
+    const copyCitation = async (pub: Publication) => {
+        const authors = pub.authors?.trim() ? `${pub.authors.replace(/\.$/, "")}. ` : "";
+        const year = pub.year ? `(${pub.year}). ` : "";
+        const venue = pub.venue ? `${pub.venue.replace(/\.$/, "")}. ` : "";
+        const link = pub.doi ? `https://doi.org/${pub.doi}` : pub.url || "";
+        const citation = `${authors}${pub.title}. ${year}${venue}${link}`.replace(/\s+/g, " ").trim();
+        try {
+            await navigator.clipboard.writeText(citation);
+            toast.success(locale === "id" ? "Sitasi disalin ke papan klip." : "Citation copied to clipboard.");
+        } catch {
+            toast.error(locale === "id" ? "Gagal menyalin sitasi." : "Failed to copy citation.");
+        }
+    };
 
     return (
         <div className="editorial-content editorial-publications" data-testid="publications-page">
@@ -148,6 +164,16 @@ export default function PublicationsPage() {
                                             <ExternalLink className="h-4 w-4" aria-hidden="true" />
                                         </a>
                                     ) : null}
+                                    <button
+                                        type="button"
+                                        onClick={() => copyCitation(pub)}
+                                        className="mt-4 ml-3 inline-flex items-center gap-1.5 text-sm font-semibold"
+                                        style={{ color: "var(--tnl-link)" }}
+                                        data-testid={`publication-copy-citation-${pub.id}`}
+                                    >
+                                        <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                                        {locale === "id" ? "Salin sitasi" : "Copy citation"}
+                                    </button>
                                 </article>
                                 </li>
                             ))}
