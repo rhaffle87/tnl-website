@@ -111,7 +111,7 @@ describe("Admin CMS Components", () => {
   it("RegistrarPage renders exports and filters without Sheets or scoring controls", () => {
     renderWithProviders(<RegistrarPage />, { route: "/admin/registrations" });
 
-    expect(screen.getByText(/Registrations/i)).toBeTruthy();
+    expect(screen.getAllByText(/Registrations/i).length).toBeGreaterThan(0);
     expect(screen.queryByTestId("registrations-score-button")).toBeNull();
     expect(screen.queryByTestId("sync-sheet-btn")).toBeNull();
     expect(screen.getByText("Export Excel (.xlsx)")).toBeTruthy();

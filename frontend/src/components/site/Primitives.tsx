@@ -91,7 +91,7 @@ export function Spinner({ label }: { label?: string }) {
 }
 
 const STATUS_STYLES: Record<string, { bg: string; fg: string }> = {
-    open: { bg: "#43594A", fg: "#ffffff" },
+    open: { bg: "var(--gsm-emerald, #43594A)", fg: "#ffffff" },
     upcoming: { bg: "#a8977b", fg: "#111518" },
     closed: { bg: "#eaeaec", fg: "#3f4245" },
     past: { bg: "#eaeaec", fg: "#3f4245" },

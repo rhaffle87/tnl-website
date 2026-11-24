@@ -225,7 +225,7 @@ export default function ContactPage() {
                                     {isId ? "LOKASI LABORATORIUM" : "LABORATORY LOCATION"}
                                 </span>
                                 {mapLinks.coordinatesLabel && (
-                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#111613] px-2.5 py-0.5 text-[11px] font-mono text-[#5D8A6B] dark:text-[#7EA88B] shadow-2xs">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#111613] px-2.5 py-0.5 text-[11px] font-mono text-[var(--gsm-emerald,#5D8A6B)] shadow-2xs">
                                         <MapPin className="h-3 w-3" aria-hidden="true" />
                                         <span>{mapLinks.coordinatesLabel}</span>
                                     </span>
@@ -247,7 +247,7 @@ export default function ContactPage() {
                                     <button
                                         type="button"
                                         onClick={handleCopyAddress}
-                                        className="inline-flex items-center gap-2 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                        className="inline-flex items-center gap-2 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary,#223027)] hover:text-white hover:border-[var(--gsm-primary,#223027)] dark:hover:bg-[var(--gsm-accent,#C4B393)] dark:hover:text-[#111613] dark:hover:border-[var(--gsm-accent,#C4B393)] shadow-2xs"
                                         data-testid="copy-address-button"
                                     >
                                         {copiedAddress ? (
@@ -282,7 +282,7 @@ export default function ContactPage() {
                             <div className="p-6 sm:p-7 space-y-3.5">
                                 <div className="tnl-inset-tile p-3.5 flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-3 min-w-0">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#223027]/10 dark:bg-[#5D8A6B]/20 text-[#223027] dark:text-[#A3C9AE] border border-[#223027]/15 dark:border-[#5D8A6B]/30">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--gsm-primary,#223027)]/10 dark:bg-[var(--gsm-emerald,#5D8A6B)]/20 text-[var(--gsm-primary,#223027)] dark:text-[var(--gsm-accent,#A3C9AE)] border border-[var(--gsm-primary,#223027)]/15 dark:border-[var(--gsm-emerald,#5D8A6B)]/30">
                                             <Mail className="h-5 w-5" aria-hidden="true" />
                                         </div>
                                         <div className="min-w-0">
@@ -302,7 +302,7 @@ export default function ContactPage() {
                                         type="button"
                                         onClick={handleCopyEmail}
                                         aria-label={isId ? "Salin email" : "Copy email"}
-                                        className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#131A16] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                        className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#131A16] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary,#223027)] hover:text-white hover:border-[var(--gsm-primary,#223027)] dark:hover:bg-[var(--gsm-accent,#C4B393)] dark:hover:text-[#111613] dark:hover:border-[var(--gsm-accent,#C4B393)] shadow-2xs"
                                         data-testid="copy-email-button"
                                     >
                                         {copiedEmail ? (
@@ -321,7 +321,7 @@ export default function ContactPage() {
 
                                 <div className="tnl-inset-tile p-3.5 flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-3 min-w-0">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C4B393]/20 text-[#7F715C] dark:text-[#C4B393] border border-[#C4B393]/30">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--gsm-accent,#C4B393)]/20 text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent,#C4B393)] border border-[var(--gsm-accent,#C4B393)]/30">
                                             <Sparkles className="h-5 w-5" aria-hidden="true" />
                                         </div>
                                         <div className="min-w-0">
@@ -337,7 +337,7 @@ export default function ContactPage() {
                                         href={igUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#131A16] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                        className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#131A16] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary,#223027)] hover:text-white hover:border-[var(--gsm-primary,#223027)] dark:hover:bg-[var(--gsm-accent,#C4B393)] dark:hover:text-[#111613] dark:hover:border-[var(--gsm-accent,#C4B393)] shadow-2xs"
                                         data-testid="official-instagram-link"
                                     >
                                         <span>{isId ? "Buka" : "Open"}</span>
@@ -354,7 +354,7 @@ export default function ContactPage() {
                                     <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                         {isId ? "JAM OPERASIONAL & LAYANAN" : "OPERATING HOURS & DESK"}
                                     </span>
-                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#111613] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[#5D8A6B] dark:text-[#7EA88B] shadow-2xs">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C5CDC2] dark:border-white/15 bg-white dark:bg-[#111613] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[var(--gsm-emerald,#5D8A6B)] shadow-2xs">
                                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                         <span>WIB · UTC+7</span>
                                     </span>
@@ -390,21 +390,21 @@ export default function ContactPage() {
                                     <div className="flex flex-wrap gap-2 text-xs">
                                         <Link
                                             to="/open-house"
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary,#223027)] hover:text-white hover:border-[var(--gsm-primary,#223027)] dark:hover:bg-[var(--gsm-accent,#C4B393)] dark:hover:text-[#111613] dark:hover:border-[var(--gsm-accent,#C4B393)] shadow-2xs"
                                         >
                                             <span>Open House</span>
                                             <ArrowUpRight className="h-3 w-3" />
                                         </Link>
                                         <Link
                                             to="/activity"
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary,#223027)] hover:text-white hover:border-[var(--gsm-primary,#223027)] dark:hover:bg-[var(--gsm-accent,#C4B393)] dark:hover:text-[#111613] dark:hover:border-[var(--gsm-accent,#C4B393)] shadow-2xs"
                                         >
                                             <span>{isId ? "Kegiatan & Riset" : "Activities & Research"}</span>
                                             <ArrowUpRight className="h-3 w-3" />
                                         </Link>
                                         <Link
                                             to="/verify"
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[#223027] hover:text-white hover:border-[#223027] dark:hover:bg-[#C4B393] dark:hover:text-[#111613] dark:hover:border-[#C4B393] shadow-2xs"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary,#223027)] hover:text-white hover:border-[var(--gsm-primary,#223027)] dark:hover:bg-[var(--gsm-accent,#C4B393)] dark:hover:text-[#111613] dark:hover:border-[var(--gsm-accent,#C4B393)] shadow-2xs"
                                         >
                                             <span>{isId ? "Verifikasi Sertifikat" : "Verify Certificate"}</span>
                                             <ArrowUpRight className="h-3 w-3" />
@@ -420,7 +420,7 @@ export default function ContactPage() {
                         <div className="tnl-card tnl-scroll-reveal overflow-hidden flex flex-col h-full" data-testid="contact-form-container">
                             {/* Header Strip */}
                             <div className="tnl-card-header">
-                                <div className="inline-flex items-center gap-2 text-xs font-mono font-bold tracking-wider text-[#5D8A6B] dark:text-[#8AB597] uppercase">
+                                <div className="inline-flex items-center gap-2 text-xs font-mono font-bold tracking-wider text-[var(--gsm-emerald,#5D8A6B)] uppercase">
                                     <Send className="h-3.5 w-3.5" aria-hidden="true" />
                                     <span>{isId ? "FORMULIR PESAN RESMI" : "OFFICIAL DIRECT INQUIRY"}</span>
                                 </div>
@@ -453,8 +453,8 @@ export default function ContactPage() {
                                                         aria-pressed={isSelected}
                                                         className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 py-1.5 text-xs transition-all ${
                                                             isSelected
-                                                                ? "bg-[#223027] text-white border border-[#223027] dark:bg-[#A8977B] dark:text-[#111613] dark:border-[#A8977B] font-semibold shadow-xs"
-                                                                : "border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] text-[var(--foreground)] hover:border-[#223027] dark:hover:border-[#C4B393] font-medium shadow-2xs"
+                                                                ? "bg-[var(--gsm-primary,#223027)] text-white border border-[var(--gsm-primary,#223027)] dark:bg-[var(--gsm-accent,#A8977B)] dark:text-[#111613] dark:border-[var(--gsm-accent,#A8977B)] font-semibold shadow-xs"
+                                                                : "border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] text-[var(--foreground)] hover:border-[var(--gsm-primary,#223027)] dark:hover:border-[var(--gsm-accent,#C4B393)] font-medium shadow-2xs"
                                                         }`}
                                                         data-testid={`topic-pill-${pill.id}`}
                                                     >
@@ -487,7 +487,7 @@ export default function ContactPage() {
                                             <button
                                                 type="button"
                                                 onClick={handleResetForm}
-                                                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#223027] hover:bg-[#18221c] text-white dark:bg-[#A8977B] dark:hover:bg-[#C2B091] dark:text-[#111613] px-5 py-2.5 text-xs font-bold transition-all shadow-sm"
+                                                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--gsm-primary,#223027)] hover:opacity-90 text-white dark:bg-[var(--gsm-accent,#A8977B)] dark:hover:bg-[var(--gsm-accent-hover,#C2B091)] dark:text-[#111613] px-5 py-2.5 text-xs font-bold transition-all shadow-sm"
                                                 data-testid="send-another-message-button"
                                             >
                                                 <span>{isId ? "Kirim Pesan Lain" : "Send Another Message"}</span>
@@ -646,17 +646,17 @@ export default function ContactPage() {
                                                             setConsent(e.target.checked);
                                                             if (errors.consent) setErrors((prev) => ({ ...prev, consent: "" }));
                                                         }}
-                                                        className="mt-1 h-4 w-4 rounded border-[#C5CDC2] text-[#223027] dark:text-[#A8977B] focus:ring-[#223027]"
+                                                        className="mt-1 h-4 w-4 rounded border-[#C5CDC2] text-[var(--gsm-primary,#223027)] dark:text-[var(--gsm-accent,#A8977B)] focus:ring-[var(--gsm-primary,#223027)]"
                                                         data-testid="contact-pdp-consent-checkbox"
                                                         aria-invalid={!!errors.consent}
                                                         aria-describedby={errors.consent ? "contact-consent-error" : undefined}
                                                     />
                                                     <label htmlFor="contact-pdp-consent" className="text-xs leading-relaxed text-[var(--tnl-body)]">
                                                         {isId ? (
-                                                            <>
+                                                             <>
                                                                 Saya menyetujui pemrosesan data pribadi ini untuk keperluan korespondensi resmi
                                                                 sesuai dengan ketentuan <strong>UU PDP No. 27/2022</strong> dan{" "}
-                                                                <Link to="/privacy" className="text-[#223027] dark:text-[#C4B393] underline font-semibold hover:opacity-80">
+                                                                <Link to="/privacy" className="text-[var(--gsm-primary,#223027)] dark:text-[var(--gsm-accent,#C4B393)] underline font-semibold hover:opacity-80">
                                                                     Kebijakan Privasi
                                                                 </Link>{" "}
                                                                 Lab TNL ITS.
@@ -665,7 +665,7 @@ export default function ContactPage() {
                                                             <>
                                                                 I consent to the processing of this personal data for official correspondence in
                                                                 compliance with <strong>Indonesian PDP Law No. 27/2022</strong> and the Lab TNL ITS{" "}
-                                                                <Link to="/privacy" className="text-[#223027] dark:text-[#C4B393] underline font-semibold hover:opacity-80">
+                                                                <Link to="/privacy" className="text-[var(--gsm-primary,#223027)] dark:text-[var(--gsm-accent,#C4B393)] underline font-semibold hover:opacity-80">
                                                                     Privacy Policy
                                                                 </Link>
                                                                 .
@@ -684,7 +684,7 @@ export default function ContactPage() {
                                             <button
                                                 type="submit"
                                                 disabled={sending}
-                                                className="w-full min-h-[48px] rounded-[10px] bg-[#223027] hover:bg-[#18221c] text-white dark:bg-[#A8977B] dark:hover:bg-[#C2B091] dark:text-[#111613] text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all"
+                                                className="w-full min-h-[48px] rounded-[10px] bg-[var(--gsm-primary,#223027)] hover:opacity-90 text-white dark:bg-[var(--gsm-accent,#A8977B)] dark:hover:bg-[var(--gsm-accent-hover,#C2B091)] dark:text-[#111613] text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all"
                                                 data-testid="contact-submit-button"
                                             >
                                                 {sending ? (
@@ -713,7 +713,7 @@ export default function ContactPage() {
                         {/* Map Header */}
                         <div className="tnl-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>
-                                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#5D8A6B] dark:text-[#7EA88B]">
+                                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--gsm-emerald,#5D8A6B)]">
                                     INTERACTIVE LOCATION · GEDUNG B, B-301
                                 </span>
                                 <h3 className="text-xl font-bold tracking-tight text-[var(--foreground)] mt-0.5">
@@ -740,7 +740,7 @@ export default function ContactPage() {
                                     href={mapLinks.directionsUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-[#223027] hover:bg-[#18221c] text-white dark:bg-[#A8977B] dark:hover:bg-[#C2B091] dark:text-[#111613] px-4 py-2 text-xs font-semibold shadow-2xs transition-all"
+                                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-[var(--gsm-primary,#223027)] hover:opacity-90 text-white dark:bg-[var(--gsm-accent,#A8977B)] dark:hover:bg-[var(--gsm-accent-hover,#C2B091)] dark:text-[#111613] px-4 py-2 text-xs font-semibold shadow-2xs transition-all"
                                     data-testid="map-get-directions"
                                 >
                                     <Navigation className="h-3.5 w-3.5" aria-hidden="true" />
@@ -764,7 +764,7 @@ export default function ContactPage() {
 
                                 {/* Floating Non-Blocking Info Badge */}
                                 <div className="pointer-events-none absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-2.5 rounded-xl border border-white/15 bg-[#111613]/92 text-white px-3.5 py-2 text-xs font-medium shadow-lg backdrop-blur-md">
-                                    <span className="flex h-2 w-2 rounded-full bg-[#5D8A6B] animate-pulse" />
+                                    <span className="flex h-2 w-2 rounded-full bg-[var(--gsm-emerald,#5D8A6B)] animate-pulse" />
                                     <span>Ruang B-301 · Lantai 3 Gedung B, Teknik Elektro ITS</span>
                                 </div>
                             </div>
