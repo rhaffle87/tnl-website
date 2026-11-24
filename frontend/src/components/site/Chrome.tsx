@@ -405,7 +405,7 @@ export function SiteCollaborationBand({ lang: propLang, show = true }: Collabora
     if (!show) return null;
 
     return (
-        <section className="signal-collaboration" data-testid="section-collaboration-cta">
+        <section className="signal-collaboration" data-testid="section-collaboration-cta" role="region" aria-label={t.ctaTitle}>
             <div className="tnl-container signal-collaboration-inner">
                 <div>
                     <span className="signal-chrome-kicker">{t.badge}</span>

@@ -125,7 +125,7 @@ export function PrivacyPage() {
             </header>
 
             {/* Main Content Layout */}
-            <main className="tnl-container py-12 md:py-16">
+            <div className="tnl-container py-12 md:py-16">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
                     {/* Sticky Left Sidebar (4 Columns) */}
                     <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6 print:hidden">
@@ -405,7 +405,7 @@ export function PrivacyPage() {
                             <div className="space-y-3">
                                 <div className="legal-note p-4 space-y-1">
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-bold text-sm text-[var(--tnl-heading)]">1. Cloudflare, Inc. (Edge CDN & WAF)</h4>
+                                        <h3 className="font-bold text-sm text-[var(--tnl-heading)]">1. Cloudflare, Inc. (Edge CDN & WAF)</h3>
                                         <span className="text-xs font-mono text-[var(--tnl-body)]">Edge Infrastructure</span>
                                     </div>
                                     <p className="text-xs leading-relaxed">
@@ -417,7 +417,7 @@ export function PrivacyPage() {
 
                                 <div className="legal-note p-4 space-y-1">
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-bold text-sm text-[var(--tnl-heading)]">2. Google Workspace / Google Sheets (via Apps Script Webhook)</h4>
+                                        <h3 className="font-bold text-sm text-[var(--tnl-heading)]">2. Google Workspace / Google Sheets (via Apps Script Webhook)</h3>
                                         <span className="text-xs font-mono text-[var(--tnl-body)]">Operational Sync</span>
                                     </div>
                                     <p className="text-xs leading-relaxed">
@@ -429,7 +429,7 @@ export function PrivacyPage() {
 
                                 <div className="legal-note p-4 space-y-1">
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-bold text-sm text-[var(--tnl-heading)]">3. Google Maps Embed (Google LLC)</h4>
+                                        <h3 className="font-bold text-sm text-[var(--tnl-heading)]">3. Google Maps Embed (Google LLC)</h3>
                                         <span className="text-xs font-mono text-[var(--tnl-body)]">Interactive Mapping</span>
                                     </div>
                                     <p className="text-xs leading-relaxed">
@@ -441,7 +441,7 @@ export function PrivacyPage() {
 
                                 <div className="legal-note p-4 space-y-1">
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-bold text-sm text-[var(--tnl-heading)]">4. Klaster Server Mandiri Laboratorium (Proxmox LXC)</h4>
+                                        <h3 className="font-bold text-sm text-[var(--tnl-heading)]">4. Klaster Server Mandiri Laboratorium (Proxmox LXC)</h3>
                                         <span className="text-xs font-mono text-[var(--tnl-body)]">Internal On-Premises</span>
                                     </div>
                                     <p className="text-xs leading-relaxed">
@@ -503,19 +503,19 @@ export function PrivacyPage() {
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                                 <div className="legal-note p-4 space-y-1">
-                                    <h4 className="font-bold text-[var(--tnl-heading)]">{isId ? "Pendaftaran Kegiatan / Open House" : "Event Registrations"}</h4>
+                                    <h3 className="font-bold text-[var(--tnl-heading)]">{isId ? "Pendaftaran Kegiatan / Open House" : "Event Registrations"}</h3>
                                     <p>{isId ? "Disimpan selama siklus seleksi & pelaporan akademik berlangsung, kemudian dihapus atau dianonimkan untuk keperluan statistik akademik agregat." : "Retained for the event duration and academic reporting, then purged or anonymised for aggregated statistics."}</p>
                                 </div>
                                 <div className="legal-note p-4 space-y-1">
-                                    <h4 className="font-bold text-[var(--tnl-heading)]">{isId ? "Pesan Formulir Kontak" : "Contact Inquiries"}</h4>
+                                    <h3 className="font-bold text-[var(--tnl-heading)]">{isId ? "Pesan Formulir Kontak" : "Contact Inquiries"}</h3>
                                     <p>{isId ? "Disimpan selama proses korespondensi dan penyelesaian tindak lanjut pesan (maksimal 1 tahun sejak kontak terakhir)." : "Retained during correspondence and follow-up (up to 1 year from last contact)."}</p>
                                 </div>
                                 <div className="legal-note p-4 space-y-1">
-                                    <h4 className="font-bold text-[var(--tnl-heading)]">{isId ? "Keabsahan e-Sertifikat (/verify)" : "e-Certificate Authenticity"}</h4>
+                                    <h3 className="font-bold text-[var(--tnl-heading)]">{isId ? "Keabsahan e-Sertifikat (/verify)" : "e-Certificate Authenticity"}</h3>
                                     <p>{isId ? "Disimpan secara berkelanjutan agar lulusan dan peserta dapat memvalidasi keaslian sertifikat mereka di masa depan." : "Stored continuously so alumni and participants can reliably verify certificates at any time."}</p>
                                 </div>
                                 <div className="legal-note p-4 space-y-1">
-                                    <h4 className="font-bold text-[var(--tnl-heading)]">{isId ? "Rotasi Cadangan Server (14 Hari)" : "Server Backups (14-Day Safe Rotation)"}</h4>
+                                    <h3 className="font-bold text-[var(--tnl-heading)]">{isId ? "Rotasi Cadangan Server (14 Hari)" : "Server Backups (14-Day Safe Rotation)"}</h3>
                                     <p>{isId ? "Cadangan otomatis terkompresi harian pada server Proxmox LXC (CT 116 & CT 103) mengalami rotasi otomatis 14 hari sebelum dihapus permanen." : "Daily compressed automated archives on internal Proxmox LXC undergo 14-day safe rotation before secure removal."}</p>
                                 </div>
                             </div>
@@ -562,10 +562,10 @@ export function PrivacyPage() {
                             </div>
 
                             <div className="legal-note p-5 space-y-3 bg-[var(--gsm-emerald)]/10 border-[var(--gsm-emerald)]/30">
-                                <h4 className="font-bold text-sm text-[var(--tnl-heading)] flex items-center gap-2">
+                                <h3 className="font-bold text-sm text-[var(--tnl-heading)] flex items-center gap-2">
                                     <Clock className="h-4 w-4 text-[var(--tnl-body)]" />
                                     <span>{isId ? "Prosedur Pengajuan & Komitmen SLA 3×24 Jam Kerja" : "Request Procedure & 3x24-Hour SLA"}</span>
-                                </h4>
+                                </h3>
                                 <p className="text-xs leading-relaxed text-justify">
                                     {isId ? (
                                         <>
@@ -661,7 +661,7 @@ export function PrivacyPage() {
                         </section>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }
@@ -767,7 +767,7 @@ export function TermsPage() {
             </header>
 
             {/* Main Content Layout */}
-            <main className="tnl-container py-12 md:py-16">
+            <div className="tnl-container py-12 md:py-16">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
                     {/* Sticky Left Sidebar (4 Columns) */}
                     <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6 print:hidden">
@@ -1086,7 +1086,7 @@ export function TermsPage() {
                         </section>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }

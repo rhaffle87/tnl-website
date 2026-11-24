@@ -518,7 +518,7 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
         return locale === "id" ? "Operator Telekomunikasi" : "Telco Operator";
     };
 
-    const renderPartner = (p: (typeof list)[0], keySuffix: string | number) => {
+    const renderPartner = (p: (typeof list)[0], keySuffix: string | number, isDuplicate = false) => {
         const category = getCategory(p.name);
         const content = (
             <div className="flex flex-col items-center justify-center shrink-0 w-auto px-2 transition-transform duration-300 hover:scale-105">
@@ -559,6 +559,7 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                 href={p.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                tabIndex={isDuplicate ? -1 : undefined}
                 className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B393] shrink-0"
                 data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
             >
@@ -589,8 +590,8 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                                 {list.map((p, idx) => renderPartner(p, `track1-dup-${idx}`))}
                             </div>
                             <div className="flex items-center gap-6 sm:gap-8 md:gap-10 pr-6 sm:pr-8 md:pr-10" aria-hidden="true">
-                                {list.map((p, idx) => renderPartner(p, `track2-${idx}`))}
-                                {list.map((p, idx) => renderPartner(p, `track2-dup-${idx}`))}
+                                {list.map((p, idx) => renderPartner(p, `track2-${idx}`, true))}
+                                {list.map((p, idx) => renderPartner(p, `track2-dup-${idx}`, true))}
                             </div>
                         </div>
                     </div>
