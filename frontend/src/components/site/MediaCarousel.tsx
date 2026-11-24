@@ -120,13 +120,17 @@ export function FadeCarousel({
                                     setCurrent(idx);
                                 }}
                                 aria-label={`Slide ${idx + 1}`}
-                                className={cn(
-                                    "h-1.5 rounded-full transition-all duration-300",
-                                    idx === current
-                                        ? "w-5 bg-[#C4B393]"
-                                        : "w-1.5 bg-white/40 hover:bg-white/70"
-                                )}
-                            />
+                                className="group flex h-6 w-6 items-center justify-center rounded-full bg-transparent p-0"
+                            >
+                                <span
+                                    className={cn(
+                                        "block rounded-full transition-all duration-300",
+                                        idx === current
+                                            ? "h-1.5 w-5 bg-[#C4B393]"
+                                            : "h-1.5 w-1.5 bg-white/40 group-hover:bg-white/70"
+                                    )}
+                                />
+                            </button>
                         ))}
                     </div>
                 </>
