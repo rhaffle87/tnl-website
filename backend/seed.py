@@ -288,21 +288,27 @@ ABOUT_TILES = [
 ]
 
 FIELDS_OF_STUDY = [
-    ("Optical & Photonic Networks (PON / WDM)", "Jaringan Optik & Fotonik (PON / WDM)",
-     "High-speed optical transport networks, wavelength division multiplexing (WDM), passive optical network (PON) architectures, and fiber dispersion characterization.",
-     "Jaringan transport optik berkecepatan tinggi, wavelength division multiplexing (WDM), arsitektur passive optical network (PON), serta karakterisasi dispersi serat optik."),
-    ("5G/6G & Software-Defined Radio (SDR)", "5G/6G & Software-Defined Radio (SDR)",
-     "Software-defined wireless testbeds utilizing USRP B210, OpenAirInterface (OAI), and srsRAN for standalone 5G NR gNodeB deployment and sub-6 GHz RF channel characterization.",
-     "Testbed nirkabel berbasis SDR menggunakan USRP B210, OpenAirInterface (OAI), dan srsRAN untuk penggelaran gNodeB 5G NR mandiri serta karakterisasi kanal RF sub-6 GHz."),
-    ("Cloud-Native, NFV & Software-Defined Networking", "Cloud-Native, NFV & Software-Defined Networking",
-     "Virtual network function (VNF) orchestration on high-availability Proxmox clusters, OpenFlow SDN controllers, and low-latency network slicing for telecom infrastructure.",
-     "Orkestrasi virtual network function (VNF) pada klaster Proxmox berkinerja tinggi, kontroler SDN berbasis OpenFlow, dan network slicing berlatensi rendah untuk infrastruktur telekomunikasi."),
-    ("IoT Telemetry & SCADA Network Security", "Telemetri IoT & Keamanan Jaringan SCADA",
-     "End-to-end LoRaWAN and cellular IoT telemetry, industrial SCADA protocol vulnerability analysis, and machine-learning intrusion detection for IEC 60870-5-104 communications.",
-     "Telemetri IoT end-to-end berbasis LoRaWAN dan seluler, analisis kerentanan protokol SCADA industri, serta sistem deteksi intrusi berbasis ML untuk komunikasi IEC 60870-5-104."),
-    ("Wireless Propagation & Antenna Modeling", "Propagasi Nirkabel & Pemodelan Antena",
-     "Empirical path-loss analysis, antenna beamforming, and wireless channel characterization across VHF/UHF and microwave bands in tropical dense urban environments.",
-     "Analisis rugi propagasi empiris, antena beamforming, dan pemodelan kanal nirkabel pada pita VHF/UHF hingga gelombang mikro di lingkungan tropis perkotaan."),
+    ("Enterprise & Service Provider Networking", "Jaringan Enterprise & Service Provider",
+     "Routing, switching, MPLS, BGP, and resilient campus-to-carrier network architectures designed for high-availability enterprise and ISP deployments.",
+     "Perancangan arsitektur routing, switching, MPLS, BGP, serta jaringan berketahanan tinggi untuk skala enterprise dan penyedia layanan internet (ISP)."),
+    ("Optical Access & Transport Networks (FTTH / WDM)", "Jaringan Akses & Transport Fiber Optik (FTTH / WDM)",
+     "Passive optical networks (GPON/XGS-PON), wavelength-division multiplexing (WDM), optical link budgeting, and fiber-to-the-home access engineering.",
+     "Teknologi jaringan akses optik pasif (GPON/XGS-PON), wavelength-division multiplexing (WDM), perhitungan link budget optik, serta implementasi FTTH."),
+    ("Server Infrastructure, Cloud & Virtualization", "Infrastruktur Server, Cloud & Virtualisasi",
+     "Bare-metal hypervisors, Proxmox LXC/KVM clusters, container orchestration, private cloud architecture, and high-availability datacenter operations.",
+     "Pengelolaan server bare-metal, kluster virtualisasi Proxmox LXC/KVM, orkestrasi kontainer, arsitektur private cloud, serta operasional pusat data."),
+]
+
+# Tracks 04-05: held back from the live carousel on purpose. Append these two tuples to
+# FIELDS_OF_STUDY above to switch the "Fields of Study" block to five tracks (OPSI B);
+# the carousel counter renders "NN / len(slides)" dynamically, so no other change is needed.
+FIELDS_OF_STUDY_OPTIONAL = [
+    ("Software-Defined Networking (SDN) & Network Automation", "Software-Defined Networking (SDN) & Otomasi Jaringan",
+     "Programmable control planes, OpenFlow/P4 telemetry, intent-based networking, and automated multi-vendor network provisioning pipelines.",
+     "Control plane terprogram, telemetri jaringan modern, intent-based networking, serta otomasi konfigurasi perangkat jaringan multi-vendor."),
+    ("Network Security & Internet of Things (IoT)", "Keamanan Jaringan & Internet of Things (IoT)",
+     "Next-generation firewall hardening, MikroTik/perimeter defense, intrusion detection, and secure low-power IoT telemetry architectures.",
+     "Penguatan firewall dan keamanan perimeter jaringan, sistem deteksi intrusi, serta arsitektur telemetri perangkat IoT yang aman."),
 ]
 
 ASSISTANT_ACTIVITIES = [
