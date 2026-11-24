@@ -1,7 +1,7 @@
 // Media library, Registrar dashboard, Contact inbox (with Jev triage/scoring),
 // Theme editor, Settings, People & access, API keys.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -183,12 +183,19 @@ export function RegistrarPage() {
     const [eventId, setEventId] = useState("");
     const [status, setStatus] = useState("");
     const [checkinCode, setCheckinCode] = useState("");
+    const [checkinResult, setCheckinResult] = useState<{ ok: boolean; text: string } | null>(null);
 
     const { data: events } = useQuery({
         queryKey: ["admin", "content", "events", "all"],
         queryFn: () => apiGet<ListResponse<LabEvent>>("/admin/content/events?limit=200"),
         retry: false,
     });
+
+    useEffect(() => {
+        if (!checkinResult) return;
+        const timer = window.setTimeout(() => setCheckinResult(null), 8000);
+        return () => window.clearTimeout(timer);
+    }, [checkinResult]);
 
     const [isLive, setIsLive] = useState(true);
     const { data, isLoading, dataUpdatedAt } = useQuery({
@@ -237,13 +244,20 @@ export function RegistrarPage() {
     });
 
     const checkin = useMutation({
-        mutationFn: () => apiPost<{ name: string; message: string }>("/admin/registrations/checkin", { code: checkinCode }),
+        mutationFn: () => apiPost<{ name: string; message: string; nim?: string; time?: string }>("/admin/registrations/checkin", { code: checkinCode }),
         onSuccess: (res) => {
             refresh();
             setCheckinCode("");
+            const when = res.time || new Date().toLocaleTimeString();
+            const who = res.nim ? `${res.name} · NRP ${res.nim}` : res.name;
+            setCheckinResult({ ok: true, text: `${who} · ${when} · ${res.message}` });
             toast.success(`${res.name}: ${res.message}`);
         },
-        onError: (err) => toast.error(adminError(err, "No registration matches this code.")),
+        onError: (err) => {
+            const message = adminError(err, "No registration matches this code.");
+            setCheckinResult({ ok: false, text: message });
+            toast.error(message);
+        },
     });
 
     const issueCerts = useMutation({
@@ -265,6 +279,15 @@ export function RegistrarPage() {
     });
 
     const items = data?.items ?? [];
+    const counts = data?.counts ?? {};
+    const registered = data?.total ?? items.length;
+    const quota = eventId
+        ? (events?.items.find((ev) => ev.id === eventId)?.capacity ?? 0)
+        : (events?.items.reduce((sum, ev) => sum + (ev.capacity || 0), 0) ?? 0);
+    const attended = counts.attended ?? items.filter((reg) => reg.status === "attended").length;
+    const pending = counts.accepted ?? items.filter((reg) => reg.status === "accepted").length;
+    const rejected = counts.rejected ?? items.filter((reg) => reg.status === "rejected").length;
+    const attendedPct = registered ? Math.round((attended / registered) * 100) : 0;
     const exportCsvUrl = `/api/admin/registrations/export${eventId ? `?event_id=${eventId}` : ""}${status ? `${eventId ? "&" : "?"}status=${status}` : ""}`;
     const exportExcelUrl = `/api/admin/registrations/export-excel${eventId ? `?event_id=${eventId}` : ""}${status ? `${eventId ? "&" : "?"}status=${status}` : ""}`;
 
@@ -331,6 +354,32 @@ export function RegistrarPage() {
                 testId="registrar-header"
             />
 
+            <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="checkin-kpi-strip">
+                <AdminCard className="!p-4" testId="checkin-kpi-registered">
+                    <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>Registered / Quota</p>
+                    <p className="mt-1 text-2xl font-bold tabular-nums">{registered} <span className="text-base font-medium" style={{ color: "var(--tnl-tan-text)" }}>/ {quota || "—"}</span></p>
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--tnl-border)" }}>
+                        <div className="h-full rounded-full bg-[var(--tnl-green)]" style={{ width: `${quota ? Math.min(100, Math.round((registered / quota) * 100)) : 0}%` }} />
+                    </div>
+                </AdminCard>
+                <AdminCard className="!p-4" testId="checkin-kpi-attended">
+                    <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>Checked In</p>
+                    <p className="mt-1 text-2xl font-bold tabular-nums" style={{ color: "var(--tnl-green)" }}>{attended} <span className="text-base font-medium">· {attendedPct}%</span></p>
+                    <p className="mt-2 text-xs" style={{ color: "var(--tnl-tan-text)" }}>hadir · presensi pintu</p>
+                </AdminCard>
+                <AdminCard className="!p-4" testId="checkin-kpi-pending">
+                    <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>Not Yet Checked In</p>
+                    <p className="mt-1 text-2xl font-bold tabular-nums">{pending}</p>
+                    <p className="mt-2 text-xs" style={{ color: "var(--tnl-tan-text)" }}>status accepted</p>
+                </AdminCard>
+                {rejected > 0 ? (
+                    <AdminCard className="!p-4" testId="checkin-kpi-rejected">
+                        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>Cancelled / Rejected</p>
+                        <p className="mt-1 text-2xl font-bold tabular-nums text-red-600 dark:text-red-400">{rejected}</p>
+                    </AdminCard>
+                ) : null}
+            </div>
+
             <Panel className="mb-5">
                 <div className="grid gap-3 lg:grid-cols-3">
                     <AdminSelect value={eventId} onChange={(e) => setEventId(e.target.value)} aria-label="Event" data-testid="registrations-event-filter">
@@ -360,11 +409,54 @@ export function RegistrarPage() {
                         {scoreAll.isPending ? "Scoring…" : "Score registrations"}
                     </button>
                 </div>
-                <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
-                    <input className="tnl-field" placeholder="Scan or type a check-in code" value={checkinCode} onChange={(e) => setCheckinCode(e.target.value)} aria-label="Check-in code" data-testid="checkin-code-input" />
-                    <button type="button" onClick={() => checkin.mutate()} className="tnl-btn tnl-btn-primary" disabled={!checkinCode.trim()} data-testid="checkin-submit-button">
-                        Check in
-                    </button>
+                <div className="mt-4 rounded-xl border border-[var(--tnl-green)]/40 bg-[var(--tnl-green)]/5 p-3">
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--tnl-green)" }}>Door check-in</p>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                        <input
+                            className="tnl-field h-11 text-base"
+                            placeholder="Scan or type a check-in code"
+                            value={checkinCode}
+                            onChange={(e) => setCheckinCode(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    if (checkinCode.trim()) checkin.mutate();
+                                }
+                            }}
+                            aria-label="Check-in code"
+                            data-testid="checkin-code-input"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => checkin.mutate()}
+                            className="tnl-btn tnl-btn-primary h-11 min-h-[44px] px-6 text-sm"
+                            disabled={!checkinCode.trim() || checkin.isPending}
+                            data-testid="checkin-submit-button"
+                        >
+                            {checkin.isPending ? "Checking in…" : "Check in"}
+                        </button>
+                    </div>
+                    {checkinResult ? (
+                        <div
+                            className={`mt-3 flex items-start gap-3 rounded-lg border px-3 py-2.5 text-sm ${
+                                checkinResult.ok
+                                    ? "border-[var(--tnl-green)] bg-[var(--tnl-green)]/10 text-[var(--tnl-green)]"
+                                    : "border-red-500 bg-red-500/10 text-red-600 dark:text-red-400"
+                            }`}
+                            role={checkinResult.ok ? "status" : "alert"}
+                            data-testid="checkin-result-banner"
+                        >
+                            <span className="flex-1 font-medium">{checkinResult.text}</span>
+                            <button
+                                type="button"
+                                onClick={() => setCheckinResult(null)}
+                                aria-label="Dismiss check-in result"
+                                className="rounded px-1.5 text-base leading-none"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    ) : null}
                 </div>
             </Panel>
 
@@ -375,8 +467,60 @@ export function RegistrarPage() {
                     <p className="text-sm text-[var(--tnl-body)]" data-testid="registrations-empty">No registrations yet.</p>
                 </Panel>
             ) : (
-                <Panel className="overflow-x-auto">
-                    <table className="w-full text-sm" data-testid="registrations-table">
+            <>
+            <div className="mb-5 space-y-3 md:hidden" data-testid="registrations-mobile-cards">
+                {items.map((reg) => {
+                    const name = reg.display_name && reg.display_name !== reg.email
+                        ? reg.display_name
+                        : ((reg.data && (reg.data["f_nama-lengkap"] || reg.data["f_full-name"] || reg.data["f_nama"])) as string) || reg.email;
+                    return (
+                        <AdminCard key={reg.id} className="!p-4" testId={`registration-mobile-card-${reg.id}`}>
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                    <p className="truncate font-semibold">{name}</p>
+                                    <p className="break-all text-xs" style={{ color: "var(--tnl-tan-text)" }}>{reg.email}</p>
+                                    {reg.nim ? <p className="mt-0.5 font-mono text-xs">{reg.nim}</p> : null}
+                                </div>
+                                <span className="shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize" style={{ borderColor: "var(--tnl-border)", color: reg.status === "attended" ? "var(--tnl-green)" : "var(--tnl-tan-text)" }}>
+                                    {reg.status}
+                                </span>
+                            </div>
+                            <p className="mt-2 text-xs" style={{ color: "var(--tnl-tan-text)" }}>{reg.event_title}</p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setRegStatus.mutate({ id: reg.id, next: "attended" })}
+                                    className="tnl-btn tnl-btn-primary min-h-[40px] text-xs"
+                                    data-testid={`registration-checkin-${reg.id}`}
+                                >
+                                    Check in
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setRegStatus.mutate({ id: reg.id, next: "rejected" })}
+                                    className="tnl-btn tnl-btn-outline min-h-[40px] text-xs text-red-600 dark:text-red-400"
+                                    data-testid={`registration-reject-${reg.id}`}
+                                >
+                                    Reject
+                                </button>
+                                {canDelete ? (
+                                    <ConfirmButton
+                                        label="Delete"
+                                        confirmLabel="Delete entry"
+                                        question={`Delete registration for ${reg.email}?`}
+                                        onConfirm={() => deleteReg.mutate(reg.id)}
+                                        testId={`registration-delete-mobile-${reg.id}`}
+                                    />
+                                ) : null}
+                            </div>
+                        </AdminCard>
+                    );
+                })}
+            </div>
+
+                <Panel>
+                    <div className="hidden overflow-x-auto md:block">
+                        <table className="w-full text-sm" data-testid="registrations-table">
                         <thead>
                             <tr className="text-left" style={{ color: "var(--tnl-tan-text)" }}>
                                 <th className="pb-2 pr-4 font-semibold">Name</th>
@@ -473,8 +617,10 @@ export function RegistrarPage() {
                                 </tr>
                             ))}
                         </tbody>
-                    </table>
+                        </table>
+                    </div>
                 </Panel>
+            </>
             )}
         </div>
     );
