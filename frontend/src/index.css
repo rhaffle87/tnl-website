@@ -158,21 +158,21 @@
     --gsm-text-primary: #111613;
     --gsm-text-secondary: #3F4A43;
     --gsm-text-muted: #667069;
-    --gsm-border-hairline: #D5DBD3;
+    --gsm-border-hairline: var(--tnl-border-light, #D5DBD3);
     --gsm-border-input: #C5CDC2;
     --gsm-border-focus: var(--gsm-primary, #223027);
 
     /* TNL brand backward compatibility mappings */
     --tnl-black: var(--gsm-obsidian);
     --tnl-tan: var(--gsm-accent);
-    --tnl-tan-text: #6E604B;
+    --tnl-tan-text: var(--tnl-tan-text-light, #6E604B);
     --tnl-link: #254C35;
     --tnl-muted: var(--gsm-text-muted);
     --tnl-green: var(--gsm-primary);
     --tnl-green-hover: #18221c;
-    --tnl-surface: var(--gsm-bg-surface);
-    --tnl-border: var(--gsm-border-hairline);
-    --tnl-body: var(--gsm-text-secondary);
+    --tnl-surface: var(--tnl-surface-light, var(--gsm-bg-surface));
+    --tnl-border: var(--tnl-border-light, var(--gsm-border-hairline));
+    --tnl-body: var(--tnl-body-light, var(--gsm-text-secondary));
     --tnl-heading: var(--gsm-text-primary);
     /* Semantic status colours (severity + destructive actions), theme-aware. */
     --tnl-danger: #b91c1c;
@@ -232,7 +232,7 @@
     --gsm-accent-glow: #C4B393;
 
     /* Semantic GSM Design Tokens (Surfaces & Typography - Dark Mode) */
-    --gsm-bg-page: #0B0F0D;
+    --gsm-bg-page: var(--gsm-obsidian, #0B0F0D);
     --gsm-bg-surface: #131A16;
     --gsm-bg-elevated: #17201B;
     --gsm-bg-recessed: #0E1411;
@@ -242,12 +242,12 @@
     --gsm-text-muted: #9FA8A2;
     --gsm-border-hairline: rgba(255, 255, 255, 0.12);
     --gsm-border-input: rgba(255, 255, 255, 0.14);
-    --gsm-border-focus: #C4B393;
+    --gsm-border-focus: var(--gsm-accent, #C4B393);
 
     /* TNL brand backward compatibility mappings */
-    --tnl-black: #0C100E;
+    --tnl-black: var(--gsm-obsidian, #0C100E);
     --tnl-tan: var(--gsm-accent);
-    --tnl-tan-text: #D6C39F;
+    --tnl-tan-text: var(--gsm-accent, #D6C39F);
     --tnl-link: #A9D1B3;
     --tnl-muted: var(--gsm-text-muted);
     --tnl-green: var(--gsm-primary);

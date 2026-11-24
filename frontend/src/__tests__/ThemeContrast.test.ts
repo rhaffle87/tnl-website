@@ -25,4 +25,13 @@ describe("Semantic interactive text palette",()=>{
  it("keeps outline hover text independent from background fill",()=>{
   expect(css).toMatch(/\.tnl-btn-outline:hover[^}]*color:\s*var\(--tnl-link\)/);
  });
+ it("isolates dynamic light surfaces so dark mode retains high-contrast obsidian and elevated surfaces",()=>{
+  const rootBlock=css.slice(css.indexOf(":root {")).split("\n}")[0];
+  const darkBlock=css.slice(css.indexOf(".dark {")).split("\n}")[0];
+  expect(rootBlock).toContain("--tnl-surface: var(--tnl-surface-light");
+  expect(rootBlock).toContain("--tnl-body: var(--tnl-body-light");
+  expect(darkBlock).toContain("--tnl-surface: var(--gsm-bg-surface)");
+  expect(darkBlock).toContain("--tnl-body: var(--gsm-text-secondary)");
+  expect(darkBlock).toContain("--tnl-tan-text: var(--gsm-accent");
+ });
 });
