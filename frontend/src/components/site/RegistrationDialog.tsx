@@ -139,20 +139,20 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
 
                         {result.whatsapp_group_url ? (
                             <div
-                                className="rounded-xl border border-[#22c55e]/40 bg-[#f0fdf4] dark:bg-[#14532d]/20 p-5 text-left max-w-md mx-auto space-y-3"
+                                className="rounded-xl border border-[var(--gsm-emerald)] bg-[var(--gsm-bg-elevated)] p-5 text-left max-w-md mx-auto space-y-3"
                                 data-testid="registration-wa-group-card"
                             >
                                 <div className="flex items-start gap-3">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#16a34a] text-white shadow-sm">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--gsm-primary)] text-white shadow-sm">
                                         <MessageCircle className="h-5 w-5" />
                                     </div>
                                     <div>
-                                        <h4 className="text-sm font-bold text-[#14532d] dark:text-[#86efac]">
+                                        <h4 className="text-sm font-bold text-[var(--gsm-emerald)]">
                                             {locale === "id"
                                                 ? "Langkah Terakhir: Gabung Grup WhatsApp Peserta"
                                                 : "Final Step: Join the Participant WhatsApp Group"}
                                         </h4>
-                                        <p className="mt-1 text-xs text-[#166534] dark:text-[#bbf7d0] leading-relaxed">
+                                        <p className="mt-1 text-xs text-[var(--gsm-text-secondary)] leading-relaxed">
                                             {locale === "id"
                                                 ? "Seluruh pengumuman jadwal, ruang praktikum, dan panduan teknis akan dibagikan melalui grup resmi peserta."
                                                 : "All schedule updates, room instructions, and technical guides will be shared in the official participant group."}
@@ -164,7 +164,7 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                                         href={result.whatsapp_group_url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#16a34a] hover:bg-[#15803d] text-white px-4 py-2.5 text-xs font-bold transition-colors shadow-sm"
+                                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--gsm-primary)] hover:opacity-90 text-white px-4 py-2.5 text-xs font-bold transition-colors shadow-sm"
                                         data-testid="registration-wa-group-join-button"
                                     >
                                         <span>{locale === "id" ? "Gabung Grup WhatsApp Sekarang ↗" : "Join WhatsApp Group Now ↗"}</span>
@@ -172,12 +172,12 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                                     <button
                                         type="button"
                                         onClick={() => handleCopyWa(result.whatsapp_group_url!)}
-                                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#16a34a]/30 bg-white/80 dark:bg-black/30 px-3 py-2 text-xs font-semibold text-[#166534] dark:text-[#86efac] hover:bg-white transition-colors"
+                                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--gsm-emerald)] bg-[var(--gsm-bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--gsm-emerald)] hover:opacity-90 transition-colors"
                                         data-testid="registration-wa-group-copy-button"
                                     >
                                         {copiedWa ? (
                                             <>
-                                                <Check className="h-3.5 w-3.5 text-[#16a34a]" />
+                                                <Check className="h-3.5 w-3.5 text-[var(--gsm-emerald)]" />
                                                 <span>{locale === "id" ? "Tersalin!" : "Copied!"}</span>
                                             </>
                                         ) : (

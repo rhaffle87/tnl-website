@@ -186,7 +186,7 @@ export default function OpenHousePage() {
                                         </span>
                                     </span>
                                 ) : (
-                                    <span className="inline-flex items-center gap-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 border border-emerald-500/20 font-semibold text-xs" data-testid="open-house-status-open">
+                                    <span className="inline-flex items-center gap-2 rounded-lg bg-[var(--gsm-bg-elevated)] text-[var(--gsm-emerald)] px-3 py-1.5 border border-[var(--gsm-emerald)] font-semibold text-xs" data-testid="open-house-status-open">
                                         <CheckCircle2 className="h-4 w-4" />
                                         <span>
                                             {locale === "id"
@@ -268,7 +268,7 @@ export default function OpenHousePage() {
 
                             {submittedData.whatsapp_group_url ? (
                                 <div
-                                    className="rounded-xl border border-[#22c55e]/40 bg-[var(--gsm-bg-elevated)] p-5 text-left max-w-md mx-auto space-y-3"
+                                    className="rounded-xl border border-[var(--gsm-emerald)] bg-[var(--gsm-bg-elevated)] p-5 text-left max-w-md mx-auto space-y-3"
                                     data-testid="open-house-wa-group-card"
                                 >
                                     <div className="flex items-start gap-3">
@@ -301,7 +301,7 @@ export default function OpenHousePage() {
                                         <button
                                             type="button"
                                             onClick={() => handleCopyWa(submittedData.whatsapp_group_url!)}
-                                            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#16a34a]/30 bg-[var(--gsm-bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--tnl-body)] hover:bg-[var(--gsm-bg-recessed-hover)] transition-colors"
+                                            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--gsm-emerald)] bg-[var(--gsm-bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--tnl-body)] hover:bg-[var(--gsm-bg-recessed-hover)] transition-colors"
                                             data-testid="open-house-wa-group-copy-button"
                                         >
                                             {copiedWa ? (

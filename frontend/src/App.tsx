@@ -47,7 +47,7 @@ const UsersPage = lazy(() => import("@/pages/admin/AdminScreens").then((m) => ({
 function RouteFallback() {
     return (
         <div className="flex min-h-[50vh] items-center justify-center p-8" aria-live="polite" aria-busy="true">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1E4D2B] border-t-transparent" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--gsm-primary)] border-t-transparent" />
         </div>
     );
 }

@@ -129,9 +129,9 @@ class ThemeTokens(BaseModel):
     color_tan: str = "#a8977b"
     color_tan_text: str = "#7f715c"  # darker tan — small text on light surfaces (AA)
     color_green: str = "#43594A"
-    color_green_hover: str = "#35483b"
+    color_green_hover: str = "#4A2E18"
     color_surface: str = "#f4f4f5"
-    color_border: str = "#eaeaec"
+    color_border: str = "rgba(93, 59, 31, 0.12)"
     color_body: str = "#3f4245"
     font_heading: str = "Poppins"
     font_body: str = "Poppins"

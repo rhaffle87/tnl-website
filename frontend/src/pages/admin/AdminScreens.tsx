@@ -763,8 +763,8 @@ export function ThemePage() {
     const resetToGsmStandard = () => {
         setDraft({
             ...tokens,
-            primary_color: "#223027",
-            emerald_color: "#5D8A6B",
+            primary_color: "#5d3b1f",
+            emerald_color: "#ffbb58",
             obsidian_color: "#0C100E",
             accent_color: "#A8977B",
             accent_hover_color: "#C2B091",
@@ -772,17 +772,17 @@ export function ThemePage() {
             color_black: "#0C100E",
             color_tan: "#A8977B",
             color_tan_text: "#7F715C",
-            color_green: "#223027",
-            color_green_hover: "#2F4236",
+            color_green: "#5d3b1f",
+            color_green_hover: "#4A2E18",
             color_surface: "#FAF7F2",
-            color_border: "rgba(34, 48, 39, 0.12)",
+            color_border: "rgba(93, 59, 31, 0.12)",
             color_body: "#1E2521",
         });
         toast.info("Preset baku GSM Kabinet Keberlanjutan dimuat ke draf. Klik 'Save draft' lalu 'Publish theme' untuk menerapkan.");
     };
 
-    const activePrimary = tokens.primary_color || "#223027";
-    const activeEmerald = tokens.emerald_color || "#5D8A6B";
+    const activePrimary = tokens.primary_color || "#5d3b1f";
+    const activeEmerald = tokens.emerald_color || "#ffbb58";
     const activeObsidian = tokens.obsidian_color || "#0C100E";
     const activeAccent = tokens.accent_color || "#A8977B";
 
@@ -897,7 +897,7 @@ export function ThemePage() {
                                 style={{
                                     backgroundColor: tokens.color_surface || "#FAF7F2",
                                     color: tokens.color_body || "#1E2521",
-                                    borderColor: "rgba(34, 48, 39, 0.15)",
+                                    borderColor: "color-mix(in srgb, var(--gsm-primary) 15%, transparent)",
                                 }}
                             >
                                 <div className="flex items-center justify-between pb-2 border-b border-gray-300/60">
@@ -936,15 +936,15 @@ export function ThemePage() {
                                 className="rounded-xl p-4 border transition-colors shadow-sm"
                                 style={{
                                     backgroundColor: activeObsidian,
-                                    color: "#E5EDE7",
-                                    borderColor: "rgba(93, 138, 107, 0.25)",
+                                    color: "var(--gsm-text-secondary)",
+                                    borderColor: "color-mix(in srgb, var(--gsm-emerald) 25%, transparent)",
                                 }}
                             >
                                 <div className="flex items-center justify-between pb-2 border-b border-white/10">
                                     <span className="text-[11px] font-bold tracking-wider uppercase text-gray-400">Dark Mode</span>
                                     <span
                                         className="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                                        style={{ backgroundColor: "rgba(93, 138, 107, 0.2)", color: activeEmerald, border: `1px solid ${activeEmerald}40` }}
+                                        style={{ backgroundColor: "color-mix(in srgb, var(--gsm-emerald) 20%, transparent)", color: activeEmerald, border: `1px solid ${activeEmerald}40` }}
                                     >
                                         Active Node
                                     </span>
@@ -1260,15 +1260,15 @@ export function SettingsPage() {
                         <AdminCard className="p-3 sm:p-3">
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Edisi GSM Aktif:</span>
-                                <span className="px-2 py-0.5 rounded text-xs font-bold bg-[#5D8A6B] text-white">
+                                <span className="px-2 py-0.5 rounded text-xs font-bold bg-[var(--gsm-emerald)] text-white">
                                     {current.theme_tokens?.gsm_edition_label || "GSM Kabinet Keberlanjutan 2026"}
                                 </span>
                             </div>
                             <div className="mt-3 flex items-center gap-2">
                                 <span className="text-[11px] text-gray-500">Palet Baku:</span>
                                 <div className="flex items-center gap-1.5">
-                                    <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[#223027]" title="Primary Deep Forest (#223027)" />
-                                    <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[#5D8A6B]" title="Emerald Glow (#5D8A6B)" />
+                                    <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[var(--gsm-primary)]" title="Primary (CMS)" />
+                                    <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[var(--gsm-emerald)]" title="Emerald Glow (CMS)" />
                                     <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[#0C100E]" title="Obsidian Dark (#0C100E)" />
                                     <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[#A8977B]" title="Accent Warm Sand (#A8977B)" />
                                 </div>
@@ -1290,7 +1290,7 @@ export function SettingsPage() {
                 {/* Import dari Figma Tokens (JSON) */}
                 <Panel>
                     <div className="flex items-center gap-2">
-                        <FileJson className="h-5 w-5 text-[var(--gsm-accent,#A8977B)]" />
+                        <FileJson className="h-5 w-5 text-[var(--gsm-accent)]" />
                         <AdminSectionHeader title="Import dari Figma Tokens (JSON)" />
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -1304,7 +1304,7 @@ export function SettingsPage() {
                                 type="file"
                                 accept=".json,application/json"
                                 onChange={handleFileUpload}
-                                className="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[var(--gsm-primary,#223027)] file:text-white hover:file:opacity-90"
+                                className="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[var(--gsm-primary)] file:text-white hover:file:opacity-90"
                             />
                         </div>
 
@@ -1320,7 +1320,7 @@ export function SettingsPage() {
                         </div>
 
                         {jsonImportPreview && (
-                            <div className="rounded-lg border p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40 text-xs text-emerald-800 dark:text-emerald-200">
+                            <div className="rounded-lg border p-2.5 bg-[var(--gsm-bg-elevated)] border-[var(--gsm-emerald)] text-xs text-[var(--gsm-emerald)]">
                                 <span className="font-semibold block mb-1">✓ JSON Terdeteksi Valid</span>
                                 <span className="text-[11px]">Struktur token terbaca dan siap disuntikkan ke draf tema.</span>
                             </div>
@@ -1348,7 +1348,7 @@ export function SettingsPage() {
                 {/* Koneksi Plugin Figma (TNL CMS Sync) */}
                 <Panel>
                     <div className="flex items-center gap-2">
-                        <KeyRound className="h-5 w-5 text-[var(--gsm-emerald,#5D8A6B)]" />
+                        <KeyRound className="h-5 w-5 text-[var(--gsm-emerald)]" />
                         <AdminSectionHeader title="Koneksi Plugin Figma (TNL CMS Sync)" />
                     </div>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -1359,7 +1359,7 @@ export function SettingsPage() {
                         <AdminCard className="p-3 sm:p-3 text-xs space-y-1.5">
                             <div className="flex items-center justify-between">
                                 <span className="text-gray-500">Status Token:</span>
-                                <span className={`font-bold px-2 py-0.5 rounded text-[11px] ${figmaStatus?.configured ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"}`}>
+                                <span className={`font-bold px-2 py-0.5 rounded text-[11px] ${figmaStatus?.configured ? "bg-[var(--gsm-bg-elevated)] text-[var(--gsm-emerald)]" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"}`}>
                                     {figmaStatus?.configured ? `Aktif (${figmaStatus.prefix})` : "Belum Dikonfigurasi"}
                                 </span>
                             </div>
@@ -1396,7 +1396,7 @@ export function SettingsPage() {
                                         }}
                                         className="tnl-btn tnl-btn-outline shrink-0 h-[42px] px-3 text-xs"
                                     >
-                                        {copiedToken ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                                        {copiedToken ? <Check className="h-4 w-4 text-[var(--gsm-emerald)]" /> : <Copy className="h-4 w-4" />}
                                     </button>
                                 </div>
                             </div>

@@ -149,7 +149,7 @@ export function PrivacyPage() {
                                         data-testid={`toc-link-${sec.id}`}
                                     >
                                         <span className="truncate">{isId ? sec.title_id : sec.title_en}</span>
-                                        {activeSection === sec.id && <span className="h-1.5 w-1.5 rounded-full bg-[var(--gsm-emerald,#5D8A6B)] shrink-0 ml-2" />}
+                                        {activeSection === sec.id && <span className="h-1.5 w-1.5 rounded-full bg-[var(--gsm-emerald)] shrink-0 ml-2" />}
                                     </button>
                                 ))}
                             </nav>
@@ -193,7 +193,7 @@ export function PrivacyPage() {
                             </p>
                             <a
                                 href="mailto:telconnetlab@gmail.com?subject=[Permintaan%20UU%20PDP]%20Hak%20Subjek%20Data"
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] p-2.5 text-xs font-semibold hover:border-[var(--gsm-emerald,#5D8A6B)] hover:text-[var(--tnl-body)] transition-colors"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] p-2.5 text-xs font-semibold hover:border-[var(--gsm-emerald)] hover:text-[var(--tnl-body)] transition-colors"
                             >
                                 <Mail className="h-3.5 w-3.5" />
                                 <span>telconnetlab@gmail.com</span>
@@ -328,7 +328,7 @@ export function PrivacyPage() {
                                         : "Preventing DDoS attacks, defending forms against automated spam (honeypots), internal CMS auditing, and laboratory compliance."}
                                 </li>
                             </ul>
-                            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs font-semibold text-[var(--tnl-body)]">
+                            <div className="rounded-xl border border-[var(--gsm-emerald)] bg-[var(--gsm-bg-elevated)] p-4 text-xs font-semibold text-[var(--tnl-body)]">
                                 {isId
                                     ? "Penegasan Resmi: Laboratorium TNL ITS TIDAK PERNAH menjual, menyewakan, memperjualbelikan, atau menyerahkan data pribadi Anda kepada pihak ketiga untuk kepentingan pemasaran komersial atau iklan."
                                     : "Official Guarantee: TNL Laboratory NEVER sells, rents, monetises, or discloses your personal data to any third party for commercial marketing or advertising purposes."}
@@ -561,7 +561,7 @@ export function PrivacyPage() {
                                 </div>
                             </div>
 
-                            <div className="legal-note p-5 space-y-3 bg-[var(--gsm-emerald,#5D8A6B)]/10 border-[var(--gsm-emerald,#5D8A6B)]/30">
+                            <div className="legal-note p-5 space-y-3 bg-[var(--gsm-emerald)]/10 border-[var(--gsm-emerald)]/30">
                                 <h4 className="font-bold text-sm text-[var(--tnl-heading)] flex items-center gap-2">
                                     <Clock className="h-4 w-4 text-[var(--tnl-body)]" />
                                     <span>{isId ? "Prosedur Pengajuan & Komitmen SLA 3×24 Jam Kerja" : "Request Procedure & 3x24-Hour SLA"}</span>
@@ -791,7 +791,7 @@ export function TermsPage() {
                                         data-testid={`toc-link-${sec.id}`}
                                     >
                                         <span className="truncate">{isId ? sec.title_id : sec.title_en}</span>
-                                        {activeSection === sec.id && <span className="h-1.5 w-1.5 rounded-full bg-[var(--gsm-emerald,#5D8A6B)] shrink-0 ml-2" />}
+                                        {activeSection === sec.id && <span className="h-1.5 w-1.5 rounded-full bg-[var(--gsm-emerald)] shrink-0 ml-2" />}
                                     </button>
                                 ))}
                             </nav>
@@ -835,7 +835,7 @@ export function TermsPage() {
                             </p>
                             <Link
                                 to="/contact"
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] p-2.5 text-xs font-semibold hover:border-[var(--gsm-emerald,#5D8A6B)] hover:text-[var(--tnl-body)] transition-colors"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] p-2.5 text-xs font-semibold hover:border-[var(--gsm-emerald)] hover:text-[var(--tnl-body)] transition-colors"
                             >
                                 <Mail className="h-3.5 w-3.5" />
                                 <span>{isId ? "Hubungi Ruang B-301" : "Contact Room B-301"}</span>

@@ -135,7 +135,7 @@ export default function AdminDashboard() {
                         <div className="mt-3 space-y-2 text-sm">
                             <div className="flex items-center justify-between text-xs py-1">
                                 <span className="text-[var(--tnl-body)]">Open House 2026:</span>
-                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">30 / 30 Quota Filled</span>
+                                <span className="font-semibold text-[var(--gsm-emerald)]">30 / 30 Quota Filled</span>
                             </div>
                             <div className="flex items-center justify-between text-xs py-1">
                                 <span className="text-[var(--tnl-body)]">Needs Review Queue:</span>

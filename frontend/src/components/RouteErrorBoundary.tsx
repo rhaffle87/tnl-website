@@ -28,7 +28,7 @@ export default class RouteErrorBoundary extends Component<{ children: ReactNode 
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="rounded-md bg-[#1E4D2B] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          className="rounded-md bg-[var(--gsm-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           Muat ulang / Reload
         </button>
