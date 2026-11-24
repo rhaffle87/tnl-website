@@ -26,3 +26,6 @@ dist-ssr
 # Playwright geometry gate artifacts
 /test-results/
 /playwright-report/
+
+# Playwright probe screenshots (regenerated every run)
+/e2e/__screenshots__/

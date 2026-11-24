@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import {
     ChevronDown,
     ChevronUp,
+    Crop,
     ExternalLink,
     FileIcon,
     ImageIcon,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { MediaPickerModal } from "./MediaPickerModal";
+import { ImageCropDialog, type CropSource } from "./ImageCropDialog";
 import type { MediaAsset } from "@/lib/types";
 
 export interface InlineMediaFieldProps {
@@ -47,12 +49,15 @@ export function InlineMediaField({
     const [manualOpen, setManualOpen] = useState(false);
     const [isUploadingDirect, setIsUploadingDirect] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [cropOpen, setCropOpen] = useState(false);
+    const [cropSource, setCropSource] = useState<CropSource | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const hasValue = Boolean(value && value.trim());
+    const isImageField = accept === "image" && !(value ?? "").match(/\.(pdf|doc|docx|pkt|zip)$/i);
 
-    // Direct single file upload
-    const handleDirectFile = async (file: File) => {
+    // Direct single file upload (cropped WebP blob or the original file)
+    const uploadFile = async (file: File) => {
         setIsUploadingDirect(true);
         try {
             const formData = new FormData();
@@ -108,10 +113,10 @@ export function InlineMediaField({
 
     const aspectClass =
         aspect === "square"
-            ? "aspect-square max-w-[140px]"
+            ? "aspect-square w-[140px] max-w-full"
             : aspect === "video"
-            ? "aspect-video max-w-sm"
-            : "max-h-48";
+            ? "aspect-video w-full max-w-[240px]"
+            : "max-h-48 w-full max-w-full";
 
     return (
         <div className="space-y-1.5" data-testid={testId}>
@@ -139,7 +144,15 @@ export function InlineMediaField({
                 accept={accept === "image" ? "image/*" : undefined}
                 onChange={(e) => {
                     const f = e.target.files?.[0];
-                    if (f) void handleDirectFile(f);
+                    if (f) {
+                        e.target.value = "";
+                        if (isImageField) {
+                            setCropSource({ file: f });
+                            setCropOpen(true);
+                        } else {
+                            void uploadFile(f);
+                        }
+                    }
                 }}
                 className="hidden"
                 disabled={disabled}
@@ -149,12 +162,12 @@ export function InlineMediaField({
             {/* If value exists, show thumbnail card */}
             {hasValue ? (
                 <div
-                    className="relative group rounded-xl border border-[var(--tnl-border)] p-2 bg-black/[0.02] dark:bg-white/[0.02] flex flex-col sm:flex-row items-center gap-3.5"
+                    className="relative group min-w-0 rounded-xl border border-[var(--tnl-border)] p-2 bg-black/[0.02] dark:bg-white/[0.02] flex flex-row flex-wrap items-center gap-3"
                     data-testid={`${testId}-preview`}
                 >
                     {/* Thumbnail preview */}
                     <div
-                        className={`w-full sm:w-auto ${aspectClass} shrink-0 rounded-lg overflow-hidden border border-black/10 bg-black/10 flex items-center justify-center relative`}
+                        className={`${aspectClass} shrink-0 rounded-lg overflow-hidden border border-black/10 bg-black/10 flex items-center justify-center relative`}
                     >
                         {isUploadingDirect ? (
                             <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white">
@@ -179,9 +192,9 @@ export function InlineMediaField({
                     </div>
 
                     {/* Path summary & actions */}
-                    <div className="flex-1 min-w-0 w-full space-y-2">
+                    <div className="flex-1 min-w-0 w-full basis-full space-y-2">
                         <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-[var(--tnl-body)] truncate block flex-1" title={value ?? ""}>
+                            <span className="font-mono text-xs text-[var(--tnl-body)] truncate block flex-1 min-w-0" title={value ?? ""}>
                                 {value}
                             </span>
                             <a
@@ -219,6 +232,22 @@ export function InlineMediaField({
                                 <span>Upload</span>
                             </button>
 
+                            {isImageField ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setCropSource({ url: value ?? undefined, suggestedName: value?.split("/").pop() });
+                                        setCropOpen(true);
+                                    }}
+                                    disabled={disabled || isUploadingDirect}
+                                    className="tnl-btn tnl-btn-secondary text-xs py-1 px-2.5 h-auto inline-flex items-center gap-1.5"
+                                    data-testid={`${testId}-crop-btn`}
+                                >
+                                    <Crop className="h-3 w-3" />
+                                    <span>Crop → WebP</span>
+                                </button>
+                            ) : null}
+
                             <button
                                 type="button"
                                 onClick={() => onChange("")}
@@ -251,16 +280,23 @@ export function InlineMediaField({
                         e.preventDefault();
                         setIsDragging(false);
                         const file = e.dataTransfer.files?.[0];
-                        if (file) void handleDirectFile(file);
+                        if (file) {
+                            if (isImageField) {
+                                setCropSource({ file });
+                                setCropOpen(true);
+                            } else {
+                                void uploadFile(file);
+                            }
+                        }
                     }}
-                    className={`rounded-xl border-2 border-dashed p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left transition-colors ${
+                    className={`rounded-xl border-2 border-dashed p-4 flex flex-col sm:flex-row flex-wrap items-center justify-between gap-3 text-center sm:text-left transition-colors ${
                         isDragging
                             ? "border-[var(--tnl-green)] bg-[var(--tnl-green)]/10"
                             : "border-[var(--tnl-border)] bg-black/[0.01] dark:bg-white/[0.01]"
                     }`}
                     data-testid={`${testId}-dropzone`}
                 >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                         <div className="h-9 w-9 rounded-lg bg-[var(--tnl-green)]/10 text-[var(--tnl-green)] flex items-center justify-center shrink-0">
                             {isUploadingDirect ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -325,6 +361,16 @@ export function InlineMediaField({
                     {help}
                 </p>
             )}
+
+            {/* On-site WebP cropper */}
+            <ImageCropDialog
+                open={cropOpen}
+                source={cropSource}
+                onOpenChange={setCropOpen}
+                onDone={(file) => {
+                    void uploadFile(file);
+                }}
+            />
 
             {/* Media Picker Modal */}
             <MediaPickerModal
