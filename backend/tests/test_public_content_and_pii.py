@@ -143,6 +143,25 @@ async def test_public_posts_pagination_and_search(async_client):
 
 
 @pytest.mark.asyncio
+async def test_public_posts_hide_drafts_and_keep_published(async_client, mock_db):
+    published = await mock_db.posts.find_one({"status": "published", "slug": {"$exists": True}})
+    assert published is not None, "seed must contain at least one published post"
+    slug = published["slug"]
+
+    res = await async_client.get("/public/posts")
+    assert slug in [item["slug"] for item in res.json()["items"]]
+
+    await mock_db.posts.update_one({"_id": published["_id"]}, {"$set": {"status": "draft"}})
+    try:
+        res = await async_client.get("/public/posts")
+        assert slug not in [item["slug"] for item in res.json()["items"]]
+        detail = await async_client.get(f"/public/posts/{slug}")
+        assert detail.status_code == 404
+    finally:
+        await mock_db.posts.update_one({"_id": published["_id"]}, {"$set": {"status": "published"}})
+
+
+@pytest.mark.asyncio
 async def test_public_publications_scholarly_records(async_client):
     res = await async_client.get("/public/publications")
     assert res.status_code == 200
