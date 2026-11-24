@@ -99,11 +99,10 @@ V1_READ = {
 }
 
 
-# Fields never returned by the public v1 reads. The sheet webhook is a write credential for the
-# registrant spreadsheet, and the WhatsApp group URL must only be revealed post-registration, so a
-# read-scope key must not be able to see them.
+# Fields never returned by the public v1 reads. The WhatsApp group URL must only be revealed
+# post-registration, so a read-scope key must not be able to see it.
 V1_PROJECTION = {"issues": 0, "ai_review": 0, "nim": 0, "email_personal": 0, "phone": 0,
-                 "spreadsheet_webhook_url": 0, "whatsapp_group_url": 0}
+                 "whatsapp_group_url": 0}
 
 
 async def _practicum_view(request: Request, items: list) -> list:

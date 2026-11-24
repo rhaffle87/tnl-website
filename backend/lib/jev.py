@@ -1,9 +1,8 @@
 """Jev (TypeSafe) fast typed decisions.
 
-Three uses in TNL Studio:
+Two uses in TNL Studio:
   • review_draft()      — smarter publish checks beyond the rule-based gates
   • triage_message()    — contact inbox category + urgency + spam flag
-  • score_registration()— registrant fit score + junk flag for the Registrar
 
 Every helper fails SOFT: Jev being busy must never block a save, a contact form
 or a registration. Failures return `ai_ok: False` so a fallback never reads as a
@@ -172,45 +171,6 @@ async def triage_message(name: str, subject: str, body: str) -> dict:
         "urgency_level": level,
         "urgency_label": label,
         "spam_probability": round(resp.nouls["is_spam"].noul, 3),
-    }
-
-
-# ---------------------------------------------------------------- 3. registration quality scoring
-FIT_LEVELS = ["incomplete or junk", "weak", "adequate", "strong fit"]
-
-
-async def score_registration(event_title: str, event_type: str, answers: dict) -> dict:
-    clean = {k.replace("f_", "").replace("-", " "): v for k, v in (answers or {}).items()
-             if isinstance(v, str) and v}
-    if not clean:
-        return {"ai_ok": False}
-    resp = await _ask(
-        {"event": event_title, "event_type": event_type, "answers": clean},
-        {
-            "fit": Score(
-                instructions=(
-                    "A person registered for this laboratory event. Judging only by how complete, genuine "
-                    "and relevant their answers are, how strong is this registration?"
-                ),
-                criteria=FIT_LEVELS,
-            ),
-            "is_junk": Noul(
-                instructions=(
-                    "Are these answers fake, nonsense, test entries or auto-filled gibberish rather than "
-                    "a genuine person registering?"
-                )
-            ),
-        },
-    )
-    if resp is None:
-        return {"ai_ok": False}
-    level, label = _levels(resp.scores["fit"])
-    return {
-        "ai_ok": True,
-        "fit_level": level,
-        "fit_label": label,
-        "fit_score": round(resp.scores["fit"].score, 2),
-        "junk_probability": round(resp.nouls["is_junk"].noul, 3),
     }
 
 

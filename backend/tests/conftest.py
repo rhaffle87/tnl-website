@@ -172,19 +172,4 @@ def temp_media_dir(tmp_path, monkeypatch):
     return test_media
 
 
-@pytest.fixture
-def mock_sheets_webhook(monkeypatch):
-    """Mocks outgoing HTTP requests to Google Apps Script webhook."""
-    original_send = httpx.AsyncClient.send
 
-    async def mocked_send(self, request, *args, **kwargs):
-        if "script.google.com" in str(request.url):
-            return httpx.Response(
-                status_code=200,
-                json={"status": "success", "row": 42},
-                request=request
-            )
-        return await original_send(self, request, *args, **kwargs)
-
-    monkeypatch.setattr(httpx.AsyncClient, "send", mocked_send)
-    return True

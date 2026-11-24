@@ -4,9 +4,10 @@ import { Routes, Route } from "react-router-dom";
 import AdminLogin from "@/pages/admin/AdminLogin";
 import ContentManager from "@/pages/admin/ContentManager";
 import ContentEditor from "@/pages/admin/ContentEditor";
-import { RegistrarPage, ThemePage } from "@/pages/admin/AdminScreens";
+import { RegistrarPage, ThemePage, publishedEventQuota } from "@/pages/admin/AdminScreens";
 import { renderWithProviders } from "./test-utils";
 import * as api from "@/lib/api";
+import type { LabEvent } from "@/lib/types";
 
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
@@ -53,7 +54,6 @@ vi.mock("@/lib/api", async () => {
               email: "peserta@its.ac.id",
               nim: "5024211001",
               status: "attended",
-              sheet_synced: true,
               data: { "f_full-name": "Ahmad Dani" },
             },
           ],
@@ -108,19 +108,24 @@ describe("Admin CMS Components", () => {
     expect(screen.getByRole("button", { name: /Sign in|Masuk/i })).toBeInTheDocument();
   });
 
-  it("RegistrarPage renders sync sheets action and export buttons", async () => {
+  it("RegistrarPage renders exports and filters without Sheets or scoring controls", () => {
     renderWithProviders(<RegistrarPage />, { route: "/admin/registrations" });
 
-    // Sync sheet button exists
-    const syncBtn = await screen.findByTestId("sync-sheet-btn");
-    expect(syncBtn).toBeInTheDocument();
+    expect(screen.getByText(/Registrations/i)).toBeTruthy();
+    expect(screen.queryByTestId("registrations-score-button")).toBeNull();
+    expect(screen.queryByTestId("sync-sheet-btn")).toBeNull();
+    expect(screen.getByText("Export Excel (.xlsx)")).toBeTruthy();
+    expect(screen.getByText("CSV")).toBeTruthy();
+    expect(screen.queryByText("Quality")).toBeNull();
+  });
 
-    // Verify CSV and Excel download links
-    const csvLink = screen.getByRole("link", { name: /CSV/i });
-    expect(csvLink).toHaveAttribute("href", expect.stringContaining("/api/admin/registrations/export"));
+  it("published event quota excludes draft events", () => {
+    const events = [
+      { id: "ev-1", title: "Open House", capacity: 30, status: "published" },
+      { id: "ev-2", title: "Cisco Packet Tracer Training", capacity: 40, status: "draft" },
+    ] as LabEvent[];
 
-    const excelLink = screen.getByRole("link", { name: /Excel/i });
-    expect(excelLink).toHaveAttribute("href", expect.stringContaining("/api/admin/registrations/export-excel"));
+    expect(publishedEventQuota(events)).toBe(30);
   });
 
   it("ThemePage renders GSM theme tokens with color inputs", async () => {

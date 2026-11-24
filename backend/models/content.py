@@ -145,7 +145,6 @@ class Event(BaseModel):
     poster_urls: list[str] = []
     gallery_images: list[str] = []
     documentation: list[MediaItem] = []
-    spreadsheet_webhook_url: str | None = None
     whatsapp_group_url: str = ""
     start_date: str | None = None  # YYYY-MM-DD
     end_date: str | None = None

@@ -134,7 +134,6 @@ export interface LabEvent {
   cover_image?: string | null;
   poster_urls: string[];
   gallery_images?: string[];
-  spreadsheet_webhook_url?: string | null;
   whatsapp_group_url?: string | null;
   documentation: MediaItemRef[];
   start_date?: string | null;
@@ -467,14 +466,6 @@ export interface AiTriage {
   spam_probability?: number;
 }
 
-export interface AiScore {
-  ai_ok: boolean;
-  fit_level?: number;
-  fit_label?: string;
-  fit_score?: number;
-  junk_probability?: number;
-}
-
 export interface AiReview {
   ai_ok: boolean;
   substance_level?: number;
@@ -508,7 +499,6 @@ export interface Registration {
   notes: string;
   created_at: string;
   display_name?: string;
-  ai_score?: AiScore;
   anonymized?: boolean;
 }
 

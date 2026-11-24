@@ -1,4 +1,4 @@
-"""Hardening: sheet-webhook secrecy on public event endpoints, registration uploads, seed safety."""
+"""Hardening: private-field redaction, registration uploads, seed safety."""
 
 import sys
 from datetime import date, datetime, timedelta, timezone
@@ -8,7 +8,6 @@ import pytest
 
 import seed
 
-SECRET_WEBHOOK = "https://script.google.com/macros/s/SECRET_TEST_ID/exec"
 DUMMY_WA_GROUP = "https://chat.whatsapp.com/EXAMPLE_TEST_GROUP"
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 32
 
@@ -17,14 +16,14 @@ EMAIL_FIELD = {"type": "email", "label": "Email", "required": True, "options": [
 PROOF_FIELD = {"type": "file", "label": "Proof", "required": True, "options": []}
 
 
-def _event(slug, form_fields, webhook=None, whatsapp_group_url=None):
+def _event(slug, form_fields, whatsapp_group_url=None):
     today = date.today()
     return {
         "id": str(uuid4()), "slug": slug, "title": "Hardening <b>Test</b>", "title_id": "",
         "type": "training", "status": "published", "capacity": 0, "price": 0,
         "start_date": str(today + timedelta(days=10)), "end_date": str(today + timedelta(days=11)),
         "reg_open_date": str(today - timedelta(days=2)), "reg_close_date": str(today + timedelta(days=5)),
-        "form_fields": form_fields, "spreadsheet_webhook_url": webhook,
+        "form_fields": form_fields,
         "whatsapp_group_url": whatsapp_group_url or "",
     }
 
@@ -34,49 +33,48 @@ def _uploads_empty(tmp_path):
     return not uploads.exists() or not list(uploads.iterdir())
 
 
+def test_event_model_has_no_spreadsheet_webhook_field():
+    from models.content import Event
+
+    assert "spreadsheet_webhook_url" not in Event.model_fields
+
+
 @pytest.mark.asyncio
-async def test_public_event_endpoints_never_expose_sheet_webhook(async_client, mock_db):
-    slug = "webhook-secrecy-" + uuid4().hex[:6]
-    await mock_db.events.insert_one(_event(slug, [NAME_FIELD], webhook=SECRET_WEBHOOK))
+async def test_public_and_v1_never_expose_spreadsheet_webhook_field(async_client, mock_db):
+    slug = "no-webhook-" + uuid4().hex[:6]
+    await mock_db.events.insert_one(_event(slug, [NAME_FIELD]))
 
     listing = await async_client.get("/public/events")
     assert listing.status_code == 200
-    assert SECRET_WEBHOOK not in listing.text
-    assert any(e.get("slug") == slug for e in listing.json())
     assert all("spreadsheet_webhook_url" not in e for e in listing.json())
 
     single = await async_client.get(f"/public/events/{slug}")
     assert single.status_code == 200
     assert "spreadsheet_webhook_url" not in single.json()
-    assert SECRET_WEBHOOK not in single.text
 
-    # The server side must still know the webhook so registrations keep syncing.
-    stored = await mock_db.events.find_one({"slug": slug})
-    assert stored["spreadsheet_webhook_url"] == SECRET_WEBHOOK
-
-
-@pytest.mark.asyncio
-async def test_v1_events_never_expose_sheet_webhook(async_client, mock_db):
     from routers.apiv1 import hash_key
-
     raw = "tnl_test_" + uuid4().hex
     await mock_db.api_keys.insert_one({
         "id": str(uuid4()), "name": "hardening-test", "scopes": ["read"], "key_hash": hash_key(raw),
         "prefix": raw[:12], "active": True, "calls": 0,
         "created_at": datetime.now(timezone.utc), "last_used_at": None,
     })
-    slug = "v1-webhook-secrecy-" + uuid4().hex[:6]
-    await mock_db.events.insert_one(_event(slug, [NAME_FIELD], webhook=SECRET_WEBHOOK))
     headers = {"X-API-Key": raw}
 
-    single = await async_client.get(f"/v1/events/{slug}", headers=headers)
-    assert single.status_code == 200, single.text
-    assert "spreadsheet_webhook_url" not in single.json()
-    assert SECRET_WEBHOOK not in single.text
+    v1_single = await async_client.get(f"/v1/events/{slug}", headers=headers)
+    assert v1_single.status_code == 200, v1_single.text
+    assert "spreadsheet_webhook_url" not in v1_single.json()
 
-    listing = await async_client.get("/v1/events?limit=100", headers=headers)
-    assert listing.status_code == 200
-    assert SECRET_WEBHOOK not in listing.text
+    v1_listing = await async_client.get("/v1/events?limit=100", headers=headers)
+    assert v1_listing.status_code == 200
+    assert "spreadsheet_webhook_url" not in v1_listing.text
+
+
+@pytest.mark.asyncio
+async def test_registration_score_and_sheet_sync_endpoints_are_removed(async_client, admin_cookies):
+    for path in ("/admin/registrations/score-all", "/admin/registrations/sync-sheet"):
+        res = await async_client.post(path, json={"event_id": "missing"}, cookies=admin_cookies)
+        assert res.status_code == 404, res.text
 
 
 @pytest.mark.asyncio
@@ -114,7 +112,7 @@ async def test_rejected_registration_removes_the_file_it_already_stored(
 
 
 @pytest.mark.asyncio
-async def test_valid_upload_is_still_stored(async_client, mock_db, monkeypatch, tmp_path, mock_sheets_webhook):
+async def test_valid_upload_is_still_stored(async_client, mock_db, monkeypatch, tmp_path):
     monkeypatch.setenv("MEDIA_DIR", str(tmp_path))
     ev = _event("valid-upload-" + uuid4().hex[:6], [NAME_FIELD, PROOF_FIELD])
     await mock_db.events.insert_one(ev)
@@ -172,7 +170,7 @@ async def test_certificate_pdf_survives_non_latin_text(async_client, mock_db):
 
 
 @pytest.mark.asyncio
-async def test_read_only_roles_do_not_see_webhook_or_private_member_fields(async_client, mock_db):
+async def test_read_only_roles_do_not_see_private_member_fields(async_client, mock_db):
     import lib.auth
 
     viewer = await mock_db.users.find_one({"email": "viewer@its.ac.id", "active": True})
@@ -182,7 +180,7 @@ async def test_read_only_roles_do_not_see_webhook_or_private_member_fields(async
     as_viewer = {"tnl_session": await lib.auth.create_session(viewer["id"])}
     as_admin = {"tnl_session": await lib.auth.create_session(admin["id"])}
 
-    ev = _event("redaction-" + uuid4().hex[:6], [NAME_FIELD], webhook=SECRET_WEBHOOK)
+    ev = _event("redaction-" + uuid4().hex[:6], [NAME_FIELD])
     await mock_db.events.insert_one(ev)
     member_id = str(uuid4())
     await mock_db.members.insert_one({
@@ -191,13 +189,11 @@ async def test_read_only_roles_do_not_see_webhook_or_private_member_fields(async
         "nim": "5024200000", "order": 9999,
     })
 
-    # Read-only role: no webhook, no private member data, in detail, list and CSV export.
+    # Read-only role: no private member data, in detail, list and CSV export.
     single = await async_client.get(f"/admin/content/events/{ev['id']}", cookies=as_viewer)
     assert single.status_code == 200, single.text
-    assert "spreadsheet_webhook_url" not in single.json()
     listing = await async_client.get("/admin/content/events?limit=200", cookies=as_viewer)
     assert listing.status_code == 200
-    assert SECRET_WEBHOOK not in listing.text
 
     member = await async_client.get(f"/admin/content/members/{member_id}", cookies=as_viewer)
     assert member.status_code == 200, member.text
@@ -208,9 +204,7 @@ async def test_read_only_roles_do_not_see_webhook_or_private_member_fields(async
     for leaked in ("+6280000000000", "redaction.private@example.org", "5024200000"):
         assert leaked not in export.text
 
-    # Roles that can edit still get the full record, so the admin forms keep working.
-    full = await async_client.get(f"/admin/content/events/{ev['id']}", cookies=as_admin)
-    assert full.json()["spreadsheet_webhook_url"] == SECRET_WEBHOOK
+    # Roles that can edit still get the full member record, so the admin forms keep working.
     full_member = await async_client.get(f"/admin/content/members/{member_id}", cookies=as_admin)
     assert full_member.json()["nim"] == "5024200000"
 

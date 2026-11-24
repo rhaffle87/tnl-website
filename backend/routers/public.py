@@ -30,7 +30,7 @@ router = APIRouter(tags=["public"])
 # Fields that must never leave the server through the public event endpoints. The sheet webhook
 # is a write credential: anyone holding it can append rows to the registrant spreadsheet.
 # The WhatsApp group invite URL must only be revealed upon successful registration.
-EVENT_PRIVATE_PROJECTION = {"spreadsheet_webhook_url": 0, "whatsapp_group_url": 0}
+EVENT_PRIVATE_PROJECTION = {"whatsapp_group_url": 0}
 
 
 async def check_maintenance(request: Request) -> None:
@@ -373,61 +373,6 @@ def _discard_uploads(urls: list[str]) -> None:
             pass
 
 
-async def _sync_registration_to_sheet(reg_id: str, webhook_url: str, ev: dict, reg: dict):
-    from datetime import timedelta
-    try:
-        data = reg.get("data") or {}
-        wib = reg.get("created_at") or datetime.now(timezone.utc)
-        if hasattr(wib, "astimezone"):
-            wib_str = wib.astimezone(timezone(timedelta(hours=7))).strftime("%Y-%m-%d %H:%M:%S WIB")
-        else:
-            wib_str = str(wib)
-
-        full_name = next((v for k, v in data.items() if ("nama" in k or "name" in k) and isinstance(v, str)), "")
-        nrp = reg.get("nim") or next((v for k, v in data.items() if ("nrp" in k or "nim" in k) and isinstance(v, str)), "")
-        batch = next((v for k, v in data.items() if ("angkatan" in k or "batch" in k) and isinstance(v, str)), "")
-        motivation = next((v for k, v in data.items() if ("motivasi" in k or "alasan" in k or "motivation" in k or "tertarik" in k) and isinstance(v, str)), "")
-
-        ig_proof = ""
-        for k, v in data.items():
-            if isinstance(v, dict) and ("ig" in k or "instagram" in k or "proof" in k or "bukti" in k):
-                ig_proof = v.get("absolute_url") or v.get("url") or ""
-            elif isinstance(v, str) and ("ig" in k or "instagram" in k) and (v.startswith("http") or v.startswith("/api/")):
-                ig_proof = v
-
-        payload = {
-            "timestamp": wib_str,
-            "event_id": ev.get("id"),
-            "event_slug": ev.get("slug") or "open-house-tnl",
-            "event_title": ev.get("title", ""),
-            "full_name": full_name or reg.get("email", ""),
-            "nrp": nrp,
-            "batch": batch,
-            "motivation": motivation,
-            "ig_proof_url": ig_proof,
-            "email": reg.get("email", ""),
-            "registration_id": reg_id,
-        }
-
-        async with httpx.AsyncClient(follow_redirects=True, timeout=15.0) as hc:
-            r = await hc.post(webhook_url, json=payload)
-            if r.status_code in (200, 201, 302):
-                await db.registrations.update_one(
-                    {"id": reg_id},
-                    {"$set": {"sheet_synced": True, "sheet_sync_error": None, "sheet_synced_at": datetime.now(timezone.utc)}}
-                )
-            else:
-                await db.registrations.update_one(
-                    {"id": reg_id},
-                    {"$set": {"sheet_synced": False, "sheet_sync_error": f"HTTP {r.status_code}: {r.text[:200]}"}}
-                )
-    except Exception as exc:
-        await db.registrations.update_one(
-            {"id": reg_id},
-            {"$set": {"sheet_synced": False, "sheet_sync_error": str(exc)}}
-        )
-
-
 @router.post("/registrations/{event_id}")
 async def submit_registration(event_id: str, request: Request):
     ev = await db.events.find_one({"$or": [{"id": event_id}, {"slug": event_id}], "status": "published"})
@@ -554,7 +499,6 @@ async def submit_registration(event_id: str, request: Request):
         "data": data, "email": email.lower(), "nim": nim, "status": "accepted",
         "consent": True, "consent_timestamp": now_utc.isoformat(), "consent_policy_version": "2026.1",
         "certificate_code": cert_code, "notes": "",
-        "sheet_synced": False, "sheet_sync_error": None,
         "created_at": now_utc,
     }
     await db.registrations.insert_one(reg)
@@ -567,11 +511,6 @@ async def submit_registration(event_id: str, request: Request):
             await db.registrations.delete_one({"id": reg["id"]})
             _discard_uploads(saved_uploads)
             raise HTTPException(status_code=409, detail="Kuota pendaftaran sudah penuh.")
-
-    webhook_url = ev.get("spreadsheet_webhook_url") or os.environ.get("OPEN_HOUSE_SHEET_WEBHOOK_URL")
-    if webhook_url:
-        import asyncio
-        asyncio.create_task(_sync_registration_to_sheet(reg["id"], webhook_url, ev, reg))
 
     name = next((v for v in data.values() if isinstance(v, str) and 2 < len(v) < 80), email)
     state = "accepted and confirmed"

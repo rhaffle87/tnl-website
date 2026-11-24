@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Award, Check, Copy, Download, FileJson, FileSpreadsheet, KeyRound, RefreshCw, Sparkles, Upload } from "lucide-react";
+import { Award, Check, Copy, Download, FileJson, FileSpreadsheet, KeyRound, Sparkles, Upload } from "lucide-react";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
 import { AdminCard, AdminPageHeader, AdminSectionHeader, AdminSelect, AdminStatusBadge, AdminSwitch, ConfirmButton, Panel, adminError } from "@/pages/admin/AdminUI";
 import { useMe } from "@/lib/hooks";
@@ -176,6 +176,12 @@ export function MediaLibrary() {
 }
 
 // ---------------------------------------------------------------- registrar
+export function publishedEventQuota(events: LabEvent[] | undefined): number {
+    return (events ?? [])
+        .filter((ev) => ev.status === "published")
+        .reduce((sum, ev) => sum + (ev.capacity || 0), 0);
+}
+
 export function RegistrarPage() {
     const qc = useQueryClient();
     const { data: me } = useMe();
@@ -234,15 +240,6 @@ export function RegistrarPage() {
         onError: (err) => toast.error(adminError(err, "Could not delete registration.")),
     });
 
-    const scoreAll = useMutation({
-        mutationFn: () => apiPost<{ scored: number; examined: number }>("/admin/registrations/score-all", { event_id: eventId }),
-        onSuccess: (res) => {
-            refresh();
-            toast.success(`Scored ${res.scored} of ${res.examined} registration(s).`);
-        },
-        onError: (err) => toast.error(adminError(err, "Scoring is busy. Try again shortly.")),
-    });
-
     const checkin = useMutation({
         mutationFn: () => apiPost<{ name: string; message: string; nim?: string; time?: string }>("/admin/registrations/checkin", { code: checkinCode }),
         onSuccess: (res) => {
@@ -269,21 +266,12 @@ export function RegistrarPage() {
         onError: (err) => toast.error(adminError(err, "Could not issue certificates.")),
     });
 
-    const syncSheet = useMutation({
-        mutationFn: () => apiPost<{ synced: number; failed: number; total: number }>("/admin/registrations/sync-sheet", { event_id: eventId || undefined, force: true }),
-        onSuccess: (res) => {
-            refresh();
-            toast.success(`Synced ${res.synced} registration(s) to Google Sheets.`);
-        },
-        onError: (err) => toast.error(adminError(err, "Spreadsheet sync failed. Verify webhook URL.")),
-    });
-
     const items = data?.items ?? [];
     const counts = data?.counts ?? {};
     const registered = data?.total ?? items.length;
     const quota = eventId
         ? (events?.items.find((ev) => ev.id === eventId)?.capacity ?? 0)
-        : (events?.items.reduce((sum, ev) => sum + (ev.capacity || 0), 0) ?? 0);
+        : publishedEventQuota(events?.items);
     const attended = counts.attended ?? items.filter((reg) => reg.status === "attended").length;
     const pending = counts.accepted ?? items.filter((reg) => reg.status === "accepted").length;
     const rejected = counts.rejected ?? items.filter((reg) => reg.status === "rejected").length;
@@ -295,7 +283,7 @@ export function RegistrarPage() {
         <div data-testid="registrar-page">
             <AdminPageHeader
                 title="Registrations"
-                description="Everyone who signed up for a programme. All valid registrations are automatically accepted. Check participants in at the door, cancel entries to free up quota, issue certificates, sync to Google Sheets, or export."
+                description="Everyone who signed up for a programme. All valid registrations are automatically accepted. Check participants in at the door, manage entries, issue certificates, or export to Excel/CSV."
                 actions={
                     <div className="flex flex-wrap items-center gap-2">
                         <div
@@ -319,17 +307,6 @@ export function RegistrarPage() {
                                 {dataUpdatedAt ? `Updated ${new Date(dataUpdatedAt).toLocaleTimeString()}` : "Waiting…"}
                             </span>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => syncSheet.mutate()}
-                            className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm"
-                            disabled={syncSheet.isPending}
-                            data-testid="sync-sheet-btn"
-                            title="Force sync unsynced or all registrations to configured Google Spreadsheet Webhook"
-                        >
-                            <RefreshCw className={`h-4 w-4 ${syncSheet.isPending ? "animate-spin" : ""}`} aria-hidden="true" />
-                            {syncSheet.isPending ? "Syncing…" : "Sync Sheets"}
-                        </button>
                         <button
                             type="button"
                             onClick={() => issueCerts.mutate()}
@@ -381,7 +358,7 @@ export function RegistrarPage() {
             </div>
 
             <Panel className="mb-5">
-                <div className="grid gap-3 lg:grid-cols-3">
+                <div className="grid gap-3 lg:grid-cols-2">
                     <AdminSelect value={eventId} onChange={(e) => setEventId(e.target.value)} aria-label="Event" data-testid="registrations-event-filter">
                         <option value="">All events</option>
                         {(events?.items ?? []).map((ev) => (
@@ -398,16 +375,6 @@ export function RegistrarPage() {
                             </option>
                         ))}
                     </AdminSelect>
-                    <button
-                        type="button"
-                        onClick={() => scoreAll.mutate()}
-                        className="tnl-btn tnl-btn-outline"
-                        disabled={!eventId || scoreAll.isPending}
-                        data-testid="registrations-score-button"
-                    >
-                        <Sparkles className="h-4 w-4" aria-hidden="true" />
-                        {scoreAll.isPending ? "Scoring…" : "Score registrations"}
-                    </button>
                 </div>
                 <div className="mt-4 rounded-xl border border-[var(--tnl-green)]/40 bg-[var(--tnl-green)]/5 p-3">
                     <p className="mb-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--tnl-green)" }}>Door check-in</p>
@@ -429,7 +396,7 @@ export function RegistrarPage() {
                         <button
                             type="button"
                             onClick={() => checkin.mutate()}
-                            className="tnl-btn tnl-btn-primary h-11 min-h-[44px] px-6 text-sm"
+                            className="tnl-btn tnl-btn-primary h-11 min-h-[44px] whitespace-nowrap shrink-0 px-5 text-sm"
                             disabled={!checkinCode.trim() || checkin.isPending}
                             data-testid="checkin-submit-button"
                         >
@@ -527,7 +494,6 @@ export function RegistrarPage() {
                                 <th className="pb-2 pr-4 font-semibold">Event</th>
                                 <th className="pb-2 pr-4 font-semibold">Status</th>
                                 <th className="pb-2 pr-4 font-semibold">Certificate</th>
-                                <th className="pb-2 pr-4 font-semibold">Quality</th>
                                 <th className="pb-2 font-semibold">Decide</th>
                             </tr>
                         </thead>
@@ -559,18 +525,6 @@ export function RegistrarPage() {
                                             </a>
                                         ) : (
                                             <span className="text-xs" style={{ color: "var(--tnl-tan-text)" }}>—</span>
-                                        )}
-                                    </td>
-                                    <td className="py-3 pr-4 text-xs">
-                                        {reg.ai_score?.ai_ok ? (
-                                            <span data-testid={`registration-score-${reg.id}`}>
-                                                {reg.ai_score.fit_label}
-                                                {(reg.ai_score.junk_probability ?? 0) > 0.6 ? (
-                                                    <span className="ml-1 font-bold" style={{ color: "#b91c1c" }}>· looks like junk</span>
-                                                ) : null}
-                                            </span>
-                                        ) : (
-                                            <span style={{ color: "var(--tnl-tan-text)" }}>not scored</span>
                                         )}
                                     </td>
                                     <td className="py-3">
@@ -817,7 +771,7 @@ export function ThemePage() {
             gsm_edition_label: "GSM Kabinet Keberlanjutan 2026",
             color_black: "#0C100E",
             color_tan: "#A8977B",
-            color_tan_text: "#C4B393",
+            color_tan_text: "#7F715C",
             color_green: "#223027",
             color_green_hover: "#2F4236",
             color_surface: "#FAF7F2",

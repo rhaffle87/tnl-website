@@ -157,7 +157,7 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
     },
     events: {
         label: "Events & Programs",
-        help: "Training, recruitment and workshops. Set the dates, media carousel, spreadsheet webhook, and the registration form here.",
+        help: "Training, recruitment and workshops. Set the dates, media carousel, and the registration form here.",
         titleField: "title",
         publishField: "status",
         fields: [
@@ -167,7 +167,6 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             { key: "cover_image", label: "Cover image", type: "media", folder: "events", aspect: "video", help: "Main banner or poster image." },
             { key: "poster_urls", label: "Poster links", type: "media_list", folder: "events", help: "Several posters become a carousel." },
             { key: "gallery_images", label: "Gallery image links", type: "media_list", folder: "events", help: "Carousel images for event & open house." },
-            { key: "spreadsheet_webhook_url", label: "Google Spreadsheet Webhook URL", type: "text", help: "Google Apps Script Web App URL to auto-sync registrations." },
             { key: "whatsapp_group_url", label: "Link Grup WhatsApp Pasca-Registrasi", type: "text", help: "Tautan undangan grup WhatsApp resmi (https://chat.whatsapp.com/...) yang hanya muncul di layar sukses dan email setelah pendaftaran berhasil." },
             { key: "start_date", label: "Starts on", type: "date" },
             { key: "end_date", label: "Ends on", type: "date" },

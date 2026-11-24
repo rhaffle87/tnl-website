@@ -12,7 +12,7 @@ from fastapi.responses import Response
 
 from lib.auth import audit, require
 from lib.db import db
-from lib.jev import score_registration, triage_message
+from lib.jev import triage_message
 from lib.mailer import send_email
 from lib.serialize import jsonable
 from models.core import BulkEmailIn, CheckinIn, IssueCertificatesIn, MessagePatch, RegistrationPatch
@@ -82,39 +82,6 @@ async def update_registration(reg_id: str, payload: RegistrationPatch, request: 
     fresh = await db.registrations.find_one({"id": reg_id})
     fresh["display_name"] = _display_name(fresh)
     return jsonable(fresh)
-
-
-@router.post("/registrations/{reg_id}/score", dependencies=[Depends(require("registrations:manage"))])
-async def score_one(reg_id: str, request: Request):
-    """Jev: rate how complete/genuine this registration looks, for triage."""
-    reg = await db.registrations.find_one({"id": reg_id})
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registration not found.")
-    ev = await db.events.find_one({"id": reg.get("event_id")}) or {}
-    result = await score_registration(reg.get("event_title", ""), ev.get("type", "training"), reg.get("data") or {})
-    await db.registrations.update_one({"id": reg_id}, {"$set": {"ai_score": result}})
-    if not result.get("ai_ok"):
-        raise HTTPException(status_code=503, detail="The scoring service is busy. Please try again shortly.")
-    return result
-
-
-@router.post("/registrations/score-all", dependencies=[Depends(require("registrations:manage"))])
-async def score_all(payload: dict, request: Request):
-    """Score up to 10 unscored registrations for an event, sequentially (concurrency limit)."""
-    event_id = payload.get("event_id")
-    if not event_id:
-        raise HTTPException(status_code=422, detail="Choose an event first.")
-    ev = await db.events.find_one({"id": event_id}) or {}
-    regs = await db.registrations.find(
-        {"event_id": event_id, "ai_score": {"$exists": False}}).limit(10).to_list(10)
-    scored = 0
-    for reg in regs:  # one at a time: the universal key allows limited concurrency
-        result = await score_registration(reg.get("event_title", ""), ev.get("type", "training"), reg.get("data") or {})
-        await db.registrations.update_one({"id": reg["id"]}, {"$set": {"ai_score": result}})
-        if result.get("ai_ok"):
-            scored += 1
-    await audit(request, "score-registrations", "registrations", event_id, {"scored": scored})
-    return {"ok": True, "scored": scored, "examined": len(regs)}
 
 
 @router.post("/registrations/bulk-email", dependencies=[Depends(require("registrations:manage"))])
@@ -191,7 +158,7 @@ async def export_registrations_excel(event_id: str | None = None, status: str | 
             if k not in keys:
                 keys.append(k)
 
-    headers = ["No", "Waktu Daftar", "Event", "Status", "Email", "NRP / NIM", "Status Sync Sheet"] + \
+    headers = ["No", "Waktu Daftar", "Event", "Status", "Email", "NRP / NIM"] + \
               [k.replace("f_", "").replace("-", " ").title() for k in keys]
     ws.append(headers)
 
@@ -203,9 +170,8 @@ async def export_registrations_excel(event_id: str | None = None, status: str | 
     for idx, r in enumerate(regs, 1):
         when = r.get("created_at")
         when_str = when.strftime("%Y-%m-%d %H:%M:%S") if hasattr(when, "strftime") else str(when)
-        sync_st = "Synced" if r.get("sheet_synced") else (r.get("sheet_sync_error") or "Unsynced")
         row = [idx, when_str, r.get("event_title", ""), r.get("status", ""), r.get("email", ""),
-               r.get("nim", ""), sync_st]
+               r.get("nim", "")]
         for k in keys:
             v = (r.get("data") or {}).get(k, "")
             if isinstance(v, dict):
@@ -227,32 +193,6 @@ async def export_registrations_excel(event_id: str | None = None, status: str | 
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": 'attachment; filename="data-pendaftaran-labtnl.xlsx"'}
     )
-
-
-@router.post("/registrations/sync-sheet", dependencies=[Depends(require("registrations:manage"))])
-async def sync_sheet_all(payload: dict = None, request: Request = None):
-    event_id = (payload or {}).get("event_id")
-    q: dict = {"sheet_synced": {"$ne": True}}
-    if event_id:
-        q["event_id"] = event_id
-    unsynced = await db.registrations.find(q).to_list(100)
-    synced_count = 0
-    errors = []
-    import os
-    from routers.public import _sync_registration_to_sheet
-    for reg in unsynced:
-        ev = await db.events.find_one({"id": reg.get("event_id")}) or {}
-        wh = ev.get("spreadsheet_webhook_url") or os.environ.get("OPEN_HOUSE_SHEET_WEBHOOK_URL")
-        if not wh:
-            continue
-        await _sync_registration_to_sheet(reg["id"], wh, ev, reg)
-        updated = await db.registrations.find_one({"id": reg["id"]})
-        if updated and updated.get("sheet_synced"):
-            synced_count += 1
-        elif updated and updated.get("sheet_sync_error"):
-            errors.append(f"{reg.get('email')}: {updated.get('sheet_sync_error')}")
-    await audit(request, "sync_sheet", "registrations", f"count={synced_count}")
-    return {"ok": True, "synced_count": synced_count, "remaining": len(unsynced) - synced_count, "errors": errors}
 
 
 @router.post("/registrations/checkin", dependencies=[Depends(require("registrations:manage"))])
