@@ -229,10 +229,10 @@
 
 /* Keep these inverse pairs independent of the page's current color scheme. */
 .signal-footer {
-    --footer-surface: #111b16;
+    --footer-surface: var(--gsm-obsidian, #101312);
     --footer-ink: #f4f4f0;
-    --footer-muted: #c3cec5;
-    --footer-accent: var(--gsm-accent-glow);
+    --footer-muted: var(--gsm-text-muted, #9FA8A2);
+    --footer-accent: var(--gsm-accent, #f4c26c);
     --footer-rule: color-mix(in srgb, var(--footer-ink) 18%, transparent);
     --chrome-focus: var(--footer-accent);
     margin-top: auto;

@@ -592,7 +592,7 @@ export function AnnouncementPopup() {
             <span
                 aria-hidden="true"
                 className="absolute inset-x-0 top-0 h-[3px]"
-                style={{ background: "linear-gradient(90deg, var(--tnl-green), #3D6B52)" }}
+                style={{ background: "linear-gradient(90deg, var(--gsm-primary, var(--tnl-green)), var(--gsm-accent, #F4C26C))" }}
             />
 
             <div className="flex items-start justify-between gap-4 px-6 pt-6 sm:px-7">
@@ -726,7 +726,7 @@ export function MobileRegistrationBar() {
     return (
         <aside
             aria-label="Informasi Pendaftaran Kegiatan"
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-white/15 bg-[#111613]/95 backdrop-blur-md px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-2xl md:hidden animate-fade-up"
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-white/15 bg-[var(--gsm-obsidian,#111613)]/95 backdrop-blur-md px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-2xl md:hidden animate-fade-up"
             data-testid="mobile-registration-bar"
         >
             <div className="flex items-center justify-between gap-3">

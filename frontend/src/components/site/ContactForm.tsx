@@ -122,7 +122,7 @@ export function ContactForm() {
 
                     <div>
                         <label htmlFor="contact-message" className="mb-1.5 block text-xs font-semibold tracking-wide text-[var(--tnl-heading)]">
-                            {t("message")} <span className="text-[#A8977B] dark:text-[#C4B393]">*</span>
+                            {t("message")} <span className="text-[var(--gsm-accent)]">*</span>
                         </label>
                         <textarea id="contact-message" name="message" className="tnl-input" rows={5} required data-testid="contact-message-input" />
                         {errors.message ? (
@@ -132,7 +132,7 @@ export function ContactForm() {
                         ) : null}
                     </div>
 
-                    <div className="rounded-xl border border-[var(--gsm-border-input)] dark:border-white/15 bg-[var(--gsm-bg-elevated)] dark:bg-[#0E1411] p-4 text-xs">
+                    <div className="rounded-xl border border-[var(--gsm-border-input)] dark:border-white/15 bg-[var(--gsm-bg-elevated)] dark:bg-[var(--gsm-bg-recessed)] p-4 text-xs">
                         <label className="flex items-start gap-2.5 cursor-pointer">
                             <input
                                 type="checkbox"

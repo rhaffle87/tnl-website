@@ -166,10 +166,10 @@
     --tnl-black: var(--gsm-obsidian);
     --tnl-tan: var(--gsm-accent);
     --tnl-tan-text: var(--tnl-tan-text-light, #6E604B);
-    --tnl-link: #254C35;
+    --tnl-link: var(--gsm-primary, #5D3B1F);
     --tnl-muted: var(--gsm-text-muted);
     --tnl-green: var(--gsm-primary);
-    --tnl-green-hover: #18221c;
+    --tnl-green-hover: color-mix(in srgb, var(--gsm-primary) 85%, black);
     --tnl-surface: var(--tnl-surface-light, var(--gsm-bg-surface));
     --tnl-border: var(--tnl-border-light, var(--gsm-border-hairline));
     --tnl-body: var(--tnl-body-light, var(--gsm-text-secondary));
@@ -222,36 +222,30 @@
 
 .dark {
     /* Semantic GSM Design Tokens (Brand Core - Dark Mode) */
-    --gsm-primary: #2E4235;
-    --gsm-primary-soft: rgba(46, 66, 53, 0.22);
-    --gsm-emerald: #7EA88B;
-    --gsm-obsidian: #111613;
-    --gsm-accent: #C4B393;
-    --gsm-accent-hover: #D6C39F;
-    --gsm-accent-ink: #111613;
-    --gsm-accent-glow: #C4B393;
+    --gsm-primary-soft: rgba(93, 59, 31, 0.22);
+    --gsm-accent-glow: var(--gsm-accent, #F4C26C);
 
     /* Semantic GSM Design Tokens (Surfaces & Typography - Dark Mode) */
-    --gsm-bg-page: var(--gsm-obsidian, #0B0F0D);
-    --gsm-bg-surface: #131A16;
-    --gsm-bg-elevated: #17201B;
-    --gsm-bg-recessed: #0E1411;
-    --gsm-bg-recessed-hover: #17201B;
+    --gsm-bg-page: var(--gsm-obsidian, #101312);
+    --gsm-bg-surface: color-mix(in srgb, var(--gsm-obsidian, #101312) 88%, white);
+    --gsm-bg-elevated: color-mix(in srgb, var(--gsm-obsidian, #101312) 80%, white);
+    --gsm-bg-recessed: color-mix(in srgb, var(--gsm-obsidian, #101312) 92%, black);
+    --gsm-bg-recessed-hover: color-mix(in srgb, var(--gsm-obsidian, #101312) 75%, white);
     --gsm-text-primary: #F4F4F0;
     --gsm-text-secondary: #D1D5DB;
     --gsm-text-muted: #9FA8A2;
     --gsm-border-hairline: rgba(255, 255, 255, 0.12);
     --gsm-border-input: rgba(255, 255, 255, 0.14);
-    --gsm-border-focus: var(--gsm-accent, #C4B393);
+    --gsm-border-focus: var(--gsm-accent, #F4C26C);
 
     /* TNL brand backward compatibility mappings */
-    --tnl-black: var(--gsm-obsidian, #0C100E);
+    --tnl-black: var(--gsm-obsidian, #101312);
     --tnl-tan: var(--gsm-accent);
     --tnl-tan-text: var(--gsm-accent, #D6C39F);
-    --tnl-link: #A9D1B3;
+    --tnl-link: var(--gsm-accent, #F4C26C);
     --tnl-muted: var(--gsm-text-muted);
     --tnl-green: var(--gsm-primary);
-    --tnl-green-hover: #3a5242;
+    --tnl-green-hover: color-mix(in srgb, var(--gsm-primary) 80%, black);
     --tnl-surface: var(--gsm-bg-surface);
     --tnl-border: var(--gsm-border-hairline);
     --tnl-body: var(--gsm-text-secondary);
@@ -283,14 +277,14 @@
     --border: var(--gsm-border-hairline);
     --input: var(--gsm-border-hairline);
     --ring: var(--gsm-accent);
-    --sidebar: #0C100E;
+    --sidebar: var(--gsm-obsidian, #101312);
     --sidebar-foreground: #F4F4F0;
-    --sidebar-primary: #2E4235;
+    --sidebar-primary: var(--gsm-primary, #5D3B1F);
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #1C2821;
+    --sidebar-accent: var(--gsm-bg-elevated);
     --sidebar-accent-foreground: #F4F4F0;
     --sidebar-border: rgba(255, 255, 255, 0.08);
-    --sidebar-ring: #C4B393;
+    --sidebar-ring: var(--gsm-accent, #C4B393);
 }
 
 @layer base {
@@ -368,7 +362,7 @@
     padding: 1rem 1.5rem;
   }
   .dark .tnl-card-header {
-    background-color: #17201B;
+    background-color: var(--gsm-bg-elevated);
   }
 
   .tnl-inset-tile {
@@ -378,7 +372,7 @@
     transition: background-color 0.15s ease, border-color 0.15s ease;
   }
   .dark .tnl-inset-tile {
-    background-color: #0E1411;
+    background-color: var(--gsm-bg-recessed);
   }
 
   .tnl-hero-gradient {
@@ -386,7 +380,7 @@
     background-image:
       linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-      radial-gradient(80% 90% at 85% 40%, var(--gsm-primary, #2E4235) 0%, transparent 70%);
+      radial-gradient(80% 90% at 85% 40%, var(--gsm-primary) 0%, transparent 70%);
     background-size: 56px 56px, 56px 56px, 100% 100%;
   }
 
@@ -466,8 +460,8 @@
   }
   .dark .tnl-input,
   .dark .tnl-field {
-    border-color: rgba(255, 255, 255, 0.15);
-    background-color: #0E1411;
+    border-color: var(--gsm-border-input, rgba(255, 255, 255, 0.15));
+    background-color: var(--gsm-bg-recessed);
   }
   .tnl-input:focus,
   .tnl-field:focus {
@@ -478,9 +472,9 @@
   }
   .dark .tnl-input:focus,
   .dark .tnl-field:focus {
-    background-color: #131A16;
-    border-color: #C4B393;
-    box-shadow: 0 0 0 3px rgba(196, 179, 147, 0.20);
+    background-color: var(--gsm-bg-elevated);
+    border-color: var(--gsm-accent, #F4C26C);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gsm-accent, #F4C26C) 20%, transparent);
   }
   textarea.tnl-input,
   textarea.tnl-field {
