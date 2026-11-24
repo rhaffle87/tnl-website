@@ -146,23 +146,19 @@ describe("Signal Editorial chrome", () => {
     expect(footer.getByTestId("footer-address")).toHaveTextContent("Gedung C");
   });
 
-  it("folds the lab identity, one combined nav column and the contact desk into a three-column footer grid", () => {
+  it("folds the lab identity and both nav groups into one four-column footer grid", () => {
     renderWithProviders(<SiteFooter />, { route: "/" });
     const footer = screen.getByTestId("site-footer");
     const grid = footer.querySelector(".signal-footer-grid");
     expect(grid).not.toBeNull();
     const columns = Array.from(grid!.children);
-    expect(columns).toHaveLength(3);
+    expect(columns).toHaveLength(4);
     expect(columns[0]).toHaveClass("signal-footer-brand");
     expect(columns[1]).toHaveProperty("tagName", "NAV");
-    expect(columns[1]).toHaveClass("signal-footer-nav");
-    expect(columns[2]).toHaveClass("signal-footer-contact");
+    expect(columns[2]).toHaveProperty("tagName", "NAV");
+    expect(columns[3]).toHaveClass("signal-footer-contact");
     expect(footer.querySelector(".signal-footer-entry")).toBeNull();
     expect(footer.querySelector(".signal-footer-brand h2")).not.toBeNull();
-    // Both link groups live in the single nav column as stacked sub-groups.
-    const nav = columns[1] as HTMLElement;
-    expect(nav.querySelectorAll(".signal-footer-group")).toHaveLength(2);
-    expect(nav.querySelectorAll("h3.signal-footer-group-label")).toHaveLength(2);
   });
 
   it("keeps the brand lockup restrained to a mark, the CMS name and one description", () => {

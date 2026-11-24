@@ -447,7 +447,6 @@ export function SiteFooter({
     return (
         <>
             {showCollaborationBand && <SiteCollaborationBand lang={lang} />}
-            {/* One brand statement only: the CMS lockup. Nav and contact are equal-weight columns. */}
             <footer className="signal-footer" data-testid="site-footer">
                 <div className="tnl-container">
                     <div className="signal-footer-grid">
@@ -463,34 +462,33 @@ export function SiteFooter({
                             <p className="signal-footer-description">{t.labShortDesc}</p>
                         </div>
 
-                        <nav className="signal-footer-nav" aria-label={t.exploreTitle}>
-                            <div className="signal-footer-group">
-                                <h3 className="signal-footer-group-label">{t.exploreTitle}</h3>
-                                <ul>
-                                    {t.navLinks.map((item) => (
-                                        <li key={item.to}>
-                                            <Link
-                                                to={item.to}
-                                                viewTransition
-                                                className="signal-footer-link"
-                                                data-testid={`footer-${item.to === "/" ? "home" : item.to.slice(1)}-link`}
-                                            >
-                                                {item.label}
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div className="signal-footer-group">
-                                <h3 className="signal-footer-group-label">{t.resourcesTitle}</h3>
-                                <ul>
-                                    {t.resourceLinks.map((item) => (
-                                        <li key={item.to}>
-                                            <Link to={item.to} viewTransition className="signal-footer-link">{item.label}</Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                        <nav className="signal-footer-group" aria-label={t.exploreTitle}>
+                            <h3 className="signal-footer-group-label">{t.exploreTitle}</h3>
+                            <ul>
+                                {t.navLinks.map((item) => (
+                                    <li key={item.to}>
+                                        <Link
+                                            to={item.to}
+                                            viewTransition
+                                            className="signal-footer-link"
+                                            data-testid={`footer-${item.to === "/" ? "home" : item.to.slice(1)}-link`}
+                                        >
+                                            {item.label}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
+
+                        <nav className="signal-footer-group" aria-label={t.resourcesTitle}>
+                            <h3 className="signal-footer-group-label">{t.resourcesTitle}</h3>
+                            <ul>
+                                {t.resourceLinks.map((item) => (
+                                    <li key={item.to}>
+                                        <Link to={item.to} viewTransition className="signal-footer-link">{item.label}</Link>
+                                    </li>
+                                ))}
+                            </ul>
                         </nav>
 
                         <div className="signal-footer-contact">
