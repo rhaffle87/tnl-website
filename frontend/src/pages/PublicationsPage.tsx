@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { usePublications } from "@/lib/hooks";
 import type { Publication } from "@/lib/types";
 import { useLocale } from "@/lib/i18n";
-import { EmptyState, SectionHeading, Spinner } from "@/components/site/Primitives";
+import { EmptyState, SectionHeading } from "@/components/site/Primitives";
 
 import { usePage } from "@/lib/hooks";
 import { BlockRenderer } from "@/components/site/Blocks";
@@ -95,7 +95,18 @@ export default function PublicationsPage() {
                     ) : null}
 
                     {isLoading ? (
-                        <Spinner label={t("loading")} />
+                        <div className="space-y-4 animate-pulse pt-2" data-testid="publications-skeleton">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="rounded-xl border border-[var(--tnl-border)] p-6 bg-black/[0.02] dark:bg-white/[0.02] space-y-3">
+                                    <div className="flex gap-2">
+                                        <div className="h-5 w-20 rounded bg-black/10 dark:bg-white/10" />
+                                        <div className="h-5 w-12 rounded bg-black/10 dark:bg-white/10" />
+                                    </div>
+                                    <div className="h-6 w-3/4 rounded bg-black/10 dark:bg-white/10" />
+                                    <div className="h-4 w-1/2 rounded bg-black/5 dark:bg-white/5" />
+                                </div>
+                            ))}
+                        </div>
                     ) : filtered.length === 0 ? (
                         <EmptyState
                             title={t("coming_soon")}

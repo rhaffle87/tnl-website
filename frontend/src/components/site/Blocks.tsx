@@ -527,6 +527,8 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                         <img
                             src={p.logo_url}
                             alt={`${p.name} logo`}
+                            width="160"
+                            height="64"
                             className="h-16 md:h-20 w-auto max-w-[190px] md:max-w-[230px] object-contain opacity-85 transition-opacity duration-200 hover:opacity-100"
                             loading="lazy"
                         />

@@ -1,11 +1,12 @@
 // News index and article pages.
 
+import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, Copy } from "lucide-react";
+import { ArrowLeft, Copy, X } from "lucide-react";
 import { toast } from "sonner";
 import { usePost } from "@/lib/hooks";
 import { pick, useLocale } from "@/lib/i18n";
-import { Breadcrumb, EmptyState, Spinner, formatDate } from "@/components/site/Primitives";
+import { Breadcrumb, EmptyState, formatDate } from "@/components/site/Primitives";
 import { CmsPage } from "@/pages/Home";
 import "./editorial-content.css";
 
@@ -18,11 +19,29 @@ export function NewsArticlePage() {
     const location = useLocation();
     const { locale, t } = useLocale();
     const { data: post, isLoading, isError } = usePost(slug);
+    const [activeLightboxImage, setActiveLightboxImage] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!activeLightboxImage) return;
+        const handleKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setActiveLightboxImage(null);
+        };
+        window.addEventListener("keydown", handleKey);
+        return () => window.removeEventListener("keydown", handleKey);
+    }, [activeLightboxImage]);
 
     if (isLoading) {
         return (
-            <div className="tnl-container tnl-section">
-                <Spinner label={t("loading")} />
+            <div className="tnl-container tnl-section animate-pulse space-y-6" data-testid="article-loading-skeleton">
+                <div className="h-4 w-32 bg-black/10 dark:bg-white/10 rounded" />
+                <div className="h-10 w-3/4 bg-black/10 dark:bg-white/10 rounded" />
+                <div className="h-4 w-48 bg-black/5 dark:bg-white/5 rounded" />
+                <div className="h-64 w-full bg-black/5 dark:bg-white/5 rounded-xl" />
+                <div className="space-y-3 pt-4">
+                    <div className="h-4 w-full bg-black/5 dark:bg-white/5 rounded" />
+                    <div className="h-4 w-full bg-black/5 dark:bg-white/5 rounded" />
+                    <div className="h-4 w-2/3 bg-black/5 dark:bg-white/5 rounded" />
+                </div>
             </div>
         );
     }
@@ -85,7 +104,12 @@ export function NewsArticlePage() {
             <div className="tnl-section" style={{ background: "var(--tnl-surface)" }}>
                 <div className="tnl-container editorial-reading-column">
                     {post.cover_url ? (
-                        <div className="editorial-article-cover mb-8 w-full overflow-hidden" style={{ maxHeight: 440 }}>
+                        <div
+                            className="editorial-article-cover mb-8 w-full overflow-hidden cursor-zoom-in rounded-xl border border-[var(--tnl-border)]"
+                            style={{ maxHeight: 440 }}
+                            onClick={() => setActiveLightboxImage(post.cover_url!)}
+                            data-testid="article-cover-zoom"
+                        >
                             <img
                                 src={post.cover_url}
                                 alt={post.cover_alt || title}
@@ -97,7 +121,15 @@ export function NewsArticlePage() {
                             />
                         </div>
                     ) : null}
-                    <div className="editorial-article-body">
+                    <div
+                        className="editorial-article-body"
+                        onClick={(e) => {
+                            const target = e.target as HTMLElement;
+                            if (target.tagName === "IMG") {
+                                setActiveLightboxImage((target as HTMLImageElement).src);
+                            }
+                        }}
+                    >
                         {/* Sanitized server-side before storage. */}
                         <div className="tnl-prose editorial-prose max-w-none" dangerouslySetInnerHTML={{ __html: body }} data-testid="article-body" />
                         {post.tags?.length ? (
@@ -139,6 +171,31 @@ export function NewsArticlePage() {
                     </div>
                 </div>
             </div>
+
+            {activeLightboxImage ? (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in-0"
+                    onClick={() => setActiveLightboxImage(null)}
+                    data-testid="article-lightbox"
+                >
+                    <button
+                        type="button"
+                        className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+                        onClick={() => setActiveLightboxImage(null)}
+                        aria-label="Close lightbox"
+                        data-testid="article-lightbox-close"
+                    >
+                        <X className="h-6 w-6" />
+                    </button>
+                    <img
+                        src={activeLightboxImage}
+                        alt="Enlarged view"
+                        className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                        data-testid="article-lightbox-img"
+                    />
+                </div>
+            ) : null}
         </article>
     );
 }
