@@ -144,6 +144,11 @@ export const STRINGS = {
     no_backend_note: "Live content is unavailable right now.",
     resources: "Resources & Downloads",
     shift_schedule: "Shift Schedule (Room B-301)",
+    practicum_locked_title: "Lab Assistant Only",
+    practicum_locked_note:
+        "Module downloads and shift schedules are restricted to laboratory assistants. Current session: limited access.",
+    practicum_locked_resources: "{{count}} module file(s) — sign in as a lab assistant to download",
+    practicum_locked_shifts: "{{count}} shift slot(s) — schedule visible to lab assistants only",
     day: "Day",
     time_slot: "Session Time",
     coordinator: "Shift PIC",
@@ -300,6 +305,11 @@ export const STRINGS = {
     no_backend_note: "Konten langsung sedang tidak tersedia.",
     resources: "Berkas & Unduhan Modul",
     shift_schedule: "Jadwal Shift Praktikum (Ruang B-301)",
+    practicum_locked_title: "Khusus Asisten Laboratorium",
+    practicum_locked_note:
+        "Unduhan modul dan jadwal shift dibatasi khusus untuk asisten laboratorium. Sesi Anda saat ini: akses terbatas.",
+    practicum_locked_resources: "{{count}} berkas modul — masuk sebagai asisten lab untuk mengunduh",
+    practicum_locked_shifts: "{{count}} slot shift — jadwal hanya terlihat oleh asisten lab",
     day: "Hari",
     time_slot: "Sesi Waktu",
     coordinator: "PJ Asisten",

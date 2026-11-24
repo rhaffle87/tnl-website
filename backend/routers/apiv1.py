@@ -12,7 +12,8 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
-from lib.auth import audit, require
+from lib.auth import audit, lab_assistant_for_request, require
+from lib.practicum_access import public_practicum_doc
 from lib.db import db
 from lib.quality import publish_blockers, run_scan
 from lib.sanitize import sanitize_html
@@ -105,8 +106,14 @@ V1_PROJECTION = {"issues": 0, "ai_review": 0, "nim": 0, "email_personal": 0, "ph
                  "spreadsheet_webhook_url": 0, "whatsapp_group_url": 0}
 
 
+async def _practicum_view(request: Request, items: list) -> list:
+    """Apply the same module redaction as the public catalog, session-aware."""
+    can_access = await lab_assistant_for_request(request) is not None
+    return [public_practicum_doc(doc, can_access) for doc in items]
+
+
 @router.get("/v1/{resource}")
-async def v1_list(resource: str, limit: int = 50, offset: int = 0,
+async def v1_list(resource: str, request: Request, limit: int = 50, offset: int = 0,
                   principal: dict = Depends(require_scope("read"))):
     spec = V1_READ.get(resource)
     if not spec:
@@ -115,11 +122,15 @@ async def v1_list(resource: str, limit: int = 50, offset: int = 0,
     projection = V1_PROJECTION
     total = await db[coll].count_documents(query)
     docs = await db[coll].find(query, projection).sort("created_at", -1).skip(offset).limit(min(limit, 100)).to_list(100)
-    return {"resource": resource, "total": total, "limit": limit, "offset": offset, "items": jsonable(docs)}
+    items = jsonable(docs)
+    if coll == "practicum":
+        items = await _practicum_view(request, items)
+    return {"resource": resource, "total": total, "limit": limit, "offset": offset, "items": items}
 
 
 @router.get("/v1/{resource}/{item_id}")
-async def v1_get(resource: str, item_id: str, principal: dict = Depends(require_scope("read"))):
+async def v1_get(resource: str, item_id: str, request: Request,
+                 principal: dict = Depends(require_scope("read"))):
     spec = V1_READ.get(resource)
     if not spec:
         raise HTTPException(status_code=404, detail="Unknown resource.")
@@ -128,7 +139,10 @@ async def v1_get(resource: str, item_id: str, principal: dict = Depends(require_
                                   V1_PROJECTION)
     if not doc:
         raise HTTPException(status_code=404, detail="Item not found.")
-    return jsonable(doc)
+    item = jsonable(doc)
+    if coll == "practicum":
+        item = (await _practicum_view(request, [item]))[0]
+    return item
 
 
 # ---------------------------------------------------------------- v1 writes

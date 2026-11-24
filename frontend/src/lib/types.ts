@@ -249,7 +249,8 @@ export interface Partner {
 export interface PracticumResource {
   id?: string;
   title: string;
-  file_url: string;
+  /** Undefined when module downloads are restricted (anonymous / viewer / API key). */
+  file_url?: string;
   file_type?: string;
   size_bytes?: number | null;
   updated_at?: string;
@@ -277,6 +278,12 @@ export interface PracticumModule {
   semester?: string | null;
   resources?: PracticumResource[];
   shifts?: PracticumShift[];
+  /** True when the current session may download module files (assistant roles and above). */
+  can_access_modules?: boolean;
+  /** True when module URLs / shift schedules were stripped by the redaction layer. */
+  resources_restricted?: boolean;
+  resources_count?: number;
+  shifts_count?: number;
   order: number;
   published: boolean;
   needs_review: boolean;

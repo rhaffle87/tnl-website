@@ -10,7 +10,9 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse
 
-from lib.auth import allowed, audit, principal, require, user_for_request, verify_upload_sig
+from lib.auth import (allowed, audit, lab_assistant_for_request, principal, require, user_for_request,
+                      verify_upload_sig)
+from lib.practicum_access import RESTRICTED_MEDIA_NOTE, media_path_is_restricted
 from lib.db import db
 from lib.serialize import jsonable
 from lib.storage import MEDIA_DIR, delete_object, local_path, put_object, safe_name
@@ -432,6 +434,22 @@ async def serve_media(path: str, request: Request):
                     status_code=403,
                     detail="Access denied. Staff session or valid signed link required.",
                 )
+        return FileResponse(
+            full,
+            headers={
+                "Cache-Control": "private, no-store, max-age=0",
+                "X-Robots-Tag": "noindex, nofollow",
+            },
+        )
+
+    # Practicum module files live under academic/ — laboratory assistants only, never indexed.
+    if media_path_is_restricted(path):
+        if await lab_assistant_for_request(request) is None:
+            raise HTTPException(
+                status_code=403,
+                detail=RESTRICTED_MEDIA_NOTE,
+                headers={"X-Robots-Tag": "noindex, nofollow"},
+            )
         return FileResponse(
             full,
             headers={

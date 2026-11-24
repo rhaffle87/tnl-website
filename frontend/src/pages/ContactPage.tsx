@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, type FormEvent } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
     Building2,
@@ -50,6 +50,27 @@ export default function ContactPage() {
     const [sending, setSending] = useState(false);
     const [done, setDone] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Deep-link prefill: /contact?topic=academic&ref=practicum-CISCO from the
+    // practicum card's "Contact us" CTA selects the matching pill and seeds the message.
+    const [params] = useSearchParams();
+    useEffect(() => {
+        const topicId = params.get("topic");
+        const pill = TOPIC_PILLS.find((p) => p.id === topicId);
+        if (pill) {
+            setActivePill(pill.id);
+            setSubject(isId ? pill.label_id : pill.label_en);
+        }
+        const ref = params.get("ref");
+        if (ref) {
+            setMessage(
+                isId
+                    ? `Halo, saya ingin meminta akses modul praktikum (referensi: ${ref}). Mohon informasinya. Terima kasih.`
+                    : `Hello, I would like to request access to practicum modules (reference: ${ref}). Please advise. Thank you.`,
+            );
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- prefill only on first mount
+    }, []);
 
     // Copy states
     const [copiedAddress, setCopiedAddress] = useState(false);

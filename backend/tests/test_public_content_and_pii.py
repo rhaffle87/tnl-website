@@ -88,6 +88,7 @@ async def test_public_equipment_and_category_filtering(async_client):
 
 @pytest.mark.asyncio
 async def test_public_practicum_modules_and_shifts(async_client):
+    """The catalog is public; module URLs and shift schedules are assistant-only."""
     res = await async_client.get("/public/practicum")
     assert res.status_code == 200
     data = res.json()
@@ -96,8 +97,13 @@ async def test_public_practicum_modules_and_shifts(async_client):
     for mod in data:
         assert mod.get("published") is True
         assert "name" in mod
+        assert mod["can_access_modules"] is False
+        assert mod["resources_restricted"] is True
         assert "resources" in mod
         assert "shifts" in mod
+        assert mod["shifts"] == []
+        for resource in mod["resources"]:
+            assert "file_url" not in resource
 
 
 @pytest.mark.asyncio

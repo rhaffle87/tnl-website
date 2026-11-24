@@ -19,7 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import ValidationError
 
-from lib.auth import allowed, audit, can_write_division, principal, require
+from lib.auth import allowed, audit, can_write_division, is_lab_assistant, principal, require
 from lib.db import db
 from lib.jev import review_draft
 from lib.quality import publish_blockers, run_scan, scan_social_reuse
@@ -35,6 +35,9 @@ RESOURCES = CONTENT_MODELS
 PRIVATE_FIELDS = {
     "events": ("spreadsheet_webhook_url", "whatsapp_group_url"),
     "members": ("phone", "email_personal", "nim"),
+    # Practicum module files and shift schedules are laboratory-assistant material, so a
+    # read-only CMS session never receives the download URLs.
+    "practicum": ("resources", "shifts"),
 }
 HTML_FIELDS = {"posts": ("body", "body_id")}
 SEARCH_FIELDS = {
@@ -69,6 +72,10 @@ def _can_see_private(resource: str, user: dict) -> bool:
     if resource == "events":
         # The sheet webhook URL is a write credential: only super_admin/admin may read it.
         return False
+    if resource == "practicum":
+        # Module URLs follow the laboratory-assistant rule, not content:edit: a registrar reads
+        # them, a read-only viewer does not.
+        return is_lab_assistant(user)
     return allowed(principal(user), "content:edit")
 
 

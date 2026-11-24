@@ -137,6 +137,26 @@ def principal(user: dict) -> dict:
     }
 
 
+# ---------------------------------------------------------------- laboratory assistant access
+# Practicum modules, laboratory guides and shift schedules are staff-only: every signed-in,
+# active staff role except the read-only `viewer`. This tuple is the single switch for that rule
+# — the public API, the v1 API, the media file gate and the CMS read redaction all read it.
+ASSISTANT_ROLES = ("super_admin", "editor", "contributor", "registrar")
+
+
+def is_lab_assistant(user: dict | None) -> bool:
+    """True when a signed-in, active user is entitled to practicum module files."""
+    if not user or not user.get("active", False):
+        return False
+    return user.get("role") in ASSISTANT_ROLES
+
+
+async def lab_assistant_for_request(request: Request) -> dict | None:
+    """The session user when they qualify as a laboratory assistant, else None."""
+    user = await user_for_request(request)
+    return user if is_lab_assistant(user) else None
+
+
 def allowed(p: dict, action: str) -> bool:
     perms = PERMS.get(p["role"], set())
     return "*" in perms or action in perms

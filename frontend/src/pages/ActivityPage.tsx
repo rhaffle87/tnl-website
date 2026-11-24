@@ -19,6 +19,7 @@ import {
     FlaskConical,
     GraduationCap,
     Layers,
+    Lock,
     MapPin,
     MessageCircle,
     Radio,
@@ -566,6 +567,12 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const resources = mod.resources ?? [];
     const shifts = mod.shifts ?? [];
+    // Backend redaction: anonymous / viewer / API-key sessions get metadata only.
+    const locked = mod.resources_restricted === true;
+    const resourceCount = mod.resources_count ?? resources.length;
+    const shiftCount = mod.shifts_count ?? shifts.length;
+    const fmt = (s: string, n: number) => s.replace("{{count}}", String(n));
+    const contactHref = `/contact?topic=academic&ref=practicum-${mod.code || mod.id}`;
 
     const images: CarouselImage[] = useMemo(() => {
         const list: CarouselImage[] = [];
@@ -622,34 +629,58 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
                     {pick(locale, mod.description, mod.description_id)}
                 </p>
 
-                {resources.length ? (
+                {resources.length || (locked && resourceCount) ? (
                     <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--tnl-border)" }}>
                         <h4 className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
                             <Download className="h-3.5 w-3.5" />
-                            {t("resources")} ({resources.length})
+                            {t("resources")} ({resourceCount})
                         </h4>
-                        <div className="flex flex-col gap-2">
-                            {resources.map((res, idx) => (
-                                <a
-                                    key={res.id || idx}
-                                    href={res.file_url}
-                                    download
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="practicum-resource-link group"
-                                    data-testid={`practicum-resource-${mod.id}-${idx}`}
-                                >
-                                    <div className="flex min-w-0 items-center gap-2">
-                                        <ResourceIcon type={res.file_type} />
-                                        <span className="font-medium group-hover:underline">{res.title}</span>
+                        {locked ? (
+                            <div data-testid={`practicum-locked-${mod.id}`} className="flex flex-col gap-2">
+                                {resources.map((res, idx) => (
+                                    <div
+                                        key={res.id || idx}
+                                        className="practicum-resource-link flex items-center justify-between gap-2 opacity-75"
+                                        aria-disabled="true"
+                                    >
+                                        <div className="flex min-w-0 items-center gap-2">
+                                            <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                            <span className="min-w-0 truncate font-medium">{res.title}</span>
+                                        </div>
+                                        <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-mono border" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-body)" }}>
+                                            {res.file_type?.toUpperCase() || "FILE"}
+                                            {res.size_bytes ? ` · ${formatBytes(res.size_bytes)}` : ""}
+                                        </span>
                                     </div>
-                                    <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-mono border" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-body)" }}>
-                                        {res.file_type?.toUpperCase() || "FILE"}
-                                        {res.size_bytes ? ` · ${formatBytes(res.size_bytes)}` : ""}
-                                    </span>
-                                </a>
-                            ))}
-                        </div>
+                                ))}
+                                {resourceCount > resources.length
+                                    ? <p className="text-xs" style={{ color: "var(--tnl-body)" }}>{fmt(t("practicum_locked_resources"), resourceCount)}</p>
+                                    : null}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-2">
+                                {resources.map((res, idx) => (
+                                    <a
+                                        key={res.id || idx}
+                                        href={res.file_url}
+                                        download
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="practicum-resource-link group"
+                                        data-testid={`practicum-resource-${mod.id}-${idx}`}
+                                    >
+                                        <div className="flex min-w-0 items-center gap-2">
+                                            <ResourceIcon type={res.file_type} />
+                                            <span className="font-medium group-hover:underline">{res.title}</span>
+                                        </div>
+                                        <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-mono border" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-body)" }}>
+                                            {res.file_type?.toUpperCase() || "FILE"}
+                                            {res.size_bytes ? ` · ${formatBytes(res.size_bytes)}` : ""}
+                                        </span>
+                                    </a>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 ) : null}
 
@@ -681,6 +712,35 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                ) : locked && shiftCount ? (
+                    <p className="mt-5 border-t pt-4 text-xs" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-body)" }}>
+                        {fmt(t("practicum_locked_shifts"), shiftCount)}
+                    </p>
+                ) : null}
+
+                {locked ? (
+                    <div
+                        className="mt-5 rounded-xl border p-4"
+                        style={{ borderColor: "var(--tnl-border)" }}
+                        data-testid={`practicum-assistant-lock-${mod.id}`}
+                    >
+                        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
+                            <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                            {t("practicum_locked_title")}
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--tnl-body)" }}>
+                            {t("practicum_locked_note")}
+                        </p>
+                        <Link
+                            to={contactHref}
+                            data-testid={`practicum-contact-cta-${mod.id}`}
+                            className="mt-3 inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors hover:opacity-80"
+                            style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-link)" }}
+                        >
+                            <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                            {t("contact_us")}
+                        </Link>
                     </div>
                 ) : null}
             </div>

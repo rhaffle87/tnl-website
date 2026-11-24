@@ -15,7 +15,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel
 
-from lib.auth import client_ip, rate_limit, sign_upload, user_for_request
+from lib.auth import client_ip, lab_assistant_for_request, rate_limit, sign_upload, user_for_request
+from lib.practicum_access import public_practicum_doc
 from lib.db import db
 from lib.dates import today_iso
 from lib.mailer import send_email
@@ -278,9 +279,17 @@ async def public_partners():
 
 
 @router.get("/public/practicum", dependencies=[Depends(check_maintenance)])
-async def public_practicum():
+async def public_practicum(request: Request):
+    """Public practicum catalog.
+
+    The curriculum (code, title, semester, summary, cover image, module count) is public so a
+    visitor can read what the laboratory teaches. Download URLs and shift schedules are not:
+    they are only attached for a signed-in laboratory assistant, and every response carries the
+    `can_access_modules` flag so the client can render the locked state without guessing.
+    """
     docs = await db.practicum.find({"published": True}).sort([("order", 1)]).to_list(100)
-    return jsonable(docs)
+    can_access = await lab_assistant_for_request(request) is not None
+    return [public_practicum_doc(jsonable(doc), can_access) for doc in docs]
 
 
 @router.get("/public/equipment", dependencies=[Depends(check_maintenance)])
