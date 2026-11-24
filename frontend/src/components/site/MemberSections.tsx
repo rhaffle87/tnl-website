@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import "@/pages/activity-editorial.css";
-import "@/pages/member-profile.css";
+import "@/components/site/member-profile.css";
 import { useSearchParams } from "react-router-dom";
 import { m, AnimatePresence } from "motion/react";
 import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
@@ -89,6 +89,7 @@ function LightPlaceholder({ member, isModal }: { member: Member; isModal?: boole
 }
 
 function SocialLinks({ member }: { member: Member }) {
+    const { locale } = useLocale();
     const links = [
         { url: member.social?.scholar, Icon: ExternalLink, label: "Google Scholar" },
         { url: member.social?.sinta, Icon: ExternalLink, label: "SINTA" },
@@ -98,22 +99,31 @@ function SocialLinks({ member }: { member: Member }) {
     ].filter((l) => l.url);
     if (!links.length) return null;
     return (
-        <div className="mt-4 flex flex-wrap gap-2">
-            {links.map(({ url, Icon, label }) => (
-                <a
-                    key={label}
-                    href={url as string}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors hover:border-[var(--tnl-green)] hover:text-[var(--tnl-link)]"
-                    style={{ borderColor: "var(--tnl-border)" }}
-                    data-testid={`member-social-${label.toLowerCase().replace(/\s+/g, "-")}`}
-                >
-                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                    {label}
-                </a>
-            ))}
-        </div>
+        <section
+            className="member-profile-section member-profile-socials"
+            aria-labelledby="member-profile-socials-title"
+            data-testid={`member-socials-${member.id}`}
+        >
+            <h3 id="member-profile-socials-title">
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                {locale === "id" ? "Tautan Akademik & Sosial" : "Academic & Social Links"}
+            </h3>
+            <div className="member-profile-list">
+                {links.map(({ url, Icon, label }) => (
+                    <a
+                        key={label}
+                        href={url as string}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="member-profile-social-link"
+                        data-testid={`member-social-${label.toLowerCase().replace(/\s+/g, "-")}`}
+                    >
+                        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                        {label}
+                    </a>
+                ))}
+            </div>
+        </section>
     );
 }
 

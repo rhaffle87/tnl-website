@@ -1,0 +1,328 @@
+/* Member profile modal only — redesigned reading surface.
+   Compact identity header (small portrait, name, role) + one primary
+   scrollable body with a wide readable bio and clearly separated sections.
+   Card classes used by the directory (member-directory-*, member-head-*,
+   member-photo-placeholder) live in activity-editorial.css. */
+
+.member-profile-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  isolation: isolate;
+}
+.member-profile-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(8 10 9 / 68%);
+  backdrop-filter: blur(3px);
+}
+
+.member-profile-dialog {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(100%, 880px);
+  max-height: calc(100vh - 48px);
+  max-height: min(880px, calc(100dvh - 48px));
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--tnl-border);
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: 0 32px 96px rgb(0 0 0 / 32%);
+}
+
+/* Compact identity header: small square portrait, role chip, name. */
+.member-profile-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px 16px 16px;
+  border-bottom: 1px solid var(--tnl-border);
+  background: var(--card);
+}
+.member-profile-portrait {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
+  background: var(--muted);
+  border: 1px solid var(--tnl-border);
+}
+.member-profile-portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.member-profile-initials {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font: 600 1.5rem/1 var(--font-heading);
+  letter-spacing: 0.04em;
+  color: var(--foreground);
+}
+.member-profile-identity {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.member-profile-role {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 3px 10px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+.member-profile-name {
+  font: 600 clamp(1.25rem, 2.2vw, 1.625rem)/1.2 var(--font-heading);
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+.member-profile-close {
+  /* First in DOM (so it takes initial focus) but rendered last: keep the
+     portrait + identity row visually leading. */
+  order: 3;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-left: auto;
+  border: 1px solid var(--tnl-border);
+  background: var(--card);
+  color: var(--card-foreground);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.member-profile-close:hover {
+  background: var(--muted);
+  border-color: var(--tnl-link);
+  color: var(--tnl-link);
+}
+
+/* One primary scrollable body. */
+.member-profile-body {
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 28px clamp(20px, 4vw, 40px) 40px;
+  scroll-padding-block: 24px;
+  overflow-wrap: anywhere;
+  color: var(--tnl-body);
+}
+
+/* Meta strip: division, batch, gated NIP/NRP. */
+.member-profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 24px;
+  row-gap: 4px;
+  margin-bottom: 24px;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--tnl-body);
+}
+
+.member-profile-section-title {
+  font: 600 1.125rem/1.4 var(--font-heading);
+  color: var(--foreground);
+}
+.member-profile-bio {
+  margin-top: 12px;
+  max-width: 72ch;
+  font-size: 1rem;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+.member-profile-expertise {
+  margin-top: 24px;
+}
+.member-profile-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tnl-tan-text);
+}
+.member-profile-tag {
+  display: inline-block;
+  padding: 5px 10px;
+  border: 1px solid var(--tnl-border);
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.member-profile-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 24px;
+  row-gap: 8px;
+  margin-top: 20px;
+}
+.member-profile-dialog a {
+  min-height: 44px;
+  max-width: 100%;
+}
+.member-profile-dialog a svg {
+  flex-shrink: 0;
+}
+.member-profile-contacts a {
+  overflow-wrap: anywhere;
+}
+.member-profile-social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 12px;
+  margin-bottom: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--tnl-border);
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.member-profile-social-link:hover {
+  border-color: var(--tnl-link);
+  color: var(--tnl-link);
+}
+.member-profile-dialog :is(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--tnl-link);
+  outline-offset: 3px;
+}
+.member-profile-body:focus-visible {
+  outline-offset: -4px;
+}
+
+/* Clear, separated sections for publications / projects / socials. */
+.member-profile-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--tnl-border);
+}
+.member-profile-section > h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font: 600 1.0625rem/1.4 var(--font-heading);
+  color: var(--foreground);
+}
+.member-profile-section > h3 svg {
+  color: var(--tnl-tan-text);
+}
+.member-profile-list {
+  margin-top: 4px;
+}
+.member-profile-record {
+  padding-block: 18px;
+  border-bottom: 1px solid var(--tnl-border);
+}
+.member-profile-record:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.member-profile-record h4 {
+  font: 600 1rem/1.55 var(--font-heading);
+  color: var(--foreground);
+}
+.member-profile-record-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  margin-top: 8px;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--tnl-tan-text);
+}
+.member-profile-record > p {
+  max-width: 78ch;
+  margin-top: 10px;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+.member-profile-socials {
+  padding-top: 20px;
+}
+.member-profile-socials .member-profile-list {
+  margin-top: 12px;
+}
+
+@media (max-width: 640px) {
+  .member-profile-overlay {
+    padding: 10px;
+  }
+  .member-profile-dialog {
+    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 20px);
+  }
+  .member-profile-header {
+    gap: 12px;
+    padding: 12px 14px 12px 12px;
+  }
+  .member-profile-portrait {
+    width: 56px;
+    height: 56px;
+  }
+  .member-profile-initials {
+    font-size: 1.125rem;
+  }
+  .member-profile-name {
+    font-size: 1.125rem;
+  }
+  .member-profile-body {
+    padding: 22px 18px 30px;
+  }
+  .member-profile-bio {
+    font-size: 0.9375rem;
+    line-height: 1.75;
+  }
+  .member-profile-section {
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+}
+@media (max-height: 560px) and (min-width: 641px) {
+  .member-profile-overlay {
+    padding: 12px;
+  }
+  .member-profile-dialog {
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+  .member-profile-portrait {
+    width: 56px;
+    height: 56px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .member-profile-overlay * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}

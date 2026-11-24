@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { fireEvent, screen, within } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { fireEvent, screen, within, cleanup, waitFor } from "@testing-library/react";
 import { MemberSections } from "@/components/site/MemberSections";
 import MemberPage from "@/pages/MemberPage";
 import { renderWithProviders } from "./test-utils";
@@ -47,5 +47,82 @@ describe("CMS member editorial directory", () => {
     const { container } = renderWithProviders(<MemberPage />);
     expect(container.querySelector(".member-editorial")).toBeInTheDocument();
     expect(screen.getByTestId("member-page")).toBeInTheDocument();
+  });
+
+  describe("modal", () => {
+    afterEach(() => {
+      cleanup();
+      document.body.style.overflow = "";
+    });
+
+    const openModal = async () => {
+      cleanup();
+      renderWithProviders(<MemberSections />);
+      const trigger = within(screen.getByTestId("assistant-card-a1")).getByRole("button", { name: /CMS Assistant/ });
+      trigger.focus();
+      fireEvent.click(trigger);
+      // Motion mounts the dialog in an effect — never assume it is synchronously present.
+      return await screen.findByRole("dialog");
+    };
+
+    it("uses a compact identity header and a single scrollable body", async () => {
+      const modal = await openModal();
+      const header = within(modal).getByTestId("member-profile-header");
+      const body = within(modal).getByTestId("member-profile-body");
+      // Everything focusable lives inside header or body — no separate panes.
+      expect(within(header).getByTestId("member-modal-close-button")).toBeInTheDocument();
+      expect(within(header).getByText("CMS Assistant")).toBeInTheDocument();
+      expect(within(modal).getAllByText(/CMS Assistant/).length).toBeGreaterThan(0);
+      expect(body).toHaveAttribute("data-lenis-prevent");
+      expect(body).toHaveAttribute("tabindex", "0");
+    });
+
+    it("locks body scroll while open and restores it on close", async () => {
+      document.body.style.overflow = "";
+      await openModal();
+      expect(document.body.style.overflow).toBe("hidden");
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(document.body.style.overflow).toBe("");
+    });
+
+    it("moves focus into the dialog on open and back to the trigger on close", async () => {
+      const modal = await openModal();
+      const close = within(modal).getByTestId("member-modal-close-button");
+      await waitFor(() => expect(close).toHaveFocus());
+      fireEvent.keyDown(window, { key: "Escape" });
+      await waitFor(() => expect(close).not.toHaveFocus());
+      await waitFor(() =>
+        expect(within(screen.getByTestId("assistant-card-a1")).getByRole("button", { name: /CMS Assistant/ })).toHaveFocus(),
+      );
+    });
+
+    it("shows gated private fields only when the CMS flags allow them", async () => {
+      const modal = await openModal();
+      expect(within(modal).queryByText(/NRP/)).not.toBeInTheDocument();
+      expect(within(modal).queryByText("private@example.org")).not.toBeInTheDocument();
+      fireEvent.keyDown(window, { key: "Escape" });
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      members[0].show_nim = true;
+      members[0].show_personal_email = true;
+      try {
+        const reopened = await openModal();
+        expect(within(reopened).getByText(/NRP: PRIVATE-NIM/)).toBeInTheDocument();
+        expect(within(reopened).getByText("private@example.org")).toBeInTheDocument();
+      } finally {
+        members[0].show_nim = false;
+        members[0].show_personal_email = false;
+      }
+    });
+
+    it("renders the social links as an accessible section", async () => {
+      members[0].social = { github: "https://github.com/cms" };
+      try {
+        const modal = await openModal();
+        const socials = within(modal).getByTestId("member-socials-a1");
+        expect(within(socials).getByRole("link", { name: "GitHub" })).toBeInTheDocument();
+      } finally {
+        members[0].social = {};
+      }
+    });
   });
 });
