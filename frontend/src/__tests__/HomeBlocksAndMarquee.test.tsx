@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import { BlockRenderer } from "@/components/site/Blocks";
 import { renderWithProviders } from "./test-utils";
@@ -96,5 +96,100 @@ describe("Home Blocks & Marquee Components", () => {
     // Verify marquee container has overflow-hidden
     const marqueeContainer = container.querySelector(".overflow-hidden");
     expect(marqueeContainer).toBeInTheDocument();
+  });
+});
+
+describe("AboutBlock editorial layout", () => {
+  afterEach(() => {
+    localStorage.removeItem("tnl-locale");
+  });
+
+  const leadEn = "A teaching and applied research laboratory at the Department of Electrical Engineering, ITS. Run by faculty, researchers, and student assistants, TNL bridges undergraduate network practicum, core infrastructure research, and industry training.";
+  const leadId = "Laboratorium pengajaran dan riset terapan di Departemen Teknik Elektro ITS. Dikelola oleh dosen, peneliti, dan asisten mahasiswa, TNL menjembatani praktikum jaringan, riset infrastruktur inti, serta pelatihan industri.";
+  const hardwareEn = [
+    "3-Node Proxmox Cloud Cluster",
+    "Cisco & MikroTik Core Racks",
+    "Optical Fusion Splicing Benches",
+    "Ettus USRP B210 SDR",
+  ];
+  const hardwareId = [
+    "Klaster Cloud Proxmox 3 Node",
+    "Rak Routing Cisco & MikroTik",
+    "Meja Splicing Serat Optik",
+    "SDR Ettus USRP B210",
+  ];
+
+  const block = (legacy = false) => [
+    {
+      id: "about-1",
+      type: "about" as const,
+      hidden: false,
+      props: {
+        heading: "About the Laboratory",
+        heading_id: "Tentang Laboratorium",
+        body: leadEn,
+        body_id: leadId,
+        location: "Room B-301, Building B (3rd Floor) · Electrical Engineering, ITS",
+        location_id: "Ruang B-301, Gedung B (Lt. 3) · Teknik Elektro ITS",
+        tiles: [
+          {
+            name: "Vision",
+            name_id: "Visi",
+            eyebrow: "01 · VISION",
+            eyebrow_id: "01 · VISI",
+            description: "Advancing industry-grade network practicum and applied research across enterprise networking, optical fiber transport, and cloud infrastructure.",
+            description_id: "Mengembangkan praktikum jaringan berstandar industri dan riset terapan di bidang jaringan enterprise, fiber optik, serta infrastruktur cloud.",
+          },
+          legacy
+            ? {
+                name: "Room B-301 Facilities & Testbeds",
+                name_id: "Fasilitas & Testbed Ruang B-301",
+                description: "Integrated laboratory hosting a 3-Node Proxmox Cloud Cluster, Cisco & MikroTik Core Racks, Optical Fusion Splicing Benches, and Ettus USRP B210 SDR.",
+              }
+            : {
+                name: "Testbeds & Hardware",
+                name_id: "Fasilitas & Testbed",
+                eyebrow: "02 · TESTBEDS & HARDWARE",
+                eyebrow_id: "02 · FASILITAS & TESTBED",
+                items: hardwareEn,
+                items_id: hardwareId,
+              },
+        ],
+      },
+    },
+  ];
+
+  it("renders concise EN editorial copy, four hardware items, and no decorative check icon", () => {
+    localStorage.setItem("tnl-locale", "en");
+    const { container } = renderWithProviders(<BlockRenderer blocks={block()} />);
+
+    expect(screen.getByTestId("about-body")).toHaveTextContent(leadEn.slice(0, 60));
+    expect(screen.getByText("01 · VISION")).toBeInTheDocument();
+    expect(screen.getByText("02 · TESTBEDS & HARDWARE")).toBeInTheDocument();
+    hardwareEn.forEach((item) => expect(screen.getByText(item)).toBeInTheDocument());
+    expect(screen.getByTestId("about-location-line")).toHaveTextContent("Room B-301, Building B (3rd Floor)");
+    expect(container.querySelector(".lucide-circle-check-big")).toBeNull();
+    expect(screen.getByTestId("block-about")).not.toHaveTextContent("5G/6G");
+    expect(screen.getByTestId("block-about")).not.toHaveTextContent("IoT");
+  });
+
+  it("renders the Indonesian copy and bilingual hardware list", () => {
+    localStorage.setItem("tnl-locale", "id");
+    renderWithProviders(<BlockRenderer blocks={block()} />);
+
+    expect(screen.getByTestId("about-body")).toHaveTextContent(leadId.slice(0, 50));
+    expect(screen.getByText("01 · VISI")).toBeInTheDocument();
+    expect(screen.getByText("02 · FASILITAS & TESTBED")).toBeInTheDocument();
+    hardwareId.forEach((item) => expect(screen.getByText(item)).toBeInTheDocument());
+    expect(screen.getByTestId("about-location-line")).toHaveTextContent("Ruang B-301, Gedung B (Lt. 3)");
+  });
+
+  it("parses a legacy CMS paragraph into a compact spec list without crashing", () => {
+    localStorage.setItem("tnl-locale", "en");
+    renderWithProviders(<BlockRenderer blocks={block(true)} />);
+
+    const items = screen.getAllByTestId(/about-testbed-item-/);
+    expect(items.length).toBeGreaterThanOrEqual(2);
+    expect(items.map((item) => item.textContent).join(" ")).toContain("Proxmox");
   });
 });

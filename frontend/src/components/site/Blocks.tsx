@@ -8,8 +8,6 @@ import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
 import {
     Activity as ActivityIcon,
     ArrowRight,
-    Building2,
-    CheckCircle2,
     ChevronLeft,
     ChevronRight,
     Download,
@@ -19,8 +17,6 @@ import {
     Minus,
     Plus,
     Radio,
-    Server,
-    Target,
     Users,
     Wrench,
 } from "lucide-react";
@@ -42,6 +38,10 @@ interface Tile {
     title_id?: string;
     description?: string;
     description_id?: string;
+    eyebrow?: string;
+    eyebrow_id?: string;
+    items?: string[];
+    items_id?: string[];
     url?: string;
 }
 
@@ -116,80 +116,88 @@ function StatsBlock() {
 }
 
 // ---------------------------------------------------------------- about + feature tiles
+function parseAboutSpecs(text: string): string[] {
+    if (!text) return [];
+    return text
+        .replace(/^(integrated laboratory hosting|laboratorium terpadu yang dilengkapi)\s+/i, "")
+        .split(/,|\band\b|\bdan\b/i)
+        .map((part) => part.replace(/\s+/g, " ").replace(/^[\s.]+|[\s.]+$/g, ""))
+        .filter((part) => part.length > 3 && part.length < 90)
+        .slice(0, 6);
+}
+
 function AboutBlock({ props }: { props: Record<string, unknown> }) {
     const { locale } = useLocale();
     const list = tiles(props, "tiles");
-    const aboutIcons = [Target, Server, Radio, Building2];
+    const location = pickProp(locale, props, "location");
 
     return (
         <section className="tnl-section signal-about" data-testid="block-about">
             <div className="tnl-container">
                 <SectionHeading title={pickProp(locale, props, "heading")} testId="about-heading" />
-                <div className={`signal-about-layout ${list.length ? "has-tiles" : ""}`}>
-                    <div className="signal-about-narrative">
-                        <p className="signal-about-body" data-testid="about-body">
-                            {pickProp(locale, props, "body")}
-                        </p>
-                        <div
-                            className="signal-about-location"
-                            style={{ borderColor: "var(--tnl-border)", background: "var(--tnl-surface)" }}
+                <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-14">
+                    <div className="lg:col-span-7">
+                        <p
+                            className="signal-about-body max-w-[54ch] text-lg leading-[1.65] text-[var(--tnl-body)] sm:text-[1.15rem]"
+                            data-testid="about-body"
                         >
-                            <div className="flex items-center gap-3">
+                            {pickProp(locale, props, "body") || pickProp(locale, props, "description")}
+                        </p>
+                        {location ? (
+                            <div className="mt-8 border-t border-[var(--tnl-border)] pt-5" data-testid="about-location">
                                 <div
-                                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
-                                    style={{ background: "color-mix(in srgb, var(--tnl-green) 12%, transparent)" }}
-                                    aria-hidden="true"
+                                    className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--tnl-muted)]"
+                                    data-testid="about-location-line"
                                 >
-                                    <MapPin className="h-5 w-5" style={{ color: "var(--tnl-link)" }} />
+                                    <MapPin className="h-4 w-4 shrink-0" style={{ color: "var(--tnl-link)" }} aria-hidden="true" />
+                                    <span>{location}</span>
                                 </div>
-                                <div>
-                                    <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>
-                                        {locale === "id" ? "Lokasi Fasilitas" : "Lab Location"}
-                                    </div>
-                                    <div className="text-sm font-semibold">{locale === "id" ? "Gedung B Lt. 3, Ruang B-301" : "Building B, 3rd Floor, Room B-301"}</div>
-                                </div>
+                                <Link
+                                    to="/contact"
+                                    className="mt-2 inline-block text-xs font-medium text-[var(--tnl-link)] underline-offset-4 hover:underline"
+                                >
+                                    {locale === "id" ? "Lihat lokasi →" : "View location →"}
+                                </Link>
                             </div>
-                            <div className="flex items-center gap-2 border-t pt-2 text-xs font-medium text-[var(--tnl-muted)] sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
-                                <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: "var(--tnl-link)" }} />
-                                <span>{locale === "id" ? "Departemen Teknik Elektro ITS" : "Dept. of Electrical Engineering"}</span>
-                            </div>
-                        </div>
+                        ) : null}
                     </div>
 
-                    <div className="signal-about-topics">
+                    <div className="space-y-7 divide-y divide-[var(--tnl-border)] lg:col-span-5">
                         {list.map((tile, i) => {
-                            const Icon = aboutIcons[i % aboutIcons.length];
+                            const heading = pick(locale, tile.title ?? tile.name, tile.title_id ?? tile.name_id);
+                            const eyebrow = pickProp(locale, tile as Record<string, unknown>, "eyebrow") ||
+                                `0${i + 1} · ${heading.toUpperCase()}`;
+                            const isHardware = /testbed|facilit|fasilitas|hardware/i.test(heading);
+                            const authored = locale === "id" && tile.items_id?.length ? tile.items_id : tile.items;
+                            const description = pick(locale, tile.description, tile.description_id);
+                            const items = isHardware
+                                ? authored && authored.length
+                                    ? authored
+                                    : parseAboutSpecs(description)
+                                : [];
                             return (
-                                <div
-                                    key={tile.name ?? tile.title ?? i}
-                                    className="signal-about-tile"
-                                    onPointerMove={handleSpotlightPointerMove}
-                                    
-                                    data-testid={`about-tile-${i}`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div
-                                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px]"
-                                            style={{
-                                                background:
-                                                    i % 2 === 0
-                                                        ? "color-mix(in srgb, var(--tnl-green) 12%, transparent)"
-                                                        : "color-mix(in srgb, var(--tnl-tan) 15%, transparent)",
-                                            }}
-                                            aria-hidden="true"
-                                        >
-                                            <Icon
-                                                className="h-5 w-5"
-                                                style={{ color: i % 2 === 0 ? "var(--tnl-link)" : "var(--tnl-tan-text)" }}
-                                            />
-                                        </div>
-                                        <h3 className="text-[18px] font-bold">
-                                            {pick(locale, tile.title ?? tile.name, tile.title_id ?? tile.name_id)}
-                                        </h3>
+                                <div key={tile.name ?? tile.title ?? i} className="pt-6 first:pt-0" data-testid={`about-topic-${i}`}>
+                                    <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--tnl-muted)]">
+                                        {eyebrow}
                                     </div>
-                                    <p className="mt-3 text-sm leading-relaxed text-[var(--tnl-body)]">
-                                        {pick(locale, tile.description, tile.description_id)}
-                                    </p>
+                                    <p className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)]">{description}</p>
+                                    {items.length ? (
+                                        <ul className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
+                                            {items.map((item, j) => (
+                                                <li
+                                                    key={`${item}-${j}`}
+                                                    className="flex items-start gap-2 text-sm leading-relaxed text-[var(--tnl-body)]"
+                                                    data-testid={`about-testbed-item-${j}`}
+                                                >
+                                                    <span
+                                                        className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600/80"
+                                                        aria-hidden="true"
+                                                    />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : null}
                                 </div>
                             );
                         })}

@@ -32,20 +32,14 @@ NOW = datetime.now(timezone.utc)
 TODO = "TODO: verify"
 
 ABOUT_EN = (
-    "The Telecommunication Network Laboratory (TNL) is a teaching and research laboratory in the "
-    "Department of Electrical Engineering, Institut Teknologi Sepuluh Nopember, based in Room B-301 "
-    "of Building B. The laboratory supports undergraduate practicum in telecommunication networks, "
-    "hosts applied research in network engineering and the Internet of Things, and runs professional "
-    "training for students and industry partners. Day-to-day activities are carried out by lecturers, "
-    "researchers and a team of student laboratory assistants."
+    "A teaching and applied research laboratory at the Department of Electrical Engineering, ITS. "
+    "Run by faculty, researchers, and student assistants, TNL bridges undergraduate network "
+    "practicum, core infrastructure research, and industry training."
 )
 ABOUT_ID = (
-    "Laboratorium Jaringan Telekomunikasi (TNL) merupakan laboratorium pendidikan dan penelitian di "
-    "Departemen Teknik Elektro, Institut Teknologi Sepuluh Nopember, yang berlokasi di Ruang B-301 "
-    "Gedung B. Laboratorium ini mendukung praktikum jaringan telekomunikasi untuk mahasiswa sarjana, "
-    "menjadi tempat penelitian terapan di bidang rekayasa jaringan dan Internet of Things, serta "
-    "menyelenggarakan pelatihan profesional bagi mahasiswa dan mitra industri. Kegiatan harian "
-    "dijalankan oleh dosen, peneliti, dan tim asisten laboratorium."
+    "Laboratorium pengajaran dan riset terapan di Departemen Teknik Elektro ITS. Dikelola oleh "
+    "dosen, peneliti, dan asisten mahasiswa, TNL menjembatani praktikum jaringan, riset "
+    "infrastruktur inti, serta pelatihan industri."
 )
 
 # Head's statement, as published on the official laboratory page (riset.its.ac.id/lab-tnl).
@@ -274,16 +268,32 @@ FOCUS_DETAIL = [
 
 ABOUT_TILES = [
     {
-        "name": "Vision & Mission",
-        "name_id": "Visi & Misi Laboratorium",
-        "description": "To be an internationally recognized center of excellence in telecommunication network engineering, advancing industry-standard practicum and leading applied research in 5G/6G, optical fiber, and IoT systems.",
-        "description_id": "Menjadi pusat keunggulan bereputasi internasional dalam rekayasa jaringan telekomunikasi, menyelenggarakan praktikum berstandar industri, serta memimpin riset terapan 5G/6G, serat optik, dan IoT.",
+        "name": "Vision",
+        "name_id": "Visi",
+        "eyebrow": "01 · VISION",
+        "eyebrow_id": "01 · VISI",
+        "description": "Advancing industry-grade network practicum and applied research across enterprise networking, optical fiber transport, and cloud infrastructure.",
+        "description_id": "Mengembangkan praktikum jaringan berstandar industri dan riset terapan di bidang jaringan enterprise, fiber optik, serta infrastruktur cloud.",
     },
     {
-        "name": "Room B-301 Facilities & Testbeds",
-        "name_id": "Fasilitas & Testbed Ruang B-301",
-        "description": "Integrated laboratory hosting a 3-Node Proxmox Cloud Virtualization Cluster, Ettus USRP B210 Software-Defined Radios, core Cisco & MikroTik routing racks, and precision fusion splicing workbenches.",
-        "description_id": "Laboratorium terpadu yang dilengkapi klaster server Proxmox, testbed SDR USRP B210, rak routing Cisco & MikroTik, serta meja kerja penyambungan serat optik presisi.",
+        "name": "Testbeds & Hardware",
+        "name_id": "Fasilitas & Testbed",
+        "eyebrow": "02 · TESTBEDS & HARDWARE",
+        "eyebrow_id": "02 · FASILITAS & TESTBED",
+        "description": "Core infrastructure available for teaching, research, and industry training in Room B-301.",
+        "description_id": "Infrastruktur inti untuk pengajaran, riset, dan pelatihan industri di Ruang B-301.",
+        "items": [
+            "3-Node Proxmox Cloud Cluster",
+            "Cisco & MikroTik Core Racks",
+            "Optical Fusion Splicing Benches",
+            "Ettus USRP B210 SDR",
+        ],
+        "items_id": [
+            "Klaster Cloud Proxmox 3 Node",
+            "Rak Routing Cisco & MikroTik",
+            "Meja Splicing Serat Optik",
+            "SDR Ettus USRP B210",
+        ],
     },
 ]
 
@@ -455,8 +465,8 @@ HOME_BLOCKS = [
     {"type": "about", "props": {
         "heading": "About the Laboratory", "heading_id": "Tentang Laboratorium",
         "body": ABOUT_EN, "body_id": ABOUT_ID,
-        "location": "Room B-301, Building B, Department of Electrical Engineering, ITS Surabaya",
-        "location_id": "Ruang B-301, Gedung B, Departemen Teknik Elektro, ITS Surabaya",
+        "location": "Room B-301, Building B (3rd Floor) · Electrical Engineering, ITS",
+        "location_id": "Ruang B-301, Gedung B (Lt. 3) · Teknik Elektro ITS",
         "tiles": ABOUT_TILES,
     }},
     {"type": "numbered_cards", "props": {
