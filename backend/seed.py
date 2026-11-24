@@ -307,12 +307,6 @@ FIELDS_OF_STUDY = [
     ("Server Infrastructure, Cloud & Virtualization", "Infrastruktur Server, Cloud & Virtualisasi",
      "Bare-metal hypervisors, Proxmox LXC/KVM clusters, container orchestration, private cloud architecture, and high-availability datacenter operations.",
      "Pengelolaan server bare-metal, kluster virtualisasi Proxmox LXC/KVM, orkestrasi kontainer, arsitektur private cloud, serta operasional pusat data."),
-]
-
-# Tracks 04-05: held back from the live carousel on purpose. Append these two tuples to
-# FIELDS_OF_STUDY above to switch the "Fields of Study" block to five tracks (OPSI B);
-# the carousel counter renders "NN / len(slides)" dynamically, so no other change is needed.
-FIELDS_OF_STUDY_OPTIONAL = [
     ("Software-Defined Networking (SDN) & Network Automation", "Software-Defined Networking (SDN) & Otomasi Jaringan",
      "Programmable control planes, OpenFlow/P4 telemetry, intent-based networking, and automated multi-vendor network provisioning pipelines.",
      "Control plane terprogram, telemetri jaringan modern, intent-based networking, serta otomasi konfigurasi perangkat jaringan multi-vendor."),
