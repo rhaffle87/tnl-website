@@ -776,7 +776,7 @@ export function ThemePage() {
             color_green_hover: "#4A2E18",
             color_surface: "#FAF7F2",
             color_border: "rgba(93, 59, 31, 0.12)",
-            color_body: "#1E2521",
+            color_body: "#141A16",
         });
         toast.info("Preset baku GSM Kabinet Keberlanjutan dimuat ke draf. Klik 'Save draft' lalu 'Publish theme' untuk menerapkan.");
     };

@@ -231,7 +231,9 @@
 .signal-footer {
     --footer-surface: var(--gsm-obsidian, #101312);
     --footer-ink: #f4f4f0;
-    --footer-muted: var(--gsm-text-muted, #9FA8A2);
+    /* Footer is an inverse surface: use the CMS accent (light on dark) so muted
+       copy clears WCAG AA in both schemes, while page muted stays dark on light. */
+    --footer-muted: var(--gsm-accent);
     --footer-accent: var(--gsm-accent, #f4c26c);
     --footer-rule: color-mix(in srgb, var(--footer-ink) 18%, transparent);
     --chrome-focus: var(--footer-accent);

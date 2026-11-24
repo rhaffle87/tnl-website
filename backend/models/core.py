@@ -132,7 +132,7 @@ class ThemeTokens(BaseModel):
     color_green_hover: str = "#4A2E18"
     color_surface: str = "#f4f4f5"
     color_border: str = "rgba(93, 59, 31, 0.12)"
-    color_body: str = "#3f4245"
+    color_body: str = "#141A16"
     font_heading: str = "Poppins"
     font_body: str = "Poppins"
     radius_card: int = 15

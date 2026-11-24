@@ -156,8 +156,8 @@
     --gsm-bg-recessed: var(--tnl-surface-light, #FAF7F2);
     --gsm-bg-recessed-hover: color-mix(in srgb, var(--tnl-surface-light, #FAF7F2) 96%, var(--gsm-primary));
     --gsm-text-primary: #111613;
-    --gsm-text-secondary: var(--tnl-body-light, #1E2521);
-    --gsm-text-muted: color-mix(in srgb, var(--tnl-body-light, #1E2521) 62%, var(--tnl-surface-light, #FAF7F2));
+    --gsm-text-secondary: var(--tnl-body-light, #141A16);
+    --gsm-text-muted: color-mix(in srgb, var(--tnl-body-light, #141A16) 62%, var(--tnl-surface-light, #FAF7F2));
     --gsm-border-hairline: var(--tnl-border-light, #E6DED2);
     --gsm-border-input: var(--gsm-border-hairline);
     --gsm-border-focus: var(--gsm-primary);
