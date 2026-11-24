@@ -124,14 +124,16 @@ def _registration_form(email: str, nim: str) -> dict:
 def test_registration_is_unique_per_email_and_nim(client, open_event):
     stamp = f"{int(time.time())}{uuid.uuid4().hex[:4]}"
     email = f"unique.{stamp}@student.its.ac.id"
-    nim = f"07{stamp[-8:]}"
+    # The API enforces >= 7 DIGITS in NIM/NRP, so build it from uuid4's integer
+    # (uuid4().hex can be all letters, which once made this test flake with 422).
+    nim = f"07{str(uuid.uuid4().int)[:9]}"
 
     first = client.post(f"/registrations/{open_event['id']}", data=_registration_form(email, nim))
     assert first.status_code == 200, first.text
     assert first.json()["status"] in ("accepted", "pending", "waitlisted")
 
     # Same email, different NIM -> rejected.
-    dup_email = client.post(f"/registrations/{open_event['id']}", data=_registration_form(email, f"08{stamp[-8:]}"))
+    dup_email = client.post(f"/registrations/{open_event['id']}", data=_registration_form(email, f"08{str(uuid.uuid4().int)[:9]}"))
     assert dup_email.status_code == 409
 
     # Same NIM, different email -> rejected.

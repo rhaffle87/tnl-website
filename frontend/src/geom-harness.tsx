@@ -19,7 +19,8 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import "./index.css";
 import { LocaleProvider } from "@/components/site/SiteLayout";
 import { AnnouncementPopup } from "@/components/site/Chrome";
-import { MediaPickerModal } from "@/components/admin/media";
+import { MemberSections } from "@/components/site/MemberSections";
+import { MediaPickerModal, InlineMediaField } from "@/components/admin/media";
 import ContentManager from "@/pages/admin/ContentManager";
 import ContentEditor from "@/pages/admin/ContentEditor";
 import AdminLayout from "@/pages/admin/AdminLayout";
@@ -181,7 +182,34 @@ createRoot(document.getElementById("root")!).render(
                   defaultFolder="members"
               />
           )
-        : only === "editor"
-          ? shell(adminRoutes())
-          : shell(<AnnouncementPopup />)
+        : only === "inlinemedia"
+          ? shell(
+                  // The worst case: a 320px CMS side pane. InlineMediaField must never
+                  // push content past its container at any width.
+                  <div className="p-3">
+                      <div data-testid="geom-inline-pane" style={{ width: 320 }}>
+                          <InlineMediaField
+                              label="Cover image"
+                              value={svg("#1")}
+                              onChange={() => {}}
+                              defaultFolder="members"
+                              testId="geom-inline-media"
+                          />
+                          <div className="mt-6">
+                              <InlineMediaField
+                                  label="Empty field"
+                                  value=""
+                                  onChange={() => {}}
+                                  defaultFolder="members"
+                                  testId="geom-inline-media-empty"
+                              />
+                          </div>
+                      </div>
+                  </div>
+              )
+          : only === "member-modal"
+            ? shell(<MemberSections />)
+            : only === "editor"
+              ? shell(adminRoutes())
+              : shell(<AnnouncementPopup />)
 );

@@ -360,3 +360,67 @@ test.describe("CMS list vs editor geometry", () => {
         await expect(page.locator('[data-testid="content-table"]')).toHaveCount(0);
     });
 });
+
+test.describe("InlineMediaField 320px pane", () => {
+    /**
+     * Screenshot showed the media field's thumbnail and action strip pushing
+     * ~60px past a 320px CMS side pane (the "max-w-sm" 384px thumbnail had no
+     * container to clamp to). The harness mounts the real field inside a hard
+     * 320px box; the gate proves nothing escapes it and the cropper exists.
+     */
+    const probePane = (page: import("@playwright/test").Page) =>
+        page.evaluate(() => {
+            const pane = document.querySelector('[data-testid="geom-inline-pane"]') as HTMLElement;
+            const pr = pane.getBoundingClientRect();
+            const filled = document.querySelector('[data-testid="geom-inline-media"]') as HTMLElement;
+            const thumb = filled.querySelector("img") as HTMLImageElement | null;
+            const buttons = [...filled.querySelectorAll("button")] as HTMLElement[];
+            const farRight = Math.max(pr.right, ...buttons.map((b) => b.getBoundingClientRect().right));
+            return {
+                paneW: pane.offsetWidth,
+                paneScrollOverflow: pane.scrollWidth > pane.clientWidth + 1,
+                thumbW: thumb?.getBoundingClientRect().width ?? 0,
+                thumbnailInside: thumb ? thumb.getBoundingClientRect().right <= pr.right + 1 : true,
+                farRightInside: farRight <= pr.right + 1,
+                cropBtn: buttons.some((b) => b.dataset.testid?.endsWith("crop-btn")),
+                pageOverflow: document.documentElement.scrollWidth - innerWidth,
+            };
+        });
+
+    test("desktop: filled + empty field stay inside the pane, cropper available", async ({ page }, testInfo) => {
+        test.skip(testInfo.project.name !== "desktop", "desktop project only");
+        await page.goto("/geom.html?only=inlinemedia");
+        await expect(page.locator('[data-testid="geom-inline-media-preview"]')).toBeVisible();
+        await expect(page.locator('[data-testid="geom-inline-media-empty-dropzone"]')).toBeVisible();
+
+        const probe = await probePane(page);
+        expect(probe.paneW).toBe(320);
+        expect(probe.paneScrollOverflow).toBe(false);
+        expect(probe.thumbnailInside).toBe(true);
+        // The old bug: a 384px thumbnail inside a 320px pane.
+        expect(probe.thumbW).toBeGreaterThan(0);
+        expect(probe.thumbW).toBeLessThanOrEqual(242);
+        expect(probe.farRightInside).toBe(true);
+        expect(probe.cropBtn).toBe(true);
+        expect(probe.pageOverflow).toBeLessThanOrEqual(1);
+
+        // The crop dialog opens with the current asset as its source.
+        await page.locator('[data-testid="geom-inline-media-crop-btn"]').click();
+        await expect(page.locator('[data-testid="image-crop-dialog"]')).toBeVisible();
+        await expect(page.locator('[data-testid="image-crop-canvas"]')).toBeVisible();
+        await page.locator('[data-testid="image-crop-close"]').click();
+        await expect(page.locator('[data-testid="image-crop-dialog"]')).toHaveCount(0);
+    });
+
+    test("mobile: no horizontal overflow at 390px viewport either", async ({ page }, testInfo) => {
+        test.skip(testInfo.project.name !== "mobile", "mobile project only");
+        await page.goto("/geom.html?only=inlinemedia");
+        await expect(page.locator('[data-testid="geom-inline-media-preview"]')).toBeVisible();
+
+        const probe = await probePane(page);
+        expect(probe.paneScrollOverflow).toBe(false);
+        expect(probe.thumbnailInside).toBe(true);
+        expect(probe.farRightInside).toBe(true);
+        expect(probe.pageOverflow).toBeLessThanOrEqual(1);
+    });
+});

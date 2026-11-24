@@ -59,7 +59,15 @@ describe("Chrome and Layout Components", () => {
     expect(footer.querySelectorAll("h2")).toHaveLength(1);
     expect(container.querySelector(".signal-footer-wordmark")).toBeNull();
     expect(footer.querySelectorAll("svg text")).toHaveLength(0);
-    expect(footer.querySelectorAll("nav")).toHaveLength(2);
+    // Both link groups live inside ONE landmark nav (two .signal-footer-group columns).
+    const nav = footer.querySelector("nav");
+    expect(nav).not.toBeNull();
+    expect(nav?.getAttribute("aria-label")).toBeTruthy();
+    expect(footer.querySelectorAll("nav")).toHaveLength(1);
+    expect(nav?.querySelectorAll(".signal-footer-group")).toHaveLength(2);
+    expect(nav?.querySelectorAll("a")).toHaveLength(
+        footer.querySelectorAll(".signal-footer-nav a").length,
+    );
 
     // Ensure no old ITS dot gradient or floating pill remains
     expect(container.querySelector("#tnlDotGrad")).toBeNull();
