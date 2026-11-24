@@ -132,17 +132,17 @@ export function ContactForm() {
                         ) : null}
                     </div>
 
-                    <div className="rounded-xl border border-[#C5CDC2] dark:border-white/15 bg-[#F6F7F4] dark:bg-[#0E1411] p-4 text-xs">
+                    <div className="rounded-xl border border-[var(--gsm-border-input)] dark:border-white/15 bg-[var(--gsm-bg-elevated)] dark:bg-[#0E1411] p-4 text-xs">
                         <label className="flex items-start gap-2.5 cursor-pointer">
                             <input
                                 type="checkbox"
                                 name="consent"
-                                className="mt-0.5 h-4 w-4 rounded border-[#C5CDC2] text-[#223027] dark:text-[#A8977B] focus:ring-[#223027]"
+                                className="mt-0.5 h-4 w-4 rounded border-[var(--gsm-border-input)] text-[var(--gsm-primary)] dark:text-[var(--gsm-accent)] focus:ring-[var(--gsm-primary)]"
                                 data-testid="contact-form-consent"
                             />
                             <span className="text-xs leading-relaxed text-[var(--tnl-body)]">
                                 Saya menyetujui pemrosesan data sesuai ketentuan <strong>UU PDP No. 27/2022</strong> dan{" "}
-                                <Link to="/privacy" className="text-[#223027] dark:text-[#C4B393] underline font-semibold hover:opacity-80">
+                                <Link to="/privacy" className="text-[var(--gsm-primary)] dark:text-[var(--gsm-accent)] underline font-semibold hover:opacity-80">
                                     Kebijakan Privasi
                                 </Link>
                                 .
@@ -155,7 +155,7 @@ export function ContactForm() {
 
                     <button
                         type="submit"
-                        className="w-full min-h-[48px] rounded-[10px] bg-[#223027] hover:bg-[#18221c] text-white dark:bg-[#A8977B] dark:hover:bg-[#C2B091] dark:text-[#111613] text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all"
+                        className="w-full min-h-[48px] rounded-[10px] bg-[var(--gsm-primary)] hover:opacity-90 text-white dark:bg-[var(--gsm-accent)] dark:hover:bg-[var(--gsm-accent-hover)] dark:text-[#111613] text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all"
                         disabled={sending}
                         data-testid="contact-submit-button"
                     >

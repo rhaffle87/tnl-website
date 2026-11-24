@@ -732,7 +732,7 @@ export function MobileRegistrationBar() {
             <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-col min-w-0 pr-1">
                     <span className="tnl-eyebrow text-[10px] text-[var(--tnl-tan,#C4B393)] flex items-center gap-1.5 font-bold">
-                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="h-2 w-2 rounded-full bg-[var(--gsm-emerald,#10b981)] animate-pulse" />
                         {locale === "id" ? "Pendaftaran Dibuka" : "Registration Open"}
                     </span>
                     <p className="truncate text-xs font-semibold text-white mt-0.5">

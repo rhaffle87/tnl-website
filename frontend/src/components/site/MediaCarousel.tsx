@@ -93,7 +93,7 @@ export function FadeCarousel({
                             prev();
                         }}
                         aria-label="Previous slide"
-                        className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-md border border-white/15 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-[#223027] hover:text-[#C4B393]"
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-md border border-white/15 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-[var(--gsm-primary)] hover:text-[var(--gsm-accent)]"
                     >
                         <ChevronLeft className="h-4 w-4" />
                     </button>
@@ -104,7 +104,7 @@ export function FadeCarousel({
                             next();
                         }}
                         aria-label="Next slide"
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-md border border-white/15 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-[#223027] hover:text-[#C4B393]"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-md border border-white/15 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-[var(--gsm-primary)] hover:text-[var(--gsm-accent)]"
                     >
                         <ChevronRight className="h-4 w-4" />
                     </button>
@@ -261,7 +261,7 @@ export function ImageLightboxModal({
                             setZoomed(false);
                         }}
                         aria-label="Previous image"
-                        className="absolute left-2 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition-all hover:bg-[#223027] hover:text-[#C4B393] hover:scale-105"
+                        className="absolute left-2 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition-all hover:bg-[var(--gsm-primary)] hover:text-[var(--gsm-accent)] hover:scale-105"
                     >
                         <ChevronLeft className="h-6 w-6" />
                     </button>
@@ -289,7 +289,7 @@ export function ImageLightboxModal({
                             setZoomed(false);
                         }}
                         aria-label="Next image"
-                        className="absolute right-2 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition-all hover:bg-[#223027] hover:text-[#C4B393] hover:scale-105"
+                        className="absolute right-2 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition-all hover:bg-[var(--gsm-primary)] hover:text-[var(--gsm-accent)] hover:scale-105"
                     >
                         <ChevronRight className="h-6 w-6" />
                     </button>

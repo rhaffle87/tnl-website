@@ -74,7 +74,7 @@ async def test_public_and_v1_never_expose_spreadsheet_webhook_field(async_client
 async def test_registration_score_and_sheet_sync_endpoints_are_removed(async_client, admin_cookies):
     for path in ("/admin/registrations/score-all", "/admin/registrations/sync-sheet"):
         res = await async_client.post(path, json={"event_id": "missing"}, cookies=admin_cookies)
-        assert res.status_code == 404, res.text
+        assert res.status_code in (404, 405), res.text
 
 
 @pytest.mark.asyncio

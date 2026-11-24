@@ -257,6 +257,14 @@ export default function SiteLayout() {
         if (t.obsidian_color) root.style.setProperty("--gsm-obsidian", t.obsidian_color);
         if (t.accent_color) root.style.setProperty("--gsm-accent", t.accent_color);
         if (t.accent_hover_color) root.style.setProperty("--gsm-accent-hover", t.accent_hover_color);
+        if (t.color_tan_text) root.style.setProperty("--tnl-tan-text", t.color_tan_text);
+        if (t.color_surface) root.style.setProperty("--tnl-surface", t.color_surface);
+        if (t.color_border) {
+            root.style.setProperty("--tnl-border", t.color_border);
+            root.style.setProperty("--gsm-border-hairline", t.color_border);
+        }
+        if (t.color_body) root.style.setProperty("--tnl-body", t.color_body);
+        if (t.color_green_hover) root.style.setProperty("--tnl-green-hover", t.color_green_hover);
         try {
             localStorage.setItem("tnl-theme-tokens", JSON.stringify(t));
         } catch {}

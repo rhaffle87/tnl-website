@@ -376,12 +376,12 @@ export default function AdminLayout() {
                                                     aria-current={active ? "page" : undefined}
                                                     className={`flex items-center gap-2.5 rounded-[7px] px-2.5 py-1.5 text-xs font-medium transition-colors ${
                                                         active
-                                                            ? "bg-[#223027] text-white shadow-sm font-semibold border-l-2 border-[#5D8A6B]"
+                                                            ? "bg-[var(--gsm-primary,#223027)] text-white shadow-sm font-semibold border-l-2 border-[var(--gsm-emerald,#5D8A6B)]"
                                                             : "text-white/70 hover:bg-white/[0.06] hover:text-white"
                                                     }`}
                                                     data-testid={testId}
                                                 >
-                                                    <Icon className={`h-4 w-4 shrink-0 ${active ? "text-[#5D8A6B]" : "text-white/50"}`} aria-hidden="true" />
+                                                    <Icon className={`h-4 w-4 shrink-0 ${active ? "text-[var(--gsm-emerald,#5D8A6B)]" : "text-white/50"}`} aria-hidden="true" />
                                                     <span className="truncate">{label}</span>
                                                 </Link>
                                             );

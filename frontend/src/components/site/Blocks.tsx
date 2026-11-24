@@ -190,7 +190,7 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                                                     data-testid={`about-testbed-item-${j}`}
                                                 >
                                                     <span
-                                                        className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600/80"
+                                                        className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--gsm-emerald,#5D8A6B)]"
                                                         aria-hidden="true"
                                                     />
                                                     <span>{item}</span>
