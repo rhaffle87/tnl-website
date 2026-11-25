@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
+    ArrowLeft,
     ArrowUpRight,
     CalendarCheck,
     CalendarDays,
@@ -85,7 +86,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Academic & Events",
         items: [
             { to: "/admin/content/events", label: "Events & Programs", icon: CalendarCheck, roles: ["super_admin", "editor", "contributor", "viewer"] },
-            { to: "/admin/content/practicum", label: "Practicum", icon: GraduationCap, roles: ["super_admin", "editor", "contributor", "viewer"] },
+            { to: "/admin/content/practicum", label: "Training", icon: GraduationCap, roles: ["super_admin", "editor", "contributor", "viewer"] },
             { to: "/admin/content/projects", label: "Projects", icon: FolderKanban, roles: ["super_admin", "editor", "contributor", "viewer"] },
             { to: "/admin/content/publications", label: "Publications", icon: Library, roles: ["super_admin", "editor", "contributor", "viewer"] },
             { to: "/admin/publications/import", label: "Import papers", icon: Download, roles: ["super_admin", "editor", "contributor"] },
@@ -487,6 +488,18 @@ export default function AdminLayout() {
                         </button>
 
                         <div className="flex items-center gap-2">
+                            {location.pathname !== "/admin" && (
+                                <button
+                                    type="button"
+                                    onClick={() => (location.key === "default" ? navigate("/admin") : navigate(-1))}
+                                    className="-ml-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--tnl-border)] text-[var(--tnl-body)] transition-colors hover:border-[var(--tnl-green)] hover:bg-[var(--tnl-surface)] hover:text-[var(--tnl-heading)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tnl-green)]"
+                                    aria-label="Back to previous page"
+                                    title="Back"
+                                    data-testid="admin-back"
+                                >
+                                    <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                                </button>
+                            )}
                             <span className="hidden sm:inline-block text-xs font-medium text-[var(--tnl-tan-text)]">
                                 TNL Studio
                             </span>

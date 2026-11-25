@@ -68,7 +68,7 @@ describe("AdminLayout App Shell & Categorized Dual-Scroll Navigation", () => {
     expect(screen.getByTestId("admin-nav-news")).toBeInTheDocument();
     expect(screen.getByTestId("admin-nav-members")).toBeInTheDocument();
     expect(screen.getByTestId("admin-nav-events-programs")).toBeInTheDocument();
-    expect(screen.getByTestId("admin-nav-practicum")).toBeInTheDocument();
+    expect(screen.getByTestId("admin-nav-training")).toBeInTheDocument();
     expect(screen.getByTestId("admin-nav-registrations")).toBeInTheDocument();
     expect(screen.getByTestId("admin-nav-contact-inbox")).toBeInTheDocument();
     expect(screen.getByTestId("admin-nav-media-library")).toBeInTheDocument();
@@ -163,6 +163,33 @@ describe("AdminLayout App Shell & Categorized Dual-Scroll Navigation", () => {
     expect(screen.queryByTestId("admin-nav-api-keys")).not.toBeInTheDocument();
   });
 
+  it("shows a back control beside the breadcrumb away from the dashboard", () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/*" element={<AdminLayout />}>
+          <Route path="content/news" element={<div>News Canvas</div>} />
+        </Route>
+      </Routes>,
+      { route: "/admin/content/news" }
+    );
+
+    const back = screen.getByTestId("admin-back");
+    expect(back).toHaveAttribute("aria-label", "Back to previous page");
+  });
+
+  it("keeps the dashboard free of a redundant back control", () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/*" element={<AdminLayout />}>
+          <Route path="" element={<div>Dashboard</div>} />
+        </Route>
+      </Routes>,
+      { route: "/admin" }
+    );
+
+    expect(screen.queryByTestId("admin-back")).not.toBeInTheDocument();
+  });
+
   it("filters menu items interactively via quick search bar", () => {
     renderWithProviders(
       <Routes>
@@ -174,10 +201,13 @@ describe("AdminLayout App Shell & Categorized Dual-Scroll Navigation", () => {
     );
 
     const searchInput = screen.getByTestId("admin-nav-search");
-    fireEvent.change(searchInput, { target: { value: "practicum" } });
+    fireEvent.change(searchInput, { target: { value: "training" } });
 
-    // Only Practicum matching item should be visible
-    expect(screen.getByTestId("admin-nav-practicum")).toBeInTheDocument();
+    // Only the Training item should survive the filter, and it must not read "Practicum".
+    const trainingItem = screen.getByTestId("admin-nav-training");
+    expect(trainingItem).toBeInTheDocument();
+    expect(trainingItem).toHaveTextContent("Training");
+    expect(trainingItem).not.toHaveTextContent("Practicum");
     expect(screen.queryByTestId("admin-nav-pages")).not.toBeInTheDocument();
     expect(screen.queryByTestId("admin-nav-news")).not.toBeInTheDocument();
 

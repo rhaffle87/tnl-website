@@ -32,7 +32,7 @@ const NAV = [
         to: "/activity",
         children: [
             { key: "nav_rd", to: "/activity?tab=rd" },
-            { key: "nav_practicum", to: "/activity?tab=practicum" },
+            { key: "nav_training", to: "/activity?tab=practicum" },
             { key: "nav_events", to: "/activity?tab=events" },
             { key: "nav_assistant", to: "/activity?tab=assistant" },
         ],
@@ -355,7 +355,7 @@ const FOOTER_COPY = {
         ],
         resourceLinks: [
             { label: "Research & Testbeds", to: "/activity?tab=rd" },
-            { label: "Practicum & Shifts", to: "/activity?tab=practicum" },
+            { label: "Training & Shifts", to: "/activity?tab=practicum" },
             { label: "Events & Registration", to: "/activity?tab=events" },
             { label: "Lab Equipment (B-301)", to: "/activity?tab=rd#equipment" },
             { label: "Verify Certificate", to: "/verify" },
@@ -389,7 +389,7 @@ const FOOTER_COPY = {
         ],
         resourceLinks: [
             { label: "Riset & Testbed", to: "/activity?tab=rd" },
-            { label: "Praktikum & Shift", to: "/activity?tab=practicum" },
+            { label: "Pelatihan & Shift", to: "/activity?tab=practicum" },
             { label: "Event & Registrasi", to: "/activity?tab=events" },
             { label: "Perangkat Lab (B-301)", to: "/activity?tab=rd#equipment" },
             { label: "Verifikasi Sertifikat", to: "/verify" },
@@ -544,12 +544,21 @@ export function isRegistrationTarget(target: string): boolean {
     return /^\/(?:activity|events|join|open-house)(?:\/|$)/i.test(path);
 }
 
-export function AnnouncementPopup() {
+export function AnnouncementPopup({ onOpenChange }: { onOpenChange?: (open: boolean) => void } = {}) {
     const { t, locale } = useLocale();
     const { data: settings } = useSettings();
+    const { data: events } = useEvents();
     const announcement = settings?.announcement;
     const key = announcement ? `tnl-announcement-${announcement.version}` : "";
     const [open, setOpen] = useState(false);
+    // The shell needs to know when this surface is up so the registration bar never
+    // competes for the same fixed bottom space. Keep the callback ref-stable.
+    const onOpenChangeRef = useRef(onOpenChange);
+    onOpenChangeRef.current = onOpenChange;
+    const show = useCallback((next: boolean) => {
+        setOpen(next);
+        onOpenChangeRef.current?.(next);
+    }, []);
     // A floating card is not a dialog: it must never swallow Escape, block the
     // page behind it, or blur the content the visitor came for.
     const asCard = announcement?.style === "card";
@@ -557,14 +566,14 @@ export function AnnouncementPopup() {
     useEffect(() => {
         if (!announcement?.enabled || !key) return;
         if (localStorage.getItem(key) === "dismissed") return;
-        const timer = window.setTimeout(() => setOpen(true), 900);
+        const timer = window.setTimeout(() => show(true), 900);
         return () => window.clearTimeout(timer);
-    }, [announcement?.enabled, key]);
+    }, [announcement?.enabled, key, show]);
 
     const dismiss = useCallback(() => {
         if (key) localStorage.setItem(key, "dismissed");
-        setOpen(false);
-    }, [key]);
+        show(false);
+    }, [key, show]);
 
     // Escape is the third exit path a blocking dialog owes the visitor
     // (alongside the close button and the backdrop).
@@ -580,22 +589,34 @@ export function AnnouncementPopup() {
     if (!announcement?.enabled || !open) return null;
 
     const ctaTarget = announcement.url || "/activity?tab=events";
+    const registrationTarget = isRegistrationTarget(ctaTarget);
+    // Do not promise "Register now" when the published event behind the CTA is
+    // closed, full, or past — a neutral "Read more" keeps the label honest.
+    const closedRegistration = registrationTarget && (events ?? []).some((e) =>
+        e.status === "published" && (
+            Boolean(e.registration_closed) || Boolean(e.is_full) ||
+            e.reg_status === "full" || e.reg_status === "closed" || e.reg_status === "past"
+        )
+    );
     const ctaLabel =
         pick(locale, announcement.cta_label, announcement.cta_label_id) ||
-        (isRegistrationTarget(ctaTarget) ? t("register_now") : t("read_more"));
+        (!registrationTarget || closedRegistration ? t("read_more") : t("register_now"));
     const title = pick(locale, announcement.title, announcement.title_id);
     const body = pick(locale, announcement.body, announcement.body_id);
 
     // One continuous editorial surface — no hard two-tone split, one accent rule.
     const panel = (
-        <div className="relative z-10 w-full max-w-[460px] overflow-hidden rounded-2xl border border-[var(--tnl-border)] bg-[var(--tnl-surface)] shadow-2xl animate-pop">
+        <div
+            className={`relative z-10 w-full max-w-[460px] rounded-2xl border border-[var(--tnl-border)] bg-[var(--tnl-surface)] shadow-2xl animate-pop ${asCard ? "max-h-[min(62vh,460px)] overflow-y-auto sm:max-h-[min(70vh,520px)]" : "overflow-hidden"}`}
+            data-lenis-prevent={asCard ? "" : undefined}
+        >
             <span
                 aria-hidden="true"
                 className="absolute inset-x-0 top-0 h-[3px]"
                 style={{ background: "linear-gradient(90deg, var(--gsm-primary, var(--tnl-green)), var(--gsm-accent, #F4C26C))" }}
             />
 
-            <div className="flex items-start justify-between gap-4 px-6 pt-6 sm:px-7">
+            <div className="flex items-start justify-between gap-4 px-5 pt-5 sm:px-7 sm:pt-6">
                 <span className="inline-flex items-center gap-2 rounded-full border border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--tnl-body)]">
                     <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[var(--tnl-green)]" />
                     {t("announcement")}
@@ -611,7 +632,7 @@ export function AnnouncementPopup() {
                 </button>
             </div>
 
-            <div className="px-6 pb-6 pt-4 sm:px-7 sm:pb-7">
+            <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-7">
                 <h2
                     id="announcement-title"
                     className="text-xl font-semibold leading-snug tracking-tight text-[var(--tnl-heading)]"
@@ -619,7 +640,7 @@ export function AnnouncementPopup() {
                     {title}
                 </h2>
                 {body && (
-                    <p className="mt-3 text-sm leading-relaxed text-[var(--tnl-body)]">
+                    <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-[var(--tnl-body)] sm:line-clamp-none">
                         {body}
                     </p>
                 )}
@@ -650,12 +671,12 @@ export function AnnouncementPopup() {
     if (asCard) {
         return (
             <aside
-                className="pointer-events-none fixed inset-x-3 bottom-3 z-[95] flex justify-end sm:inset-x-auto sm:right-6 sm:bottom-6"
+                className="pointer-events-none fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[95] flex justify-end sm:inset-x-auto sm:right-6 sm:bottom-6"
                 aria-live="polite"
                 data-testid="announcement-popup"
                 data-announcement-style="card"
             >
-                <div className="pointer-events-auto w-full max-w-[400px] animate-fade-up">
+                <div className="pointer-events-auto w-full max-w-[360px] animate-fade-up sm:max-w-[400px]">
                     {panel}
                 </div>
             </aside>
@@ -678,9 +699,9 @@ export function AnnouncementPopup() {
     );
 }
 
-export function MobileRegistrationBar() {
+export function MobileRegistrationBar({ announcementOpen = false }: { announcementOpen?: boolean } = {}) {
     const location = useLocation();
-    const { locale } = useLocale();
+    const { t, locale } = useLocale();
     const { data: events } = useEvents();
     const [dismissed, setDismissed] = useState(() => {
         try {
@@ -692,6 +713,7 @@ export function MobileRegistrationBar() {
 
     if (
         dismissed ||
+        announcementOpen ||
         location.pathname === "/open-house" ||
         location.pathname.startsWith("/admin")
     ) {
@@ -725,40 +747,40 @@ export function MobileRegistrationBar() {
 
     return (
         <aside
-            aria-label="Informasi Pendaftaran Kegiatan"
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-white/15 bg-[var(--gsm-obsidian,#111613)]/95 backdrop-blur-md px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-2xl md:hidden animate-fade-up"
+            aria-label={t("registration_bar_aria")}
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--tnl-inverse-border)] bg-[var(--gsm-obsidian)] backdrop-blur-md px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-2xl md:hidden animate-fade-up"
             data-testid="mobile-registration-bar"
         >
             <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-col min-w-0 pr-1">
-                    <span className="tnl-eyebrow text-[10px] text-[var(--tnl-tan,#C4B393)] flex items-center gap-1.5 font-bold">
-                        <span className="h-2 w-2 rounded-full bg-[var(--gsm-emerald,#10b981)] animate-pulse" />
-                        {locale === "id" ? "Pendaftaran Dibuka" : "Registration Open"}
+                    <span className="tnl-eyebrow text-[10px] text-[var(--tnl-inverse-muted)] flex items-center gap-1.5 font-bold">
+                        <span className="h-2 w-2 rounded-full bg-[var(--gsm-emerald)] animate-pulse" aria-hidden="true" />
+                        {t("reg_open")}
                     </span>
-                    <p className="truncate text-xs font-semibold text-white mt-0.5">
+                    <p className="truncate text-xs font-semibold text-[var(--tnl-inverse-foreground)] mt-0.5">
                         {eventTitle}
                     </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                     <Link
                         to={targetUrl}
-                        className="inline-flex h-9 min-h-[36px] items-center justify-center rounded-lg px-3.5 text-xs font-bold transition-transform active:scale-95 shadow-sm"
+                        className="inline-flex h-11 min-h-[44px] items-center justify-center rounded-lg px-3.5 text-xs font-bold transition-transform active:scale-95 shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tnl-inverse-foreground)]"
                         style={{
-                            background: "var(--tnl-tan, #A8977B)",
-                            color: "#111613",
+                            background: "var(--gsm-primary)",
+                            color: "var(--tnl-inverse-foreground)",
                         }}
                         data-testid="mobile-reg-cta-button"
                     >
-                        {locale === "id" ? "Daftar →" : "Register →"}
+                        {t("register_now")} →
                     </Link>
                     <button
                         type="button"
                         onClick={handleDismiss}
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-                        aria-label="Tutup bar pendaftaran"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--tnl-inverse-muted)] hover:text-[var(--tnl-inverse-foreground)] hover:bg-[var(--tnl-inverse-border)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tnl-inverse-foreground)]"
+                        aria-label={t("registration_bar_close")}
                         data-testid="mobile-reg-close-button"
                     >
-                        <X className="h-4 w-4" />
+                        <X className="h-4 w-4" aria-hidden="true" />
                     </button>
                 </div>
             </div>

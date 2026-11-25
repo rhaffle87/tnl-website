@@ -40,19 +40,25 @@ describe("Activity editorial collection", () => {
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
     expect(screen.queryByRole("tabpanel")).not.toBeInTheDocument();
     expect(screen.getByTestId("mobile-menu-button")).toHaveAttribute("aria-haspopup", "dialog");
-    for (const key of ["practicum", "assistant", "events", "rd"]) {
-      const link = screen.getByTestId(`nav-${key}-link`);
+    for (const { navKey, tab } of [
+      { navKey: "training", tab: "practicum" },
+      { navKey: "assistant", tab: "assistant" },
+      { navKey: "events", tab: "events" },
+      { navKey: "rd", tab: "rd" },
+    ]) {
+      const link = screen.getByTestId(`nav-${navKey}-link`);
       fireEvent.click(link);
       expect(link).toHaveAttribute("aria-current", "page");
-      const panel = screen.getByTestId(`activity-panel-${key}`);
+      expect(link).toHaveTextContent(navKey === "training" ? /^(Training|Pelatihan)$/ : /./);
+      const panel = screen.getByTestId(`activity-panel-${tab}`);
       expect(panel).toHaveAttribute("aria-label");
-      expect(panel).not.toHaveAttribute("aria-labelledby", `activity-tab-${key}`);
-      expect(screen.queryByTestId(`activity-tab-${key}`)).not.toBeInTheDocument();
-      if (key === "practicum") {
+      expect(panel).not.toHaveAttribute("aria-labelledby", `activity-tab-${tab}`);
+      expect(screen.queryByTestId(`activity-tab-${tab}`)).not.toBeInTheDocument();
+      if (tab === "practicum") {
         expect(screen.getByRole("link", { name: /CMS module/ })).toHaveAttribute("href", "/uploads/module.pdf");
         expect(screen.getByText("CMS coordinator")).toBeInTheDocument();
       }
-      if (key === "assistant") expect(screen.getByText("CMS assistant activity")).toBeInTheDocument();
+      if (navKey === "assistant") expect(screen.getByText("CMS assistant activity")).toBeInTheDocument();
     }
   });
   it("keeps equipment deep links and exposes filter selection without a second page navigation", () => {
@@ -68,7 +74,7 @@ describe("Activity editorial collection", () => {
     fireEvent.click(all);
     expect(screen.getByText("CMS radio")).toBeInTheDocument();
   });
-  it("names the practicum schedule for its CMS module", () => {
+  it("names the training schedule for its CMS module", () => {
     renderWithProviders(<ActivityPage />, { route: "/activity?tab=practicum" });
     expect(screen.getByRole("table")).toHaveAccessibleName(/CMS practicum/);
     expect(screen.getByRole("link", { name: /CMS module/ })).toHaveAttribute("download");

@@ -681,8 +681,12 @@ export default function ContentEditor() {
         <div data-testid={`content-editor-${resource}`}>
             {/* Sticky action bar — Save is always reachable without scrolling. */}
             <div
-                className="sticky top-0 z-20 -mx-4 -mt-4 mb-6 border-b px-4 py-3 backdrop-blur-md sm:-mx-6 sm:-mt-6 sm:px-6 lg:-mx-8 lg:-mt-8 lg:px-8"
-                style={{ borderColor: "var(--tnl-border)", background: "color-mix(in srgb, var(--tnl-surface) 88%, transparent)" }}
+                className="sticky top-0 z-20 -mx-4 -mt-4 mb-6 border-b px-4 py-3 sm:-mx-6 sm:-mt-6 sm:px-6 lg:-mx-8 lg:-mt-8 lg:px-8"
+                style={{
+                    borderColor: "var(--tnl-border)",
+                    background: "var(--card)",
+                    boxShadow: "0 12px 24px -24px color-mix(in srgb, var(--tnl-heading) 60%, transparent)",
+                }}
                 data-testid="content-editor-bar"
             >
                 <div className="flex flex-wrap items-center justify-between gap-3">

@@ -102,7 +102,8 @@ describe("Signal Editorial chrome", () => {
     renderWithProviders(<SiteHeader />, { route: "/activity?tab=practicum" });
     await userEvent.click(screen.getByTestId("mobile-menu-button"));
     const activity = screen.getByRole("group", { name: "Activity" });
-    expect(within(activity).getByTestId("mobile-nav-practicum-link")).toHaveAttribute("aria-current", "page");
+    expect(within(activity).getByTestId("mobile-nav-training-link")).toHaveAttribute("aria-current", "page");
+    expect(within(activity).getByTestId("mobile-nav-training-link")).toHaveTextContent(/^(Training|Pelatihan)$/);
     expect(screen.getByTestId("mobile-nav-activity-link")).toHaveAttribute("aria-current", "location");
     expect(within(activity).getByTestId("mobile-nav-rd-link")).toHaveAttribute("href", "/activity?tab=rd");
     await userEvent.click(screen.getByTestId("mobile-nav-rd-link"));

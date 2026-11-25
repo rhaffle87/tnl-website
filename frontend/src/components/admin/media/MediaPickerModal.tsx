@@ -42,7 +42,7 @@ const FOLDERS = [
     { value: "members", label: "Members" },
     { value: "posts", label: "News & Posts" },
     { value: "partners", label: "Partners" },
-    { value: "practicum", label: "Practicum" },
+    { value: "practicum", label: "Training" },
     { value: "equipment", label: "Lab Equipment" },
     { value: "pages", label: "Pages" },
     { value: "general", label: "General" },

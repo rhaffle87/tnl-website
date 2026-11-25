@@ -258,8 +258,8 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
         ],
     },
     practicum: {
-        label: "Practicum",
-        help: "The laboratory practicum modules students follow, with downloadable resources and shift schedules.",
+        label: "Training",
+        help: "The laboratory training modules students follow, with downloadable resources and shift schedules.",
         titleField: "name",
         publishField: "published",
         fields: [
