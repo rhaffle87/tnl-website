@@ -206,13 +206,11 @@
     --tnl-type-h5: 1rem;
     --tnl-type-label: clamp(0.75rem,0.72rem + 0.15vw,0.8125rem);
 
-    /* Tactile hover contract — shared by public pages and TNL Studio CMS. */
-    --tnl-motion-tactile-duration: 160ms;
+    /* Minimal tactile contract: one hairline, one faint tint, one press scale. */
+    --tnl-motion-tactile-duration: 140ms;
     --tnl-motion-tactile-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
-    --tnl-tactile-lift: -1px;
-    --tnl-tactile-ring: color-mix(in srgb, var(--gsm-accent) 42%, transparent);
-    --tnl-tactile-wash: color-mix(in srgb, var(--gsm-accent) 8%, transparent);
-    --tnl-tactile-shadow: 0 6px 16px -6px color-mix(in srgb, var(--gsm-obsidian) 28%, transparent);
+    --tnl-tactile-ring: color-mix(in srgb, var(--gsm-accent) 20%, transparent);
+    --tnl-tactile-wash: color-mix(in srgb, var(--gsm-accent) 5%, transparent);
 
     --background: var(--gsm-bg-page);
     --foreground: var(--gsm-text-primary);
@@ -295,9 +293,8 @@
     --tnl-surface-2: var(--gsm-bg-elevated);
     --tnl-surface-subtle: var(--gsm-bg-recessed);
     --tnl-inverse-foreground: var(--gsm-text-primary);
-    --tnl-tactile-ring: color-mix(in srgb, var(--gsm-accent-glow) 48%, transparent);
-    --tnl-tactile-wash: color-mix(in srgb, var(--tnl-inverse-foreground) 7%, transparent);
-    --tnl-tactile-shadow: 0 8px 20px -8px color-mix(in srgb, var(--gsm-obsidian) 70%, transparent);
+    --tnl-tactile-ring: color-mix(in srgb, var(--gsm-accent-glow) 26%, transparent);
+    --tnl-tactile-wash: color-mix(in srgb, var(--tnl-inverse-foreground) 5%, transparent);
 
     --background: var(--gsm-bg-page);
     --foreground: var(--gsm-text-primary);
@@ -387,7 +384,8 @@
     text-transform: uppercase;
   }
 
-  /* Tactile hover contract — one lift, one ring, one press state. Public and CMS share it. */
+  /* Minimal tactile contract: surfaces get a hairline + faint tint;
+     text links keep their own colour/underline feedback and never get a box. */
   .tnl-tactile,
   button:not(:disabled):not([aria-disabled="true"]),
   a[href],
@@ -399,7 +397,7 @@
   [role="tab"]:not([aria-disabled="true"]),
   [role="menuitem"]:not([aria-disabled="true"]),
   [role="combobox"]:not([aria-disabled="true"]) {
-    transition-property: transform, box-shadow, border-color, background-color, color;
+    transition-property: transform, border-color, background-color, box-shadow, color;
     transition-duration: var(--tnl-motion-tactile-duration);
     transition-timing-function: var(--tnl-motion-tactile-easing);
   }
@@ -407,36 +405,24 @@
   @media (hover: hover) and (pointer: fine) {
     .tnl-tactile:not(:disabled):not([aria-disabled="true"]):hover,
     button:not(:disabled):not([aria-disabled="true"]):hover,
-    a[href]:not([aria-disabled="true"]):hover,
-    summary:hover,
     select:not(:disabled):hover,
     input:is([type="checkbox"], [type="radio"], [type="range"]):not(:disabled):hover,
     [role="button"]:not([aria-disabled="true"]):hover,
     [role="switch"]:not([aria-disabled="true"]):hover,
-    [role="tab"]:not([aria-disabled="true"]):hover,
-    [role="menuitem"]:not([aria-disabled="true"]):hover,
     [role="combobox"]:not([aria-disabled="true"]):hover {
-      transform: translateY(var(--tnl-tactile-lift));
       border-color: var(--tnl-tactile-ring);
-      box-shadow:
-        inset 0 0 0 1px var(--tnl-tactile-ring),
-        inset 0 0 0 999px var(--tnl-tactile-wash),
-        var(--tnl-tactile-shadow);
+      box-shadow: inset 0 0 0 999px var(--tnl-tactile-wash);
     }
   }
 
   .tnl-tactile:not(:disabled):not([aria-disabled="true"]):active,
   button:not(:disabled):not([aria-disabled="true"]):active,
-  a[href]:not([aria-disabled="true"]):active,
-  summary:active,
   select:not(:disabled):active,
   input:is([type="checkbox"], [type="radio"], [type="range"]):not(:disabled):active,
   [role="button"]:not([aria-disabled="true"]):active,
   [role="switch"]:not([aria-disabled="true"]):active,
-  [role="tab"]:not([aria-disabled="true"]):active,
-  [role="menuitem"]:not([aria-disabled="true"]):active,
   [role="combobox"]:not([aria-disabled="true"]):active {
-    transform: translateY(0) scale(0.985);
+    transform: scale(0.99);
   }
 
   .tnl-card {
@@ -840,7 +826,7 @@ html.lenis, html.lenis body {
 
 
 /* Tactile transitions live in the utilities layer so Tailwind button utilities
-   (transition-colors) cannot strip transform/box-shadow out of the animation. */
+   (transition-colors) cannot strip the press scale out of the animation. */
 @layer utilities {
   .tnl-tactile,
   button:not(:disabled):not([aria-disabled="true"]),
@@ -853,7 +839,7 @@ html.lenis, html.lenis body {
   [role="tab"]:not([aria-disabled="true"]),
   [role="menuitem"]:not([aria-disabled="true"]),
   [role="combobox"]:not([aria-disabled="true"]) {
-    transition-property: transform, box-shadow, border-color, background-color, color;
+    transition-property: transform, border-color, background-color, box-shadow, color;
     transition-duration: var(--tnl-motion-tactile-duration);
     transition-timing-function: var(--tnl-motion-tactile-easing);
   }

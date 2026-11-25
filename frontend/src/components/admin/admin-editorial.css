@@ -86,7 +86,7 @@
 }
 
 
-/* 11. Tactile hover contract for TNL Studio — same tokens as the public site.
+/* 11. Minimal tactile hover contract for TNL Studio — same tokens as the public site.
    Scoped to the admin root so these rules never leak into the public bundle. */
 @layer components {
   [data-testid="admin-root-shell"] :is(
@@ -102,7 +102,7 @@
     [role="combobox"],
     .tnl-card
   ):not(:disabled):not([aria-disabled="true"]) {
-    transition-property: transform, box-shadow, border-color, background-color, color;
+    transition-property: transform, border-color, background-color, box-shadow, color;
     transition-duration: var(--tnl-motion-tactile-duration);
     transition-timing-function: var(--tnl-motion-tactile-easing);
   }
@@ -110,38 +110,27 @@
   @media (hover: hover) and (pointer: fine) {
     [data-testid="admin-root-shell"] :is(
       button,
-      a[href],
-      summary,
       select,
       input:is([type="checkbox"], [type="radio"]),
       [role="button"],
       [role="switch"],
-      [role="tab"],
-      [role="menuitem"],
       [role="combobox"],
       .tnl-card
     ):not(:disabled):not([aria-disabled="true"]):hover {
-      transform: translateY(var(--tnl-tactile-lift));
-      box-shadow:
-        inset 0 0 0 1px var(--tnl-tactile-ring),
-        inset 0 0 0 999px var(--tnl-tactile-wash),
-        var(--tnl-tactile-shadow);
+      border-color: var(--tnl-tactile-ring);
+      box-shadow: inset 0 0 0 999px var(--tnl-tactile-wash);
     }
   }
 
   [data-testid="admin-root-shell"] :is(
     button,
-    a[href],
-    summary,
     select,
     input:is([type="checkbox"], [type="radio"]),
     [role="button"],
     [role="switch"],
-    [role="tab"],
-    [role="menuitem"],
     [role="combobox"],
     .tnl-card
   ):not(:disabled):not([aria-disabled="true"]):active {
-    transform: translateY(0) scale(0.985);
+    transform: scale(0.99);
   }
 }
