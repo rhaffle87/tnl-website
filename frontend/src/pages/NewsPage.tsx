@@ -1,11 +1,12 @@
 // News index and article pages.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, Copy, X } from "lucide-react";
 import { toast } from "sonner";
 import { usePost } from "@/lib/hooks";
 import { pick, useLocale } from "@/lib/i18n";
+import { localizeCategory } from "@/lib/categoryLabels";
 import { Breadcrumb, EmptyState, formatDate } from "@/components/site/Primitives";
 import { CmsPage } from "@/pages/Home";
 import "./editorial-content.css";
@@ -20,6 +21,7 @@ export function NewsArticlePage() {
     const { locale, t } = useLocale();
     const { data: post, isLoading, isError } = usePost(slug);
     const [activeLightboxImage, setActiveLightboxImage] = useState<string | null>(null);
+    const bodyRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         if (!activeLightboxImage) return;
@@ -29,6 +31,29 @@ export function NewsArticlePage() {
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
     }, [activeLightboxImage]);
+
+    // Sanitized article HTML is injected as markup; enhance inline images after mount.
+    useEffect(() => {
+        const container = bodyRef.current;
+        if (!container) return;
+        const images = Array.from(container.querySelectorAll("img"));
+        images.forEach((image) => {
+            image.setAttribute("role", "button");
+            image.tabIndex = 0;
+            if (!image.hasAttribute("width") && !image.hasAttribute("height")) {
+                image.style.aspectRatio = "16 / 9";
+            }
+        });
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            const target = event.target;
+            if (!(target instanceof HTMLImageElement) || target.getAttribute("role") !== "button") return;
+            event.preventDefault();
+            setActiveLightboxImage(target.currentSrc || target.src);
+        };
+        container.addEventListener("keydown", handleKeyDown);
+        return () => container.removeEventListener("keydown", handleKeyDown);
+    }, [post?.body, post?.body_id, locale, activeLightboxImage]);
 
     if (isLoading) {
         return (
@@ -49,7 +74,7 @@ export function NewsArticlePage() {
     if (isError || !post) {
         return (
             <div className="tnl-container tnl-section" data-testid="article-not-found">
-                <EmptyState title={t("not_found_title")} body={t("not_found_body")} testId="article-empty-state" />
+                <EmptyState {...({ as: "h1" } as { as?: "h1" })} title={t("not_found_title")} body={t("not_found_body")} testId="article-empty-state" />
                 <div className="mt-6">
                     <Link to="/news" className="tnl-btn tnl-btn-outline" data-testid="article-back-button">
                         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -79,7 +104,7 @@ export function NewsArticlePage() {
                 <div className="tnl-container py-14 lg:py-20">
                     <Breadcrumb items={[{ label: t("nav_home"), to: "/" }, { label: t("nav_news"), to: "/news" }, { label: title }]} />
                     <p className="editorial-eyebrow">
-                        {post.category}
+                        {localizeCategory(post.category, locale)}
                     </p>
                     <h1 className="editorial-article-title" data-testid="article-title">
                         {title}
@@ -104,8 +129,10 @@ export function NewsArticlePage() {
             <div className="tnl-section" style={{ background: "var(--tnl-surface)" }}>
                 <div className="tnl-container editorial-reading-column">
                     {post.cover_url ? (
-                        <div
-                            className="editorial-article-cover mb-8 w-full overflow-hidden cursor-zoom-in rounded-xl border border-[var(--tnl-border)]"
+                        <button
+                            type="button"
+                            aria-label={locale === "id" ? "Perbesar gambar sampul artikel" : "Zoom article cover image"}
+                            className="editorial-article-cover mb-8 block w-full cursor-zoom-in overflow-hidden rounded-xl border border-[var(--tnl-border)] text-left"
                             style={{ maxHeight: 440 }}
                             onClick={() => setActiveLightboxImage(post.cover_url!)}
                             data-testid="article-cover-zoom"
@@ -113,15 +140,19 @@ export function NewsArticlePage() {
                             <img
                                 src={post.cover_url}
                                 alt={post.cover_alt || title}
+                                width="1600"
+                                height="900"
                                 className="w-full object-cover"
                                 style={{
                                     maxHeight: 440,
+                                    aspectRatio: "16 / 9",
                                     viewTransitionName: `news-cover-${(post.slug || post.id || "post").replace(/[^a-zA-Z0-9_-]/g, "-")}`,
                                 }}
                             />
-                        </div>
+                        </button>
                     ) : null}
                     <div
+                        ref={bodyRef}
                         className="editorial-article-body"
                         onClick={(e) => {
                             const target = e.target as HTMLElement;
@@ -155,7 +186,7 @@ export function NewsArticlePage() {
                                         className="editorial-related-link"
                                         data-testid={`related-article-${rel.slug}`}
                                     >
-                                        <span className="tnl-count-chip">{rel.category}</span>
+                                        <span className="tnl-count-chip">{localizeCategory(rel.category, locale)}</span>
                                         <h3 className="mt-3 text-[17px] font-bold leading-snug">{pick(locale, rel.title, rel.title_id)}</h3>
                                     </Link>
                                 ))}

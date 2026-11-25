@@ -21,6 +21,7 @@ import {
     Wrench,
 } from "lucide-react";
 import { pick, pickProp, useLocale } from "@/lib/i18n";
+import { categoryKey, localizeCategory } from "@/lib/categoryLabels";
 import { useMembers, usePartners, usePosts, useSettings, useStats } from "@/lib/hooks";
 import { EmptyState, SectionHeading, formatDate } from "@/components/site/Primitives";
 import { MemberSections } from "@/components/site/MemberSections";
@@ -67,19 +68,13 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
 
 function InnerHeroBlock({ props }: { props: Record<string, unknown> }) {
     const { locale } = useLocale();
-    const eyebrow = pickProp(locale, props, "eyebrow");
     return (
         <section className="signal-inner-hero" data-testid="block-inner-hero">
             <div className="tnl-container py-14 lg:py-20">
-                {eyebrow ? (
-                    <p className="tnl-eyebrow mb-3 font-bold" style={{ color: "var(--tnl-tan)" }} data-testid="inner-hero-eyebrow">
-                        {eyebrow}
-                    </p>
-                ) : null}
-                <h1 className="tnl-hero-title font-bold" style={{ color: "#ffffff" }} data-testid="inner-hero-title">
+                <h1 className="tnl-hero-title font-bold" style={{ color: "var(--tnl-inverse-foreground)" }} data-testid="inner-hero-title">
                     {pickProp(locale, props, "title")}
                 </h1>
-                <p className="mt-4 max-w-3xl text-base sm:text-lg" style={{ color: "#dfe2e5" }} data-testid="inner-hero-description">
+                <p className="mt-4 max-w-3xl text-base sm:text-lg" style={{ color: "var(--tnl-inverse-muted)" }} data-testid="inner-hero-description">
                     {pickProp(locale, props, "description")}
                 </p>
             </div>
@@ -91,21 +86,27 @@ function InnerHeroBlock({ props }: { props: Record<string, unknown> }) {
 function StatsBlock() {
     const { t } = useLocale();
     const { data, isError } = useStats();
+    const failed = isError && !data;
     const items = [
-        { label: t("stat_lecturers"), value: data ? String(data.lecturers) : "—", key: "lecturers" },
-        { label: t("stat_assistants"), value: data ? String(data.assistants) : "—", key: "assistants" },
-        { label: t("stat_tracks"), value: data ? String(data.research_tracks) : "—", key: "tracks" },
-        { label: t("stat_room"), value: data?.room ?? "B-301", key: "room" },
+        { label: t("stat_lecturers"), value: failed ? "" : data ? String(data.lecturers) : "—", key: "lecturers" },
+        { label: t("stat_assistants"), value: failed ? "" : data ? String(data.assistants) : "—", key: "assistants" },
+        { label: t("stat_tracks"), value: failed ? "" : data ? String(data.research_tracks) : "—", key: "tracks" },
+        { label: t("stat_room"), value: failed ? "" : data?.room ?? "B-301", key: "room" },
     ];
     return (
-        <section className="border-y" style={{ background: "#0C100E", borderColor: "rgba(255,255,255,0.08)" }} data-testid="block-stats">
-            <div className="tnl-container grid grid-cols-2 divide-y sm:divide-y-0 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x divide-white/[0.08] py-8 lg:py-10">
+        <section className="border-y" style={{ background: "var(--gsm-obsidian)", borderColor: "var(--tnl-inverse-border)" }} data-testid="block-stats">
+            <div className="tnl-container grid grid-cols-2 divide-y sm:divide-y-0 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x divide-[var(--tnl-inverse-border)] py-8 lg:py-10">
+                {failed ? (
+                    <p className="col-span-full mb-2 text-center text-sm" style={{ color: "var(--tnl-inverse-muted)" }}>
+                        {t("no_backend_note")}
+                    </p>
+                ) : null}
                 {items.map((item) => (
                     <div key={item.key} className="tnl-scroll-reveal flex flex-col items-center justify-center text-center px-4 py-5 sm:py-2" data-testid={`stat-${item.key}`}>
                         <div className="text-[38px] lg:text-[52px] font-bold font-mono tracking-tight tabular-nums leading-none" style={{ color: "var(--tnl-tan)" }}>
-                            {isError && !data ? "—" : item.value}
+                            {item.value}
                         </div>
-                        <div className="mt-2.5 text-xs lg:text-sm font-medium tracking-wide uppercase text-white/60 text-center">
+                        <div className="mt-2.5 text-xs lg:text-sm font-medium tracking-wide uppercase text-center" style={{ color: "var(--tnl-inverse-muted)" }}>
                             {item.label}
                         </div>
                     </div>
@@ -154,7 +155,7 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                                 </div>
                                 <Link
                                     to="/contact"
-                                    className="mt-2 inline-block text-xs font-medium text-[var(--tnl-link)] underline-offset-4 hover:underline"
+                                    className="mt-2 inline-flex min-h-[44px] items-center text-xs font-medium text-[var(--tnl-link)] underline-offset-4 hover:underline"
                                 >
                                     {locale === "id" ? "Lihat lokasi →" : "View location →"}
                                 </Link>
@@ -407,7 +408,7 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                             <button
                                 type="button"
                                 onClick={() => setCategory("")}
-                                className="relative rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+                                className="relative inline-flex min-h-[44px] items-center rounded-full border px-4 py-2 text-sm font-medium transition-colors"
                                 style={{ borderColor: category === "" ? "var(--tnl-green)" : "var(--tnl-border)" }}
                                 data-testid="news-category-all-button"
                             >
@@ -419,7 +420,7 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                                         transition={{ type: "spring", stiffness: 420, damping: 34 }}
                                     />
                                 ) : null}
-                                <span className="relative z-10" style={{ color: category === "" ? "#fff" : "inherit" }}>
+                                <span className="relative z-10" style={{ color: category === "" ? "var(--tnl-inverse-foreground)" : "inherit" }}>
                                     {t("all_categories")}
                                 </span>
                             </button>
@@ -428,9 +429,9 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                                     key={c}
                                     type="button"
                                     onClick={() => setCategory(c)}
-                                    className="relative rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+                                    className="relative inline-flex min-h-[44px] items-center rounded-full border px-4 py-2 text-sm font-medium transition-colors"
                                     style={{ borderColor: category === c ? "var(--tnl-green)" : "var(--tnl-border)" }}
-                                    data-testid={`news-category-${c.toLowerCase().replace(/\s+/g, "-")}-button`}
+                                    data-testid={`news-category-${categoryKey(c)}-button`}
                                 >
                                     {category === c ? (
                                         <m.span
@@ -440,8 +441,8 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                                             transition={{ type: "spring", stiffness: 420, damping: 34 }}
                                         />
                                     ) : null}
-                                    <span className="relative z-10" style={{ color: category === c ? "#fff" : "inherit" }}>
-                                        {c}
+                                    <span className="relative z-10" style={{ color: category === c ? "var(--tnl-inverse-foreground)" : "inherit" }}>
+                                        {localizeCategory(c, locale)}
                                     </span>
                                 </button>
                             ))}
@@ -477,7 +478,7 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                                 )}
                                 <div className="flex flex-1 flex-col p-6">
                                     <div className="mb-2 flex items-center gap-2 text-xs">
-                                        <span className="tnl-count-chip">{post.category}</span>
+                                        <span className="tnl-count-chip">{localizeCategory(post.category, locale)}</span>
                                         <span style={{ color: "var(--tnl-body)" }}>{formatDate(post.published_at, locale)}</span>
                                     </div>
                                     <h3 className="text-[18px] font-bold leading-snug">{pick(locale, post.title, post.title_id)}</h3>
@@ -533,12 +534,12 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                             loading="lazy"
                         />
                     ) : (
-                        <span className="text-center text-sm md:text-base font-bold tracking-tight text-[#111613] dark:text-white whitespace-nowrap">
+                        <span className="text-center text-sm md:text-base font-bold tracking-tight text-[var(--gsm-accent-ink)] dark:text-[var(--tnl-inverse-foreground)] whitespace-nowrap">
                             {p.name}
                         </span>
                     )}
                 </div>
-                <span className="mt-2 text-center text-xs font-semibold text-[var(--tnl-body)] dark:text-[#B8C0BA] whitespace-nowrap">
+                <span className="mt-2 text-center text-xs font-semibold text-[var(--tnl-body)] dark:text-[var(--tnl-inverse-muted)] whitespace-nowrap">
                     {p.name.replace("Institut Teknologi Sepuluh Nopember", "ITS Surabaya")}
                 </span>
                 <span
@@ -560,7 +561,7 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 tabIndex={isDuplicate ? -1 : undefined}
-                className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B393] shrink-0"
+                className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tnl-link)] shrink-0"
                 data-testid={`partner-${p.name.toLowerCase().replace(/\s+/g, "-")}`}
             >
                 {content}
@@ -701,7 +702,16 @@ function ImageBlock({ props }: { props: Record<string, unknown> }) {
     return (
         <section className="tnl-section" data-testid="block-image">
             <div className="tnl-container">
-                <img src={url} alt={alt} className="w-full rounded-[15px] object-cover" loading="lazy" />
+                <div className="w-full overflow-hidden rounded-[15px]" style={{ aspectRatio: "16 / 9" }}>
+                    <img
+                        src={url}
+                        alt={alt}
+                        width="1600"
+                        height="900"
+                        className="h-full w-full rounded-[15px] object-cover"
+                        loading="lazy"
+                    />
+                </div>
                 {str(props, "caption") ? (
                     <p className="mt-3 text-center text-sm" style={{ color: "var(--tnl-body)" }}>
                         {str(props, "caption")}
