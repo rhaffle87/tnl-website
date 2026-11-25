@@ -20,8 +20,8 @@ export function SignalGallery({ props }: { props: Record<string, unknown> }) {
                 {pickProp(locale, props, "note") && <p className="signal-gallery-note">{pickProp(locale, props, "note")}</p>}
                 <div className="signal-gallery-grid">
                     {images.map((image, index) => (
-                        <button key={`${image.url}-${index}`} type="button" className="signal-gallery-item" data-testid={`gallery-item-${index}`} onClick={event => { trigger.current = event.currentTarget; setSelected(index); }}>
-                            <span className="signal-gallery-media"><img src={image.url} alt={image.alt || label(image)} loading="lazy" /></span>
+                        <button key={`${image.url}-${index}`} type="button" className="signal-gallery-item inline-flex min-h-[44px] w-full flex-col" data-testid={`gallery-item-${index}`} onClick={event => { trigger.current = event.currentTarget; setSelected(index); }}>
+                            <span className="signal-gallery-media block w-full overflow-hidden" style={{ aspectRatio: "16 / 9" }}><img src={image.url} alt={image.alt || label(image)} width="1600" height="900" className="h-full w-full object-cover" loading="lazy" /></span>
                             <span className="signal-gallery-caption"><span><span className="signal-photo-index">{String(index + 1).padStart(2, "0")} / </span>{label(image)}</span><span aria-hidden="true">↗</span></span>
                         </button>
                     ))}
@@ -29,7 +29,7 @@ export function SignalGallery({ props }: { props: Record<string, unknown> }) {
                 <Dialog open={!!photo} onOpenChange={open => { if (!open) setSelected(null); }}>
                     <DialogContent className="signal-lightbox" data-testid="gallery-lightbox" finalFocus={trigger}>
                         <DialogTitle className="sr-only">{photo ? label(photo) : ""}</DialogTitle>
-                        {photo && <figure><img src={photo.url} alt={photo.alt || label(photo)} /><figcaption>{label(photo)}</figcaption></figure>}
+                        {photo && <figure><img src={photo.url} alt={photo.alt || label(photo)} width="1600" height="900" /><figcaption>{label(photo)}</figcaption></figure>}
                     </DialogContent>
                 </Dialog>
             </div>

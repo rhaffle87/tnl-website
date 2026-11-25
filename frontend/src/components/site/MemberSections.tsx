@@ -115,7 +115,7 @@ function SocialLinks({ member }: { member: Member }) {
                         href={url as string}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="member-profile-social-link"
+                        className="member-profile-social-link inline-flex min-h-[44px] items-center"
                         data-testid={`member-social-${label.toLowerCase().replace(/\s+/g, "-")}`}
                     >
                         <Icon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -139,6 +139,8 @@ function HeadBanner({ member, onOpen }: { member: Member; onOpen: () => void }) 
                                 <img
                                     src={member.photo_url}
                                     alt={member.photo_alt || `Portrait of ${member.name}`}
+                                    width="600"
+                                    height="800"
                                     className="h-full w-full object-cover object-top"
                                     loading="lazy"
                                 />
@@ -169,7 +171,7 @@ function HeadBanner({ member, onOpen }: { member: Member; onOpen: () => void }) 
                                 {member.email_public ? (
                                     <a
                                         href={`mailto:${member.email_public}`}
-                                        className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
+                                        className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium hover:underline"
                                         style={{ color: "var(--tnl-tan-text)" }}
                                         data-testid="head-of-lab-email-link"
                                     >
@@ -180,7 +182,7 @@ function HeadBanner({ member, onOpen }: { member: Member; onOpen: () => void }) 
                                 <button
                                     type="button"
                                     onClick={onOpen}
-                                    className="member-profile-action ml-auto"
+                                    className="member-profile-action ml-auto inline-flex min-h-[44px] items-center"
                                 >
                                     View full profile & publications →
                                 </button>
@@ -210,6 +212,8 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
                         src={member.photo_url}
                         onError={() => setFailedPhoto(member.photo_url!)}
                         alt={member.photo_alt || `Portrait of ${member.name}`}
+                        width="600"
+                        height="800"
                         className="h-full w-full object-cover object-top transition-transform duration-300 hover:scale-105"
                         loading="lazy"
                     />
@@ -250,7 +254,7 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
                                 <a
                                     href={`mailto:${member.email_public}`}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center gap-1 text-xs font-medium text-[var(--tnl-tan-text)] transition-colors hover:text-[var(--tnl-link)]"
+                                    className="inline-flex min-h-[44px] items-center gap-1 text-xs font-medium text-[var(--tnl-tan-text)] transition-colors hover:text-[var(--tnl-link)]"
                                     aria-label={`Email ${member.name}`}
                                     title={`Email ${member.name}`}
                                     data-testid={`member-card-email-${member.id}`}
@@ -264,7 +268,7 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center gap-1 text-xs font-medium text-[var(--tnl-tan-text)] transition-colors hover:text-[var(--tnl-link)]"
+                                    className="inline-flex min-h-[44px] items-center gap-1 text-xs font-medium text-[var(--tnl-tan-text)] transition-colors hover:text-[var(--tnl-link)]"
                                     aria-label={`${member.name} LinkedIn`}
                                     title={`${member.name} LinkedIn`}
                                     data-testid={`member-card-linkedin-${member.id}`}
@@ -278,7 +282,7 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center gap-1 text-xs font-medium text-[var(--tnl-tan-text)] transition-colors hover:underline"
+                                    className="inline-flex min-h-[44px] items-center gap-1 text-xs font-medium text-[var(--tnl-tan-text)] transition-colors hover:underline"
                                     aria-label={`${member.name} Instagram`}
                                     title={`${member.name} Instagram`}
                                     data-testid={`member-card-instagram-${member.id}`}
@@ -289,7 +293,7 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
                         </div>
                     );
                 })()}
-                <button type="button" className="member-profile-action mt-3" aria-label={`${t("view_profile")}: ${member.name}`} onClick={(event) => { event.stopPropagation(); onOpen(); }}>
+                <button type="button" className="member-profile-action mt-3 inline-flex min-h-[44px] items-center" aria-label={`${t("view_profile")}: ${member.name}`} onClick={(event) => { event.stopPropagation(); onOpen(); }}>
                     {t("view_profile")} →
                 </button>
             </div>
@@ -368,6 +372,8 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                                 src={member.photo_url}
                                 onError={() => setFailedPhoto(member.photo_url!)}
                                 alt={member.photo_alt || `Portrait of ${member.name}`}
+                                width="600"
+                                height="800"
                                 className="h-full w-full object-cover object-top"
                             />
                         ) : (
@@ -423,7 +429,7 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                             {member.email_public ? (
                                 <a
                                     href={`mailto:${member.email_public}`}
-                                    className="inline-flex items-center gap-2 text-sm font-medium"
+                                    className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium"
                                     style={{ color: "var(--tnl-link)" }}
                                     data-testid="member-modal-email-link"
                                 >

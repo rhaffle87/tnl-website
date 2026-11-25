@@ -214,14 +214,15 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
 function MaintenanceNotice() {
     const { data: settings } = useSettings();
+    const { t } = useLocale();
     if (!settings?.maintenance_mode) return null;
     return (
         <div
             className="px-4 py-3 text-center text-sm font-medium"
-            style={{ background: "var(--tnl-tan)", color: "#111518" }}
+            style={{ background: "var(--tnl-tan)", color: "var(--tnl-inverse-foreground)" }}
             data-testid="maintenance-banner"
         >
-            Maintenance mode is on — visitors see a maintenance notice. Turn it off in Settings.
+            {t("maintenance_notice")}
         </div>
     );
 }
@@ -231,6 +232,9 @@ export default function SiteLayout() {
     const { data: settings } = useSettings();
     const location = useLocation();
     const isHome = location.pathname === "/";
+    // The announcement card and registration bar share the same fixed bottom
+    // surface on small screens; only one of them may be mounted at a time.
+    const [announcementOpen, setAnnouncementOpen] = useState(false);
 
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
@@ -278,8 +282,8 @@ export default function SiteLayout() {
                 </main>
                 {isHome ? <SiteCollaborationBand /> : null}
                 <SiteFooter />
-                <AnnouncementPopup />
-                <MobileRegistrationBar />
+                <AnnouncementPopup onOpenChange={setAnnouncementOpen} />
+                <MobileRegistrationBar announcementOpen={announcementOpen} />
             </div>
         </SmoothScrollProvider>
     );

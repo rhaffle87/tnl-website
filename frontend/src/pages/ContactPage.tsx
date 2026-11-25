@@ -221,11 +221,11 @@ export default function ContactPage() {
                         {/* Card 1: Laboratory Address */}
                         <div className="tnl-card tnl-scroll-reveal overflow-hidden flex flex-col" data-testid="contact-address-card">
                             <div className="tnl-card-header flex items-center justify-between">
-                                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
+                                <span className="text-xs font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                     {isId ? "LOKASI LABORATORIUM" : "LABORATORY LOCATION"}
                                 </span>
                                 {mapLinks.coordinatesLabel && (
-                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-white dark:bg-[var(--gsm-bg-surface)] px-2.5 py-0.5 text-[11px] font-mono text-[var(--gsm-emerald)] shadow-2xs">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-white dark:bg-[var(--gsm-bg-surface)] px-2.5 py-0.5 text-xs font-mono text-[var(--gsm-emerald)] shadow-2xs">
                                         <MapPin className="h-3 w-3" aria-hidden="true" />
                                         <span>{mapLinks.coordinatesLabel}</span>
                                     </span>
@@ -271,10 +271,10 @@ export default function ContactPage() {
                         {/* Card 2: Email & Official Channels */}
                         <div className="tnl-card tnl-scroll-reveal overflow-hidden flex flex-col" data-testid="contact-channels-card">
                             <div className="tnl-card-header flex items-center justify-between">
-                                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
+                                <span className="text-xs font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                     {isId ? "KANAL RESMI & KORESPONDENSI" : "OFFICIAL CHANNELS"}
                                 </span>
-                                <span className="text-[10px] font-mono tracking-wider text-[var(--tnl-tan-text)] uppercase">
+                                <span className="text-xs font-mono tracking-wider text-[var(--tnl-tan-text)] uppercase">
                                     RESMI · ITS
                                 </span>
                             </div>
@@ -286,7 +286,7 @@ export default function ContactPage() {
                                             <Mail className="h-5 w-5" aria-hidden="true" />
                                         </div>
                                         <div className="min-w-0">
-                                            <span className="block text-[11px] font-mono uppercase tracking-wider text-[var(--tnl-tan-text)]">
+                                            <span className="block text-xs font-mono uppercase tracking-wider text-[var(--tnl-tan-text)]">
                                                 Email Administrasi
                                             </span>
                                             <a
@@ -325,7 +325,7 @@ export default function ContactPage() {
                                             <Sparkles className="h-5 w-5" aria-hidden="true" />
                                         </div>
                                         <div className="min-w-0">
-                                            <span className="block text-[11px] font-mono uppercase tracking-wider text-[var(--tnl-tan-text)]">
+                                            <span className="block text-xs font-mono uppercase tracking-wider text-[var(--tnl-tan-text)]">
                                                 Instagram Resmi
                                             </span>
                                             <span className="text-sm font-semibold text-[var(--foreground)] truncate block">
@@ -351,11 +351,11 @@ export default function ContactPage() {
                         <div className="tnl-card tnl-scroll-reveal overflow-hidden flex flex-col flex-1 justify-between" data-testid="contact-hours-card">
                             <div>
                                 <div className="tnl-card-header flex items-center justify-between">
-                                    <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
+                                    <span className="text-xs font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                         {isId ? "JAM OPERASIONAL & LAYANAN" : "OPERATING HOURS & DESK"}
                                     </span>
-                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-white dark:bg-[var(--gsm-bg-surface)] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[var(--gsm-emerald)] shadow-2xs">
-                                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--gsm-emerald)] animate-pulse" />
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-white dark:bg-[var(--gsm-bg-surface)] px-2.5 py-0.5 text-xs font-mono font-semibold text-[var(--gsm-emerald)] shadow-2xs">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--gsm-emerald)]" />
                                         <span>WIB · UTC+7</span>
                                     </span>
                                 </div>
@@ -384,7 +384,7 @@ export default function ContactPage() {
 
                             <div className="px-6 pb-6 sm:px-7 sm:pb-7">
                                 <div className="border-t border-[var(--tnl-border)] pt-4 mt-auto">
-                                    <span className="block text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--tnl-tan-text)] mb-2.5">
+                                    <span className="block text-xs font-mono font-bold uppercase tracking-wider text-[var(--tnl-tan-text)] mb-2.5">
                                         {isId ? "Akses Pintas Cepat" : "Quick Shortcuts"}
                                     </span>
                                     <div className="flex flex-wrap gap-2 text-xs">
@@ -604,7 +604,7 @@ export default function ContactPage() {
                                                         {isId ? "Isi Pesan" : "Message Body"}{" "}
                                                         <span className="text-[var(--gsm-accent)]">*</span>
                                                     </label>
-                                                    <span className="text-[10px] font-mono text-[var(--tnl-tan-text)]">
+                                                    <span className="text-xs font-mono text-[var(--tnl-tan-text)]">
                                                         {message.length} {isId ? "karakter" : "chars"}
                                                     </span>
                                                 </div>
@@ -713,7 +713,7 @@ export default function ContactPage() {
                         {/* Map Header */}
                         <div className="tnl-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>
-                                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--gsm-emerald)]">
+                                <span className="text-xs font-mono font-bold uppercase tracking-widest text-[var(--gsm-emerald)]">
                                     INTERACTIVE LOCATION · GEDUNG B, B-301
                                 </span>
                                 <h3 className="text-xl font-bold tracking-tight text-[var(--foreground)] mt-0.5">
@@ -764,7 +764,7 @@ export default function ContactPage() {
 
                                 {/* Floating Non-Blocking Info Badge */}
                                 <div className="pointer-events-none absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-2.5 rounded-xl border border-white/15 bg-[var(--gsm-obsidian,#111613)]/92 text-white px-3.5 py-2 text-xs font-medium shadow-lg backdrop-blur-md">
-                                    <span className="flex h-2 w-2 rounded-full bg-[var(--gsm-emerald)] animate-pulse" />
+                                    <span className="flex h-2 w-2 rounded-full bg-[var(--gsm-emerald)]" />
                                     <span>Ruang B-301 · Lantai 3 Gedung B, Teknik Elektro ITS</span>
                                 </div>
                             </div>

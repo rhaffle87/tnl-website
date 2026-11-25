@@ -140,6 +140,19 @@ describe("ContactPage Component", () => {
     expect(screen.getByText("-7.285123, 112.796456")).toBeInTheDocument();
   });
 
+  it("does not use decorative pulsing status dots on contact surfaces", () => {
+    const { container } = renderWithProviders(<ContactPage />, { route: "/contact" });
+    expect(container.querySelectorAll(".animate-pulse")).toHaveLength(0);
+  });
+
+  it("keeps contact metadata labels at least 12px", () => {
+    const { container } = renderWithProviders(<ContactPage />, { route: "/contact" });
+    const tiny = Array.from(container.querySelectorAll<HTMLElement>("[class]")).filter((el) =>
+      (el.getAttribute("class") ?? "").includes("text-[11px]"),
+    );
+    expect(tiny).toHaveLength(0);
+  });
+
   it("renders the exact B301 lab pin in the map and both map actions", () => {
     renderWithProviders(<ContactPage />, { route: "/contact" });
 

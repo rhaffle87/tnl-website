@@ -52,6 +52,16 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
         return values[fieldKey(f.show_if_field)] === f.show_if_value;
     });
 
+    // Backend validation reports missing fields as "Label: This field is required".
+    // Map those back onto the individual controls so screen readers get field-level
+    // errors instead of only a detached summary.
+    const fieldError = (label: string) => {
+        const prefix = `${label}:`;
+        const match = errors.find((error) => error.startsWith(prefix));
+        return match ? match.slice(prefix.length) : undefined;
+    };
+    const consentError = errors.find((error) => /consent|persetujuan/i.test(error));
+
     const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setErrors([]);
@@ -112,7 +122,7 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                         <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--tnl-tan)" }}>
                             {t("register_title")}
                         </p>
-                        <h2 id="registration-dialog-title" className="tnl-h5 mt-1 text-[19px]" style={{ color: "#ffffff" }}>
+                        <h2 id="registration-dialog-title" className="tnl-h5 mt-1 text-[19px] text-[var(--tnl-inverse-foreground)]">
                             {pick(locale, event.title, event.title_id)}
                         </h2>
                     </div>
@@ -223,7 +233,7 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                         {errors.length ? (
                             <div
                                 className="rounded-[6px] border px-4 py-3 text-sm"
-                                style={{ borderColor: "#b91c1c", color: "#b91c1c" }}
+                                style={{ borderColor: "var(--tnl-danger)", color: "var(--tnl-danger)" }}
                                 role="alert"
                                 data-testid="registration-errors"
                             >
@@ -238,12 +248,18 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                         {visible.map((f) => {
                             const key = fieldKey(f.label);
                             const id = `reg-${key}`;
+                            const errorId = `${id}-error`;
                             const testId = `registration-field-${key}`;
+                            const error = fieldError(f.label);
+                            const invalidProps = {
+                                "aria-invalid": Boolean(error),
+                                "aria-describedby": error ? errorId : undefined,
+                            };
                             return (
                                 <div key={key}>
                                     <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
                                         {f.label}
-                                        {f.required ? <span style={{ color: "#b91c1c" }}> *</span> : null}
+                                        {f.required ? <span style={{ color: "var(--tnl-danger)" }}> *</span> : null}
                                     </label>
                                     {f.type === "select" ? (
                                         <select
@@ -253,6 +269,7 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                                             required={f.required}
                                             value={values[key] ?? ""}
                                             onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
+                                            {...invalidProps}
                                             data-testid={testId}
                                         >
                                             <option value="">—</option>
@@ -271,10 +288,11 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                                             required={f.required}
                                             value={values[key] ?? ""}
                                             onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
+                                            {...invalidProps}
                                             data-testid={testId}
                                         />
                                     ) : f.type === "file" ? (
-                                        <input id={id} name={key} type="file" className="tnl-field pt-3" required={f.required} data-testid={testId} />
+                                        <input id={id} name={key} type="file" className="tnl-field pt-3" required={f.required} {...invalidProps} data-testid={testId} />
                                     ) : f.type === "checkbox" ? (
                                         <input
                                             id={id}
@@ -283,6 +301,7 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                                             className="h-5 w-5"
                                             required={f.required}
                                             onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.checked ? "yes" : "" }))}
+                                            {...invalidProps}
                                             data-testid={testId}
                                         />
                                     ) : (
@@ -294,23 +313,43 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                                             required={f.required}
                                             value={values[key] ?? ""}
                                             onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
+                                            {...invalidProps}
                                             data-testid={testId}
                                         />
                                     )}
+                                    {error ? (
+                                        <p id={errorId} role="alert" className="mt-1 text-xs" style={{ color: "var(--tnl-danger)" }}>
+                                            {error}
+                                        </p>
+                                    ) : null}
                                 </div>
                             );
                         })}
 
                         <div className="rounded-[6px] border p-4" style={{ borderColor: "var(--tnl-border)", background: "var(--tnl-surface)" }}>
-                            <label className="flex items-start gap-3 text-sm">
-                                <input type="checkbox" name="consent" value="1" required className="mt-1 h-4 w-4 shrink-0" data-testid="registration-consent-checkbox" />
-                                <span>
+                            <label className="flex min-h-[44px] items-start gap-3 text-sm">
+                                <input
+                                    type="checkbox"
+                                    name="consent"
+                                    value="1"
+                                    required
+                                    className="mt-2 h-5 w-5 shrink-0"
+                                    aria-invalid={Boolean(consentError)}
+                                    aria-describedby={consentError ? "reg-consent-error" : undefined}
+                                    data-testid="registration-consent-checkbox"
+                                />
+                                <span className="py-1">
                                     <span className="font-medium">{t("consent_label")}</span>
                                     <span className="mt-1 block text-xs" style={{ color: "var(--tnl-body)" }}>
                                         {t("consent_detail")}
                                     </span>
                                 </span>
                             </label>
+                            {consentError ? (
+                                <p id="reg-consent-error" role="alert" className="mt-1 text-xs" style={{ color: "var(--tnl-danger)" }}>
+                                    {consentError}
+                                </p>
+                            ) : null}
                         </div>
 
                         <button type="submit" className="tnl-btn tnl-btn-primary w-full" disabled={submitting} data-testid="registration-submit-button">

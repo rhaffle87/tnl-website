@@ -25,8 +25,7 @@ export function SectionHeading({
                 <span className={cn("tnl-accent-bar", light && "bg-[var(--tnl-tan)]")} aria-hidden="true" />
                 <div className="flex flex-1 flex-wrap items-center justify-between gap-3">
                     <h2
-                        className={cn("tnl-h2 text-[28px] sm:text-[35px] font-bold tracking-tight", light && "text-white")}
-                        style={light ? { color: "#ffffff" } : undefined}
+                        className={cn("tnl-h2 font-bold tracking-tight", light && "text-[var(--tnl-inverse-foreground)]")}
                     >
                         {title}
                     </h2>
@@ -39,7 +38,7 @@ export function SectionHeading({
             </div>
             {description ? (
                 <p
-                    className={cn("mt-3 max-w-3xl text-base", light ? "text-[#eaeaec]" : "text-[var(--tnl-body)]")}
+                    className={cn("mt-3 max-w-3xl text-base", light ? "text-[var(--tnl-inverse-muted)]" : "text-[var(--tnl-body)]")}
                 >
                     {description}
                 </p>
@@ -53,12 +52,15 @@ export function EmptyState({
     body,
     testId,
     icon,
+    as = "h3",
 }: {
     title: string;
     body: string;
     testId?: string;
     icon?: ReactNode;
+    as?: "h1" | "h2" | "h3";
 }) {
+    const Heading = as;
     return (
         <div
             className="tnl-card flex flex-col items-center justify-center px-6 py-14 text-center"
@@ -71,7 +73,7 @@ export function EmptyState({
             >
                 {icon ?? <Inbox className="h-7 w-7" style={{ color: "var(--tnl-tan-text)" }} />}
             </div>
-            <h3 className="tnl-h5 text-[20px]">{title}</h3>
+            <Heading className={as === "h1" ? "tnl-h2" : as === "h2" ? "tnl-h3" : "tnl-h4"}>{title}</Heading>
             <p className="mt-2 max-w-md text-sm text-[var(--tnl-body)]">{body}</p>
         </div>
     );
@@ -91,11 +93,11 @@ export function Spinner({ label }: { label?: string }) {
 }
 
 const STATUS_STYLES: Record<string, { bg: string; fg: string }> = {
-    open: { bg: "var(--gsm-emerald, #43594A)", fg: "#ffffff" },
-    upcoming: { bg: "#a8977b", fg: "#111518" },
-    closed: { bg: "#eaeaec", fg: "#3f4245" },
-    past: { bg: "#eaeaec", fg: "#3f4245" },
-    full: { bg: "#7f715c", fg: "#ffffff" },
+    open: { bg: "var(--tnl-status-open-bg)", fg: "var(--tnl-status-open-fg)" },
+    upcoming: { bg: "var(--tnl-status-upcoming-bg)", fg: "var(--tnl-status-upcoming-fg)" },
+    closed: { bg: "var(--tnl-status-neutral-bg)", fg: "var(--tnl-status-neutral-fg)" },
+    past: { bg: "var(--tnl-status-neutral-bg)", fg: "var(--tnl-status-neutral-fg)" },
+    full: { bg: "var(--tnl-status-full-bg)", fg: "var(--tnl-status-full-fg)" },
 };
 
 export function StatusBadge({ status, label, testId }: { status: string; label: string; testId?: string }) {
@@ -115,7 +117,7 @@ export function TypeBadge({ label, testId }: { label: string; testId?: string })
     return (
         <span
             className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-wide uppercase"
-            style={{ borderColor: "rgba(255,255,255,0.4)", color: "#ffffff" }}
+            style={{ borderColor: "color-mix(in srgb, var(--tnl-inverse-foreground) 40%, transparent)", color: "var(--tnl-inverse-foreground)" }}
             data-testid={testId}
         >
             {label}
@@ -126,7 +128,7 @@ export function TypeBadge({ label, testId }: { label: string; testId?: string })
 export function Breadcrumb({ items }: { items: { label: string; to?: string }[] }) {
     return (
         <nav aria-label="Breadcrumb" className="mb-4" data-testid="breadcrumb">
-            <ol className="flex flex-wrap items-center gap-2 text-sm text-[#eaeaec]">
+            <ol className="flex flex-wrap items-center gap-2 text-sm text-[var(--tnl-inverse-muted)]">
                 {items.map((item, i) => (
                     <li key={`${item.label}-${i}`} className="flex items-center gap-2">
                         {item.to ? (

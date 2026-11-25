@@ -1,0 +1,24 @@
+/* Touch and keyboard fallbacks for the shared media carousel and lightbox.
+   Tailwind covers the common case; these rules keep controls usable on devices
+   without hover and make focus visible even when a utility class is merged away. */
+
+.tnl-carousel-control {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tnl-carousel-control:focus-visible {
+    outline: 2px solid var(--tnl-tan, var(--gsm-primary));
+    outline-offset: 2px;
+}
+
+.tnl-carousel-slide {
+    -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: none) {
+    .tnl-carousel-slide img,
+    .tnl-carousel-control:hover img {
+        transform: none;
+    }
+}
