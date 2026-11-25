@@ -85,7 +85,7 @@ export function TagChipsField({
             )}
 
             <div
-                className="flex min-h-[46px] flex-wrap items-center gap-1.5 rounded-lg border p-1.5 transition-colors focus-within:ring-2 focus-within:ring-amber-500/30"
+                className="flex min-h-[46px] flex-wrap items-center gap-1.5 rounded-lg border p-1.5 transition-colors focus-within:ring-2 focus-within:ring-[var(--gsm-emerald)]/30 focus-within:border-[var(--gsm-emerald)]"
                 style={{
                     backgroundColor: "var(--tnl-bg)",
                     borderColor: "var(--tnl-border)",

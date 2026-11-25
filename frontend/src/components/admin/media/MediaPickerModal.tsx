@@ -760,7 +760,7 @@ export function MediaPickerModal({
 
                                             <div className="flex items-center gap-2">
                                                 {item.status === "uploading" && (
-                                                    <span className="flex items-center gap-1 text-amber-500 text-[11px]">
+                                                    <span className="flex items-center gap-1 text-[var(--gsm-accent)] text-[11px]">
                                                         <Loader2 className="h-3 w-3 animate-spin" /> Uploading...
                                                     </span>
                                                 )}

@@ -220,7 +220,7 @@ export function KeyValueMapEditor({
                     type="button"
                     onClick={toggleRawMode}
                     className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-mono font-medium transition-colors hover:bg-neutral-500/10"
-                    style={{ color: rawMode ? "var(--tnl-gold)" : "var(--tnl-tan-text)" }}
+                    style={{ color: rawMode ? "var(--gsm-accent)" : "var(--tnl-tan-text)" }}
                     data-testid={`${testId}-raw-toggle`}
                 >
                     <Code className="h-3.5 w-3.5" aria-hidden="true" />
@@ -235,7 +235,7 @@ export function KeyValueMapEditor({
                         value={rawJsonText}
                         onChange={(e) => handleRawTextChange(e.target.value)}
                         rows={7}
-                        className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
+                        className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                         style={{ backgroundColor: "var(--tnl-bg)", borderColor: jsonError ? "var(--tnl-red)" : "var(--tnl-border)" }}
                         data-testid={`${testId}-raw-textarea`}
                     />
@@ -270,7 +270,7 @@ export function KeyValueMapEditor({
                                                 <span>{item.label}</span>
                                             </span>
                                             {hasValue && !isInvalidUrl && (
-                                                <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                                                <Check className="h-3 w-3 text-[var(--gsm-emerald)]" aria-hidden="true" />
                                             )}
                                         </div>
                                         <input
@@ -278,7 +278,7 @@ export function KeyValueMapEditor({
                                             value={currentVal}
                                             onChange={(e) => updateKey(item.key, e.target.value)}
                                             placeholder={item.placeholder || `Enter ${item.label}`}
-                                            className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none transition-colors focus:ring-2 focus:ring-amber-500/30"
+                                            className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none transition-colors focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                                             style={{
                                                 backgroundColor: "var(--tnl-bg)",
                                                 borderColor: isInvalidUrl ? "var(--tnl-red)" : "var(--tnl-border)",
@@ -286,7 +286,7 @@ export function KeyValueMapEditor({
                                             data-testid={`${testId}-preset-${item.key}`}
                                         />
                                         {isInvalidUrl && (
-                                            <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                                            <p className="text-[11px] text-[var(--tnl-warning)]">
                                                 Tip: URL sebaiknya diawali https://
                                             </p>
                                         )}
@@ -310,7 +310,7 @@ export function KeyValueMapEditor({
                                             defaultValue={keyName}
                                             onBlur={(e) => renameCustomKey(keyName, e.target.value)}
                                             placeholder={keyPlaceholder}
-                                            className="w-1/3 rounded-lg border px-2.5 py-1.5 font-mono text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
+                                            className="w-1/3 rounded-lg border px-2.5 py-1.5 font-mono text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                                             style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }}
                                             data-testid={`${testId}-key-${keyName}`}
                                         />
@@ -319,7 +319,7 @@ export function KeyValueMapEditor({
                                             value={normalizedMap[keyName] || ""}
                                             onChange={(e) => updateKey(keyName, e.target.value)}
                                             placeholder={valuePlaceholder}
-                                            className="flex-1 rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
+                                            className="flex-1 rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                                             style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }}
                                             data-testid={`${testId}-val-${keyName}`}
                                         />
@@ -342,7 +342,7 @@ export function KeyValueMapEditor({
                     <button
                         type="button"
                         onClick={addCustomEntry}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-1.5 text-xs font-medium transition-colors hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-1.5 text-xs font-medium transition-colors hover:border-[var(--gsm-emerald)] hover:text-[var(--gsm-primary)] dark:hover:text-[var(--gsm-emerald)]"
                         style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-text)" }}
                         data-testid={`${testId}-add-custom`}
                     >

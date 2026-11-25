@@ -757,7 +757,13 @@ export default function ContentManager() {
                                                 {title}
                                             </Link>
                                             {row.needs_review ? (
-                                                <span className="ml-2 rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ background: "#fef3c7", color: "#92400e" }}>
+                                                <span
+                                                    className="ml-2 rounded-full px-2 py-0.5 text-[11px] font-bold"
+                                                    style={{
+                                                        background: "color-mix(in srgb, var(--gsm-accent) 22%, transparent)",
+                                                        color: "var(--tnl-tan-text)",
+                                                    }}
+                                                >
                                                     Needs review
                                                 </span>
                                             ) : null}

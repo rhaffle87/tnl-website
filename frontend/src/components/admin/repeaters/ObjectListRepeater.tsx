@@ -233,7 +233,7 @@ export function ObjectListRepeater({
                         value={rawJsonText}
                         onChange={(e) => handleRawTextChange(e.target.value)}
                         rows={9}
-                        className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
+                        className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                         style={{ backgroundColor: "var(--tnl-bg)", borderColor: jsonError ? "var(--tnl-red)" : "var(--tnl-border)" }}
                         data-testid={`${testId}-raw-textarea`}
                     />
@@ -274,7 +274,7 @@ export function ObjectListRepeater({
                                             className="flex flex-1 items-center gap-2.5 cursor-pointer"
                                             onClick={() => toggleCollapse(itemIdx)}
                                         >
-                                            <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
+                                            <span className="font-mono text-xs font-bold text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)]">
                                                 {String(itemIdx + 1).padStart(2, "0")}
                                             </span>
                                             <span className="text-xs font-semibold truncate max-w-[280px] md:max-w-[420px]" data-testid={`${testId}-card-title-${itemIdx}`}>
@@ -313,7 +313,7 @@ export function ObjectListRepeater({
                                             <button
                                                 type="button"
                                                 onClick={() => duplicateItem(itemIdx)}
-                                                className="rounded p-1 text-neutral-400 hover:text-amber-600 hover:bg-amber-500/10"
+                                                className="rounded p-1 text-neutral-400 hover:text-[var(--gsm-primary)] hover:bg-[var(--gsm-primary-soft)] dark:hover:text-[var(--gsm-accent)]"
                                                 title="Duplicate item"
                                                 aria-label="Duplicate item"
                                                 data-testid={`${testId}-card-dup-${itemIdx}`}
@@ -365,7 +365,7 @@ export function ObjectListRepeater({
                                                                 value={String(val ?? "")}
                                                                 onChange={(e) => updateItemField(itemIdx, f.key, e.target.value)}
                                                                 placeholder={f.placeholder}
-                                                                className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
+                                                                className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                                                                 style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
                                                                 data-testid={`${testId}-item-${itemIdx}-${f.key}`}
                                                             />
@@ -417,7 +417,7 @@ export function ObjectListRepeater({
                                                                     )
                                                                 }
                                                                 placeholder={f.placeholder}
-                                                                className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
+                                                                className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                                                                 style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
                                                                 data-testid={`${testId}-item-${itemIdx}-${f.key}`}
                                                             />
@@ -442,7 +442,7 @@ export function ObjectListRepeater({
                     <button
                         type="button"
                         onClick={addItem}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-2 text-xs font-medium transition-colors hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400 w-full justify-center"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-2 text-xs font-medium transition-colors hover:border-[var(--gsm-emerald)] hover:text-[var(--gsm-primary)] dark:hover:text-[var(--gsm-emerald)] w-full justify-center"
                         style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-text)" }}
                         data-testid={`${testId}-add`}
                     >

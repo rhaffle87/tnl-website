@@ -9,6 +9,7 @@ import { Award, Check, Copy, Download, FileJson, FileSpreadsheet, KeyRound, Spar
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
 import { AdminCard, AdminPageHeader, AdminSectionHeader, AdminSelect, AdminStatusBadge, AdminSwitch, ConfirmButton, Panel, adminError } from "@/pages/admin/AdminUI";
 import { useMe } from "@/lib/hooks";
+import { applyThemeTokens } from "@/lib/theme";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField } from "@/components/admin/media";
 import type {
@@ -719,8 +720,10 @@ export function ThemePage() {
 
     const publish = useMutation({
         mutationFn: () => apiPost<{ published: ThemeTokens }>("/admin/theme/publish"),
-        onSuccess: () => {
+        onSuccess: (res) => {
+            applyThemeTokens(res.published);
             void qc.invalidateQueries({ queryKey: ["admin", "theme"] });
+            void qc.invalidateQueries({ queryKey: ["public", "settings"] });
             toast.success("Theme published.");
         },
         onError: (err) => toast.error(adminError(err, "Some colour pairs are too low-contrast to publish.")),
@@ -985,11 +988,11 @@ export function ThemePage() {
                                 <li
                                     key={check.label}
                                     className="flex items-center justify-between gap-3 rounded-[8px] border px-4 py-2.5 text-sm"
-                                    style={{ borderColor: check.passes ? "var(--tnl-border)" : "#fecaca" }}
+                                    style={{ borderColor: check.passes ? "var(--tnl-border)" : "var(--tnl-danger-border)" }}
                                     data-testid={`theme-contrast-${check.passes ? "pass" : "fail"}`}
                                 >
                                     <span className="font-medium text-xs sm:text-sm">{check.label}</span>
-                                    <span className="font-semibold text-xs shrink-0" style={{ color: check.passes ? "#2e7d32" : "#b91c1c" }}>
+                                    <span className="font-semibold text-xs shrink-0" style={{ color: check.passes ? "var(--gsm-emerald)" : "var(--tnl-danger)" }}>
                                         {check.ratio} {check.passes ? "✓ Lulus" : `✕ Butuh ${check.required}`}
                                     </span>
                                 </li>
@@ -1269,8 +1272,8 @@ export function SettingsPage() {
                                 <div className="flex items-center gap-1.5">
                                     <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[var(--gsm-primary)]" title="Primary (CMS)" />
                                     <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[var(--gsm-emerald)]" title="Emerald Glow (CMS)" />
-                                    <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[#0C100E]" title="Obsidian Dark (#0C100E)" />
-                                    <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[#A8977B]" title="Accent Warm Sand (#A8977B)" />
+                                    <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[var(--gsm-obsidian)]" title="Obsidian Dark (CMS)" />
+                                    <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[var(--gsm-accent)]" title="Accent Warm Sand (CMS)" />
                                 </div>
                             </div>
                             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">

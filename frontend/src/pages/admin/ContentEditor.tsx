@@ -759,11 +759,11 @@ export default function ContentEditor() {
 
             {localDraftInfo ? (
                 <div
-                    className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-[var(--tnl-heading)]"
+                    className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--gsm-accent)]/40 bg-[var(--gsm-accent)]/10 px-4 py-3 text-sm text-[var(--tnl-heading)]"
                     data-testid="content-draft-banner"
                 >
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                        <span className="h-2 w-2 rounded-full bg-[var(--gsm-accent)] shrink-0" />
                         <span className="truncate">
                             Draf lokal tersimpan pada {new Date(localDraftInfo.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </span>
@@ -776,7 +776,7 @@ export default function ContentEditor() {
                                 setLocalDraftInfo(null);
                                 toast.success("Draf lokal dipulihkan.");
                             }}
-                            className="font-medium underline hover:text-amber-600 dark:hover:text-amber-400 text-sm"
+                            className="font-medium underline hover:text-[var(--gsm-primary)] text-sm"
                             data-testid="content-restore-draft-btn"
                         >
                             Pulihkan draf

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { KeyRound, LogIn } from "lucide-react";
 import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { beginSession } from "@/lib/session";
+import { useApplyThemeTokens } from "@/lib/theme";
 import { useQuery } from "@tanstack/react-query";
 import { TnlLogo } from "@/components/site/TnlLogo";
 import type { AuthUser, GoogleAuthConfig } from "@/lib/types";
@@ -21,6 +22,7 @@ function errorText(err: unknown, fallback: string): string {
 }
 
 function Shell({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+    useApplyThemeTokens();
     return (
         <div className="flex min-h-svh" style={{ background: "var(--tnl-surface)" }}>
             <div className="tnl-hero-gradient hidden w-[44%] flex-col justify-between p-12 lg:flex">
@@ -29,15 +31,18 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
                     <span className="text-xs font-bold uppercase tracking-[0.25em]" style={{ color: "var(--tnl-tan)" }}>
                         TNL Studio
                     </span>
-                    <h1 className="tnl-h2 mt-4 text-[32px]" style={{ color: "#ffffff" }}>
+                    <h1 className="tnl-h2 mt-4 text-[32px]" style={{ color: "var(--tnl-inverse-foreground)" }}>
                         Telecommunication Network Laboratory
                     </h1>
-                    <p className="mt-4 max-w-md text-sm leading-relaxed" style={{ color: "#dfe2e5" }}>
+                    <p
+                        className="mt-4 max-w-md text-sm leading-relaxed"
+                        style={{ color: "color-mix(in srgb, var(--tnl-inverse-foreground) 85%, transparent)" }}
+                    >
                         The content manager for the laboratory website. Everything on the public site — news, members,
                         programmes, pages and colours — is edited here in plain language.
                     </p>
                 </div>
-                <p className="text-xs" style={{ color: "#7f715c" }}>
+                <p className="text-xs" style={{ color: "var(--gsm-accent)" }}>
                     Department of Electrical Engineering, Institut Teknologi Sepuluh Nopember · Room B-301
                 </p>
             </div>

@@ -139,7 +139,9 @@ export function ImageCropDialog({
                 rect.w,
                 rect.h,
             );
-            ctx.strokeStyle = "#34d399";
+            const emerald =
+                getComputedStyle(document.documentElement).getPropertyValue("--gsm-emerald").trim() || "#5D8A6B";
+            ctx.strokeStyle = emerald;
             ctx.lineWidth = 2;
             ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
         }

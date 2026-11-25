@@ -237,7 +237,7 @@ export function FormFieldsBuilder({
             {previewMode && (
                 <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }} data-testid={`${testId}-preview-pane`}>
                     <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: "var(--tnl-border)" }}>
-                        <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)]">
                             Pratinjau Formulir Pendaftar (Read-Only)
                         </span>
                         <span className="text-[11px] opacity-60">Sesuai tampilan di RegistrationDialog</span>
@@ -293,7 +293,7 @@ export function FormFieldsBuilder({
                         value={rawJsonText}
                         onChange={(e) => handleRawTextChange(e.target.value)}
                         rows={10}
-                        className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
+                        className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                         style={{ backgroundColor: "var(--tnl-bg)", borderColor: jsonError ? "var(--tnl-red)" : "var(--tnl-border)" }}
                         data-testid={`${testId}-raw-textarea`}
                     />
@@ -338,7 +338,7 @@ export function FormFieldsBuilder({
                                             className="flex flex-1 items-center gap-2.5 cursor-pointer"
                                             onClick={() => toggleCollapse(idx)}
                                         >
-                                            <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
+                                            <span className="font-mono text-xs font-bold text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)]">
                                                 {String(idx + 1).padStart(2, "0")}
                                             </span>
                                             <TypeIcon className="h-3.5 w-3.5 text-neutral-400 shrink-0" aria-hidden="true" />
@@ -378,7 +378,7 @@ export function FormFieldsBuilder({
                                             <button
                                                 type="button"
                                                 onClick={() => duplicateQuestion(idx)}
-                                                className="rounded p-1 text-neutral-400 hover:text-amber-600 hover:bg-amber-500/10"
+                                                className="rounded p-1 text-neutral-400 hover:text-[var(--gsm-primary)] hover:bg-[var(--gsm-primary-soft)] dark:hover:text-[var(--gsm-accent)]"
                                                 title="Duplicate question"
                                                 aria-label="Duplicate question"
                                                 data-testid={`${testId}-question-dup-${idx}`}
@@ -425,7 +425,7 @@ export function FormFieldsBuilder({
                                                         value={field.label}
                                                         onChange={(e) => updateField(idx, { label: e.target.value })}
                                                         placeholder="Contoh: Nama Lengkap / Bukti Follow Instagram"
-                                                        className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-amber-500/30"
+                                                        className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                                                         style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
                                                         data-testid={`${testId}-label-${idx}`}
                                                     />
@@ -439,7 +439,7 @@ export function FormFieldsBuilder({
                                                         <button
                                                             type="button"
                                                             onClick={() => toggleLockKey(idx)}
-                                                            className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 hover:underline"
+                                                            className="flex items-center gap-1 text-[11px] text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)] hover:underline"
                                                             title={isKeyUnlocked ? "Kunci slug" : "Buka kunci untuk ubah slug"}
                                                         >
                                                             {isKeyUnlocked ? (
@@ -502,13 +502,13 @@ export function FormFieldsBuilder({
                                             {field.type === "select" && (
                                                 <div className="rounded-lg border p-3 space-y-2.5" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} data-testid={`${testId}-options-pane-${idx}`}>
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                                                        <span className="text-xs font-semibold uppercase tracking-wider text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)]">
                                                             Pilihan Dropdown (Options)
                                                         </span>
                                                         <button
                                                             type="button"
                                                             onClick={() => addOption(idx)}
-                                                            className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:underline"
+                                                            className="inline-flex items-center gap-1 text-xs text-[var(--gsm-primary)] dark:text-[var(--gsm-emerald)] hover:underline"
                                                             data-testid={`${testId}-add-option-${idx}`}
                                                         >
                                                             <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -530,7 +530,7 @@ export function FormFieldsBuilder({
                                                                         value={opt}
                                                                         onChange={(e) => updateOption(idx, optIdx, e.target.value)}
                                                                         placeholder={`Opsi #${optIdx + 1}`}
-                                                                        className="flex-1 rounded-md border px-2.5 py-1 text-xs outline-none focus:ring-1 focus:ring-amber-500"
+                                                                        className="flex-1 rounded-md border px-2.5 py-1 text-xs outline-none focus:ring-1 focus:ring-[var(--gsm-emerald)] focus:border-[var(--gsm-emerald)]"
                                                                         style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }}
                                                                         data-testid={`${testId}-option-${idx}-${optIdx}`}
                                                                     />
@@ -560,7 +560,7 @@ export function FormFieldsBuilder({
                     <button
                         type="button"
                         onClick={addQuestion}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-2 text-xs font-medium transition-colors hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400 w-full justify-center"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-2 text-xs font-medium transition-colors hover:border-[var(--gsm-emerald)] hover:text-[var(--gsm-primary)] dark:hover:text-[var(--gsm-emerald)] w-full justify-center"
                         style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-text)" }}
                         data-testid={`${testId}-add-question`}
                     >

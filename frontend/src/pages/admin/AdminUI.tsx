@@ -214,7 +214,7 @@ export function ConfirmButton({
                     await onConfirm();
                 }}
                 className="rounded-[6px] px-2.5 py-1 text-xs font-semibold text-white"
-                style={{ background: "#b91c1c" }}
+                style={{ background: "var(--tnl-danger)" }}
                 data-testid={`${testId}-confirm`}
             >
                 {confirmLabel}

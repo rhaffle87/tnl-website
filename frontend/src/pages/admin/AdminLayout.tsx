@@ -36,6 +36,7 @@ import {
     X,
 } from "lucide-react";
 import { useMe } from "@/lib/hooks";
+import { useApplyThemeTokens } from "@/lib/theme";
 import { endSession } from "@/lib/session";
 import { Spinner } from "@/components/site/Primitives";
 import { TnlLogo } from "@/components/site/TnlLogo";
@@ -136,6 +137,7 @@ function loadCollapsedState(): Record<string, boolean> {
 }
 
 export default function AdminLayout() {
+    useApplyThemeTokens();
     const { data: user, isLoading, isError } = useMe();
     const location = useLocation();
     const navigate = useNavigate();
@@ -266,14 +268,14 @@ export default function AdminLayout() {
 
     // Sidebar Inner Component (Used in both Desktop and Mobile Drawer)
     const renderSidebarContent = (isMobile = false) => (
-        <div className="flex h-full w-full flex-col overflow-hidden bg-[#0C100E] text-white">
+        <div className="flex h-full w-full flex-col overflow-hidden bg-[var(--gsm-obsidian)] text-white">
             {/* Zone 1: Pinned Brand Header */}
-            <div className="shrink-0 border-b border-white/10 px-4 py-3.5 bg-[#0C100E]">
+            <div className="shrink-0 border-b border-white/10 px-4 py-3.5 bg-[var(--gsm-obsidian)]">
                 <div className="flex items-center justify-between">
                     <Link to="/admin" className="flex items-center gap-2.5" data-testid="admin-logo-link" onClick={() => setMobileOpen(false)}>
                         <TnlLogo variant="light" className="h-8 w-8 shrink-0" />
                         <div>
-                            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#A8977B]">
+                            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--gsm-accent)]">
                                 TNL Studio
                             </span>
                             <span className="block text-xs font-semibold text-white/90">
@@ -302,7 +304,7 @@ export default function AdminLayout() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search menu…"
-                        className="h-8 w-full rounded-md border border-white/10 bg-white/[0.04] pl-8 pr-7 text-xs text-white placeholder-white/40 transition-colors focus:border-[#5D8A6B] focus:bg-white/[0.08] focus:outline-none"
+                        className="h-8 w-full rounded-md border border-white/10 bg-white/[0.04] pl-8 pr-7 text-xs text-white placeholder-white/40 transition-colors focus:border-[var(--gsm-emerald)] focus:bg-white/[0.08] focus:outline-none"
                         aria-label="Search navigation menu"
                         data-testid="admin-nav-search"
                     />
@@ -396,13 +398,13 @@ export default function AdminLayout() {
             </nav>
 
             {/* Zone 3: Pinned Account Footer */}
-            <div className="shrink-0 border-t border-white/10 px-3.5 py-3 bg-[#0C100E]" data-testid="admin-sidebar-footer">
+            <div className="shrink-0 border-t border-white/10 px-3.5 py-3 bg-[var(--gsm-obsidian)]" data-testid="admin-sidebar-footer">
                 <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-semibold text-white/90" data-testid="admin-current-user">
                             {user.name}
                         </p>
-                        <p className="truncate text-[10px] text-[#A8977B]">
+                        <p className="truncate text-[10px] text-[var(--gsm-accent)]">
                             {ROLE_LABELS[user.role]}
                             {user.divisions.length ? ` · ${user.divisions.join(", ")}` : ""}
                         </p>
