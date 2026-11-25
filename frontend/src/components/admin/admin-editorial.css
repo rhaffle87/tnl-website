@@ -1,0 +1,147 @@
+/* Admin-only editorial styles. Imported by pages/admin/AdminUI.tsx so these
+   rules stay out of the public CSS bundle. */
+
+/* 9. TNL Admin Custom Sidebar Scrollbar */
+.tnl-admin-sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--tnl-inverse-foreground) 18%, transparent) transparent;
+}
+.tnl-admin-sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.tnl-admin-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tnl-admin-sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--tnl-inverse-foreground) 18%, transparent);
+  border-radius: 9999px;
+}
+.tnl-admin-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--tnl-inverse-foreground) 32%, transparent);
+}
+
+/* 10. Admin rich-text editor (Tiptap) — mirrors the public .tnl-prose typography */
+.tnl-rich-text .ProseMirror {
+  min-height: 220px;
+  padding: 0.75rem 0.9rem;
+  outline: none;
+  color: var(--tnl-body);
+}
+.tnl-rich-text .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--tnl-muted);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+.tnl-rich-text .ProseMirror img {
+  max-width: 100%;
+  border-radius: var(--tnl-radius-card);
+  margin-block: 0.75rem;
+}
+.tnl-rich-text .ProseMirror blockquote {
+  border-left: 3px solid var(--tnl-tan);
+  margin-left: 0;
+  padding-left: 0.9rem;
+  color: var(--tnl-muted);
+}
+.tnl-rich-text .ProseMirror hr {
+  border: 0;
+  border-top: 1px solid var(--tnl-border);
+  margin-block: 1.25rem;
+}
+.tnl-rich-text .ProseMirror code {
+  background: color-mix(in srgb, var(--tnl-tan) 16%, transparent);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.9em;
+}
+.tnl-rich-text .ProseMirror a {
+  color: var(--tnl-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.tnl-admin-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.tnl-admin-live-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--gsm-emerald);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--gsm-emerald) 60%, transparent);
+  animation: tnl-live-pulse 2s ease-out infinite;
+}
+.tnl-admin-live-badge-dot.is-paused {
+  background: var(--tnl-muted);
+  animation: none;
+  box-shadow: none;
+}
+@keyframes tnl-live-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gsm-emerald) 55%, transparent); }
+  70% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--gsm-emerald) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gsm-emerald) 0%, transparent); }
+}
+
+
+/* 11. Tactile hover contract for TNL Studio — same tokens as the public site.
+   Scoped to the admin root so these rules never leak into the public bundle. */
+@layer components {
+  [data-testid="admin-root-shell"] :is(
+    button,
+    a[href],
+    summary,
+    select,
+    input:is([type="checkbox"], [type="radio"]),
+    [role="button"],
+    [role="switch"],
+    [role="tab"],
+    [role="menuitem"],
+    [role="combobox"],
+    .tnl-card
+  ):not(:disabled):not([aria-disabled="true"]) {
+    transition-property: transform, box-shadow, border-color, background-color, color;
+    transition-duration: var(--tnl-motion-tactile-duration);
+    transition-timing-function: var(--tnl-motion-tactile-easing);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    [data-testid="admin-root-shell"] :is(
+      button,
+      a[href],
+      summary,
+      select,
+      input:is([type="checkbox"], [type="radio"]),
+      [role="button"],
+      [role="switch"],
+      [role="tab"],
+      [role="menuitem"],
+      [role="combobox"],
+      .tnl-card
+    ):not(:disabled):not([aria-disabled="true"]):hover {
+      transform: translateY(var(--tnl-tactile-lift));
+      box-shadow:
+        inset 0 0 0 1px var(--tnl-tactile-ring),
+        inset 0 0 0 999px var(--tnl-tactile-wash),
+        var(--tnl-tactile-shadow);
+    }
+  }
+
+  [data-testid="admin-root-shell"] :is(
+    button,
+    a[href],
+    summary,
+    select,
+    input:is([type="checkbox"], [type="radio"]),
+    [role="button"],
+    [role="switch"],
+    [role="tab"],
+    [role="menuitem"],
+    [role="combobox"],
+    .tnl-card
+  ):not(:disabled):not([aria-disabled="true"]):active {
+    transform: translateY(0) scale(0.985);
+  }
+}

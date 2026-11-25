@@ -179,12 +179,40 @@
     --tnl-danger-border: #fecaca;
     --tnl-warning: #a16207;
     --tnl-info: var(--gsm-emerald);
+    /* Badge surfaces: one declaration per status, referenced by StatusBadge. */
+    --tnl-status-open-bg: #43594A;
+    --tnl-status-open-fg: #ffffff;
+    --tnl-status-upcoming-bg: #a8977b;
+    --tnl-status-upcoming-fg: #111518;
+    --tnl-status-neutral-bg: #eaeaec;
+    --tnl-status-neutral-fg: #3f4245;
+    --tnl-status-full-bg: #7f715c;
+    --tnl-status-full-fg: #ffffff;
     /* Secondary surfaces (inputs, inset tiles). Theme-aware, never hardcoded white. */
     --tnl-surface-2: var(--gsm-bg-elevated);
     --tnl-surface-subtle: var(--gsm-bg-recessed);
     --tnl-radius-card: 16px;
     --tnl-radius-button: 10px;
     --tnl-section-spacing: 64px;
+
+    /* Inverse surfaces and the single type contract (light values). */
+    --tnl-inverse-foreground: #F1F3EE;
+    --tnl-inverse-muted: var(--gsm-accent-glow);
+    --tnl-inverse-border: color-mix(in srgb, var(--tnl-inverse-foreground) 24%, transparent);
+    --tnl-type-h1: clamp(2.25rem,6vw,5rem);
+    --tnl-type-h2: clamp(1.6rem,3.2vw,2.65rem);
+    --tnl-type-h3: clamp(1.25rem,2.2vw,1.8rem);
+    --tnl-type-h4: 1.25rem;
+    --tnl-type-h5: 1rem;
+    --tnl-type-label: clamp(0.75rem,0.72rem + 0.15vw,0.8125rem);
+
+    /* Tactile hover contract — shared by public pages and TNL Studio CMS. */
+    --tnl-motion-tactile-duration: 160ms;
+    --tnl-motion-tactile-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --tnl-tactile-lift: -1px;
+    --tnl-tactile-ring: color-mix(in srgb, var(--gsm-accent) 42%, transparent);
+    --tnl-tactile-wash: color-mix(in srgb, var(--gsm-accent) 8%, transparent);
+    --tnl-tactile-shadow: 0 6px 16px -6px color-mix(in srgb, var(--gsm-obsidian) 28%, transparent);
 
     --background: var(--gsm-bg-page);
     --foreground: var(--gsm-text-primary);
@@ -223,6 +251,7 @@
 .dark {
     /* Semantic GSM Design Tokens (Brand Core - Dark Mode) */
     --gsm-primary-soft: rgba(93, 59, 31, 0.22);
+    --gsm-emerald: #7FAE8D;
     --gsm-accent-glow: var(--gsm-accent, #F4C26C);
 
     /* Semantic GSM Design Tokens (Surfaces & Typography - Dark Mode) */
@@ -241,7 +270,7 @@
     /* TNL brand backward compatibility mappings */
     --tnl-black: var(--gsm-obsidian, #101312);
     --tnl-tan: var(--gsm-accent);
-    --tnl-tan-text: var(--gsm-accent, #D6C39F);
+    --tnl-tan-text: var(--tnl-tan-text-dark, color-mix(in srgb, var(--gsm-accent, #D6C39F) 68%, white));
     --tnl-link: var(--gsm-accent, #F4C26C);
     --tnl-muted: var(--gsm-text-muted);
     --tnl-green: var(--gsm-primary);
@@ -255,9 +284,20 @@
     --tnl-danger-border: rgba(248, 113, 113, 0.45);
     --tnl-warning: #FBBF24;
     --tnl-info: #9EC4AE;
+    /* Badge surfaces tuned for dark cards; upcoming keeps dark ink on tan in both themes. */
+    --tnl-status-open-bg: #2F6B4F;
+    --tnl-status-open-fg: #F1F3EE;
+    --tnl-status-neutral-bg: #2A2E2B;
+    --tnl-status-neutral-fg: #D6DBD4;
+    --tnl-status-full-bg: #6C5F4C;
+    --tnl-status-full-fg: #F7F5EF;
     /* Secondary surfaces (inputs, inset tiles). Theme-aware, never hardcoded white. */
     --tnl-surface-2: var(--gsm-bg-elevated);
     --tnl-surface-subtle: var(--gsm-bg-recessed);
+    --tnl-inverse-foreground: var(--gsm-text-primary);
+    --tnl-tactile-ring: color-mix(in srgb, var(--gsm-accent-glow) 48%, transparent);
+    --tnl-tactile-wash: color-mix(in srgb, var(--tnl-inverse-foreground) 7%, transparent);
+    --tnl-tactile-shadow: 0 8px 20px -8px color-mix(in srgb, var(--gsm-obsidian) 70%, transparent);
 
     --background: var(--gsm-bg-page);
     --foreground: var(--gsm-text-primary);
@@ -285,6 +325,11 @@
     --sidebar-accent-foreground: #F4F4F0;
     --sidebar-border: rgba(255, 255, 255, 0.08);
     --sidebar-ring: var(--gsm-accent, #C4B393);
+
+    ::placeholder {
+      color: var(--gsm-text-muted);
+      opacity: 1;
+    }
 }
 
 @layer base {
@@ -306,16 +351,19 @@
     letter-spacing: -0.015em;
     color: var(--tnl-heading);
     }
-  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 { color: #f4f4f5; }
+  p {
+    text-wrap: pretty;
+    }
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 { color: var(--gsm-text-primary); }
 }
 
 @layer components {
   /* Brand type scale from the design system */
-  .tnl-h1 { font-size: 40px; }
-  .tnl-h2 { font-size: 35px; }
-  .tnl-h3 { font-size: 30px; }
-  .tnl-h4 { font-size: 25px; }
-  .tnl-h5 { font-size: 20px; }
+  .tnl-h1 { font-size: var(--tnl-type-h1); }
+  .tnl-h2 { font-size: var(--tnl-type-h2); }
+  .tnl-h3 { font-size: var(--tnl-type-h3); }
+  .tnl-h4 { font-size: var(--tnl-type-h4); }
+  .tnl-h5 { font-size: var(--tnl-type-h5); }
   .tnl-h6 { font-size: 16px; }
 
   .tnl-container { max-width: 1290px; margin-inline: auto; padding-inline: 1rem; }
@@ -333,32 +381,90 @@
     color: var(--tnl-tan-text);
   }
 
+  .tnl-mono-label {
+    font: var(--tnl-type-label)/1.6 var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* Tactile hover contract — one lift, one ring, one press state. Public and CMS share it. */
+  .tnl-tactile,
+  button:not(:disabled):not([aria-disabled="true"]),
+  a[href],
+  summary,
+  select,
+  input:is([type="checkbox"], [type="radio"], [type="range"]),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="switch"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  [role="combobox"]:not([aria-disabled="true"]) {
+    transition-property: transform, box-shadow, border-color, background-color, color;
+    transition-duration: var(--tnl-motion-tactile-duration);
+    transition-timing-function: var(--tnl-motion-tactile-easing);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .tnl-tactile:not(:disabled):not([aria-disabled="true"]):hover,
+    button:not(:disabled):not([aria-disabled="true"]):hover,
+    a[href]:not([aria-disabled="true"]):hover,
+    summary:hover,
+    select:not(:disabled):hover,
+    input:is([type="checkbox"], [type="radio"], [type="range"]):not(:disabled):hover,
+    [role="button"]:not([aria-disabled="true"]):hover,
+    [role="switch"]:not([aria-disabled="true"]):hover,
+    [role="tab"]:not([aria-disabled="true"]):hover,
+    [role="menuitem"]:not([aria-disabled="true"]):hover,
+    [role="combobox"]:not([aria-disabled="true"]):hover {
+      transform: translateY(var(--tnl-tactile-lift));
+      border-color: var(--tnl-tactile-ring);
+      box-shadow:
+        inset 0 0 0 1px var(--tnl-tactile-ring),
+        inset 0 0 0 999px var(--tnl-tactile-wash),
+        var(--tnl-tactile-shadow);
+    }
+  }
+
+  .tnl-tactile:not(:disabled):not([aria-disabled="true"]):active,
+  button:not(:disabled):not([aria-disabled="true"]):active,
+  a[href]:not([aria-disabled="true"]):active,
+  summary:active,
+  select:not(:disabled):active,
+  input:is([type="checkbox"], [type="radio"], [type="range"]):not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active,
+  [role="switch"]:not([aria-disabled="true"]):active,
+  [role="tab"]:not([aria-disabled="true"]):active,
+  [role="menuitem"]:not([aria-disabled="true"]):active,
+  [role="combobox"]:not([aria-disabled="true"]):active {
+    transform: translateY(0) scale(0.985);
+  }
+
   .tnl-card {
     border-radius: var(--tnl-radius-card);
     background: var(--card);
     border: 1px solid var(--tnl-border);
     box-shadow:
-      0 1px 2px rgba(17, 22, 19, 0.05),
-      0 4px 14px -4px rgba(17, 22, 19, 0.04);
+      0 1px 2px color-mix(in srgb, var(--gsm-obsidian) 5%, transparent),
+            0 4px 14px -4px color-mix(in srgb, var(--gsm-obsidian) 4%, transparent);
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .tnl-card-hover:hover {
     transform: translateY(-2px);
     border-color: var(--tnl-tan);
     box-shadow:
-      0 2px 6px rgba(17, 22, 19, 0.06),
-      0 8px 20px -4px rgba(17, 22, 19, 0.06);
+      0 2px 6px color-mix(in srgb, var(--gsm-obsidian) 6%, transparent),
+            0 8px 20px -4px color-mix(in srgb, var(--gsm-obsidian) 6%, transparent);
   }
   .dark .tnl-card {
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--tnl-inverse-foreground) 6%, transparent);
   }
   .dark .tnl-card-hover:hover {
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 8px 24px -4px rgba(0, 0, 0, 0.4);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--tnl-inverse-foreground) 10%, transparent), 0 8px 24px -4px color-mix(in srgb, var(--gsm-obsidian) 40%, transparent);
   }
 
   .tnl-card-header {
     border-bottom: 1px solid var(--tnl-border);
-    background-color: #F7F8F5;
+    background-color: var(--gsm-bg-elevated);
     padding: 1rem 1.5rem;
   }
   .dark .tnl-card-header {
@@ -368,7 +474,7 @@
   .tnl-inset-tile {
     border-radius: 0.75rem;
     border: 1px solid var(--tnl-border);
-    background-color: #F6F7F4;
+    background-color: var(--gsm-bg-recessed);
     transition: background-color 0.15s ease, border-color 0.15s ease;
   }
   .dark .tnl-inset-tile {
@@ -378,8 +484,8 @@
   .tnl-hero-gradient {
     background-color: var(--gsm-obsidian);
     background-image:
-      linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(to right, color-mix(in srgb, var(--tnl-inverse-foreground) 3.5%, transparent) 1px, transparent 1px),
+            linear-gradient(to bottom, color-mix(in srgb, var(--tnl-inverse-foreground) 3.5%, transparent) 1px, transparent 1px),
       radial-gradient(80% 90% at 85% 40%, var(--gsm-primary) 0%, transparent 70%);
     background-size: 56px 56px, 56px 56px, 100% 100%;
   }
@@ -408,7 +514,7 @@
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: var(--gsm-accent, #A8977B);
+    background: var(--gsm-accent);
     opacity: 0;
     animation: tnl-amb-float 18s ease-in-out infinite;
   }
@@ -417,13 +523,13 @@
     position: absolute;
     inset: -6px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(196, 179, 147, 0.4), transparent 70%);
+    background: radial-gradient(circle, color-mix(in srgb, var(--gsm-accent-glow) 40%, transparent), transparent 70%);
   }
   .tnl-amb-dot:nth-child(1) { top: 22%; left: 14%; animation-delay: 0s; animation-duration: 18s; }
-  .tnl-amb-dot:nth-child(2) { top: 68%; left: 8%; width: 3px; height: 3px; animation-delay: -4s; animation-duration: 22s; background: var(--gsm-emerald, #5D8A6B); }
+  .tnl-amb-dot:nth-child(2) { top: 68%; left: 8%; width: 3px; height: 3px; animation-delay: -4s; animation-duration: 22s; background: var(--gsm-emerald); }
   .tnl-amb-dot:nth-child(3) { top: 38%; left: 48%; width: 4px; height: 4px; animation-delay: -9s; animation-duration: 20s; }
   .tnl-amb-dot:nth-child(4) { top: 82%; left: 42%; width: 3px; height: 3px; animation-delay: -13s; animation-duration: 17s; }
-  .tnl-amb-dot:nth-child(5) { top: 15%; left: 68%; width: 4px; height: 4px; animation-delay: -6s; animation-duration: 24s; background: var(--gsm-emerald, #5D8A6B); }
+  .tnl-amb-dot:nth-child(5) { top: 15%; left: 68%; width: 4px; height: 4px; animation-delay: -6s; animation-duration: 24s; background: var(--gsm-emerald); }
   .tnl-amb-dot:nth-child(6) { top: 54%; left: 90%; width: 3px; height: 3px; animation-delay: -16s; animation-duration: 19s; }
 
   @keyframes tnl-amb-float {
@@ -438,12 +544,10 @@
     .tnl-amb-dot { display: none !important; }
   }
   .tnl-hero-title {
-    font-size: 35px;
+    font-size: var(--tnl-type-h1);
     line-height: 1.2;
     letter-spacing: -0.03em;
   }
-  @media (min-width: 768px) { .tnl-hero-title { font-size: 40px; } }
-  @media (min-width: 1024px) { .tnl-hero-title { font-size: 60px; line-height: 1.12; } }
 
   .tnl-quote { font-family: var(--font-quote); font-weight: 600; }
 
@@ -451,7 +555,7 @@
   .tnl-field {
     border-radius: var(--tnl-radius-button);
     border: 1px solid var(--gsm-border-hairline);
-    background-color: #F7F8F5;
+    background-color: var(--gsm-bg-elevated);
     padding-inline: 1rem;
     color: var(--foreground);
     transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
@@ -460,21 +564,21 @@
   }
   .dark .tnl-input,
   .dark .tnl-field {
-    border-color: var(--gsm-border-input, rgba(255, 255, 255, 0.15));
+    border-color: var(--gsm-border-input);
     background-color: var(--gsm-bg-recessed);
   }
   .tnl-input:focus,
   .tnl-field:focus {
     outline: none;
-    background-color: #FFFFFF;
-    border-color: var(--gsm-border-focus, #223027);
+    background-color: var(--gsm-bg-surface);
+    border-color: var(--gsm-border-focus);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--gsm-primary) 15%, transparent);
   }
   .dark .tnl-input:focus,
   .dark .tnl-field:focus {
     background-color: var(--gsm-bg-elevated);
-    border-color: var(--gsm-accent, #F4C26C);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gsm-accent, #F4C26C) 20%, transparent);
+    border-color: var(--gsm-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gsm-accent) 20%, transparent);
   }
   textarea.tnl-input,
   textarea.tnl-field {
@@ -498,14 +602,14 @@
   .tnl-btn:focus-visible { outline: 2px solid var(--tnl-green); outline-offset: 2px; }
   .tnl-btn:active:not(:disabled) { transform: translateY(1px); }
   .tnl-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-  .tnl-btn-primary { background: var(--tnl-green); color: #ffffff; }
+  .tnl-btn-primary { background: var(--tnl-green); color: var(--tnl-inverse-foreground); }
   .tnl-btn-primary:hover:not(:disabled) { background: var(--tnl-green-hover); transform: translateY(-1px); }
-  .tnl-btn-tan { background: var(--tnl-tan); color: #111613; }
-  .tnl-btn-tan:hover:not(:disabled) { background: #c2b091; color: #111613; transform: translateY(-1px); }
+  .tnl-btn-tan { background: var(--tnl-tan); color: var(--gsm-accent-ink); }
+  .tnl-btn-tan:hover:not(:disabled) { background: var(--gsm-accent-hover); color: var(--gsm-accent-ink); transform: translateY(-1px); }
   .tnl-btn-outline { border: 1px solid var(--tnl-border); background: transparent; color: var(--foreground); }
   .tnl-btn-outline:hover:not(:disabled) { border-color: var(--tnl-link); color: var(--tnl-link); }
-  .tnl-btn-ghost-light { border: 1px solid rgba(255,255,255,0.35); background: transparent; color: #ffffff; }
-  .tnl-btn-ghost-light:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
+  .tnl-btn-ghost-light { border: 1px solid color-mix(in srgb, var(--tnl-inverse-foreground) 35%, transparent); background: transparent; color: var(--tnl-inverse-foreground); }
+  .tnl-btn-ghost-light:hover:not(:disabled) { background: color-mix(in srgb, var(--tnl-inverse-foreground) 12%, transparent); }
 
   /* Section heading with the left accent bar */
   .tnl-accent-bar { width: 6px; border-radius: 9999px; background: var(--tnl-green); align-self: stretch; min-height: 2rem; }
@@ -519,11 +623,11 @@
   }
   .dark .tnl-count-chip { color: var(--tnl-tan); }
 
-  .tnl-prose :where(h3) { font-size: 30px; margin-block: 1.5rem 0.75rem; }
-  .tnl-prose :where(h4) { font-size: 25px; margin-block: 1.25rem 0.5rem; }
-  .tnl-prose :where(h5) { font-size: 20px; margin-block: 1rem 0.5rem; }
+  .tnl-prose :where(h3) { font-size: var(--tnl-type-h3); margin-block: 1.5rem 0.75rem; }
+  .tnl-prose :where(h4) { font-size: var(--tnl-type-h4); margin-block: 1.25rem 0.5rem; }
+  .tnl-prose :where(h5) { font-size: var(--tnl-type-h5); margin-block: 1rem 0.5rem; }
   .tnl-prose :where(p) { margin-block: 0.85rem; color: var(--tnl-body); }
-  .dark .tnl-prose :where(p) { color: #c8ccd0; }
+  .dark .tnl-prose :where(p) { color: var(--gsm-text-secondary); }
   .tnl-prose :where(ul) { list-style: disc; padding-left: 1.5rem; margin-block: 0.85rem; color: var(--tnl-body); }
   .tnl-prose :where(ol) { list-style: decimal; padding-left: 1.5rem; margin-block: 0.85rem; color: var(--tnl-body); }
   .tnl-prose :where(li) { margin-block: 0.35rem; }
@@ -557,7 +661,7 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: var(--gsm-accent, #A8977B);
+    background: var(--gsm-accent);
     transform-origin: 0 50%;
     transform: scaleX(0);
     pointer-events: none;
@@ -655,11 +759,11 @@
     padding: 1px;
     background: radial-gradient(
       420px circle at var(--spot-x, -999px) var(--spot-y, -999px),
-      rgba(168, 151, 123, 0.24),
+      color-mix(in srgb, var(--gsm-accent) 24%, transparent),
       transparent 65%
     );
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(var(--tnl-inverse-foreground) 0 0) content-box, linear-gradient(var(--tnl-inverse-foreground) 0 0);
+        mask: linear-gradient(var(--tnl-inverse-foreground) 0 0) content-box, linear-gradient(var(--tnl-inverse-foreground) 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
@@ -671,7 +775,7 @@
   .dark .tnl-card-spotlight::before {
     background: radial-gradient(
       420px circle at var(--spot-x, -999px) var(--spot-y, -999px),
-      rgba(196, 179, 147, 0.32),
+      color-mix(in srgb, var(--gsm-accent-glow) 32%, transparent),
       transparent 65%
     );
   }
@@ -725,95 +829,32 @@ html.lenis, html.lenis body {
   overflow: hidden;
 }
 
-/* 9. TNL Admin Custom Sidebar Scrollbar */
-.tnl-admin-sidebar-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
-}
-.tnl-admin-sidebar-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-.tnl-admin-sidebar-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-.tnl-admin-sidebar-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.18);
-  border-radius: 9999px;
-}
-.tnl-admin-sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.32);
-}
-
-/* 10. Admin rich-text editor (Tiptap) — mirrors the public .tnl-prose typography */
-.tnl-rich-text .ProseMirror {
-  min-height: 220px;
-  padding: 0.75rem 0.9rem;
-  outline: none;
-  color: var(--tnl-body);
-}
-.tnl-rich-text .ProseMirror p.is-editor-empty:first-child::before {
-  content: attr(data-placeholder);
-  color: var(--tnl-muted);
-  float: left;
-  height: 0;
-  pointer-events: none;
-}
-.tnl-rich-text .ProseMirror img {
-  max-width: 100%;
-  border-radius: var(--tnl-radius-card);
-  margin-block: 0.75rem;
-}
-.tnl-rich-text .ProseMirror blockquote {
-  border-left: 3px solid var(--tnl-tan);
-  margin-left: 0;
-  padding-left: 0.9rem;
-  color: var(--tnl-muted);
-}
-.tnl-rich-text .ProseMirror hr {
-  border: 0;
-  border-top: 1px solid var(--tnl-border);
-  margin-block: 1.25rem;
-}
-.tnl-rich-text .ProseMirror code {
-  background: color-mix(in srgb, var(--tnl-tan) 16%, transparent);
-  border-radius: 4px;
-  padding: 0.1rem 0.35rem;
-  font-size: 0.9em;
-}
-.tnl-rich-text .ProseMirror a {
-  color: var(--tnl-link);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.tnl-admin-live-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.tnl-admin-live-badge-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 9999px;
-  background: var(--gsm-emerald);
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--gsm-emerald) 60%, transparent);
-  animation: tnl-live-pulse 2s ease-out infinite;
-}
-.tnl-admin-live-badge-dot.is-paused {
-  background: var(--tnl-muted);
-  animation: none;
-  box-shadow: none;
-}
-@keyframes tnl-live-pulse {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gsm-emerald) 55%, transparent); }
-  70% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--gsm-emerald) 0%, transparent); }
-  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gsm-emerald) 0%, transparent); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+
+/* Tactile transitions live in the utilities layer so Tailwind button utilities
+   (transition-colors) cannot strip transform/box-shadow out of the animation. */
+@layer utilities {
+  .tnl-tactile,
+  button:not(:disabled):not([aria-disabled="true"]),
+  a[href],
+  summary,
+  select,
+  input:is([type="checkbox"], [type="radio"], [type="range"]),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="switch"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  [role="combobox"]:not([aria-disabled="true"]) {
+    transition-property: transform, box-shadow, border-color, background-color, color;
+    transition-duration: var(--tnl-motion-tactile-duration);
+    transition-timing-function: var(--tnl-motion-tactile-easing);
   }
 }

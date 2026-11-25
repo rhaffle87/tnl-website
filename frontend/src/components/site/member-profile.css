@@ -16,7 +16,7 @@
 .member-profile-backdrop {
   position: absolute;
   inset: 0;
-  background: rgb(8 10 9 / 68%);
+  background: color-mix(in srgb, var(--gsm-obsidian) 68%, transparent);
   backdrop-filter: blur(3px);
 }
 
@@ -32,7 +32,7 @@
   border: 1px solid var(--tnl-border);
   background: var(--card);
   color: var(--card-foreground);
-  box-shadow: 0 32px 96px rgb(0 0 0 / 32%);
+  box-shadow: 0 32px 96px color-mix(in srgb, var(--gsm-obsidian) 32%, transparent);
 }
 
 /* Compact identity header: small square portrait, role chip, name. */

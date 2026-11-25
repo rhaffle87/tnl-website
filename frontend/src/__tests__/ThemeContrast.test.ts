@@ -32,6 +32,24 @@ describe("Semantic interactive text palette",()=>{
   expect(rootBlock).toContain("--tnl-body: var(--tnl-body-light");
   expect(darkBlock).toContain("--tnl-surface: var(--gsm-bg-surface)");
   expect(darkBlock).toContain("--tnl-body: var(--gsm-text-secondary)");
-  expect(darkBlock).toContain("--tnl-tan-text: var(--gsm-accent");
+ });
+ it("lightens dark-mode accent text so a muted CMS accent still passes AA",()=>{
+  const darkBlock=css.slice(css.indexOf(".dark {")).split("\n}")[0];
+  const token=darkBlock.match(/--tnl-tan-text:\s*([^;]+);/)?.[1] ?? "";
+  expect(token).toContain("color-mix");
+  expect(token).toContain("white");
+  expect(token).not.toMatch(/^var\(--gsm-accent/);
+ });
+ it("uses a dark-mode emerald token that clears AA on recessed surfaces",()=>{
+  const darkBlock=css.slice(css.indexOf(".dark {")).split("\n}")[0];
+  const token=darkBlock.match(/--gsm-emerald:\s*([^;]+);/)?.[1] ?? "";
+  expect(token).toBe("#7FAE8D");
+ });
+ it("keeps dark placeholders at full token opacity",()=>{
+  const darkBlock=css.slice(css.indexOf(".dark {")).split("\n}")[0];
+  expect(darkBlock).toMatch(/::placeholder\s*\{[^}]*opacity:\s*1/);
+ });
+ it("opts body copy into prettier wrapping to avoid orphan words",()=>{
+  expect(css).toMatch(/\bp\s*\{[^}]*text-wrap:\s*pretty/);
  });
 });
