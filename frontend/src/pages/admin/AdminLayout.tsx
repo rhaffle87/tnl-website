@@ -537,9 +537,11 @@ export default function AdminLayout() {
                     ref={mainScrollRef}
                     data-testid="admin-main-scroll"
                     data-lenis-prevent
-                    className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 lg:p-8"
+                    className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
                 >
-                    <Outlet />
+                    <div className="p-4 sm:p-6 lg:p-8">
+                        <Outlet />
+                    </div>
                 </main>
             </div>
         </div>

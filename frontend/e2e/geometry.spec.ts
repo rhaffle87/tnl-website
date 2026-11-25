@@ -315,6 +315,19 @@ test.describe("CMS list vs editor geometry", () => {
         expect(after.y).toBeGreaterThanOrEqual(-1);
         expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(4);
 
+        // No dead band above the bar: it must sit flush under the topbar, not
+        // leave a strip of scrolled form exposed in the main padding.
+        const shellTops = await page.evaluate(() => {
+            const main = document.querySelector('[data-testid="admin-main-scroll"]') as HTMLElement;
+            const topbar = document.querySelector('[data-testid="admin-topbar"]') as HTMLElement;
+            return {
+                main: Math.round(main.getBoundingClientRect().top),
+                topbar: Math.round(topbar.getBoundingClientRect().bottom),
+            };
+        });
+        expect(Math.round(after.y)).toBe(shellTops.main);
+        expect(Math.round(after.y)).toBe(shellTops.topbar);
+
         // Editorial text must not be monospace source-code.
         const bioFont = await page
             .locator("textarea")
