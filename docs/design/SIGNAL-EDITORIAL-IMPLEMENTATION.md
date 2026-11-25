@@ -25,6 +25,7 @@ Pre-change checkpoint: branch `backup/pre-signal-editorial-a6eb4bf`. Implementat
 - Docker preview is retired: `compose.local.yml` removed; production frontend releases use SSH/SCP to the app node through Tailscale, preserving backend/environment/database and creating frontend backups before publishing.
 - Original CMS-authored photos/captions are retained. Authentic equipment photography and editorial translations require content-owner review, not invented replacements.
 - Production contact/registration submissions and CMS edit/save remain deliberately unexercised to avoid real records and email side effects.
+- CMS editor sticky action bar sits flush under the topbar: admin main scroll padding now lives in an inner wrapper, so no strip of scrolled form is exposed above the bar; real-CSS geometry test pins the contract.
 
 ## Verification
 
