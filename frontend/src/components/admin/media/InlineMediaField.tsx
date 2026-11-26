@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { MediaPickerModal } from "./MediaPickerModal";
 import { ImageCropDialog, type CropSource } from "./ImageCropDialog";
 import type { MediaAsset } from "@/lib/types";
+import { useAdminT } from "@/lib/admin-i18n";
 
 export interface InlineMediaFieldProps {
     label?: string;
@@ -45,6 +46,7 @@ export function InlineMediaField({
     testId = "inline-media-field",
     disabled = false,
 }: InlineMediaFieldProps) {
+    const t = useAdminT();
     const [pickerOpen, setPickerOpen] = useState(false);
     const [manualOpen, setManualOpen] = useState(false);
     const [isUploadingDirect, setIsUploadingDirect] = useState(false);
@@ -181,7 +183,7 @@ export function InlineMediaField({
                         ) : (
                             <img
                                 src={value ?? ""}
-                                alt={altValue || label || "Asset preview"}
+                                alt={altValue || label || t("adminGenericAlt")}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                     // Fallback if image fails to load

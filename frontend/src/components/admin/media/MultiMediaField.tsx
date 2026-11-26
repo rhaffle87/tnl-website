@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { MediaPickerModal } from "./MediaPickerModal";
 import type { MediaAsset } from "@/lib/types";
+import { useAdminT } from "@/lib/admin-i18n";
 
 export interface MultiMediaFieldProps {
     label?: string;
@@ -38,6 +39,7 @@ export function MultiMediaField({
     testId = "multi-media-field",
     disabled = false,
 }: MultiMediaFieldProps) {
+    const t = useAdminT();
     const [pickerOpen, setPickerOpen] = useState(false);
     const [rawOpen, setRawOpen] = useState(false);
     const [isUploadingBatch, setIsUploadingBatch] = useState(false);
@@ -180,7 +182,7 @@ export function MultiMediaField({
                         >
                             <img
                                 src={url}
-                                alt={`Media asset ${idx + 1}`}
+                                alt={`${t("adminGenericAlt")} ${idx + 1}`}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                     (e.target as HTMLElement).style.display = "none";

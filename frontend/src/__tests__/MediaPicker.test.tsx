@@ -2,7 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { InlineMediaField, MultiMediaField, MediaPickerModal } from "@/components/admin/media";
+import { AdminLocaleProvider } from "@/lib/admin-i18n";
+import { LocaleContext, STRINGS, type Locale } from "@/lib/i18n";
 
 // Mock API calls
 vi.mock("@/lib/api", () => ({
@@ -70,7 +73,40 @@ function createTestQueryClient() {
     });
 }
 
+function localizedMedia(ui: ReactNode, locale: Locale) {
+    return (
+        <QueryClientProvider client={createTestQueryClient()}>
+            <LocaleContext.Provider value={{ locale, setLocale: vi.fn(), t: (key) => STRINGS[locale][key] }}>
+                <AdminLocaleProvider>{ui}</AdminLocaleProvider>
+            </LocaleContext.Provider>
+        </QueryClientProvider>
+    );
+}
+
 describe("InlineMediaField Component", () => {
+    it.each([
+        ["id", "Gambar"],
+        ["en", "Image"],
+    ] as const)("localizes preview fallback alt text in %s", (locale, expectedAlt) => {
+        render(localizedMedia(
+            <InlineMediaField value="/api/media-files/preview.webp" onChange={vi.fn()} />,
+            locale,
+        ));
+
+        expect(screen.getByRole("img")).toHaveAccessibleName(expectedAlt);
+    });
+
+    it.each([
+        { label: "Foto anggota", altValue: undefined, expectedAlt: "Foto anggota" },
+        { label: "Foto anggota", altValue: "Rak server laboratorium", expectedAlt: "Rak server laboratorium" },
+    ])("preserves authored preview alt text: $expectedAlt", ({ label, altValue, expectedAlt }) => {
+        render(localizedMedia(
+            <InlineMediaField label={label} altValue={altValue} value="/api/media-files/preview.webp" onChange={vi.fn()} />,
+            "id",
+        ));
+
+        expect(screen.getByRole("img")).toHaveAccessibleName(expectedAlt);
+    });
     it("renders empty dropzone when value is empty and toggles manual URL input", async () => {
         const user = userEvent.setup();
         const handleChange = vi.fn();
@@ -128,6 +164,22 @@ describe("InlineMediaField Component", () => {
 });
 
 describe("MultiMediaField Component", () => {
+    it.each([
+        ["id", ["Gambar 1", "Gambar 2"]],
+        ["en", ["Image 1", "Image 2"]],
+    ] as const)("localizes numbered gallery fallback alt text in %s", (locale, expectedAlts) => {
+        render(localizedMedia(
+            <MultiMediaField
+                value={["/api/media-files/first.webp", "/api/media-files/second.webp"]}
+                onChange={vi.fn()}
+            />,
+            locale,
+        ));
+
+        const images = screen.getAllByRole("img");
+        expect(images).toHaveLength(expectedAlts.length);
+        images.forEach((image, index) => expect(image).toHaveAccessibleName(expectedAlts[index]));
+    });
     it("renders thumbnail grid and allows reordering and removing items", async () => {
         const user = userEvent.setup();
         const handleChange = vi.fn();
