@@ -41,15 +41,21 @@ Untuk menjamin keberlanjutan operasional (*kepengurusan keberlanjutan*), sistem 
 |                                                                                         |
 |  [.github/workflows/ci.yml]                                                             |
 |  - Trigger : Push ke `main`, Pull Request ke `main`, dan manual workflow_dispatch        |
-|  - Job 1   : backend-tests (Python 3.12, pytest 79+ tes in-memory mock DB)              |
-|  - Job 2   : frontend-checks (Node 20, tsc --noEmit, vitest 20 tes, vite build)         |
-|  - Job 3   : web-standards-guard (Cek kebocoran secret .env dan arsip di Git index)     |
+|  - Job 1   : backend-tests (Python 3.12, pytest **minimal 154 tes**, in-memory mock DB)             |
+|  - Job 2   : frontend-checks (Node.js **22**, `tsc -b`, Vitest **minimal 360 tes**, vite build,   |
+|              Playwright geometry gate)                                                            |
+|  - Job 3   : repository hygiene & security guard (cek `.env`/arsip ter-commit, working tree       |
+|              bersih, dan pemindaian assignment kredensial di source)                             |
 |                                                                                         |
 |  [.github/workflows/live-smoke.yml]                                                     |
 |  - Trigger : Cron Harian 01:00 UTC (08:00 WIB) & workflow_dispatch pasca-deploy         |
 |  - Job     : Playwright Chromium Read-Only Smoke Test terhadap https://labtnl.site      |
 +-----------------------------------------------------------------------------------------+
 ```
+
+> **Catatan angka:** 154 (backend) dan 360 (frontend) adalah angka gate terverifikasi sebelum perbaikan audit dan merupakan **minimum; final counts recorded by parent after audit fixes**. Node.js 22 adalah runtime CI saat ini.
+
+> **Penamaan arsip:** backup *terjadwal di server* (CT 116) menghasilkan `.archive.gz` (mongodump `--gzip`), sedangkan `scripts/deploy/backup-db.ps1` menghasilkan dump ad-hoc `.archive` (tanpa gzip) di `backups/db/`. Keduanya sengaja berbeda; gunakan `--gzip` hanya untuk `.archive.gz`.
 
 ---
 
@@ -115,6 +121,13 @@ powershell -ExecutionPolicy Bypass -File scripts\deploy\health-check.ps1
    ```bash
    mongosh --eval "use tnl; db.users.countDocuments(); db.events.countDocuments();"
    ```
+4. **Restore dump ad-hoc dari workstation (`backup-db.ps1`, ekstensi `.archive`, TANPA gzip):**
+   ```bash
+   # Jalankan di workstation Windows; file lokal berada di backups/db/
+   scp backups\db\tnl-backup-<TIMESTAMP>.archive root@100.111.32.102:/tmp/restore.archive
+   ssh root@100.111.32.102 "mongorestore --drop --archive=/tmp/restore.archive && rm -f /tmp/restore.archive"
+   ```
+   Jangan menambahkan `--gzip` untuk arsip `.archive`; flag tersebut hanya untuk arsip server `.archive.gz`.
 
 ### B. Restore Berkas Media & Unggahan (`CT 103`)
 
@@ -123,9 +136,17 @@ powershell -ExecutionPolicy Bypass -File scripts\deploy\health-check.ps1
    ssh root@100.65.129.8
    tar -xzf /var/backups/tnl/media/latest.tar.gz -C /opt/tnl/
    ```
-2. **Pastikan Izin Berkas Tetap Aksesibel oleh Aplikasi:**
+2. **Pastikan Kepemilikan & Izin Least-Privilege:**
    ```bash
-   chmod -R 777 /opt/tnl/media
+   # Sesuaikan group dengan user yang menjalankan Nginx di CT 103 (umumnya www-data).
+   chown -R root:www-data /opt/tnl/media
+   find /opt/tnl/media -type d -exec chmod 750 {} +
+   find /opt/tnl/media -type f -exec chmod 640 {} +
+   ```
+   Hindari `chmod -R 777`: izin tersebut memberi hak tulis kepada semua user dan melemahkan isolasi media. Berikan hanya hak baca bagi group web server; gunakan `chown`/`chmod` tambahan hanya jika backend perlu menulis (`root` sudah memiliki akses penuh pada layanan systemd saat ini).
+3. **Verifikasi:**
+   ```bash
+   ls -ld /opt/tnl/media && find /opt/tnl/media -maxdepth 1 -type f -printf '%m %u:%g %p\n' | head
    ```
 
 ---
@@ -153,11 +174,12 @@ Folder `backups/` telah dikecualikan secara ketat pada `.gitignore` agar tidak p
 Setiap asisten yang melakukan *pull request* atau *push* ke branch `main`:
 
 1. **Workflow `CI` Otomatis Berjalan:**
-   - Menjalankan 79+ tes backend `pytest` dengan database terisolasi (`mongomock_motor`).
-   - Menjalankan static typecheck TypeScript `tsc --noEmit`.
-   - Menjalankan 20 tes komponen frontend `Vitest`.
-   - Menjalankan kompilasi produksi `vite build`.
-   - Memastikan tidak ada file `.env`, private key, atau arsip backup yang tidak sengaja terdorong ke Git.
+   - Menjalankan **minimal 154** tes backend `pytest` dengan database terisolasi (`mongomock_motor`).
+   - Menjalankan static typecheck TypeScript `tsc -b` dengan Node.js 22.
+   - Menjalankan **minimal 360** tes komponen frontend `Vitest`.
+   - Menjalankan kompilasi produksi `vite build` dan geometry gate Playwright.
+   - Memastikan tidak ada file `.env`, private key, atau arsip backup yang tidak sengaja terdorong ke Git, working tree bersih, serta tidak ada assignment kredensial hardcoded di source.
+   - Angka tes tersebut adalah minimum; final counts recorded by parent after audit fixes.
 2. **Workflow `Live Smoke` Berjalan Setiap Pagi (08:00 WIB):**
    - Headless Playwright Chromium membuka `https://labtnl.site`.
    - Memeriksa zero broken images, responsive viewport (Desktop, Laptop, iPhone), dan keabsahan HTTP 200 di seluruh 8 rute publik.

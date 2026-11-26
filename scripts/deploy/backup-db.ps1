@@ -37,8 +37,14 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "[3/3] Cleaning up temporary remote archive..." -ForegroundColor Yellow
 ssh root@$DbNode "rm -f $remoteArchive"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[WARN] Remote temporary archive cleanup failed (exit $LASTEXITCODE)." -ForegroundColor Yellow
+}
 
 $fileInfo = Get-Item $localArchive
 Write-Host "`n[SUCCESS] Backup completed successfully!" -ForegroundColor Green
 Write-Host "File size: $([math]::Round($fileInfo.Length / 1KB, 2)) KB"
 Write-Host "Local file: $localArchive"
+# Catatan: dump ad-hoc ini menggunakan ekstensi .archive (tanpa gzip).
+# Backup terjadwal di server menggunakan .archive.gz (gzip); lihat runbook backup.
+exit 0

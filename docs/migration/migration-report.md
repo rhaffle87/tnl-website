@@ -107,7 +107,8 @@ flowchart TD
    - Media Repository: `/opt/tnl/media`
 2. **Python Runtime & Virtualenv:**
    - Provisioned Python 3.12 virtualenv at `/opt/tnl/backend/venv`.
-   - Installed `requirements.txt` dependencies + `typesafe-sdk==0.7.1`.
+   - Installed `requirements.txt` dependencies.
+   - **Historical note:** `typesafe-sdk==0.7.1` was installed during this migration window, but it is **deprecated; removed from Dockerfile and requirements** and must not be treated as a current dependency.
 3. **Configuration & Persistence:**
    - Configured `/opt/tnl/backend/.env` with `MONGO_URL=mongodb://100.111.32.102:27017` and `MEDIA_DIR=/opt/tnl/media`.
    - Synchronized all lab member portraits and media assets to `/opt/tnl/media`.
@@ -210,13 +211,18 @@ CT 117 (Grafana)       100.114.215.48 Port 3000         OK     Port 3000 reachab
 ## 5. Operational Runbook
 
 ### 1. How to Deploy Code Updates from Windows
-Run from repository root:
+Run from repository root. The script is a **dry run by default**; `-Execute` is required for
+any real change (it performs a pre-update DB backup, snapshots files for rollback, syncs
+frontend/backend/configs, and aborts on any failed health check):
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\deploy\deploy.ps1
+powershell -ExecutionPolicy Bypass -File scripts\deploy\deploy.ps1            # plan only
+powershell -ExecutionPolicy Bypass -File scripts\deploy\deploy.ps1 -Execute   # real deploy
 ```
 *Options:*
 - `-SkipFrontendBuild`: Deploys current `frontend/dist` and updates backend without recompiling frontend.
 - `-SkipBackendDeploy`: Only packages and updates frontend static assets.
+- `-SkipBackup`: Skips the pre-update database backup (use only when a verified backup already exists).
+- `-DryRun`: Forces plan-only output even if `-Execute` is also passed.
 
 ### 2. How to Run Health Checks Across the Cluster
 Run at any time from Windows:

@@ -88,12 +88,18 @@ try {
     $dbStat = ssh -o ConnectTimeout=3 root@$DbIp "if [ -f /var/backups/tnl/db/latest.archive.gz ]; then ls -lh /var/backups/tnl/db/latest.archive.gz | awk '{print `$5, `$6, `$7, `$8}'; fi" 2>$null
     if ($dbStat) {
         $results.Add([PSCustomObject]@{ Node = "CT 116 (Backup DB)"; Target = "$DbIp"; Test = "latest.archive.gz"; Status = "OK"; Detail = "$($dbStat.Trim())" })
+    } else {
+        $results.Add([PSCustomObject]@{ Node = "CT 116 (Backup DB)"; Target = "$DbIp"; Test = "latest.archive.gz"; Status = "FAIL"; Detail = "backup tidak ditemukan" })
     }
     $mediaStat = ssh -o ConnectTimeout=3 root@$AppIp "if [ -f /var/backups/tnl/media/latest.tar.gz ]; then ls -lh /var/backups/tnl/media/latest.tar.gz | awk '{print `$5, `$6, `$7, `$8}'; fi" 2>$null
     if ($mediaStat) {
         $results.Add([PSCustomObject]@{ Node = "CT 103 (Backup Media)"; Target = "$AppIp"; Test = "latest.tar.gz"; Status = "OK"; Detail = "$($mediaStat.Trim())" })
+    } else {
+        $results.Add([PSCustomObject]@{ Node = "CT 103 (Backup Media)"; Target = "$AppIp"; Test = "latest.tar.gz"; Status = "FAIL"; Detail = "backup tidak ditemukan" })
     }
-} catch {}
+} catch {
+    $results.Add([PSCustomObject]@{ Node = "Backup check"; Target = "-"; Test = "ssh backup status"; Status = "FAIL"; Detail = $_.Exception.Message })
+}
 
 # Output table
 $results | Format-Table -AutoSize
@@ -101,6 +107,9 @@ $results | Format-Table -AutoSize
 $allOk = ($results | Where-Object { $_.Status -ne "OK" }).Count -eq 0
 if ($allOk) {
     Write-Host "[PASS] All services across the 4 LXC nodes are healthy and responding." -ForegroundColor Green
+    exit 0
 } else {
-    Write-Host "[WARN] One or more endpoints reported errors. Review table above." -ForegroundColor Yellow
+    Write-Host "[FAIL] One or more checks reported errors. Review table above." -ForegroundColor Red
+    Write-Host "Exit code 1 indicates failure to callers (deploy.ps1 / CI)." -ForegroundColor DarkGray
+    exit 1
 }

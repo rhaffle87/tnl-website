@@ -33,13 +33,47 @@ All ids are string uuid4. Datetimes stored aware UTC.
 - **Theme editor** has draft/published tokens; publishing is blocked when a colour pair
   fails WCAG AA contrast.
 
-## Jev (TypeSafe) typed decisions — `backend/lib/jev.py`
+## Local content advisor — `backend/lib/advisor.py`
 
-1. `review_draft()` — smarter publish checks: substance score, placeholder probability,
+1. `review_draft()` — publish checks: substance score, placeholder probability,
    unverified-claim flag; merged into the item's issue list.
 2. `triage_message()` — contact inbox category + urgency + spam probability.
-3. `score_registration()` — registrant fit score + junk flag for the Registrar.
-All three fail SOFT (`ai_ok: false`) so Jev being busy never blocks a save or a signup.
+Both are deterministic and offline (no API key, no network, no SDK) and fail SOFT
+(`ai_ok: false` only when there is nothing to judge), so a save or a signup never
+blocks on an external service. Issue codes (`ai_placeholder`, `ai_thin`,
+`ai_unverified_claim`) stay identical to the old external implementation.
+
+## Temporary feature flags — `frontend/src/lib/features.ts`
+
+`doorCheckIn` and `certificates` default to false: the two Registrar desks are hidden
+temporarily. Set `VITE_FEATURE_DOOR_CHECKIN=true` / `VITE_FEATURE_CERTIFICATES=true` at build
+time to restore them. Backend endpoints remain live and tested — hiding the UI never deletes
+registration or certificate data.
+
+## Admin list hygiene
+
+- `GET /admin/api-keys?status=active|revoked` returns `items` plus `counts`;
+  `DELETE /admin/api-keys/{id}/purge` permanently removes a revoked key only (409 if active).
+- `GET /admin/audit?period=hour|day|week|month|year` and the matching `/admin/audit/export`
+  parameter filter the activity log by time range. Unknown periods return 422.
+
+## API contracts (current audit fixes)
+
+- **Self-service TOTP:** `POST /admin/users/{id}/totp-setup` returns the provisioning payload;
+  `POST /admin/users/{id}/totp-confirm` activates it with the one-time code. Keep the
+  existing last-Super-Admin guard intact.
+- **Upload signing:** `UPLOAD_SIGNING_SECRET` must be configured in `backend/.env` when uploads
+  are enabled; signed URLs are rejected when the secret is absent. Empty placeholder only in
+  `.env.example` — never commit a value.
+- **Public settings:** `/api/public/settings` serves an explicit allowlist only (contact/theme
+  fields), never the full Settings document.
+- **Outbox:** notification outbox routes are Super Admin only.
+- **Certificates:** a certificate is issued only after the registration status is `attended`;
+  verification of already-issued codes remains public.
+- **Audit export:** `GET /admin/audit/export` accepts `offset` in addition to `period`, and
+  returns header `X-Audit-Truncated` when results were cut short.
+- **API keys:** keys carry `expires_at`; write scope implies read scope (a write key can also
+  read published content).
 
 ## Auth & roles
 

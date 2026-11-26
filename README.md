@@ -13,7 +13,7 @@ language, with guardrails that refuse to publish broken or placeholder content.
 ## Quick start (clean clone)
 
 ```bash
-cp backend/.env.example backend/.env     # then edit SEED_ADMIN_* and GOOGLE_ALLOWED_EMAILS
+cp backend/.env.example backend/.env     # then fill SEED_ADMIN_* and GOOGLE_ALLOWED_EMAILS
 docker compose up --build                # mongodb + backend + frontend
 docker compose exec backend python seed.py --reset
 ```
@@ -23,7 +23,10 @@ Open <http://localhost:3000> for the site, <http://localhost:3000/admin/login> f
 `backend/.env` is the **single source of truth** for backend settings: `docker-compose.yml`
 loads it with `env_file`. Do not re-declare those keys in the compose `environment:` block
 (variables already in the environment win over the file and would silently shadow it).
-Change `SEED_ADMIN_PASSWORD` from the example value before the first seed on any server
+Every secret in the example files is an **empty placeholder**: fill `SESSION_SECRET` and
+`UPLOAD_SIGNING_SECRET` locally before enabling uploads or deploying. Vite feature flags
+(`VITE_FEATURE_*`) are read at **build time**, not runtime.
+Change `SEED_ADMIN_PASSWORD` from its empty placeholder before the first seed on any server
 reachable from outside your machine.
 
 > **`seed.py --reset` drops pages, news, members, events, registrations (personal data),
@@ -172,12 +175,36 @@ text, one social URL reused across members, social URLs that do not match their 
 domain, phone numbers outside the +62 format, and statistics or funding claims that are
 not marked verified. Plus an EN/ID typo hint.
 
-### AI assistance (Jev / TypeSafe)
+### Local content advisor (no external AI)
 
-Three typed decisions, all failing **soft** so the site never blocks on them:
-smarter publish checks (is this real content or filler?), contact-inbox triage
-(topic + urgency + spam), and registration quality scoring (fit + junk flag).
-Needs `EMERGENT_LLM_KEY`.
+Two deterministic, offline decisions — no credentials, no network, no third-party SDK:
+draft substance/placeholder/claim review (`lib/advisor.py: review_draft`) merged into the
+publish issue list, and contact-inbox category + urgency + spam scoring (`triage_message`).
+Both keep the `ai_ok` contract and fail soft (empty input → `ai_ok: false`) so a save or
+a signup never blocks on an external service. The rulebook constants live in `lib/advisor.py`.
+
+### Temporarily hidden desks
+
+Door check-in and certificate issuing are hidden from the Registrar UI while the CMS is being
+tidied. Restore them without touching code by setting `VITE_FEATURE_DOOR_CHECKIN=true` and
+`VITE_FEATURE_CERTIFICATES=true` in the frontend build environment (or flip the defaults in
+`frontend/src/lib/features.ts`). Backend routes stay live and tested, so no registration or
+certificate data is lost while the desks are hidden.
+
+#### Sunset note
+
+The temporary desks are removed on 2026-12-31 unless re-enabled earlier by setting
+the VITE_* flags in the frontend build environment. VITE_* values are build-time
+only: they are read when the bundle is created and cannot be changed at runtime.
+
+### Admin list hygiene
+
+- API keys: active/revoked badge and status filter; revoked keys can be deleted permanently
+  with `DELETE /admin/api-keys/{id}/purge` (an active key returns 409 — revoke it first).
+- Activity log: `GET /admin/audit?period=hour|day|week|month|year`, also honoured by the
+  CSV export at `GET /admin/audit/export?period=...`.
+- Audit export additionally accepts `offset` and sets `X-Audit-Truncated: true` when the
+  response was cut short (page through with larger `offset` values).
 
 ### Registration engine
 
@@ -219,7 +246,8 @@ edits Practicum, Event edits Activities and Events.
 ## Public API
 
 Scoped API keys in an `X-API-Key` header. Read keys serve published content; write keys
-also publish News and Members for automation scripts.
+also publish News and Members for automation scripts. Keys carry `expires_at`, and a write
+scope implies read scope (write keys can also read published content).
 
 ```bash
 curl -H "X-API-Key: tnl_…" https://riset.its.ac.id/lab-tnl/api/v1/news
@@ -230,6 +258,21 @@ curl -H "X-API-Key: tnl_…" -H 'Content-Type: application/json' \
 
 OpenAPI description: `GET /api/v1-docs/openapi`. Interactive FastAPI docs: `/docs`.
 
+### Current API contract notes
+
+- **Self-service TOTP:** `POST /admin/users/{id}/totp-setup` returns the provisioning payload
+  and `POST /admin/users/{id}/totp-confirm` activates it with the one-time code. The
+  last-active-Super-Admin guard still applies.
+- **Upload signing:** `UPLOAD_SIGNING_SECRET` (empty placeholder in `.env.example`) must be set
+  in `backend/.env` when uploads are enabled; signed URLs fail closed without it.
+- **Public settings:** `/api/public/settings` returns only an explicit allowlist of
+  contact/theme fields, never the whole Settings document.
+- **Outbox:** notification outbox endpoints are restricted to Super Admin.
+- **Certificates:** a certificate is issued only when the registration is `attended`;
+  public verification of already-issued codes is unchanged.
+- **Audit export:** `offset` plus `X-Audit-Truncated` as described in *Admin list hygiene*.
+- **API keys:** `expires_at` and write-implies-read as described above.
+
 ---
 
 ## Backup and restore
@@ -239,7 +282,7 @@ With the Docker Compose stack, back up from the **host**: the backend image cont
 
 ```bash
 mkdir -p backups
-docker compose exec -T mongodb mongodump --db=tnl --archive --gzip > backups/db-$(date +%F).archive
+docker compose exec -T mongodb mongodump --db=tnl --archive --gzip > backups/db-$(date +%F).archive.gz
 docker run --rm -v tnl-website_media-data:/data -v "$PWD/backups":/out alpine \
   tar -czf /out/media-$(date +%F).tar.gz -C /data .
 # nightly: 0 2 * * *  cd /path/to/tnl-website && <the two commands above>
@@ -252,7 +295,7 @@ server, and test a restore at least once.
 Restore:
 
 ```bash
-docker compose exec -T mongodb mongorestore --drop --archive --gzip < backups/db-YYYY-MM-DD.archive
+docker compose exec -T mongodb mongorestore --drop --archive --gzip < backups/db-YYYY-MM-DD.archive.gz
 docker run --rm -v tnl-website_media-data:/data -v "$PWD/backups":/in alpine \
   tar -xzf /in/media-YYYY-MM-DD.tar.gz -C /data
 ```
@@ -282,9 +325,13 @@ In production at `https://labtnl.site`, the application runs across an isolated 
 - **CT 116 (`labtnl-db` / `100.111.32.102`)**: MongoDB database service with automated nightly backup scripts (`/usr/local/bin/tnl-backup-db.sh`) and Prometheus node-exporter textfile metrics.
 - **CT 117 (`labtnl-monitor` / `100.114.215.48`)**: Prometheus & Grafana monitoring stack (`https://grafana.labtnl.site`).
 
-To deploy updates from the project root:
+To deploy updates from the project root (the script is a **dry run by default**; add
+`-Execute` only when you intend to change the servers — it backs up the database first,
+snapshots config/bundle for rollback, and aborts when any health check fails):
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\deploy\deploy.ps1
+powershell -ExecutionPolicy Bypass -File scripts\deploy\deploy.ps1            # dry run
+powershell -ExecutionPolicy Bypass -File scripts\deploy\deploy.ps1 -Execute   # real deploy
+# health-check exits 0 on all-pass, 1 on any failure (safe for CI / deploy gate)
 powershell -ExecutionPolicy Bypass -File scripts\deploy\health-check.ps1
 ```
 

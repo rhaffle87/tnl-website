@@ -81,7 +81,7 @@ jobs:
           npm --prefix frontend run test:geometry
 
   web-standards-guard:
-    name: Web Standards & Security Guard
+    name: Repository Hygiene & Security Guard
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -98,13 +98,38 @@ jobs:
           fi
           echo "No sensitive secret files found in Git index."
 
-      - name: Verify Repository Cleanliness
+      - name: Verify No Tracked Archives and Clean Working Tree
         run: |
-          echo "Ensuring no stray backups or archives in working tree..."
+          echo "Ensuring no archive files are tracked and the working tree is clean..."
           ARCHIVES=$(git ls-files | grep -E '(\.tar\.gz$|\.archive\.gz$|\.archive$)' || true)
           if [ -n "$ARCHIVES" ]; then
             echo "::error::Found archive files committed to Git:"
             echo "$ARCHIVES"
             exit 1
           fi
+          DIRTY=$(git status --porcelain --untracked-files=normal)
+          if [ -n "$DIRTY" ]; then
+            echo "::error::Working tree contains uncommitted or untracked files:"
+            echo "$DIRTY"
+            exit 1
+          fi
           echo "Repository working tree is clean."
+
+      - name: Scan Tracked Sources for Hardcoded Credential Assignments
+        run: |
+          echo "Scanning tracked source files for obvious credential assignments..."
+          # Nilai literal 16+ karakter saja; kata "secret" di docs, contoh .env,
+          # fixture test, dan workflow CI tidak ikut dipindai.
+          PATTERN="(SECRET|TOKEN|PASSWORD|PASSWD|API_KEY|APIKEY|PRIVATE_KEY|ACCESS_KEY|CREDENTIAL)[A-Z0-9_]*[[:space:]]*[:=][[:space:]]*[\"']?[A-Za-z0-9+/=_-]{16,}[\"']?([[:space:]]|;|$)"
+          CREDENTIALS=$(git grep -n -I -E -i -e "$PATTERN" -- . \
+            ':(exclude)*.example' ':(exclude)*.example.*' ':(exclude)*.md' \
+            ':(exclude)backend/tests/**' ':(exclude)**/*test*' ':(exclude)**/__tests__/**' \
+            ':(exclude)frontend/e2e/**' ':(exclude).github/workflows/**' \
+            ':(exclude)*.lock' ':(exclude)package-lock.json' || true)
+          CREDENTIALS=$(echo "$CREDENTIALS" | grep -v -E -i '(process\.env|os\.environ|getenv|settings\.|config\.|\$\{|placeholder|example|dummy|changeme|test-ci|redacted|<[A-Za-z])' || true)
+          if [ -n "$CREDENTIALS" ]; then
+            echo "::error::Possible hardcoded credentials in tracked source:"
+            echo "$CREDENTIALS"
+            exit 1
+          fi
+          echo "No hardcoded credential assignments found in tracked source."

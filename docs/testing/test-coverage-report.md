@@ -1,7 +1,9 @@
 # Laporan Pengujian Otomatis Holistik (Test Coverage Report)
 **Laboratorium Jaringan Telekomunikasi (TNL) ITS — `https://labtnl.site`**
-*Tanggal Eksekusi:* 20 November 2026  
+*Tanggal Eksekusi:* 20 November 2026 (rincian suite) / 25 November 2026 (verifikasi gate)
 *Status:* **100% PASS across All 3 Layers (Backend, Frontend, E2E Smoke)**
+
+> **Catatan pembaruan:** Runtime frontend dan CI menggunakan **Node.js 22**. Angka gate terverifikasi sebelum perbaikan audit adalah **backend 154** dan **frontend 360** — keduanya merupakan **minimum; jumlah final dicatat oleh parent setelah perbaikan audit selesai**. Rincian per-suite pada bagian 3–4 di bawah adalah snapshot historis eksekusi 20 November 2026 dan belum mencerminkan penambahan tes terbaru.
 
 ---
 
@@ -24,13 +26,14 @@ Sesuai dengan instruksi dan standar mutu produksi institusi:
 ==========================================================================================
 LAYER                          TOOL / RUNNER           TEST FILES   TEST CASES   OUTCOME
 ==========================================================================================
-Layer 1: Backend Integration   pytest + mongomock_motor    10           79        100% PASS
-Layer 2: Frontend Components   Vitest + Testing Library     7           20        100% PASS
-Layer 3: E2E Smoke & Visual    Playwright (Chromium)        1           16        100% PASS
+Layer 1: Backend Integration   pytest + mongomock_motor    10           154        100% PASS
+Layer 2: Frontend Components   Vitest + Testing Library     7           360        100% PASS
+Layer 3: E2E Smoke & Visual    Playwright (Chromium)        1            16        100% PASS
 TypeScript & Build Check       tsc -b && vite build         -            -        100% PASS
 ==========================================================================================
-TOTAL TERVERIFIKASI                                        18          115        100% PASS
+TOTAL TERVERIFIKASI (minimum)                             18           530        100% PASS
 ==========================================================================================
+Angka backend 154 / frontend 360 = minimum; final counts recorded by parent after audit fixes.
 ```
 
 ---
