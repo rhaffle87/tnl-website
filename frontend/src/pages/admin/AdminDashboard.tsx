@@ -1,10 +1,12 @@
 // Dashboard + Needs-review queue + Activity log + Maintainer guide.
 
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Calendar, CheckCircle2, Clock, FileText, Image, MessageSquare, Plus, QrCode, ScrollText, Users } from "lucide-react";
+import { ArrowUpRight, Calendar, ClipboardList, Image, Plus } from "lucide-react";
 import { apiGet } from "@/lib/api";
-import { AdminPageHeader, AdminSectionHeader, IssueList, Panel } from "@/pages/admin/AdminUI";
+import { useAdminT } from "@/lib/admin-i18n";
+import { AdminErrorBanner, AdminLoadMore, AdminPageHeader, AdminSectionHeader, AdminSelect, IssueList, Panel, adminError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import type { AuditEntry, DashboardStats, ListResponse, ReviewQueueItem } from "@/lib/types";
 
@@ -33,7 +35,7 @@ export default function AdminDashboard() {
     const quickActions = [
         { label: "New News", to: "/admin/content/posts/new", icon: Plus, primary: true },
         { label: "New Event", to: "/admin/content/events/new", icon: Calendar },
-        { label: "Door Check-in Desk", to: "/admin/registrations", icon: QrCode },
+        { label: "Registrations Desk", to: "/admin/registrations", icon: ClipboardList },
         { label: "Upload Media", to: "/admin/media", icon: Image },
     ];
 
@@ -241,26 +243,61 @@ export function ReviewQueuePage() {
 }
 
 export function AuditLogPage() {
-    const { data, isLoading } = useQuery({
-        queryKey: ["admin", "audit"],
-        queryFn: () => apiGet<{ items: AuditEntry[]; total: number }>("/admin/audit?limit=200"),
+    const t = useAdminT();
+    const [period, setPeriod] = useState("");
+    // Backend caps a page at 200; grow the page in smaller steps on demand.
+    const [limit, setLimit] = useState(50);
+    const { data, isLoading, error, refetch } = useQuery({
+        queryKey: ["admin", "audit", period, limit],
+        queryFn: () => apiGet<{ items: AuditEntry[]; total: number }>(`/admin/audit?limit=${limit}${period ? `&period=${period}` : ""}`),
         retry: false,
     });
+    useEffect(() => {
+        setLimit(50);
+    }, [period]);
     const items = data?.items ?? [];
+    const total = Math.min(data?.total ?? items.length, 200);
 
     return (
         <div data-testid="audit-log-page">
             <AdminPageHeader
-                title="Activity log"
-                description="Every change made in TNL Studio, with who made it and when. Useful when handing the site to the next batch."
+                title={t("adminActivityLog")}
+                description="Every change made in TNL Studio, with who made it and when. Filter by time range; export the visible range as a spreadsheet. Useful when handing the site to the next batch."
                 actions={
-                    <a href="/api/admin/audit/export" className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="audit-export-button">
+                    <a href={`/api/admin/audit/export?${period ? `period=${period}&` : ""}limit=${limit}`} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="audit-export-button">
                         Export to spreadsheet
                     </a>
                 }
                 testId="audit-header"
             />
-            {isLoading ? (
+            <Panel className="mb-6">
+                <div className="flex flex-wrap items-center gap-3">
+                    <label htmlFor="audit-period-filter" className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>Time range</label>
+                    <AdminSelect
+                        id="audit-period-filter"
+                        data-testid="audit-period-filter"
+                        wrapperClassName="w-auto min-w-[150px]"
+                        value={period}
+                        onChange={(e) => setPeriod(e.target.value)}
+                    >
+                        <option value="">All time</option>
+                        <option value="hour">Last hour</option>
+                        <option value="day">Last 24 hours</option>
+                        <option value="week">Last 7 days</option>
+                        <option value="month">Last 30 days</option>
+                        <option value="year">Last 12 months</option>
+                    </AdminSelect>
+                    <span className="text-xs" style={{ color: "var(--tnl-tan-text)" }} data-testid="audit-count">
+                        {items.length} dari {total} {total === 1 ? "event" : "events"}
+                    </span>
+                </div>
+            </Panel>
+            {error ? (
+                <AdminErrorBanner
+                    message={adminError(error, "Could not load the activity log.")}
+                    onRetry={() => void refetch()}
+                />
+            ) : isLoading ? (
                 <Spinner label="Loading…" />
             ) : (
                 <Panel className="overflow-x-auto">
@@ -293,6 +330,13 @@ export function AuditLogPage() {
                     </table>
                 </Panel>
             )}
+            {!error && !isLoading && items.length > 0 ? (
+                <AdminLoadMore
+                    shown={items.length}
+                    total={total}
+                    onMore={() => setLimit((current) => Math.min(current + 50, 200))}
+                />
+            ) : null}
         </div>
     );
 }

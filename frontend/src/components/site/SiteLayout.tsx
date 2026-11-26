@@ -230,7 +230,7 @@ function MaintenanceNotice() {
 
 export default function SiteLayout() {
     useHeadTags();
-    const { data: settings } = useSettings();
+    useSettings();
     const location = useLocation();
     const isHome = location.pathname === "/";
     // The announcement card and registration bar share the same fixed bottom

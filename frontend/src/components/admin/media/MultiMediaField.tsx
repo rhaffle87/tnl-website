@@ -5,7 +5,6 @@ import {
     ChevronDown,
     ChevronUp,
     ExternalLink,
-    FileIcon,
     ImageIcon,
     Loader2,
     Plus,
@@ -119,7 +118,7 @@ export function MultiMediaField({
                     const asset = (await res.json()) as MediaAsset;
                     uploadedUrls.push(asset.url);
                 }
-            } catch (err) {
+            } catch {
                 // Continue with other files
             }
         }

@@ -18,6 +18,7 @@ import {
     X,
 } from "lucide-react";
 import { useLocale, pick } from "@/lib/i18n";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import { useEvents, useSettings } from "@/lib/hooks";
 import { TnlLogo } from "@/components/site/TnlLogo";
 import { useSmoothScroll } from "@/components/site/SmoothScrollProvider";
@@ -555,6 +556,7 @@ export function AnnouncementPopup({ onOpenChange }: { onOpenChange?: (open: bool
     // competes for the same fixed bottom space. Keep the callback ref-stable.
     const onOpenChangeRef = useRef(onOpenChange);
     onOpenChangeRef.current = onOpenChange;
+    const dialogRef = useRef<HTMLDivElement>(null);
     const show = useCallback((next: boolean) => {
         setOpen(next);
         onOpenChangeRef.current?.(next);
@@ -575,16 +577,11 @@ export function AnnouncementPopup({ onOpenChange }: { onOpenChange?: (open: bool
         show(false);
     }, [key, show]);
 
-    // Escape is the third exit path a blocking dialog owes the visitor
-    // (alongside the close button and the backdrop).
-    useEffect(() => {
-        if (!open || asCard) return;
-        const onKeyDown = (event: globalThis.KeyboardEvent) => {
-            if (event.key === "Escape") dismiss();
-        };
-        window.addEventListener("keydown", onKeyDown);
-        return () => window.removeEventListener("keydown", onKeyDown);
-    }, [open, asCard, dismiss]);
+    // The modal surface shares the admin dialogs' focus trap: Tab cycles inside
+    // the panel, Escape dismisses, and focus returns to the opener. A floating
+    // card stays out of the trap — it must never swallow Escape or block the
+    // page behind it.
+    useFocusTrap(open && !asCard && Boolean(announcement?.enabled), dialogRef, { onEscape: dismiss });
 
     if (!announcement?.enabled || !open) return null;
 
@@ -685,6 +682,7 @@ export function AnnouncementPopup({ onOpenChange }: { onOpenChange?: (open: bool
 
     return (
         <div
+            ref={dialogRef}
             className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center"
             role="dialog"
             aria-modal="true"

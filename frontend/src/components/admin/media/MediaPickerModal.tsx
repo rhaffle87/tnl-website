@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Check,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { apiGet, apiPatch } from "@/lib/api";
+import { useAdminT } from "@/lib/admin-i18n";
 import type { MediaAsset } from "@/lib/types";
 import {
     Dialog,
@@ -76,6 +77,7 @@ export function MediaPickerModal({
     onSelect,
 }: MediaPickerModalProps) {
     const qc = useQueryClient();
+    const t = useAdminT();
     const [activeTab, setActiveTab] = useState<"library" | "upload">("library");
 
     // Search and filter states
@@ -84,6 +86,8 @@ export function MediaPickerModal({
     const [folder, setFolder] = useState<string>(defaultFolder || "all");
     const [kind, setKind] = useState<string>(accept === "all" ? "all" : accept);
     const [limit] = useState<number>(48);
+    const [offset, setOffset] = useState(0);
+    const [allItems, setAllItems] = useState<MediaAsset[]>([]);
 
     // Selected items state
     const [selectedItems, setSelectedItems] = useState<MediaAsset[]>([]);
@@ -119,21 +123,27 @@ export function MediaPickerModal({
         }
     }, [open, defaultFolder]);
 
+    // A folder / search / kind change starts a new paged result set.
+    useEffect(() => {
+        setOffset(0);
+    }, [folder, debouncedSearch, kind, open]);
+
     // Fetch media from backend
-    const { data, isLoading, refetch, isRefetching } = useQuery<{
+    const { data, error, isLoading, refetch, isRefetching } = useQuery<{
         items: MediaAsset[];
         folders: string[];
         total: number;
         limit: number;
         offset: number;
     }>({
-        queryKey: ["admin", "media", "picker", folder, debouncedSearch, kind, limit],
+        queryKey: ["admin", "media", "picker", folder, debouncedSearch, kind, limit, offset],
         queryFn: () => {
             const params = new URLSearchParams();
             if (folder && folder !== "all") params.set("folder", folder);
             if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
             if (kind && kind !== "all") params.set("kind", kind);
             params.set("limit", String(limit));
+            if (offset > 0) params.set("offset", String(offset));
             return apiGet<{ items: MediaAsset[]; folders: string[]; total: number; limit: number; offset: number }>(
                 `/admin/media?${params.toString()}`
             );
@@ -141,7 +151,15 @@ export function MediaPickerModal({
         enabled: open,
     });
 
-    const items = data?.items ?? [];
+    useEffect(() => {
+        const page = data?.items ?? [];
+        setAllItems((prev) =>
+            offset === 0 ? page : [...prev, ...page.filter((p) => !prev.some((old) => old.id === p.id))]
+        );
+    }, [data, offset]);
+
+    const items = allItems;
+    const totalItems = data?.total ?? items.length;
 
     // Pre-select assets matching selectedUrls if items are loaded
     useEffect(() => {
@@ -202,7 +220,7 @@ export function MediaPickerModal({
             setSelectedItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
             void qc.invalidateQueries({ queryKey: ["admin", "media"] });
             toast.success("Alt text updated.");
-        } catch (err) {
+        } catch {
             toast.error("Failed to update alt text.");
         } finally {
             setIsSavingAlt(false);
@@ -390,6 +408,7 @@ export function MediaPickerModal({
                                     <input
                                         type="text"
                                         placeholder="Search by filename or alt..."
+                                        aria-label={t("adminSearch")}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="tnl-field pl-8 h-9 text-sm w-full"
@@ -456,7 +475,14 @@ export function MediaPickerModal({
                                 className="flex-1 min-h-0 overflow-y-auto p-5"
                                 data-testid="media-picker-grid"
                             >
-                                {isLoading ? (
+                                {error ? (
+                                    <div role="alert" data-testid="media-picker-error" className="flex flex-col items-center justify-center gap-3 p-6 text-center text-sm">
+                                        <p className="font-semibold text-[var(--tnl-danger)]">Could not load the media library.</p>
+                                        <button type="button" onClick={() => void refetch()} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs">
+                                            Coba lagi
+                                        </button>
+                                    </div>
+                                ) : isLoading ? (
                                     <div className="h-full flex items-center justify-center">
                                         <Loader2 className="h-6 w-6 animate-spin text-[var(--tnl-green)]" />
                                     </div>
@@ -478,6 +504,7 @@ export function MediaPickerModal({
                                                 <button
                                                     key={asset.id}
                                                     type="button"
+                                                    aria-pressed={active}
                                                     onClick={() => handleSelectAsset(asset)}
                                                     className={`group relative flex flex-col rounded-xl overflow-hidden border text-left transition-all bg-[var(--tnl-surface-2)] focus:outline-hidden ${
                                                         active
@@ -539,6 +566,21 @@ export function MediaPickerModal({
                                         })}
                                     </div>
                                 )}
+                                {!error && !isLoading && items.length > 0 ? (
+                                    <div className="flex flex-wrap items-center justify-between gap-2 px-1 pt-3 text-xs text-[var(--tnl-body)]">
+                                        <span>{items.length} dari {totalItems}</span>
+                                        {items.length < totalItems ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setOffset((current) => current + limit)}
+                                                className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs"
+                                                data-testid="load-more-media"
+                                            >
+                                                Muat lebih banyak
+                                            </button>
+                                        ) : null}
+                                    </div>
+                                ) : null}
                             </div>
                         </div>
 
@@ -641,8 +683,13 @@ export function MediaPickerModal({
                 {/* Tab 2: Upload New */}
                 {activeTab === "upload" && (
                     <div className="flex-1 min-h-0 flex flex-col p-5 overflow-y-auto space-y-4">
-                        {/* Drag and Drop Zone */}
+                        {/* Drag and Drop Zone — a real button so Enter/Space opens the file picker */}
                         <div
+                            className={`border-2 border-dashed rounded-2xl p-8 transition-colors ${
+                                isDragging
+                                    ? "border-[var(--tnl-green)] bg-[var(--tnl-green)]/10"
+                                    : "border-[var(--tnl-border)] hover:border-[var(--tnl-green)]/60 bg-[var(--tnl-surface-2)]"
+                            }`}
                             onDragEnter={(e) => {
                                 e.preventDefault();
                                 setIsDragging(true);
@@ -662,14 +709,24 @@ export function MediaPickerModal({
                                     handleFilesEnqueued(e.dataTransfer.files);
                                 }
                             }}
-                            onClick={() => fileInputRef.current?.click()}
-                            className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${
-                                isDragging
-                                    ? "border-[var(--tnl-green)] bg-[var(--tnl-green)]/10"
-                                    : "border-[var(--tnl-border)] hover:border-[var(--tnl-green)]/60 bg-[var(--tnl-surface-2)]"
-                            }`}
-                            data-testid="media-picker-dropzone"
                         >
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                aria-label={`${t("adminDropFiles")} — ${t("adminBrowse")}`}
+                                className="w-full flex flex-col items-center justify-center text-center cursor-pointer"
+                                data-testid="media-picker-dropzone"
+                            >
+                                <div className="h-12 w-12 rounded-full bg-[var(--tnl-green)]/10 flex items-center justify-center text-[var(--tnl-green)] mb-3">
+                                    <UploadCloud className="h-6 w-6" aria-hidden="true" />
+                                </div>
+                                <p className="text-sm font-semibold text-[var(--tnl-heading)]">
+                                    {t("adminDropFiles")} <span className="text-[var(--tnl-green)] underline">{t("adminBrowse")}</span>
+                                </p>
+                                <p className="text-xs text-[var(--tnl-body)] mt-1">
+                                    JPG, PNG, WebP, GIF, or academic docs up to 10 MB.
+                                </p>
+                            </button>
                             <input
                                 ref={fileInputRef}
                                 type="file"
@@ -681,24 +738,17 @@ export function MediaPickerModal({
                                 className="hidden"
                                 data-testid="media-picker-file-input"
                             />
-                            <div className="h-12 w-12 rounded-full bg-[var(--tnl-green)]/10 flex items-center justify-center text-[var(--tnl-green)] mb-3">
-                                <UploadCloud className="h-6 w-6" />
-                            </div>
-                            <p className="text-sm font-semibold text-[var(--tnl-heading)]">
-                                Drop files here, or <span className="text-[var(--tnl-green)] underline">browse</span>
-                            </p>
-                            <p className="text-xs text-[var(--tnl-body)] mt-1">
-                                JPG, PNG, WebP, GIF, or academic docs up to 10 MB.
-                            </p>
                         </div>
 
                         {/* Upload Options */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-xs font-semibold block mb-1">Destination Folder</label>
+                                <label htmlFor="media-picker-upload-folder" className="text-xs font-semibold block mb-1">{t("adminFolder")}</label>
                                 <AdminSelect
                                     value={uploadFolder}
                                     onChange={(e) => setUploadFolder(e.target.value)}
+                                    aria-label={t("adminFolder")}
+                                    id="media-picker-upload-folder"
                                     className="text-xs"
                                     data-testid="media-picker-upload-folder"
                                 >
@@ -711,8 +761,9 @@ export function MediaPickerModal({
                             </div>
 
                             <div>
-                                <label className="text-xs font-semibold block mb-1">Alt text (Optional)</label>
+                                <label htmlFor="media-picker-upload-alt" className="text-xs font-semibold block mb-1">{t("adminAltText")} ({t("adminOptional")})</label>
                                 <input
+                                    id="media-picker-upload-alt"
                                     type="text"
                                     placeholder="Leave blank to use clean filename"
                                     value={uploadAlt}
@@ -760,18 +811,29 @@ export function MediaPickerModal({
 
                                             <div className="flex items-center gap-2">
                                                 {item.status === "uploading" && (
-                                                    <span className="flex items-center gap-1 text-[var(--gsm-accent)] text-[11px]">
-                                                        <Loader2 className="h-3 w-3 animate-spin" /> Uploading...
+                                                    <span
+                                                        role="status"
+                                                        aria-live="polite"
+                                                        className="flex items-center gap-1 text-[var(--gsm-accent)] text-[11px]"
+                                                    >
+                                                        <Loader2 className="h-3 w-3 animate-spin" /> {t("adminUploading")}
                                                     </span>
                                                 )}
                                                 {item.status === "done" && (
-                                                    <span className="flex items-center gap-1 text-[var(--tnl-green)] text-[11px] font-semibold">
-                                                        <CheckCircle2 className="h-3.5 w-3.5" /> Ready
+                                                    <span
+                                                        role="status"
+                                                        aria-live="polite"
+                                                        className="flex items-center gap-1 text-[var(--tnl-green)] text-[11px] font-semibold"
+                                                    >
+                                                        <CheckCircle2 className="h-3.5 w-3.5" /> {t("adminReady")}
                                                     </span>
                                                 )}
                                                 {item.status === "error" && (
-                                                    <span className="text-rose-500 text-[11px] truncate max-w-[150px]">
-                                                        {item.errorMsg}
+                                                    <span
+                                                        role="alert"
+                                                        className="text-rose-500 text-[11px] truncate max-w-[150px]"
+                                                    >
+                                                        {t("adminUploadFailed")}: {item.errorMsg}
                                                     </span>
                                                 )}
                                                 <button
@@ -792,9 +854,36 @@ export function MediaPickerModal({
                     </div>
                 )}
 
+                {/* Narrow screens: the inspector is a collapsible panel above the footer. */}
+                {activeTab === "library" && focusedAsset ? (
+                    <details className="md:hidden shrink-0 border-t border-[var(--tnl-border)] px-5 py-2">
+                        <summary className="cursor-pointer text-xs font-semibold text-[var(--tnl-heading)]">
+                            Detail aset
+                        </summary>
+                        <div className="mt-2 flex gap-3">
+                            {focusedAsset.kind === "image" ? (
+                                <img
+                                    src={focusedAsset.webp_url || focusedAsset.url}
+                                    alt={focusedAsset.alt || focusedAsset.filename}
+                                    className="h-20 w-24 shrink-0 rounded-lg border border-[var(--tnl-border)] object-contain"
+                                />
+                            ) : null}
+                            <div className="min-w-0 text-xs">
+                                <p className="truncate font-medium text-[var(--tnl-heading)]">
+                                    {focusedAsset.original_name || focusedAsset.filename}
+                                </p>
+                                <p className="mt-1 text-[var(--tnl-body)]">{focusedAsset.alt || "No alt text yet"}</p>
+                                <p className="mt-1 text-[var(--tnl-body)]">{formatBytes(focusedAsset.size_bytes || focusedAsset.bytes)}</p>
+                            </div>
+                        </div>
+                    </details>
+                ) : null}
+
                 {/* Zone 3 — sticky modal footer: summary | Cancel | primary action */}
                 <div className="shrink-0 px-5 py-3 border-t border-[var(--tnl-border)] bg-[var(--tnl-surface)] flex flex-wrap items-center justify-between gap-3">
                     <p
+                        role="status"
+                        aria-live="polite"
                         className="text-xs text-[var(--tnl-body)] min-w-0 truncate"
                         data-testid="media-picker-summary"
                     >

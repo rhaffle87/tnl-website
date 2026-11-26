@@ -3,13 +3,14 @@
 // not raw JSON. The dedicated create/edit form lives in ContentEditor.tsx and
 // is mounted on its own routes (/new and /:id).
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Download, Link2, Plus, Search } from "lucide-react";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
-import { AdminHeader, ConfirmButton, Panel, StatusPill, adminError } from "@/pages/admin/AdminUI";
+import { useAdminT } from "@/lib/admin-i18n";
+import { AdminErrorBanner, AdminHeader, AdminLoadMore, ConfirmButton, Panel, StatusPill, adminError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { MEMBER_SOCIAL_PRESETS, type RepeaterFieldSpec, type PresetKeyConfig } from "@/components/admin/repeaters";
 import type { ListResponse, QualityIssue } from "@/lib/types";
@@ -437,14 +438,22 @@ const PHOTO_KEYS = ["photo_url", "cover_url", "cover_image", "logo_url"];
 
 type StatusTab = "all" | "published" | "draft";
 
+// Backend caps a single content page at 200 rows; request smaller pages so the
+// list can grow as the admin asks for more instead of silently truncating.
+const CONTENT_PAGE_SIZE = 50;
+
 export default function ContentManager() {
     const { resource = "posts" } = useParams<{ resource: string }>();
     const spec = RESOURCE_SPECS[resource];
+    const t = useAdminT();
     const qc = useQueryClient();
     const [params] = useSearchParams();
+    const [searchInput, setSearchInput] = useState("");
     const [search, setSearch] = useState("");
     const [tab, setTab] = useState<StatusTab>("all");
     const [selected, setSelected] = useState<string[]>([]);
+    const [offset, setOffset] = useState(0);
+    const [accumulated, setAccumulated] = useState<Row[]>([]);
 
     const relinkMutation = useMutation({
         mutationFn: () => apiPost<{ ok: boolean; updated: number; total_with_links: number; total: number }>("/admin/publications/relink-authors"),
@@ -455,14 +464,39 @@ export default function ContentManager() {
         onError: (err) => toast.error(adminError(err, "Could not relink authors.")),
     });
 
-    const { data, isLoading } = useQuery({
-        queryKey: ["admin", "content", resource, search],
-        queryFn: () => apiGet<ListResponse<Row>>(`/admin/content/${resource}?limit=200${search ? `&q=${encodeURIComponent(search)}` : ""}`),
+    const { data, isLoading, error, isFetching, refetch } = useQuery({
+        queryKey: ["admin", "content", resource, search, offset],
+        queryFn: () => apiGet<ListResponse<Row>>(
+            `/admin/content/${resource}?limit=${CONTENT_PAGE_SIZE}&offset=${offset}${search ? `&q=${encodeURIComponent(search)}` : ""}`
+        ),
         retry: false,
         enabled: Boolean(spec),
     });
 
-    const rows = useMemo(() => data?.items ?? [], [data]);
+    // Debounce the search input: typing must not fire one request per keystroke.
+    useEffect(() => {
+        const timer = setTimeout(() => setSearch(searchInput.trim()), 250);
+        return () => clearTimeout(timer);
+    }, [searchInput]);
+
+    // Any filter switch invalidates the bulk selection and restarts pagination.
+    useEffect(() => {
+        setSelected([]);
+        setOffset(0);
+    }, [search, resource]);
+
+    useEffect(() => {
+        const page = data?.items ?? [];
+        setAccumulated((prev) => {
+            if (offset === 0) return page;
+            const merged = new Map(prev.map((row) => [row.id, row]));
+            for (const row of page) merged.set(row.id, row);
+            return Array.from(merged.values());
+        });
+    }, [data, offset]);
+
+    const rows = accumulated;
+    const totalRows = data?.total ?? rows.length;
 
     const invalidate = () => {
         void qc.invalidateQueries({ queryKey: ["admin", "content", resource] });
@@ -471,9 +505,18 @@ export default function ContentManager() {
         void qc.invalidateQueries({ queryKey: ["public"] });
     };
 
+    const resetContentPages = () => {
+        setAccumulated([]);
+        setOffset(0);
+    };
+
     const deleteMutation = useMutation({
         mutationFn: (id: string) => apiDelete<{ ok: boolean }>(`/admin/content/${resource}/${id}`),
         onSuccess: (_res, id) => {
+            // Restart pagination so deletions and records that shift across pages
+            // are reconciled from the API rather than stale accumulated rows.
+            resetContentPages();
+            setSelected((prev) => prev.filter((selectedId) => selectedId !== id));
             invalidate();
             toast.success("Deleted.", {
                 action: {
@@ -481,6 +524,7 @@ export default function ContentManager() {
                     onClick: () => {
                         void apiPost(`/admin/content/${resource}/${id}/undo-delete`)
                             .then(() => {
+                                resetContentPages();
                                 invalidate();
                                 toast.success("Restored.");
                             })
@@ -500,6 +544,7 @@ export default function ContentManager() {
             return apiPut<Row>(`/admin/content/${resource}/${id}`, patch);
         },
         onSuccess: (_res, variables) => {
+            resetContentPages();
             invalidate();
             toast.success(variables.willPublish ? "Published." : "Moved to draft / Hidden.");
         },
@@ -509,6 +554,7 @@ export default function ContentManager() {
     const bulkMutation = useMutation({
         mutationFn: (action: string) => apiPost<{ updated: number; skipped: { title: string; reason: string }[] }>(`/admin/content/${resource}/bulk`, { ids: selected, action }),
         onSuccess: (res) => {
+            resetContentPages();
             invalidate();
             setSelected([]);
             toast.success(`${res.updated} item(s) updated.`);
@@ -556,9 +602,9 @@ export default function ContentManager() {
     };
 
     const tabs: { id: StatusTab; label: string; count: number }[] = [
-        { id: "all", label: "All", count: rows.length },
-        { id: "published", label: "Published", count: publishedCount },
-        { id: "draft", label: "Draft", count: draftCount },
+        { id: "all", label: t("adminAll"), count: rows.length },
+        { id: "published", label: t("adminPublished"), count: publishedCount },
+        { id: "draft", label: t("adminDraft"), count: draftCount },
     ];
 
     const allVisibleSelected = visibleRows.length > 0 && visibleRows.every((r) => selected.includes(r.id));
@@ -625,7 +671,10 @@ export default function ContentManager() {
                             <button
                                 key={t.id}
                                 type="button"
-                                onClick={() => setTab(t.id)}
+                                onClick={() => {
+                                    setTab(t.id);
+                                    setSelected([]); // a hidden row must never survive a filter switch
+                                }}
                                 aria-pressed={active}
                                 className="rounded-[8px] px-3 py-1.5 text-sm font-medium transition-colors"
                                 style={active ? { background: "var(--tnl-green)", color: "#fff" } : { color: "var(--tnl-body)" }}
@@ -641,13 +690,31 @@ export default function ContentManager() {
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--tnl-body)]" aria-hidden="true" />
                     <input
                         type="search"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder={`Search ${spec.label.toLowerCase()}...`}
+                        value={searchInput}
+                        onChange={(e) => {
+                            setSearchInput(e.target.value);
+                            setSelected([]);
+                        }}
+                        placeholder={`${t("adminSearch")} ${resource.toLowerCase()}...`}
                         className="tnl-field pl-9 sm:w-72"
-                        aria-label="Search"
+                        aria-label={t("adminSearch")}
                         data-testid="content-search-input"
                     />
+                    {tab !== "all" || searchInput.trim() ? (
+                        <button
+                            type="button"
+                            className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm"
+                            data-testid="content-clear-filters"
+                            onClick={() => {
+                                setTab("all");
+                                setSearchInput("");
+                                setSelected([]);
+                                setOffset(0);
+                            }}
+                        >
+                            {t("adminClearFilters") ?? "Clear filters"}
+                        </button>
+                    ) : null}
                 </div>
 
                 {selected.length ? (
@@ -657,18 +724,18 @@ export default function ContentManager() {
                         data-testid="content-bulk-bar"
                     >
                         <span className="text-sm" style={{ color: "var(--tnl-tan-text)" }}>
-                            {selected.length} selected
+                            {selected.length} {t("adminSelected")}
                         </span>
                         <button type="button" onClick={() => bulkMutation.mutate("publish")} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-sm" data-testid="bulk-publish-button">
-                            Publish
+                            {t("adminPublish")}
                         </button>
                         <button type="button" onClick={() => bulkMutation.mutate("unpublish")} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-sm" data-testid="bulk-unpublish-button">
-                            Unpublish
+                            {t("adminUnpublish")}
                         </button>
                         <ConfirmButton
-                            label="Delete"
-                            confirmLabel="Delete them"
-                            question={`Delete ${selected.length} item(s)?`}
+                            label={t("adminDelete")}
+                            confirmLabel={t("adminDeleteThem")}
+                            question={`${t("adminDelete")} ${selected.length} ${t("adminItems")}?`}
                             onConfirm={() => bulkMutation.mutate("delete")}
                             testId="bulk-delete-button"
                         />
@@ -676,7 +743,13 @@ export default function ContentManager() {
                 ) : null}
             </div>
 
-            {isLoading ? (
+            {error ? (
+                <AdminErrorBanner
+                    testId="content-list-error"
+                    message={adminError(error, "Could not load this content. Please try again.")}
+                    onRetry={() => void refetch()}
+                />
+            ) : isLoading ? (
                 <Spinner label="Loading..." />
             ) : visibleRows.length === 0 ? (
                 <Panel>
@@ -783,7 +856,7 @@ export default function ContentManager() {
                                                     data-testid={`content-toggle-publish-${row.id}`}
                                                     title={published ? "Hide from website (set to draft)" : "Publish to website"}
                                                 >
-                                                    {published ? "Hide" : "Publish"}
+                                                    {published ? "Hide" : t("adminPublish")}
                                                 </button>
                                                 <Link
                                                     to={`/admin/content/${resource}/${row.id}`}
@@ -791,11 +864,11 @@ export default function ContentManager() {
                                                     style={{ borderColor: "var(--tnl-border)" }}
                                                     data-testid={`content-edit-${row.id}`}
                                                 >
-                                                    Edit
+                                                    {t("adminEdit")}
                                                 </Link>
                                                 <ConfirmButton
-                                                    label="Delete"
-                                                    confirmLabel="Delete it"
+                                                    label={t("adminDelete")}
+                                                    confirmLabel={t("adminDeleteItems")}
                                                     question="Delete this item?"
                                                     onConfirm={() => deleteMutation.mutate(row.id)}
                                                     testId={`content-delete-${row.id}`}
@@ -809,6 +882,19 @@ export default function ContentManager() {
                     </table>
                 </Panel>
             )}
+            {!error && !isLoading && (rows.length > 0 || rows.length < totalRows) ? (
+                <AdminLoadMore
+                    shown={rows.length}
+                    total={totalRows}
+                    loading={isFetching}
+                    onMore={() => {
+                        setSelected([]); // page change is a filter change too
+                        setOffset((current) => current + CONTENT_PAGE_SIZE);
+                    }}
+                    testId="load-more-content"
+                    countTestId="content-count"
+                />
+            ) : null}
         </div>
     );
 }

@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "r
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, Monitor, RotateCcw, Save, Smartphone } from "lucide-react";
+import { ArrowLeft, Eye, Monitor, Save, Smartphone } from "lucide-react";
 import { apiGet, apiPost, apiPut } from "@/lib/api";
 import { AdminSelect, AdminSwitch, IssueList, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
@@ -751,7 +751,13 @@ export default function ContentEditor() {
                             data-testid="content-save-button"
                         >
                             <Save className="h-4 w-4" aria-hidden="true" />
-                            {saveMutation.isPending ? "Saving..." : isNew ? "Create & Publish" : "Save changes"}
+                            {saveMutation.isPending
+                                ? "Saving..."
+                                : isNew
+                                    ? publishedNow
+                                        ? "Create & Publish"
+                                        : "Create as Draft"
+                                    : "Save changes"}
                         </button>
                     </div>
                 </div>
@@ -975,9 +981,9 @@ export default function ContentEditor() {
                                     <h1 className="tnl-h2 text-2xl sm:text-3xl font-bold">
                                         {String(previewLang === "id" && form.title_id ? form.title_id : form.title || "Untitled Article")}
                                     </h1>
-                                    {form.image_url ? (
+                                    {form.cover_url ? (
                                         <div className="aspect-video w-full rounded-xl overflow-hidden border">
-                                            <img src={String(form.image_url)} alt="Cover" className="h-full w-full object-cover" />
+                                            <img src={String(form.cover_url)} alt="Cover" className="h-full w-full object-cover" />
                                         </div>
                                     ) : null}
                                     <div
@@ -995,9 +1001,9 @@ export default function ContentEditor() {
                                     <h1 className="tnl-h2 text-2xl font-bold">
                                         {String(previewLang === "id" && form.title_id ? form.title_id : form.title || "Untitled Event")}
                                     </h1>
-                                    {form.cover_image ? (
+                                    {(form.cover_url || form.cover_image) ? (
                                         <div className="aspect-video w-full rounded-xl overflow-hidden border">
-                                            <img src={String(form.cover_image)} alt="Event Cover" className="h-full w-full object-cover" />
+                                            <img src={String(form.cover_url || form.cover_image)} alt="Event Cover" className="h-full w-full object-cover" />
                                         </div>
                                     ) : null}
                                     <p className="text-sm leading-relaxed text-[var(--tnl-body)]">

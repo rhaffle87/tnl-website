@@ -9,6 +9,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Crop, Loader2, X } from "lucide-react";
+import { useAdminT } from "@/lib/admin-i18n";
 
 export type CropSource = { file?: File; url?: string; suggestedName?: string };
 
@@ -43,6 +44,7 @@ export function ImageCropDialog({
     onDone: (file: File) => void;
 }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const t = useAdminT();
     const imageRef = useRef<HTMLImageElement | null>(null);
     const dragRef = useRef<{ startX: number; startY: number; base: CropRect } | null>(null);
     const [rect, setRect] = useState<CropRect>({ x: 0, y: 0, w: 0, h: 0 });
@@ -170,6 +172,27 @@ export function ImageCropDialog({
         dragRef.current = null;
     };
 
+    // Keyboard equivalent of dragging the crop frame: arrows move by 1 px,
+    // Shift+arrows by 10 px. The position is exposed in the canvas label so
+    // screen-reader users hear the result of each adjustment.
+    const onKeyDown = (e: React.KeyboardEvent<HTMLCanvasElement>) => {
+        const step = e.shiftKey ? 10 : 1;
+        let dx = 0;
+        let dy = 0;
+        if (e.key === "ArrowLeft") dx = -step;
+        else if (e.key === "ArrowRight") dx = step;
+        else if (e.key === "ArrowUp") dy = -step;
+        else if (e.key === "ArrowDown") dy = step;
+        else return;
+        e.preventDefault();
+        if (!imageRef.current) return;
+        setRect((prev) => ({
+            ...prev,
+            x: Math.max(0, Math.min(display.w - prev.w, prev.x + dx)),
+            y: Math.max(0, Math.min(display.h - prev.h, prev.y + dy)),
+        }));
+    };
+
     const applyCrop = () => {
         const img = imageRef.current;
         if (!img || rect.w < 4 || rect.h < 4) return;
@@ -253,6 +276,10 @@ export function ImageCropDialog({
                                 ref={canvasRef}
                                 width={display.w}
                                 height={display.h}
+                                tabIndex={0}
+                                role="application"
+                                aria-label={`${t("adminCrop")} frame at x ${rect.x} y ${rect.y}. Arrow keys move; hold Shift for larger steps.`}
+                                onKeyDown={onKeyDown}
                                 onPointerDown={onPointerDown}
                                 onPointerMove={onPointerMove}
                                 onPointerUp={onPointerUp}

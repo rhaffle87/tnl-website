@@ -103,8 +103,8 @@ describe("Admin CMS Components", () => {
   it("AdminLogin renders sign-in form with email and password inputs", () => {
     renderWithProviders(<AdminLogin />, { route: "/admin/login" });
 
-    expect(screen.getByLabelText(/Email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText("Email address", { selector: "input" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Password", { selector: "input" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Sign in|Masuk/i })).toBeInTheDocument();
   });
 
@@ -225,7 +225,7 @@ describe("Admin CMS Components", () => {
     expect(screen.getByTestId("content-table")).toBeInTheDocument();
   });
 
-  it("ContentEditor create route renders the sticky action bar with 'Create & Publish'", async () => {
+  it("ContentEditor create label follows the actual publish status", async () => {
     renderWithProviders(
       <Routes>
         <Route path="/admin/content/:resource/new" element={<ContentEditor />} />
@@ -241,6 +241,11 @@ describe("Admin CMS Components", () => {
     expect(screen.getByTestId("content-editor-title")).toHaveTextContent("New Event");
     expect(screen.getByTestId("content-editor-back")).toHaveAttribute("href", "/admin/content/events");
     expect(screen.getByTestId("content-editor-status")).toHaveTextContent("Draft");
+    expect(screen.getByTestId("content-save-button")).toHaveTextContent("Create as Draft");
+
+    // Publishing the draft must update the action label, not keep a stale promise.
+    fireEvent.change(screen.getByTestId("content-field-status"), { target: { value: "published" } });
+    expect(screen.getByTestId("content-editor-status")).toHaveTextContent("Published");
     expect(screen.getByTestId("content-save-button")).toHaveTextContent("Create & Publish");
 
     // Bilingual tab switcher present, EN active by default.

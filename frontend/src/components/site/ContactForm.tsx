@@ -1,4 +1,4 @@
-// Contact form with honeypot; messages land in the admin inbox (Jev triages them).
+// Contact form with honeypot; messages land in the admin inbox (local advisor triages them).
 
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";

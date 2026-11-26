@@ -310,8 +310,35 @@ describe("AdminLayout App Shell & Categorized Dual-Scroll Navigation", () => {
     expect(drawer).toHaveAttribute("aria-modal", "true");
     await waitFor(() => expect(drawer.contains(document.activeElement)).toBe(true));
 
+    // Tab (and Shift+Tab) must never escape the open dialog.
+    for (let i = 0; i < 30; i += 1) {
+      fireEvent.keyDown(document, { key: "Tab" });
+      expect(drawer.contains(document.activeElement)).toBe(true);
+    }
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(drawer.contains(document.activeElement)).toBe(true);
+
     fireEvent.click(screen.getByTestId("admin-mobile-drawer-close"));
     await waitFor(() => expect(document.activeElement).toBe(toggle));
+  });
+
+  it("closes the mobile drawer on Escape and restores focus to the toggle", async () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/*" element={<AdminLayout />}>
+          <Route path="" element={<div>Dashboard</div>} />
+        </Route>
+      </Routes>,
+      { route: "/admin" }
+    );
+
+    const toggle = screen.getByTestId("admin-mobile-menu-toggle");
+    fireEvent.click(toggle);
+    await screen.findByTestId("admin-mobile-drawer");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("admin-mobile-drawer")).toBeNull());
+    expect(document.activeElement).toBe(toggle);
   });
 
 });

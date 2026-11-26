@@ -1,7 +1,7 @@
 // Page builder: list of pages, then a block workbench with add / reorder /
 // duplicate / hide / delete, live preview link and revision restore.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -16,7 +16,7 @@ import {
     Trash2,
 } from "lucide-react";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
-import { AdminPageHeader, AdminSectionHeader, AdminStatusBadge, ConfirmButton, IssueList, Panel, adminError, issuesFromError } from "@/pages/admin/AdminUI";
+import { AdminErrorBanner, AdminPageHeader, AdminSectionHeader, AdminStatusBadge, ConfirmButton, IssueList, Panel, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
 import { KeyValueMapEditor } from "@/components/admin/repeaters";
@@ -151,9 +151,10 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
     const [showRevisions, setShowRevisions] = useState(false);
     const [editingBlock, setEditingBlock] = useState<string | null>(null);
     const [propsText, setPropsText] = useState("");
+    const [propsError, setPropsError] = useState<string | null>(null);
     const [issues, setIssues] = useState<QualityIssue[]>([]);
 
-    const { data: page, isLoading } = useQuery({
+    const { data: page, isLoading, isError, error, refetch } = useQuery({
         queryKey: ["admin", "page", pageId],
         queryFn: () => apiGet<PageDoc>(`/admin/pages/${pageId}`),
         retry: false,
@@ -165,6 +166,20 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
         retry: false,
         enabled: showRevisions,
     });
+
+    // Invalid JSON must be reported inline instead of silently discarded.
+    useEffect(() => {
+        if (!propsText.trim()) {
+            setPropsError(null);
+            return;
+        }
+        try {
+            JSON.parse(propsText);
+            setPropsError(null);
+        } catch {
+            setPropsError("JSON tidak valid: periksa tanda kurung dan koma.");
+        }
+    }, [propsText]);
 
     const refresh = (updated?: PageDoc) => {
         if (updated) qc.setQueryData(["admin", "page", pageId], updated);
@@ -185,6 +200,14 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
             });
     };
 
+    if (isError) {
+        return (
+            <AdminErrorBanner
+                message={adminError(error, "Could not load this page.")}
+                onRetry={() => void refetch()}
+            />
+        );
+    }
     if (isLoading || !page) {
         return <Spinner label="Loading page…" />;
     }
@@ -209,7 +232,7 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
         try {
             parsed = propsText.trim() ? JSON.parse(propsText) : {};
         } catch {
-            toast.error("The settings are not valid. Check the brackets and commas.");
+            setPropsError("JSON tidak valid: periksa tanda kurung dan koma.");
             return;
         }
         setEditingBlock(null);
@@ -430,7 +453,7 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                                     p.url = newUrl;
                                                     setPropsText(JSON.stringify(p, null, 2));
                                                 } catch {
-                                                    // ignore parse error
+                                                    setPropsError("JSON tidak valid: periksa tanda kurung dan koma.");
                                                 }
                                             }}
                                             defaultFolder="pages"
@@ -459,7 +482,7 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                                     p.images = newUrls.map((u) => ({ url: u, alt: "" }));
                                                     setPropsText(JSON.stringify(p, null, 2));
                                                 } catch {
-                                                    // ignore parse error
+                                                    setPropsError("JSON tidak valid: periksa tanda kurung dan koma.");
                                                 }
                                             }}
                                             defaultFolder="pages"
@@ -467,6 +490,20 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                         />
                                     )}
 
+                                    <div className="pt-1">
+                                        <label htmlFor={`props-raw-${block.id}`} className="mb-1 block text-xs font-medium">
+                                            Widget properties JSON
+                                        </label>
+                                        <textarea
+                                            id={`props-raw-${block.id}`}
+                                            aria-label="Widget properties JSON"
+                                            rows={4}
+                                            value={propsText}
+                                            onChange={(e) => setPropsText(e.target.value)}
+                                            className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none"
+                                            style={{ borderColor: propsError ? "var(--tnl-danger)" : "var(--tnl-border)" }}
+                                        />
+                                    </div>
                                     <div className="pt-1">
                                         <KeyValueMapEditor
                                             label="Widget Settings & Properties"
@@ -484,7 +521,12 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                             testId={`block-props-${block.id}`}
                                         />
                                     </div>
-                                    <button type="button" onClick={() => saveProps(block)} className="tnl-btn tnl-btn-primary mt-3 h-10 min-h-[40px] text-sm" data-testid={`block-props-save-${block.id}`}>
+                                    {propsError ? (
+                                        <p role="alert" data-testid="pages-json-error" className="mt-2 text-xs" style={{ color: "var(--tnl-danger)" }}>
+                                            {propsError}
+                                        </p>
+                                    ) : null}
+                                    <button type="button" onClick={() => saveProps(block)} disabled={Boolean(propsError)} className="tnl-btn tnl-btn-primary mt-3 h-10 min-h-[40px] text-sm disabled:opacity-50" data-testid={`block-props-save-${block.id}`}>
                                         <Save className="h-4 w-4" aria-hidden="true" />
                                         Save settings
                                     </button>

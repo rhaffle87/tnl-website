@@ -1,8 +1,253 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
+  "plugins": [
+    "react",
+    "typescript",
+    "oxc"
+  ],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/components/admin/editor/RichTextField.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "countWords",
+              "escapeHtml",
+              "htmlToPlainText",
+              "isSafeHref",
+              "normalizeHtml"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/components/admin/repeaters/KeyValueMapEditor.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "MEMBER_SOCIAL_PRESETS"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/components/site/Blocks.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "useMembersForBlocks"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/components/site/Chrome.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "isRegistrationTarget"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/components/site/Primitives.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "formatDate"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/components/site/SmoothScrollProvider.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "useSmoothScroll"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/components/site/SpotlightCard.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "cancelSpotlightFrame",
+              "handleSpotlightPointerEnter",
+              "handleSpotlightPointerMove"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/components/ui/badge.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "badgeVariants"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/components/ui/button.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "buttonVariants"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/components/ui/tabs.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "tabsListVariants"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/pages/admin/AdminLayout.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "NAV_GROUPS"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/pages/admin/AdminScreens.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "publishedEventQuota"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/pages/admin/AdminUI.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "adminError",
+              "issuesFromError"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/pages/admin/ContentManager.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true,
+            "allowExportNames": [
+              "RESOURCE_SPECS",
+              "emptyDraft",
+              "toForm",
+              "toPayload"
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

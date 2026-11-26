@@ -20,7 +20,7 @@ export default function PublicationsPage() {
     const [year, setYear] = useState<string>("");
     const [ptype, setPtype] = useState<string>("");
 
-    const list = publications ?? [];
+    const list = useMemo(() => publications ?? [], [publications]);
     const years = useMemo(
         () => Array.from(new Set(list.map((p) => p.year).filter(Boolean))).sort((a, b) => Number(b) - Number(a)),
         [list],

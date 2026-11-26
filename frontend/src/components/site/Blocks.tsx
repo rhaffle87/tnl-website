@@ -1,7 +1,7 @@
 // Block renderer: every public page is a list of blocks authored in TNL Studio.
 // Each block type here matches an entry in the admin's block library.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { m } from "motion/react";
 import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
@@ -361,7 +361,7 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
         category: category || undefined,
         q: debouncedSearch || undefined,
     });
-    const posts = data?.items ?? [];
+    const posts = useMemo(() => data?.items ?? [], [data?.items]);
 
     const [masterCategories, setMasterCategories] = useState<string[]>([]);
     useEffect(() => {

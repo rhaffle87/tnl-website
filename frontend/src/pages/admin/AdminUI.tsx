@@ -1,8 +1,9 @@
 // Shared admin UI helpers: page header, cards, quality-issue list, confirm dialog.
 
-import { useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, Info, TriangleAlert } from "lucide-react";
 import { ApiError } from "@/lib/api";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import { cn } from "@/lib/utils";
 import type { QualityIssue } from "@/lib/types";
 import "@/components/admin/admin-editorial.css";
@@ -185,9 +186,34 @@ export function ConfirmButton({
     variant?: "destructive" | "primary";
 }) {
     const [asking, setAsking] = useState(false);
+    const [pending, setPending] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const dialogRef = useRef<HTMLDivElement>(null);
+    const acceptRef = useRef<HTMLButtonElement>(null);
+    const questionId = useId();
+
+    const close = () => {
+        setAsking(false);
+        requestAnimationFrame(() => triggerRef.current?.focus());
+    };
+
+    useFocusTrap(asking, dialogRef, { onEscape: close, initialFocusRef: acceptRef });
+
+    const accept = async () => {
+        if (pending) return; // guard against double submit
+        setPending(true);
+        try {
+            await onConfirm();
+        } finally {
+            setPending(false);
+            close();
+        }
+    };
+
     if (!asking) {
         return (
             <button
+                ref={triggerRef}
                 type="button"
                 onClick={() => setAsking(true)}
                 className="rounded-[6px] border px-3 py-1.5 text-xs font-medium transition-colors"
@@ -203,31 +229,102 @@ export function ConfirmButton({
         );
     }
     return (
-        <span className="inline-flex flex-wrap items-center gap-2 rounded-[6px] border px-3 py-1.5" style={{ borderColor: "var(--tnl-danger-border)" }}>
-            <span className="text-xs" style={{ color: "var(--tnl-danger)" }}>
+        <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={questionId}
+            className="inline-flex flex-wrap items-center gap-2 rounded-[6px] border px-3 py-1.5"
+            style={{ borderColor: "var(--tnl-danger-border)" }}
+        >
+            <span id={questionId} className="text-xs" style={{ color: "var(--tnl-danger)" }}>
                 {question}
             </span>
             <button
+                ref={acceptRef}
                 type="button"
-                onClick={async () => {
-                    setAsking(false);
-                    await onConfirm();
-                }}
-                className="rounded-[6px] px-2.5 py-1 text-xs font-semibold text-white"
+                disabled={pending}
+                aria-busy={pending}
+                onClick={() => void accept()}
+                className="rounded-[6px] px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
                 style={{ background: "var(--tnl-danger)" }}
                 data-testid={`${testId}-confirm`}
             >
-                {confirmLabel}
+                {pending ? "Working..." : confirmLabel}
             </button>
             <button
                 type="button"
-                onClick={() => setAsking(false)}
-                className="text-xs underline"
+                disabled={pending}
+                onClick={close}
+                className="text-xs underline disabled:opacity-50"
                 data-testid={`${testId}-cancel`}
             >
                 Cancel
             </button>
-        </span>
+        </div>
+    );
+}
+
+/** Shared error banner: always an alert, with a retry action when refetching is possible. */
+export function AdminErrorBanner({
+    message,
+    onRetry,
+    testId,
+}: {
+    message: string;
+    onRetry?: () => void;
+    testId?: string;
+}) {
+    return (
+        <div
+            role="alert"
+            className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm"
+            style={{ borderColor: "var(--tnl-danger-border)", color: "var(--tnl-danger)" }}
+            data-testid={testId}
+        >
+            <span>{message}</span>
+            {onRetry ? (
+                <button type="button" onClick={onRetry} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs">
+                    Coba lagi
+                </button>
+            ) : null}
+        </div>
+    );
+}
+
+/** "X dari Y" count + a real load-more action; the button disappears at the end. */
+export function AdminLoadMore({
+    shown,
+    total,
+    onMore,
+    testId,
+    countTestId,
+    loading = false,
+}: {
+    shown: number;
+    total: number;
+    onMore: () => void;
+    testId?: string;
+    countTestId?: string;
+    loading?: boolean;
+}) {
+    return (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs" data-testid={countTestId} style={{ color: "var(--tnl-tan-text)" }}>
+                {shown} dari {total}
+            </span>
+            {shown < total ? (
+                <button
+                    type="button"
+                    onClick={onMore}
+                    disabled={loading}
+                    className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-sm disabled:opacity-50"
+                    data-testid={testId}
+                >
+                    {loading ? "Memuat..." : "Muat lebih banyak"}
+                </button>
+            ) : null}
+        </div>
     );
 }
 

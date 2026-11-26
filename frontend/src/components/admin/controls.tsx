@@ -23,6 +23,7 @@ export function AdminSwitch({
     testId,
     className = "",
     labelHidden = false,
+    id,
 }: {
     label: string;
     description?: ReactNode;
@@ -32,10 +33,13 @@ export function AdminSwitch({
     testId?: string;
     className?: string;
     labelHidden?: boolean;
+    /** Optional DOM id used to pair the visible label with the switch control. */
+    id?: string;
 }) {
     return (
         <div className={cn("flex items-start gap-3", disabled && "opacity-60", className)}>
             <button
+                id={id}
                 type="button"
                 role="switch"
                 aria-checked={checked}
@@ -60,7 +64,14 @@ export function AdminSwitch({
                     )}
                 />
             </button>
-            {labelHidden ? null : (
+            {labelHidden ? null : id ? (
+                <span className="min-w-0">
+                    <label htmlFor={id} className="block cursor-pointer text-sm font-medium text-[var(--tnl-heading)]">
+                        {label}
+                    </label>
+                    {description ? <span className="mt-0.5 block text-xs text-[var(--tnl-body)]">{description}</span> : null}
+                </span>
+            ) : (
                 <span className="min-w-0">
                     <span className="block text-sm font-medium text-[var(--tnl-heading)]">{label}</span>
                     {description ? <span className="mt-0.5 block text-xs text-[var(--tnl-body)]">{description}</span> : null}

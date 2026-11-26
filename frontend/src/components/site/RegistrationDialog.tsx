@@ -1,11 +1,12 @@
 // Public registration dialog: renders the admin-built form (including conditional
 // fields and file upload), enforces explicit UU PDP consent, and posts multipart.
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Check, CheckCircle2, Copy, MessageCircle, X } from "lucide-react";
 import { useLocale, pick } from "@/lib/i18n";
 import type { LabEvent } from "@/lib/types";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 function fieldKey(label: string): string {
     const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -32,6 +33,15 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
     const [result, setResult] = useState<SubmitResult | null>(null);
     const [copiedWa, setCopiedWa] = useState(false);
     const [values, setValues] = useState<Record<string, string>>({});
+    const dialogRef = useRef<HTMLDivElement>(null);
+
+    useFocusTrap(true, dialogRef, { onEscape: onClose });
+
+    useEffect(() => {
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => { document.body.style.overflow = previousOverflow; };
+    }, []);
 
     const handleCopyWa = async (url: string) => {
         try {
@@ -109,13 +119,20 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
 
     return (
         <div
+            ref={dialogRef}
+            tabIndex={-1}
             className="fixed inset-0 z-[110] flex items-center justify-center p-4"
             role="dialog"
             aria-modal="true"
             aria-labelledby="registration-dialog-title"
             data-testid="registration-dialog"
         >
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} aria-hidden="true" />
+            <div
+                className="absolute inset-0 backdrop-blur-sm animate-fade-in"
+                style={{ background: "color-mix(in srgb, var(--gsm-obsidian) 60%, transparent)" }}
+                onClick={onClose}
+                aria-hidden="true"
+            />
             <div className="tnl-card relative z-10 max-h-[90vh] w-full max-w-xl overflow-y-auto p-0 animate-pop">
                 <div className="tnl-hero-gradient sticky top-0 z-10 flex items-start justify-between gap-4 px-7 py-5">
                     <div>

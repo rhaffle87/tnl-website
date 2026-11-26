@@ -230,15 +230,18 @@ export function ObjectListRepeater({
             {rawMode ? (
                 <div className="space-y-2">
                     <textarea
+                        id={`${testId}-raw-input`}
                         value={rawJsonText}
                         onChange={(e) => handleRawTextChange(e.target.value)}
                         rows={9}
+                        aria-invalid={jsonError ? true : undefined}
+                        aria-describedby={jsonError ? `${testId}-raw-error` : undefined}
                         className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                         style={{ backgroundColor: "var(--tnl-bg)", borderColor: jsonError ? "var(--tnl-red)" : "var(--tnl-border)" }}
                         data-testid={`${testId}-raw-textarea`}
                     />
                     {jsonError && (
-                        <div className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400">
+                        <div id={`${testId}-raw-error`} role="alert" className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                             <span>{jsonError}</span>
                         </div>

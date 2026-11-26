@@ -1,6 +1,6 @@
 // Utility public pages: legal pages (CMS-driven), certificate verification, 404.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./utility-editorial.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { BadgeCheck, Download, QrCode, RotateCcw, Search, ShieldAlert, ShieldCheck } from "lucide-react";
@@ -37,7 +37,7 @@ export function VerifyPage() {
     const [loading, setLoading] = useState(Boolean(code));
     const [searched, setSearched] = useState(Boolean(code));
 
-    const runVerification = (targetCode: string) => {
+    const runVerification = useCallback((targetCode: string) => {
         const clean = targetCode.trim();
         if (!clean) return;
         setLoading(true);
@@ -57,7 +57,7 @@ export function VerifyPage() {
             .finally(() => {
                 setLoading(false);
             });
-    };
+    }, [locale]);
 
     useEffect(() => {
         if (code) {
@@ -68,7 +68,7 @@ export function VerifyPage() {
             setLoading(false);
             setSearched(false);
         }
-    }, [code]);
+    }, [code, runVerification]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

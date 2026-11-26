@@ -10,8 +10,6 @@ import { expect, test } from "@playwright/test";
  * modal's rect — both scale together, so the comparison holds either way.
  */
 
-type Box = { x: number; y: number; w: number; h: number; right: number; bottom: number };
-
 async function settle(page: import("@playwright/test").Page) {
     // Let the enter animation finish so we measure the final box, not a frame.
     await page

@@ -1,13 +1,16 @@
-// Media library, Registrar dashboard, Contact inbox (with Jev triage/scoring),
+// Media library, Registrar dashboard, Contact inbox (with local triage),
 // Theme editor, Settings, People & access, API keys.
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Award, Check, Copy, Download, FileJson, FileSpreadsheet, KeyRound, Sparkles, Upload } from "lucide-react";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
-import { AdminCard, AdminPageHeader, AdminSectionHeader, AdminSelect, AdminStatusBadge, AdminSwitch, ConfirmButton, Panel, adminError } from "@/pages/admin/AdminUI";
+import { useAdminT } from "@/lib/admin-i18n";
+import { useFocusTrap } from "@/lib/useFocusTrap";
+import { FEATURES } from "@/lib/features";
+import { AdminCard, AdminErrorBanner, AdminLoadMore, AdminPageHeader, AdminSectionHeader, AdminSelect, AdminStatusBadge, AdminSwitch, ConfirmButton, Panel, adminError } from "@/pages/admin/AdminUI";
 import { useMe } from "@/lib/hooks";
 import { applyThemeTokens } from "@/lib/theme";
 import { Spinner } from "@/components/site/Primitives";
@@ -37,7 +40,7 @@ export function MediaLibrary() {
     const [videoUrl, setVideoUrl] = useState("");
     const [search, setSearch] = useState("");
 
-    const { data, isLoading } = useQuery({
+    const { data, isLoading, error, refetch } = useQuery({
         queryKey: ["admin", "media", search],
         queryFn: () => apiGet<{ items: MediaAsset[]; folders: string[] }>(`/admin/media${search ? `?q=${encodeURIComponent(search)}` : ""}`),
         retry: false,
@@ -116,7 +119,12 @@ export function MediaLibrary() {
 
             <input type="search" className="tnl-field mb-4 sm:max-w-sm" placeholder="Search files…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search files" data-testid="media-search-input" />
 
-            {isLoading ? (
+            {error ? (
+                <AdminErrorBanner
+                    message={adminError(error, "Could not load the media library.")}
+                    onRetry={() => void refetch()}
+                />
+            ) : isLoading ? (
                 <Spinner label="Loading…" />
             ) : items.length === 0 ? (
                 <Panel>
@@ -156,10 +164,15 @@ export function MediaLibrary() {
                             <div className="mt-3 flex flex-wrap items-center gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        void navigator.clipboard?.writeText(asset.url);
-                                        toast.success("Link copied.");
+                                    onClick={async () => {
+                                        try {
+                                            await navigator.clipboard.writeText(asset.url);
+                                            toast.success("Link copied.");
+                                        } catch {
+                                            toast.error("Could not copy the link.");
+                                        }
                                     }}
+                                    aria-label={`Copy link for ${asset.filename}`}
                                     className="rounded-[6px] border px-3 py-1.5 text-xs font-medium"
                                     style={{ borderColor: "var(--tnl-border)" }}
                                     data-testid={`media-copy-${asset.id}`}
@@ -284,7 +297,11 @@ export function RegistrarPage() {
         <div data-testid="registrar-page">
             <AdminPageHeader
                 title="Registrations"
-                description="Everyone who signed up for a programme. All valid registrations are automatically accepted. Check participants in at the door, manage entries, issue certificates, or export to Excel/CSV."
+                description={
+                    FEATURES.doorCheckIn || FEATURES.certificates
+                        ? "Everyone who signed up for a programme. All valid registrations are automatically accepted. Check participants in at the door, manage entries, issue certificates, or export to Excel/CSV."
+                        : "Everyone who signed up for a programme. All valid registrations are automatically accepted. Manage entries or export to Excel/CSV. Door check-in and certificates are temporarily unavailable."
+                }
                 actions={
                     <div className="flex flex-wrap items-center gap-2">
                         <div
@@ -308,17 +325,19 @@ export function RegistrarPage() {
                                 {dataUpdatedAt ? `Updated ${new Date(dataUpdatedAt).toLocaleTimeString()}` : "Waiting…"}
                             </span>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => issueCerts.mutate()}
-                            className="tnl-btn tnl-btn-primary h-10 min-h-[40px] text-sm"
-                            disabled={!eventId || issueCerts.isPending}
-                            data-testid="issue-certificates-btn"
-                            title={!eventId ? "Select an event to issue certificates" : "Issue certificate codes for attended participants"}
-                        >
-                            <Award className="h-4 w-4" aria-hidden="true" />
-                            {issueCerts.isPending ? "Issuing…" : "Issue Certificates"}
-                        </button>
+                        {FEATURES.certificates ? (
+                            <button
+                                type="button"
+                                onClick={() => issueCerts.mutate()}
+                                className="tnl-btn tnl-btn-primary h-10 min-h-[40px] text-sm"
+                                disabled={!eventId || issueCerts.isPending}
+                                data-testid="issue-certificates-btn"
+                                title={!eventId ? "Select an event to issue certificates" : "Issue certificate codes for attended participants"}
+                            >
+                                <Award className="h-4 w-4" aria-hidden="true" />
+                                {issueCerts.isPending ? "Issuing…" : "Issue Certificates"}
+                            </button>
+                        ) : null}
                         <a href={exportExcelUrl} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="registrations-export-excel-button">
                             <FileSpreadsheet className="h-4 w-4 mr-1.5" aria-hidden="true" />
                             Export Excel (.xlsx)
@@ -377,6 +396,7 @@ export function RegistrarPage() {
                         ))}
                     </AdminSelect>
                 </div>
+                {FEATURES.doorCheckIn ? (
                 <div className="mt-4 rounded-xl border border-[var(--tnl-green)]/40 bg-[var(--tnl-green)]/5 p-3">
                     <p className="mb-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--tnl-green)" }}>Door check-in</p>
                     <div className="flex flex-col gap-2 sm:flex-row">
@@ -426,6 +446,7 @@ export function RegistrarPage() {
                         </div>
                     ) : null}
                 </div>
+                ) : null}
             </Panel>
 
             {isLoading ? (
@@ -455,14 +476,16 @@ export function RegistrarPage() {
                             </div>
                             <p className="mt-2 text-xs" style={{ color: "var(--tnl-tan-text)" }}>{reg.event_title}</p>
                             <div className="mt-3 flex flex-wrap gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setRegStatus.mutate({ id: reg.id, next: "attended" })}
-                                    className="tnl-btn tnl-btn-primary min-h-[40px] text-xs"
-                                    data-testid={`registration-checkin-${reg.id}`}
-                                >
-                                    Check in
-                                </button>
+                                {FEATURES.doorCheckIn ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setRegStatus.mutate({ id: reg.id, next: "attended" })}
+                                        className="tnl-btn tnl-btn-primary min-h-[40px] text-xs"
+                                        data-testid={`registration-checkin-${reg.id}`}
+                                    >
+                                        Check in
+                                    </button>
+                                ) : null}
                                 <button
                                     type="button"
                                     onClick={() => setRegStatus.mutate({ id: reg.id, next: "rejected" })}
@@ -494,7 +517,7 @@ export function RegistrarPage() {
                                 <th className="pb-2 pr-4 font-semibold">Name</th>
                                 <th className="pb-2 pr-4 font-semibold">Event</th>
                                 <th className="pb-2 pr-4 font-semibold">Status</th>
-                                <th className="pb-2 pr-4 font-semibold">Certificate</th>
+                                {FEATURES.certificates ? <th className="pb-2 pr-4 font-semibold">Certificate</th> : null}
                                 <th className="pb-2 font-semibold">Decide</th>
                             </tr>
                         </thead>
@@ -511,39 +534,43 @@ export function RegistrarPage() {
                                     </td>
                                     <td className="py-3 pr-4">{reg.event_title}</td>
                                     <td className="py-3 pr-4 capitalize">{reg.status}</td>
-                                    <td className="py-3 pr-4">
-                                        {reg.certificate_code ? (
-                                            <a
-                                                href={`/api/certificates/${reg.certificate_code}/pdf`}
-                                                download
-                                                className="inline-flex items-center gap-1 rounded-[6px] border px-2 py-0.5 text-xs font-mono font-semibold transition-colors hover:border-[var(--tnl-green)]"
-                                                style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-green)" }}
-                                                title="Download certificate PDF"
-                                                data-testid={`download-cert-${reg.id}`}
-                                            >
-                                                <Download className="h-3 w-3" />
-                                                {reg.certificate_code}
-                                            </a>
-                                        ) : (
-                                            <span className="text-xs" style={{ color: "var(--tnl-tan-text)" }}>—</span>
-                                        )}
-                                    </td>
+                                    {FEATURES.certificates ? (
+                                        <td className="py-3 pr-4">
+                                            {reg.certificate_code ? (
+                                                <a
+                                                    href={`/api/certificates/${reg.certificate_code}/pdf`}
+                                                    download
+                                                    className="inline-flex items-center gap-1 rounded-[6px] border px-2 py-0.5 text-xs font-mono font-semibold transition-colors hover:border-[var(--tnl-green)]"
+                                                    style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-green)" }}
+                                                    title="Download certificate PDF"
+                                                    data-testid={`download-cert-${reg.id}`}
+                                                >
+                                                    <Download className="h-3 w-3" />
+                                                    {reg.certificate_code}
+                                                </a>
+                                            ) : (
+                                                <span className="text-xs" style={{ color: "var(--tnl-tan-text)" }}>—</span>
+                                            )}
+                                        </td>
+                                    ) : null}
                                     <td className="py-3">
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => setRegStatus.mutate({ id: reg.id, next: "attended" })}
-                                                className={`rounded-[6px] border px-2.5 py-1 text-xs font-medium capitalize transition-colors ${
-                                                    reg.status === "attended"
-                                                        ? "bg-[var(--tnl-green)] text-white border-[var(--tnl-green)]"
-                                                        : "hover:border-[var(--tnl-green)] hover:text-[var(--tnl-green)]"
-                                                }`}
-                                                style={{ borderColor: reg.status === "attended" ? undefined : "var(--tnl-border)" }}
-                                                data-testid={`registration-attended-${reg.id}`}
-                                                title="Tandai peserta hadir (presensi hari-H)"
-                                            >
-                                                Attended
-                                            </button>
+                                            {FEATURES.doorCheckIn ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setRegStatus.mutate({ id: reg.id, next: "attended" })}
+                                                    className={`rounded-[6px] border px-2.5 py-1 text-xs font-medium capitalize transition-colors ${
+                                                        reg.status === "attended"
+                                                            ? "bg-[var(--tnl-green)] text-white border-[var(--tnl-green)]"
+                                                            : "hover:border-[var(--tnl-green)] hover:text-[var(--tnl-green)]"
+                                                    }`}
+                                                    style={{ borderColor: reg.status === "attended" ? undefined : "var(--tnl-border)" }}
+                                                    data-testid={`registration-attended-${reg.id}`}
+                                                    title="Tandai peserta hadir (presensi hari-H)"
+                                                >
+                                                    Attended
+                                                </button>
+                                            ) : null}
                                             <button
                                                 type="button"
                                                 onClick={() => setRegStatus.mutate({ id: reg.id, next: "rejected" })}
@@ -921,7 +948,9 @@ export function ThemePage() {
                                 <div className="mt-3.5 flex items-center gap-2">
                                     <button
                                         type="button"
-                                        className="px-3 py-1.5 rounded-md text-xs font-bold shadow-sm"
+                                        disabled
+                                        aria-hidden="true"
+                                        className="px-3 py-1.5 rounded-md text-xs font-bold shadow-sm opacity-70"
                                         style={{ backgroundColor: activePrimary, color: "#FFFFFF" }}
                                     >
                                         Eksplorasi Riset
@@ -961,14 +990,18 @@ export function ThemePage() {
                                 <div className="mt-3.5 flex items-center gap-2">
                                     <button
                                         type="button"
-                                        className="px-3 py-1.5 rounded-md text-xs font-bold shadow-sm"
+                                        disabled
+                                        aria-hidden="true"
+                                        className="px-3 py-1.5 rounded-md text-xs font-bold shadow-sm opacity-70"
                                         style={{ backgroundColor: activeAccent, color: activeObsidian }}
                                     >
                                         Daftar Pelatihan
                                     </button>
                                     <button
                                         type="button"
-                                        className="px-2.5 py-1.5 rounded-md text-xs font-medium border"
+                                        disabled
+                                        aria-hidden="true"
+                                        className="px-2.5 py-1.5 rounded-md text-xs font-medium border opacity-70"
                                         style={{ borderColor: activeEmerald, color: activeEmerald }}
                                     >
                                         Silabus
@@ -1008,7 +1041,7 @@ export function ThemePage() {
 // ---------------------------------------------------------------- settings
 export function SettingsPage() {
     const qc = useQueryClient();
-    const { data, isLoading } = useQuery({
+    const { data, isLoading, isError, error, refetch } = useQuery({
         queryKey: ["admin", "settings"],
         queryFn: () => apiGet<SiteSettings>("/admin/settings"),
         retry: false,
@@ -1097,15 +1130,28 @@ export function SettingsPage() {
                 announcement: current.announcement,
                 retention_days: current.retention_days,
             }),
-        onSuccess: () => {
+    });
+
+    const saveSettings = async () => {
+        try {
+            await save.mutateAsync();
             void qc.invalidateQueries({ queryKey: ["admin", "settings"] });
             void qc.invalidateQueries({ queryKey: ["public", "settings"] });
             toast.success("Settings saved.");
-        },
-        onError: (err) => toast.error(adminError(err, "Could not save the settings.")),
-    });
+        } catch (err) {
+            toast.error(adminError(err, "Could not save the settings."));
+        }
+    };
 
-    if (isLoading || !data) return <Spinner label="Loading…" />;
+    if (isError || !data) {
+        return (
+            <AdminErrorBanner
+                message={adminError(error, "Could not load the settings.")}
+                onRetry={() => void refetch()}
+            />
+        );
+    }
+    if (isLoading) return <Spinner label="Loading…" />;
 
     const set = (patch: Partial<SiteSettings>) => setForm({ ...(form ?? {}), ...patch });
 
@@ -1115,7 +1161,7 @@ export function SettingsPage() {
                 title="Site settings"
                 description="The one place for the laboratory's name, contact details and social links. The footer and the contact page both read from here, so they can never disagree."
                 actions={
-                    <button type="button" onClick={() => save.mutate()} className="tnl-btn tnl-btn-primary h-10 min-h-[40px] text-sm" data-testid="settings-save-button">
+                    <button type="button" onClick={() => void saveSettings()} disabled={save.isPending} className="tnl-btn tnl-btn-primary h-10 min-h-[40px] text-sm" data-testid="settings-save-button">
                         Save settings
                     </button>
                 }
@@ -1302,8 +1348,9 @@ export function SettingsPage() {
 
                     <div className="mt-3 space-y-3">
                         <div>
-                            <label className="block text-xs font-medium mb-1">Pilih File JSON (.json)</label>
+                            <label htmlFor="settings-figma-json-file" className="block text-xs font-medium mb-1">Pilih File JSON (.json)</label>
                             <input
+                                id="settings-figma-json-file"
                                 type="file"
                                 accept=".json,application/json"
                                 onChange={handleFileUpload}
@@ -1312,8 +1359,9 @@ export function SettingsPage() {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-medium mb-1">Atau Tempel JSON Tokens Studio / W3C</label>
+                            <label htmlFor="settings-figma-json-paste" className="block text-xs font-medium mb-1">Atau Tempel JSON Tokens Studio / W3C</label>
                             <textarea
+                                id="settings-figma-json-paste"
                                 rows={4}
                                 className="tnl-field font-mono text-[11px]"
                                 placeholder='{"primary": {"value": "#223027"}, "emerald": {"value": "#5D8A6B"}, "accent": {"value": "#A8977B"}}'
@@ -1387,16 +1435,22 @@ export function SettingsPage() {
                                         type="text"
                                         readOnly
                                         value={generatedToken}
+                                        aria-label="Generated Figma token"
                                         className="tnl-field font-mono text-xs flex-1"
                                     />
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            void navigator.clipboard.writeText(generatedToken);
-                                            setCopiedToken(true);
-                                            setTimeout(() => setCopiedToken(false), 2000);
-                                            toast.success("Token disalin!");
+                                        onClick={async () => {
+                                            try {
+                                                await navigator.clipboard.writeText(generatedToken);
+                                                setCopiedToken(true);
+                                                setTimeout(() => setCopiedToken(false), 2000);
+                                                toast.success("Token disalin!");
+                                            } catch {
+                                                toast.error("Gagal menyalin token.");
+                                            }
                                         }}
+                                        aria-label="Copy Figma token"
                                         className="tnl-btn tnl-btn-outline shrink-0 h-[42px] px-3 text-xs"
                                     >
                                         {copiedToken ? <Check className="h-4 w-4 text-[var(--gsm-emerald)]" /> : <Copy className="h-4 w-4" />}
@@ -1425,19 +1479,75 @@ export function SettingsPage() {
 }
 
 function Field({ label, value, onChange, help, testId }: { label: string; value: string; onChange: (v: string) => void; help?: string; testId: string }) {
+    const fieldId = useId();
     return (
         <div>
-            <label className="mb-1.5 block text-sm font-medium">{label}</label>
-            <input className="tnl-field" value={value} onChange={(e) => onChange(e.target.value)} aria-label={label} data-testid={testId} />
+            <label htmlFor={fieldId} className="mb-1.5 block text-sm font-medium">{label}</label>
+            <input id={fieldId} className="tnl-field" value={value} onChange={(e) => onChange(e.target.value)} aria-label={label} data-testid={testId} />
             {help ? <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>{help}</p> : null}
         </div>
     );
 }
 
 // ---------------------------------------------------------------- users & keys
+function UsersConfirmDialog({
+    title,
+    message,
+    onAccept,
+    onCancel,
+}: {
+    title: string;
+    message: string;
+    onAccept: () => void;
+    onCancel: () => void;
+}) {
+    const dialogRef = useRef<HTMLDivElement>(null);
+    const acceptRef = useRef<HTMLButtonElement>(null);
+    const descriptionId = useId();
+    const t = useAdminT();
+
+    useFocusTrap(true, dialogRef, { onEscape: onCancel, initialFocusRef: acceptRef });
+
+    return (
+        <div
+            ref={dialogRef}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="users-confirm-title"
+            aria-describedby={descriptionId}
+            data-testid="confirm-dialog"
+        >
+            <div className="w-full max-w-md rounded-xl border p-5 shadow-xl" style={{ borderColor: "var(--tnl-border)", background: "var(--tnl-surface)" }}>
+                <h2 id="users-confirm-title" className="text-base font-semibold text-[var(--tnl-heading)]">{title}</h2>
+                <p id={descriptionId} className="mt-2 text-sm text-[var(--tnl-body)]">{message}</p>
+                <div className="mt-5 flex justify-end gap-2">
+                    <button
+                        ref={acceptRef}
+                        type="button"
+                        onClick={onAccept}
+                        className="tnl-btn tnl-btn-primary h-9 min-h-[36px] text-xs"
+                        data-testid="confirm-accept"
+                    >
+                        {t("adminConfirm")}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs"
+                        data-testid="confirm-cancel"
+                    >
+                        {t("adminCancel")}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function UsersPage() {
     const qc = useQueryClient();
-    const { data, isLoading } = useQuery({
+    const { data, isLoading, error, refetch } = useQuery({
         queryKey: ["admin", "users"],
         queryFn: () => apiGet<ListResponse<AuthUser>>("/admin/users"),
         retry: false,
@@ -1445,6 +1555,13 @@ export function UsersPage() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [role, setRole] = useState("contributor");
+    const [userLimit, setUserLimit] = useState(50);
+    const [pendingChange, setPendingChange] = useState<{
+        id: string;
+        name: string;
+        label: string;
+        patch: Record<string, unknown>;
+    } | null>(null);
 
     const refresh = () => void qc.invalidateQueries({ queryKey: ["admin", "users"] });
 
@@ -1461,14 +1578,23 @@ export function UsersPage() {
 
     const update = useMutation({
         mutationFn: ({ id, patch }: { id: string; patch: Record<string, unknown> }) => apiPatch<AuthUser>(`/admin/users/${id}`, patch),
-        onSuccess: () => {
-            refresh();
-            toast.success("Updated.");
-        },
-        onError: (err) => toast.error(adminError(err, "Could not update this account.")),
     });
 
     const users = data?.items ?? [];
+    const shownUsers = users.slice(0, userLimit);
+
+    const applyPendingChange = async () => {
+        if (!pendingChange) return;
+        const change = pendingChange;
+        setPendingChange(null);
+        try {
+            await update.mutateAsync({ id: change.id, patch: change.patch });
+            refresh();
+            toast.success(`Updated ${change.name}.`);
+        } catch (err) {
+            toast.error(adminError(err, "Could not update this account."));
+        }
+    };
 
     return (
         <div data-testid="users-page">
@@ -1496,8 +1622,18 @@ export function UsersPage() {
                 </div>
             </Panel>
 
-            {isLoading ? (
+            {error ? (
+                <AdminErrorBanner
+                    testId="users-list-error"
+                    message={adminError(error, "Could not load the users list.")}
+                    onRetry={() => void refetch()}
+                />
+            ) : isLoading ? (
                 <Spinner label="Loading…" />
+            ) : users.length === 0 ? (
+                <Panel>
+                    <p className="text-sm text-[var(--tnl-body)]">No accounts yet.</p>
+                </Panel>
             ) : (
                 <Panel className="overflow-x-auto">
                     <table className="w-full text-sm" data-testid="users-table">
@@ -1510,7 +1646,7 @@ export function UsersPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {users.map((user) => (
+                            {shownUsers.map((user) => (
                                 <tr key={user.id} className="border-t" style={{ borderColor: "var(--tnl-border)" }} data-testid={`user-row-${user.id}`}>
                                     <td className="py-3 pr-4">
                                         <span className="font-medium">{user.name}</span>
@@ -1522,7 +1658,15 @@ export function UsersPage() {
                                         <div className="flex flex-wrap items-center gap-2">
                                             <AdminSelect
                                                 value={user.role}
-                                                onChange={(e) => update.mutate({ id: user.id, patch: { role: e.target.value } })}
+                                                onChange={(e) => {
+                                                    if (e.target.value === user.role) return;
+                                                    setPendingChange({
+                                                        id: user.id,
+                                                        name: user.name,
+                                                        label: `Ubah peran ${user.name} menjadi ${e.target.value.replace("_", " ")}?`,
+                                                        patch: { role: e.target.value },
+                                                    });
+                                                }}
                                                 aria-label={`Role for ${user.name}`}
                                                 data-testid={`user-role-${user.id}`}
                                             >
@@ -1534,7 +1678,12 @@ export function UsersPage() {
                                             </AdminSelect>
                                             <button
                                                 type="button"
-                                                onClick={() => update.mutate({ id: user.id, patch: { active: !user.active } })}
+                                                onClick={() => setPendingChange({
+                                                    id: user.id,
+                                                    name: user.name,
+                                                    label: `${user.active ? "Nonaktifkan" : "Aktifkan"} akun ${user.name}?`,
+                                                    patch: { active: !user.active },
+                                                })}
                                                 className="rounded-[6px] border px-3 py-1.5 text-xs font-medium"
                                                 style={{ borderColor: "var(--tnl-border)" }}
                                                 data-testid={`user-toggle-${user.id}`}
@@ -1549,15 +1698,32 @@ export function UsersPage() {
                     </table>
                 </Panel>
             )}
+            {!error && !isLoading && users.length > 0 ? (
+                <AdminLoadMore
+                    shown={shownUsers.length}
+                    total={users.length}
+                    onMore={() => setUserLimit((current) => current + 50)}
+                    testId="load-more-users"
+                />
+            ) : null}
+            {pendingChange ? (
+                <UsersConfirmDialog
+                    title="Confirm access change"
+                    message={pendingChange.label}
+                    onAccept={() => void applyPendingChange()}
+                    onCancel={() => setPendingChange(null)}
+                />
+            ) : null}
         </div>
     );
 }
 
 export function ApiKeysPage() {
     const qc = useQueryClient();
+    const [status, setStatus] = useState("");
     const { data, isLoading } = useQuery({
-        queryKey: ["admin", "api-keys"],
-        queryFn: () => apiGet<ListResponse<ApiKeyRecord>>("/admin/api-keys"),
+        queryKey: ["admin", "api-keys", status],
+        queryFn: () => apiGet<{ items: ApiKeyRecord[]; counts: { active: number; revoked: number } }>(`/admin/api-keys${status ? `?status=${status}` : ""}`),
         retry: false,
     });
     const [name, setName] = useState("");
@@ -1581,6 +1747,16 @@ export function ApiKeysPage() {
             void qc.invalidateQueries({ queryKey: ["admin", "api-keys"] });
             toast.success("Key revoked.");
         },
+        onError: (err) => toast.error(adminError(err, "Could not revoke the key.")),
+    });
+
+    const purge = useMutation({
+        mutationFn: (id: string) => apiDelete<{ ok: boolean }>(`/admin/api-keys/${id}/purge`),
+        onSuccess: () => {
+            void qc.invalidateQueries({ queryKey: ["admin", "api-keys"] });
+            toast.success("Revoked key deleted permanently.");
+        },
+        onError: (err) => toast.error(adminError(err, "Could not delete the key.")),
     });
 
     const keys = data?.items ?? [];
@@ -1589,7 +1765,7 @@ export function ApiKeysPage() {
         <div data-testid="api-keys-page">
             <AdminPageHeader
                 title="API keys"
-                description="Keys let other programs read the website's content, or publish news and members automatically."
+                description="Keys let other programs read the website's content, or publish news and members automatically. Revoke a compromised key, then delete revoked keys permanently."
                 actions={
                     <a href="/api/v1-docs/openapi" target="_blank" rel="noopener noreferrer" className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="api-docs-link">
                         API documentation
@@ -1597,6 +1773,21 @@ export function ApiKeysPage() {
                 }
                 testId="api-keys-header"
             />
+
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+                <label htmlFor="api-key-status-filter" className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>Status</label>
+                <select
+                    id="api-key-status-filter"
+                    data-testid="api-key-status-filter"
+                    className="tnl-field w-auto min-w-[160px]"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                >
+                    <option value="">All keys ({data?.counts ? data.counts.active + data.counts.revoked : "—"})</option>
+                    <option value="active">Active ({data?.counts?.active ?? "—"})</option>
+                    <option value="revoked">Revoked ({data?.counts?.revoked ?? "—"})</option>
+                </select>
+            </div>
 
             <Panel className="mb-6">
                 <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto]">
@@ -1624,7 +1815,9 @@ export function ApiKeysPage() {
                 <Spinner label="Loading…" />
             ) : keys.length === 0 ? (
                 <Panel>
-                    <p className="text-sm text-[var(--tnl-body)]" data-testid="api-keys-empty">No keys yet.</p>
+                    <p className="text-sm text-[var(--tnl-body)]" data-testid="api-keys-empty">
+                        {status === "active" ? "No active keys." : status === "revoked" ? "No revoked keys." : "No keys yet."}
+                    </p>
                 </Panel>
             ) : (
                 <Panel className="overflow-x-auto">
@@ -1634,6 +1827,7 @@ export function ApiKeysPage() {
                                 <th className="pb-2 pr-4 font-semibold">Name</th>
                                 <th className="pb-2 pr-4 font-semibold">Allows</th>
                                 <th className="pb-2 pr-4 font-semibold">Calls</th>
+                                <th className="pb-2 pr-4 font-semibold">Status</th>
                                 <th className="pb-2 font-semibold">Actions</th>
                             </tr>
                         </thead>
@@ -1646,11 +1840,20 @@ export function ApiKeysPage() {
                                     </td>
                                     <td className="py-3 pr-4">{key.scopes.join(", ")}</td>
                                     <td className="py-3 pr-4">{key.calls}</td>
+                                    <td className="py-3 pr-4">
+                                        <span
+                                            className="rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize"
+                                            style={{ borderColor: key.active ? "var(--tnl-green)" : "var(--tnl-border)", color: key.active ? "var(--tnl-green)" : "var(--tnl-tan-text)" }}
+                                            data-testid={`api-key-status-${key.id}`}
+                                        >
+                                            {key.active ? "active" : "revoked"}
+                                        </span>
+                                    </td>
                                     <td className="py-3">
                                         {key.active ? (
                                             <ConfirmButton label="Revoke" confirmLabel="Revoke it" question="Revoke this key?" onConfirm={() => revoke.mutate(key.id)} testId={`api-key-revoke-${key.id}`} />
                                         ) : (
-                                            <span className="text-xs" style={{ color: "var(--tnl-tan-text)" }}>revoked</span>
+                                            <ConfirmButton label="Delete" confirmLabel="Delete permanently" question="Delete this revoked key permanently?" onConfirm={() => purge.mutate(key.id)} testId={`api-key-purge-${key.id}`} />
                                         )}
                                     </td>
                                 </tr>

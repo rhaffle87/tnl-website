@@ -29,11 +29,14 @@ describe('LegalPages — PrivacyPage & TermsPage', () => {
       expect(screen.getByText(/Cadangan terenkripsi dengan rotasi 14 hari/i)).toBeInTheDocument();
     });
 
-    it('renders accurate sub-processors: Cloudflare, Google Workspace, Google Maps, Internal Cluster', () => {
+    it('renders external services and internal registration database, CMS and manual exports accurately', () => {
       renderWithProviders(<PrivacyPage />, { route: '/privacy' });
 
       expect(screen.getByText(/Cloudflare, Inc\./i)).toBeInTheDocument();
-      expect(screen.getAllByText(/Google Workspace/i).length).toBeGreaterThan(0);
+      expect(screen.getByText(/Basis Data Pendaftaran & CMS Internal/i)).toBeInTheDocument();
+      expect(screen.getByText(/Data pendaftaran disimpan di basis data MongoDB/i)).toHaveTextContent(/panitia berwenang melalui CMS/);
+      expect(screen.getByText(/Data pendaftaran disimpan di basis data MongoDB/i)).toHaveTextContent(/ekspor CSV\/XLSX secara manual/);
+      expect(screen.queryByText(/Google Workspace|Google Sheets|Apps Script|webhook/i)).not.toBeInTheDocument();
       expect(screen.getByText(/Google Maps Embed/i)).toBeInTheDocument();
       expect(screen.getByText(/Klaster Server Mandiri Laboratorium/i)).toBeInTheDocument();
     });

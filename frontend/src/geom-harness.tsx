@@ -12,7 +12,7 @@
  *   /geom.html?only=editor&route=/admin/content/members/1 -> 2-column editor view
  *   /geom.html?only=editor&route=/admin/content/members   -> list view only
  */
-import { StrictMode, type ReactNode } from "react";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";

@@ -13,7 +13,6 @@ import {
     Check,
     Calendar,
     XCircle,
-    Clock,
 } from "lucide-react";
 import { useEvent, useSubmitRegistration } from "@/lib/hooks";
 import { useLocale, pick } from "@/lib/i18n";

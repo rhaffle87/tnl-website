@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { InlineMediaField, MultiMediaField, MediaPickerModal } from "@/components/admin/media";
-import type { MediaAsset } from "@/lib/types";
 
 // Mock API calls
 vi.mock("@/lib/api", () => ({
@@ -201,7 +200,7 @@ describe("MediaPickerModal Component", () => {
         await user.click(screen.getByTestId("media-item-media-1"));
 
         // Detail pane displays asset details
-        expect(screen.getByText("Server rack in room B-301")).toBeInTheDocument();
+        expect(screen.getAllByText("Server rack in room B-301").length).toBeGreaterThan(0);
         expect(screen.getByTestId("media-picker-insert-button")).toBeInTheDocument();
 
         // Click insert button

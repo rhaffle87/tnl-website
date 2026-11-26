@@ -11,6 +11,7 @@ import type { AuthUser } from "@/lib/types";
 export default function AuthCallback() {
     const navigate = useNavigate();
     const processed = useRef(false);
+    const backRef = useRef<HTMLButtonElement>(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -37,6 +38,10 @@ export default function AuthCallback() {
             });
     }, [navigate]);
 
+    useEffect(() => {
+        if (error) backRef.current?.focus();
+    }, [error]);
+
     if (error) {
         return (
             <div className="flex min-h-svh items-center justify-center p-6" style={{ background: "var(--tnl-surface)" }}>
@@ -44,6 +49,7 @@ export default function AuthCallback() {
                     <h1 className="tnl-h5 text-[20px]">Could not sign you in</h1>
                     <p className="mt-3 text-sm text-[var(--tnl-body)]">{error}</p>
                     <button
+                        ref={backRef}
                         type="button"
                         onClick={() => navigate("/admin/login", { replace: true })}
                         className="tnl-btn tnl-btn-primary mt-6"
@@ -58,7 +64,9 @@ export default function AuthCallback() {
 
     return (
         <div className="flex min-h-svh items-center justify-center" style={{ background: "var(--tnl-surface)" }}>
-            <Spinner label="Signing you in…" />
+            <div role="status" aria-live="polite" data-testid="auth-callback-status">
+                <Spinner label="Signing you in…" />
+            </div>
         </div>
     );
 }

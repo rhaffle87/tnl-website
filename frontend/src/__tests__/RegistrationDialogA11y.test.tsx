@@ -65,4 +65,24 @@ describe("RegistrationDialog accessibility", () => {
     await waitFor(() => expect(screen.getByTestId("registration-errors")).toBeInTheDocument());
     expect(container.innerHTML).not.toContain("#b91c1c");
   });
+
+  it("traps focus, closes on Escape and locks scroll with theme-derived chrome", () => {
+    const onClose = vi.fn();
+    const opener = document.createElement("button");
+    document.body.appendChild(opener);
+    opener.focus();
+    const { container, unmount } = render(<RegistrationDialog event={event} onClose={onClose} />);
+
+    const dialog = screen.getByTestId("registration-dialog");
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(document.body.style.overflow).toBe("hidden");
+    expect(container.innerHTML).toContain("--gsm-obsidian");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onClose).toHaveBeenCalled();
+
+    unmount();
+    expect(document.body.style.overflow).toBe("");
+    opener.remove();
+  });
 });

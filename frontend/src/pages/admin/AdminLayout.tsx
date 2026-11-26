@@ -36,6 +36,8 @@ import {
     X,
 } from "lucide-react";
 import { useMe } from "@/lib/hooks";
+import { useAdminT } from "@/lib/admin-i18n";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import { useApplyThemeTokens } from "@/lib/theme";
 import { endSession } from "@/lib/session";
 import { Spinner } from "@/components/site/Primitives";
@@ -138,6 +140,7 @@ function loadCollapsedState(): Record<string, boolean> {
 
 export default function AdminLayout() {
     useApplyThemeTokens();
+    const t = useAdminT();
     const { data: user, isLoading, isError } = useMe();
     const location = useLocation();
     const navigate = useNavigate();
@@ -154,6 +157,11 @@ export default function AdminLayout() {
     const drawerRef = useRef<HTMLDivElement>(null);
     const menuToggleRef = useRef<HTMLButtonElement>(null);
     const drawerWasOpen = useRef(false);
+
+    // Shared modal trap: keeps Tab inside the drawer, handles Escape and
+    // restores focus to whatever opened it. Declared before the focus effect
+    // below so the opener is captured before the panel takes focus.
+    useFocusTrap(mobileOpen, drawerRef, { onEscape: () => setMobileOpen(false) });
 
     useEffect(() => {
         if (mobileOpen) {
@@ -181,17 +189,6 @@ export default function AdminLayout() {
         }
         setMobileOpen(false);
     }, [location.pathname]);
-
-    // Close mobile drawer on Escape key
-    useEffect(() => {
-        function handleKeyDown(e: KeyboardEvent) {
-            if (e.key === "Escape" && mobileOpen) {
-                setMobileOpen(false);
-            }
-        }
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [mobileOpen]);
 
     // Save collapsed states
     const toggleGroup = (groupId: string) => {
@@ -413,8 +410,8 @@ export default function AdminLayout() {
                         type="button"
                         onClick={signOut}
                         className="rounded p-1.5 text-white/60 hover:bg-white/10 hover:text-white transition-colors"
-                        title="Sign out"
-                        aria-label="Sign out"
+                        title={t("adminSignOut")}
+                        aria-label={t("adminSignOut")}
                         data-testid="admin-sign-out-button"
                     >
                         <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
@@ -428,7 +425,7 @@ export default function AdminLayout() {
                         className="flex items-center justify-between text-[11px] text-white/60 hover:text-white transition-colors"
                         data-testid="admin-view-site-link"
                     >
-                        <span>View public site</span>
+                        <span>{t("adminViewSite")}</span>
                         <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
                     </Link>
                 </div>

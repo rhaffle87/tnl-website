@@ -1,17 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import "./utility-editorial.css";
 import { Link } from "react-router-dom";
 import {
     ArrowUpRight,
     CheckCircle2,
     Clock,
-    Download,
     FileText,
-    HelpCircle,
     Mail,
     Printer,
     Scale,
-    Shield,
     ShieldCheck,
     Sparkles,
 } from "lucide-react";
@@ -27,12 +24,12 @@ export function PrivacyPage() {
     const isId = locale === "id";
     const [activeSection, setActiveSection] = useState<string>("sec-1");
 
-    const sections = [
+    const sections = useMemo(() => [
         { id: "sec-1", title_id: "1. Identitas Pengendali Data", title_en: "1. Data Controller Identity" },
         { id: "sec-2", title_id: "2. Ruang Lingkup & Jenis Data", title_en: "2. Scope & Categories of Data" },
         { id: "sec-3", title_id: "3. Dasar Pemrosesan & Tujuan", title_en: "3. Legal Basis & Purposes" },
         { id: "sec-4", title_id: "4. Penyimpanan Browser & Cookie", title_en: "4. Browser Storage & Cookies" },
-        { id: "sec-5", title_id: "5. Pihak Ketiga & Pemroses Data", title_en: "5. Third Parties & Sub-processors" },
+        { id: "sec-5", title_id: "5. Layanan Eksternal & Pengelolaan Data Internal", title_en: "5. External Services & Internal Data Management" },
         { id: "sec-6", title_id: "6. Keamanan & Perlindungan Teknis", title_en: "6. Security & Technical Safeguards" },
         { id: "sec-7", title_id: "7. Masa Retensi & Cadangan", title_en: "7. Retention Period & Backups" },
         { id: "sec-8", title_id: "8. Hak Subjek Data & SLA 3×24 Jam", title_en: "8. Data Subject Rights & SLA" },
@@ -40,7 +37,7 @@ export function PrivacyPage() {
         { id: "sec-10", title_id: "10. Transfer Data Lintas Batas", title_en: "10. Cross-Border Data Transfer" },
         { id: "sec-11", title_id: "11. Privasi Usia & Mahasiswa", title_en: "11. Age & Student Privacy" },
         { id: "sec-12", title_id: "12. Pembaruan & Kontak Pengaduan", title_en: "12. Policy Updates & Contact" },
-    ];
+    ], []);
 
     const { scrollTo } = useSmoothScroll();
     const scrollToSection = (id: string) => {
@@ -67,7 +64,7 @@ export function PrivacyPage() {
         };
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+    }, [sections]);
 
     return (
         <div data-testid="privacy-page" className="utility-editorial legal-editorial">
@@ -394,13 +391,13 @@ export function PrivacyPage() {
                             <div className="legal-section-heading">
                                 <span className="text-xs font-mono font-bold text-[var(--tnl-tan-text)] uppercase">PASAL 5 / SECTION 5</span>
                                 <h2 className="text-2xl font-bold tracking-tight text-[var(--tnl-heading)]">
-                                    {isId ? "Pihak Ketiga & Pemroses Data (Sub-processors)" : "Third Parties & Sub-processors"}
+                                    {isId ? "Layanan Eksternal & Pengelolaan Data Internal" : "External Services & Internal Data Management"}
                                 </h2>
                             </div>
                             <p className="text-justify">
                                 {isId
-                                    ? "Untuk menjamin keandalan infrastruktur dan kelancaran operasional tridarma, situs ini berinteraksi secara terbatas dengan layanan pihak ketiga berikut:"
-                                    : "To ensure infrastructure reliability and smooth academic operations, the laboratory interacts with the following service providers:"}
+                                    ? "Untuk menjamin keandalan infrastruktur dan kelancaran operasional tridarma, situs ini menggunakan layanan eksternal secara terbatas serta pengelolaan data internal berikut:"
+                                    : "To ensure infrastructure reliability and smooth academic operations, the website uses the following limited external services and internal data management:"}
                             </p>
                             <div className="space-y-3">
                                 <div className="legal-note p-4 space-y-1">
@@ -417,13 +414,13 @@ export function PrivacyPage() {
 
                                 <div className="legal-note p-4 space-y-1">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="font-bold text-sm text-[var(--tnl-heading)]">2. Google Workspace / Google Sheets (via Apps Script Webhook)</h3>
-                                        <span className="text-xs font-mono text-[var(--tnl-body)]">Operational Sync</span>
+                                        <h3 className="font-bold text-sm text-[var(--tnl-heading)]">{isId ? "2. Basis Data Pendaftaran & CMS Internal" : "2. Registration Database & Internal CMS"}</h3>
+                                        <span className="text-xs font-mono text-[var(--tnl-body)]">{isId ? "Pengelolaan Internal" : "Internal Management"}</span>
                                     </div>
                                     <p className="text-xs leading-relaxed">
                                         {isId
-                                            ? "Digunakan sebagai sinkronisasi operasional data pendaftaran kegiatan (seperti Open House) ke lembar kerja panitia asisten resmi Lab TNL secara terenkripsi melalui webhook terotentikasi."
-                                            : "Used to synchronize event registration records (e.g. Open House) into authorized staff Google Sheets via encrypted webhook."}
+                                            ? "Data pendaftaran disimpan di basis data MongoDB dan dikelola oleh panitia berwenang melalui CMS internal Lab TNL. Untuk keperluan operasional kegiatan, panitia dapat mengunduh ekspor CSV/XLSX secara manual."
+                                            : "Registration records are stored in the MongoDB database and managed by authorized staff through the CMS maintained by Lab TNL. Staff can download manual CSV/XLSX exports for event operations."}
                                     </p>
                                 </div>
 
@@ -610,8 +607,8 @@ export function PrivacyPage() {
                             </div>
                             <p className="text-justify">
                                 {isId
-                                    ? "Secara umum basis data utama tersimpan di dalam wilayah Republik Indonesia (Kampus ITS Surabaya). Apabila terjadi perutean lalu lintas tepi melalui jaringan Cloudflare CDN atau sinkronisasi Google Workspace, transfer data dilindungi oleh enkripsi TLS standar industri dan perjanjian pemrosesan data berstandar global selaras prinsip GDPR."
-                                    : "Primary databases reside on-premises within the Republic of Indonesia. Where edge routing traverses Cloudflare CDN or Google Workspace, data is protected by industry TLS encryption and compliant data processing agreements aligned with global standards."}
+                                    ? "Secara umum basis data utama tersimpan di dalam wilayah Republik Indonesia (Kampus ITS Surabaya). Apabila terjadi perutean lalu lintas tepi melalui jaringan Cloudflare CDN, transfer data dilindungi oleh enkripsi TLS standar industri dan perjanjian pemrosesan data berstandar global selaras prinsip GDPR."
+                                    : "Primary databases reside on-premises within the Republic of Indonesia. Where edge routing traverses Cloudflare CDN, data is protected by industry TLS encryption and compliant data processing agreements aligned with global standards."}
                             </p>
                         </section>
 
@@ -671,7 +668,7 @@ export function TermsPage() {
     const isId = locale === "id";
     const [activeSection, setActiveSection] = useState<string>("sec-1");
 
-    const sections = [
+    const sections = useMemo(() => [
         { id: "sec-1", title_id: "1. Penerimaan Ketentuan", title_en: "1. Acceptance of Terms" },
         { id: "sec-2", title_id: "2. Ruang Lingkup Layanan", title_en: "2. Scope of Services" },
         { id: "sec-3", title_id: "3. Batasan Perilaku & UU ITE", title_en: "3. Acceptable Use & Cyber Law" },
@@ -682,7 +679,7 @@ export function TermsPage() {
         { id: "sec-8", title_id: "8. Penafian Jaminan & Batasan", title_en: "8. Warranty Disclaimer & Liability" },
         { id: "sec-9", title_id: "9. Hukum yang Berlaku & Sengketa", title_en: "9. Governing Law & Jurisdiction" },
         { id: "sec-10", title_id: "10. Kontak Hukum & Administrasi", title_en: "10. Legal & Administrative Desk" },
-    ];
+    ], []);
 
     const { scrollTo } = useSmoothScroll();
     const scrollToSection = (id: string) => {
@@ -709,7 +706,7 @@ export function TermsPage() {
         };
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+    }, [sections]);
 
     return (
         <div data-testid="terms-page" className="utility-editorial legal-editorial">
@@ -892,7 +889,7 @@ export function TermsPage() {
                                 <li>{isId ? "Profil resmi laboratorium, fasilitas Ruang B-301, serta direktori keanggotaan dosen pembina dan asisten laboratorium (/member)." : "Official laboratory profile, Room B-301 facilities, and academic faculty and assistant directory (/member)."}</li>
                                 <li>{isId ? "Katalog publikasi ilmiah, artikel riset telekomunikasi, dan rekam jejak pengabdian masyarakat (/publications & /news)." : "Scholarly publication catalogue, telecommunication research updates, and community programmes (/publications & /news)."}</li>
                                 <li>{isId ? "Informasi silabus modul praktikum, jadwal shift praktikum, dan materi panduan jaringan kurikulum Departemen Teknik Elektro ITS." : "Practicum syllabus information, laboratory shift schedules, and telecommunication curriculum guides."}</li>
-                                <li>{isId ? "Portal pendaftaran kegiatan terintegrasi (seperti Open House dan Pelatihan) dengan sinkronisasi data panitia." : "Integrated registration portals for events (e.g. Open House & Technical Workshops)."}</li>
+                                <li>{isId ? "Portal pendaftaran kegiatan (seperti Open House dan Pelatihan) dengan pengelolaan data melalui CMS internal dan ekspor CSV/XLSX secara manual." : "Registration portals for events (e.g. Open House & Technical Workshops), with internal CMS data management and manual CSV/XLSX exports."}</li>
                                 <li>{isId ? "Sistem validasi dan verifikasi keabsahan e-sertifikat kegiatan akademik (/verify)." : "Official electronic certificate authenticity verification system (/verify)."}</li>
                                 <li>{isId ? "Saluran komunikasi dan formulir korespondensi langsung ke meja administrasi Ruang B-301 (/contact)." : "Direct communication desk and contact form to Room B-301 (/contact)."}</li>
                             </ul>

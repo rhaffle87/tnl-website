@@ -293,10 +293,13 @@ export function RichTextField({
             {linkOpen && mode === "write" ? (
                 <div className="flex flex-wrap items-center gap-2 border border-t-0 px-2 py-2" style={{ borderColor: "var(--tnl-border)", background: "var(--tnl-surface)" }}>
                     <input
+                        id={`${testId}-link-input`}
                         className="tnl-field h-9 flex-1 text-sm"
                         value={linkDraft}
                         placeholder="https://example.com or /news"
                         aria-label="Link URL"
+                        aria-invalid={linkError ? true : undefined}
+                        aria-describedby={linkError ? `${testId}-link-error` : undefined}
                         data-testid={`${testId}-link-input`}
                         onChange={(e) => setLinkDraft(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyLink(); } }}
@@ -305,7 +308,7 @@ export function RichTextField({
                         Apply
                     </button>
                     {linkError ? (
-                        <p className="w-full text-xs text-[var(--tnl-danger)]" data-testid={`${testId}-link-error`}>
+                        <p id={`${testId}-link-error`} role="alert" className="w-full text-xs text-[var(--tnl-danger)]" data-testid={`${testId}-link-error`}>
                             {linkError}
                         </p>
                     ) : null}

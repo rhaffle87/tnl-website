@@ -1,10 +1,11 @@
 import { Suspense } from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { LazyMotion, domAnimation } from "motion/react";
 import { Toaster } from "@/components/ui/sonner";
 import RouteErrorBoundary from "@/components/RouteErrorBoundary";
 import { lazyWithRetry as lazy } from "@/lib/lazy";
 import SiteLayout, { LocaleProvider } from "@/components/site/SiteLayout";
+import { AdminLocaleProvider } from "@/lib/admin-i18n";
 import Home from "@/pages/Home";
 
 // Public secondary routes — code-split to keep initial landing bundle light
@@ -52,6 +53,12 @@ function RouteFallback() {
     );
 }
 
+function AdminLocaleRoute() {
+    // Pathless layout route: admin copy follows the site locale without
+    // changing the public site's copy or any route path.
+    return <AdminLocaleProvider><Outlet /></AdminLocaleProvider>;
+}
+
 export default function App() {
     // Read the fragment from useLocation (reactive) — the OAuth return must be
     // handled before any auth guard runs.
@@ -59,9 +66,11 @@ export default function App() {
     if (location.hash?.includes("session_id=")) {
         return (
             <LocaleProvider>
+                <AdminLocaleProvider>
                 <Suspense fallback={<RouteFallback />}>
                     <AuthCallback />
                 </Suspense>
+                </AdminLocaleProvider>
                 <Toaster richColors />
             </LocaleProvider>
         );
@@ -74,6 +83,7 @@ export default function App() {
                 <Suspense fallback={<RouteFallback />}>
                     <Routes>
                     {/* Admin — TNL Studio */}
+                    <Route element={<AdminLocaleRoute />}>
                     <Route path="/admin/login" element={<AdminLogin />} />
                     <Route path="/admin/invite/:token" element={<AdminInviteAccept />} />
                     <Route path="/admin" element={<AdminLayout />}>
@@ -94,6 +104,7 @@ export default function App() {
                         <Route path="api-keys" element={<ApiKeysPage />} />
                         <Route path="audit" element={<AuditLogPage />} />
                         <Route path="guide" element={<MaintainerGuidePage />} />
+                    </Route>
                     </Route>
 
                     {/* Public site */}
