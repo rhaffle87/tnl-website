@@ -198,3 +198,30 @@ async def test_media_patch_alt_and_folder(async_client, admin_cookies, temp_medi
     updated = patch_res.json()
     assert updated["alt"] == "Updated alt text description"
     assert updated["folder"] == "members"
+
+
+@pytest.mark.asyncio
+async def test_media_upload_ooxml_docx_keeps_docx_extension(async_client, admin_cookies, temp_media_dir):
+    """K2: OOXML files are ZIP archives but must not be stored as .zip."""
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("[Content_Types].xml", '<?xml version="1.0"?><Types/>')
+        zf.writestr("word/document.xml", '<?xml version="1.0"?><document/>')
+    res = await async_client.post(
+        "/admin/media",
+        data={"alt": "Modul praktikum dalam format Word", "folder": "general"},
+        files={
+            "file": (
+                "modul-praktikum.docx",
+                buf.getvalue(),
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        },
+        cookies=admin_cookies,
+    )
+    assert res.status_code == 201, res.text
+    doc = res.json()
+    assert doc["filename"].endswith(".docx"), doc["filename"]
+    assert doc["url"].endswith(".docx"), doc["url"]

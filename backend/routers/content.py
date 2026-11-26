@@ -21,7 +21,7 @@ from pydantic import ValidationError
 
 from lib.auth import allowed, audit, can_write_division, is_lab_assistant, principal, require
 from lib.db import db
-from lib.jev import review_draft
+from lib.advisor import review_draft
 from lib.quality import publish_blockers, run_scan, scan_social_reuse
 from lib.sanitize import sanitize_html
 from lib.serialize import jsonable
@@ -112,7 +112,7 @@ def _plain(html: str) -> str:
 
 
 async def _apply_gates(resource: str, doc: dict) -> dict:
-    """Rule-based gates + the Jev draft review, merged into one issue list."""
+    """Rule-based gates + the local draft review, merged into one issue list."""
     issues = run_scan(resource, {k: v for k, v in doc.items()
                                  if k not in ("issues", "needs_review", "revisions")})
     if resource == "members":
@@ -140,7 +140,7 @@ async def _apply_gates(resource: str, doc: dict) -> dict:
                 })
 
     text = " ".join(str(doc.get(f) or "") for f in REVIEW_TEXT.get(resource, ("title",)))
-    ai = await review_draft(resource, _plain(text))
+    ai = review_draft(resource, _plain(text))
     if ai.get("ai_ok"):
         issues.extend(ai.get("ai_issues", []))
     doc["ai_review"] = {k: v for k, v in ai.items() if k != "ai_issues"}
@@ -290,6 +290,8 @@ async def undo_delete(resource: str, item_id: str, request: Request,
                       user: dict = Depends(require("content:delete"))):
     """Undo the most recent delete of this item, replayed from the audit entry."""
     _model(resource)
+    if not can_write_division(user, resource):
+        raise HTTPException(status_code=403, detail="Your division does not manage this content type.")
     entry = await db.audit_log.find_one(
         {"resource": resource, "target_id": item_id, "action": "delete"}, sort=[("created_at", -1)])
     if not entry or not (entry.get("detail") or {}).get("restore"):
@@ -303,9 +305,16 @@ async def undo_delete(resource: str, item_id: str, request: Request,
                 doc[key] = datetime.fromisoformat(doc[key])
             except ValueError:
                 doc[key] = datetime.now(timezone.utc)
-    await db[resource].insert_one(doc)
+    restored = await _apply_gates(resource, doc)
+    if (restored.get("status") == "published" or restored.get("published") is True):
+        blockers = publish_blockers(restored.get("issues") or [])
+        if blockers:
+            raise HTTPException(status_code=422, detail={
+                "message": "This item cannot be restored to published state until these issues are fixed.",
+                "issues": blockers})
+    await db[resource].insert_one(restored)
     await audit(request, "undo-delete", resource, item_id)
-    return jsonable(doc)
+    return jsonable(restored)
 
 
 # ---------------------------------------------------------------- bulk actions
@@ -328,6 +337,11 @@ async def bulk_action(resource: str, payload: dict, request: Request,
         if action == "delete":
             if user.get("role") not in ("super_admin", "editor"):
                 raise HTTPException(status_code=403, detail="Your role cannot delete items.")
+            if resource == "events":
+                count = await db.registrations.count_documents({"event_id": item_id})
+                if count:
+                    raise HTTPException(status_code=400, detail=(
+                        f"Event {item_id} has {count} registration(s). Export or delete them first before deleting permanently."))
             await db[resource].delete_one({"id": item_id})
             await audit(request, "delete", resource, item_id, {"restore": jsonable(doc)})
             done += 1

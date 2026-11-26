@@ -206,6 +206,14 @@ def client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+def login_failure_key(email: str, ip: str) -> str:
+    """Scope repeated-login limits to one IP *and* one account, never to the account alone:
+
+    otherwise anyone knowing a victim's address could lock that victim out."""
+    digest = hashlib.sha256(email.strip().lower().encode("utf-8")).hexdigest()[:16]
+    return f"login-attempt:{ip}:{digest}"
+
+
 # ---------------------------------------------------------------- optional TOTP (RFC 6238)
 def new_totp_secret() -> str:
     return base64.b32encode(os.urandom(20)).decode("ascii")
@@ -227,25 +235,52 @@ def verify_totp(secret: str, code: str, window: int = 1) -> bool:
 
 
 # ---------------------------------------------------------------- audit trail
+def audit_hash(prev_hash: str, actor_id: str, action: str, resource: str,
+               target_id: str | None, created_at: datetime) -> str:
+    """One-way link to the previous entry: editing an old row breaks every later hash."""
+    payload = "|".join((prev_hash or "", actor_id or "", action, resource,
+                        target_id or "", created_at.isoformat()))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 async def audit(request: Request, action: str, resource: str, target_id: str | None = None,
-                detail: dict | None = None) -> None:
-    user = getattr(request.state, "user", None) or {}
+                detail: dict | None = None, actor: dict | None = None) -> None:
+    state = getattr(getattr(request, "state", None), "user", None)
+    user = actor or state or {}
+    created = datetime.now(timezone.utc)
+    last = await db.audit_log.find_one({}, sort=[("created_at", -1)])
+    prev_hash = (last or {}).get("hash") or ""
+    actor_id = user.get("id") or user.get("key_id") or ""
     await db.audit_log.insert_one({
         "id": str(__import__("uuid").uuid4()),
-        "actor_id": user.get("id", ""),
+        "actor_id": actor_id,
         "actor_email": user.get("email", "anonymous"),
         "action": action,
         "resource": resource,
         "target_id": target_id,
         "detail": detail or {},
-        "created_at": datetime.now(timezone.utc),
+        "created_at": created,
+        "prev_hash": prev_hash,
+        "hash": audit_hash(prev_hash, actor_id, action, resource, target_id, created),
     })
 
 
 # ---------------------------------------------------------------- signed uploads
+def _upload_signing_secret() -> bytes:
+    """Fail closed: a missing secret must never silently become a public constant."""
+    secret = (os.environ.get("UPLOAD_SIGNING_SECRET")
+              or os.environ.get("SESSION_SECRET")
+              or os.environ.get("JWT_SECRET"))
+    if not secret:
+        raise RuntimeError(
+            "UPLOAD_SIGNING_SECRET is not set; refusing to sign upload URLs. "
+            "Set UPLOAD_SIGNING_SECRET (or SESSION_SECRET/JWT_SECRET) in the environment."
+        )
+    return secret.encode("utf-8")
+
+
 def sign_upload(filename: str) -> str:
-    secret = (os.environ.get("SESSION_SECRET") or os.environ.get("JWT_SECRET") or "tnl-media-upload-secret-key-2026").encode()
-    return hmac.new(secret, filename.encode(), hashlib.sha256).hexdigest()[:32]
+    return hmac.new(_upload_signing_secret(), filename.encode(), hashlib.sha256).hexdigest()[:32]
 
 
 def verify_upload_sig(filename: str, sig: str | None) -> bool:

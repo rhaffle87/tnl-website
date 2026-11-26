@@ -9,12 +9,13 @@ import os
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 
 from lib.auth import (
     aware, audit, clear_session_cookie, client_ip, create_session, destroy_session,
-    hash_password, rate_limit, require, set_session_cookie, user_for_request,
-    verify_password, verify_totp,
+    hash_password, login_failure_key, new_totp_secret, rate_limit, require,
+    set_session_cookie, user_for_request, verify_password, verify_totp,
 )
 from lib.db import db
 from lib.mailer import send_email
@@ -52,12 +53,13 @@ async def _last_super_admin_count(exclude_id: str | None = None) -> int:
 async def login(payload: LoginIn, request: Request, response: Response):
     rate_limit(f"login:{client_ip(request)}", 10, 300)
     email = payload.email.strip().lower()
-    rate_limit(f"login-email:{email}", 10, 300)
+    rate_limit(login_failure_key(email, client_ip(request)), 10, 300)
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(payload.password, user.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="Email or password is incorrect.")
-    if user.get("totp_enabled") and user.get("totp_secret"):
-        if not payload.code or not verify_totp(user["totp_secret"], payload.code):
+    if user.get("totp_enabled"):
+        # Fail closed: an enabled flag with no usable secret must never bypass 2FA.
+        if not user.get("totp_secret") or not payload.code or not verify_totp(user["totp_secret"], payload.code):
             raise HTTPException(status_code=401, detail="A valid two-factor code is required.")
     token = await create_session(user["id"])
     await db.users.update_one({"id": user["id"]}, {"$set": {"last_login_at": datetime.now(timezone.utc)}})
@@ -153,6 +155,8 @@ async def update_user(user_id: str, payload: UserUpdate, request: Request):
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
     patch = payload.model_dump(exclude_unset=True)
+    if "totp_enabled" in patch and patch["totp_enabled"] and not user.get("totp_secret"):
+        raise HTTPException(status_code=422, detail="Confirm a TOTP secret via the setup endpoint before enabling two-factor auth.")
     if "role" in patch:
         if patch["role"] not in VALID_ROLES:
             raise HTTPException(status_code=422, detail="Unknown role.")
@@ -190,18 +194,58 @@ async def delete_user(user_id: str, request: Request):
     return {"ok": True}
 
 
-@router.get("/admin/users/{user_id}/totp-setup", dependencies=[Depends(require("users:manage"))])
-async def totp_setup(user_id: str):
-    """Return (and persist) a TOTP secret for a Super Admin — shown as a base32 key to
-    enrol in any authenticator app. Enabled via PATCH totp_enabled=true."""
-    from lib.auth import new_totp_secret
+# ---------------------------------------------------------------- self-service TOTP enrolment
+class TotpConfirm(BaseModel):
+    code: str
+
+
+async def _signed_in_user(request: Request) -> dict:
+    user = await user_for_request(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not signed in.")
+    request.state.user = user
+    return user
+
+
+def _assert_self(request: Request, user_id: str) -> dict:
+    principal_user = getattr(request.state, "user", None) or {}
+    if principal_user.get("id") != user_id:
+        raise HTTPException(status_code=403, detail="Two-factor setup is self-service only.")
+    return principal_user
+
+
+@router.post("/admin/users/{user_id}/totp-setup")
+async def totp_setup(user_id: str, request: Request, _=Depends(_signed_in_user)):
+    """Generate a *pending* secret for the signed-in user, returned exactly once.
+
+    Existing secrets are never read or returned; enrolment completes via totp-confirm."""
+    _assert_self(request, user_id)
+    rate_limit(f"totp-setup:{user_id}", 10, 300)
     user = await db.users.find_one({"id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
-    secret = user.get("totp_secret") or new_totp_secret()
-    if not user.get("totp_secret"):
-        await db.users.update_one({"id": user_id}, {"$set": {"totp_secret": secret}})
-    return {"secret": secret, "email": user.get("email")}
+    secret = new_totp_secret()
+    await db.users.update_one({"id": user_id}, {"$set": {
+        "totp_pending_secret": secret, "totp_pending_at": datetime.now(timezone.utc)}})
+    await audit(request, "totp-setup", "users", user_id)
+    return {"secret": secret, "email": user.get("email"),
+            "message": "Confirm with a code from your authenticator app to enable 2FA."}
+
+
+@router.post("/admin/users/{user_id}/totp-confirm")
+async def totp_confirm(user_id: str, payload: TotpConfirm, request: Request, _=Depends(_signed_in_user)):
+    _assert_self(request, user_id)
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    pending = user.get("totp_pending_secret")
+    if not pending or not payload.code or not verify_totp(pending, payload.code):
+        raise HTTPException(status_code=422, detail="Invalid or missing pending TOTP code.")
+    await db.users.update_one({"id": user_id}, {"$set": {
+        "totp_secret": pending, "totp_enabled": True,
+        "totp_pending_secret": None, "totp_pending_at": None}})
+    await audit(request, "totp-confirm", "users", user_id)
+    return {"ok": True, "totp_enabled": True}
 
 
 @router.get("/admin/review-queue", dependencies=[Depends(require("content:read"))])

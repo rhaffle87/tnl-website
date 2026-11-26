@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir "typesafe-sdk==0.7.1" fpdf2 "qrcode[pil]" pillow
+    && pip install --no-cache-dir fpdf2 "qrcode[pil]" pillow
 
 COPY . .
 

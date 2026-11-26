@@ -107,9 +107,11 @@ INDEXES: dict[str, list[IndexModel]] = {
     "api_keys": [
         IndexModel([("id", ASCENDING)], name="id", unique=True),
         IndexModel([("key_hash", ASCENDING)], name="key_hash", unique=True),
+        IndexModel([("active", ASCENDING)], name="api_keys_active"),
     ],
     "audit_log": [
         IndexModel([("created_at", DESCENDING)], name="created_desc"),
+        IndexModel([("created_at", DESCENDING), ("action", ASCENDING)], name="audit_created_action"),
         IndexModel([("resource", ASCENDING), ("target_id", ASCENDING), ("action", ASCENDING)], name="resource_target"),
     ],
     "settings": [IndexModel([("id", ASCENDING)], name="id", unique=True)],

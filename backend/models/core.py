@@ -275,8 +275,12 @@ class MessagePatch(BaseModel):
 class ApiKeyCreate(BaseModel):
     name: str
     scopes: list[Literal["read", "write"]] = ["read"]
+    expires_at: datetime | None = None
 
 
-# ---------------------------------------------------------------- v1 write API
+# Bulk importer hard cap: keep one request from monopolising the worker.
+V1_IMPORT_MAX_ITEMS = 200
+
+
 class V1Import(BaseModel):
     items: list[dict[str, Any]]

@@ -6,6 +6,7 @@ admin under Messages → Outbox) so nothing is silently lost in dev/demo.
 import asyncio
 import logging
 import os
+import re
 import smtplib
 from datetime import datetime, timezone
 from email.message import EmailMessage
@@ -13,6 +14,18 @@ from email.message import EmailMessage
 from lib.db import db
 
 logger = logging.getLogger(__name__)
+
+_INVITE_URL = re.compile(r'https?://[^\s"\'<>]+?(?:invite|invitation|reset-password|verify)[^\s"\'<>]*', re.I)
+_SECRET_PARAM = re.compile(r'\b(invite[_-]?token|reset[_-]?token|token|code)(["\']?\s*[=:]\s*["\']?)([A-Za-z0-9._~+/=-]{8,})', re.I)
+
+
+def redact_for_outbox(html: str) -> str:
+    """Keep the human-readable message but strip live credentials from stored mail.
+
+    Delivery uses the original HTML; only the outbox copy is redacted."""
+    out = _INVITE_URL.sub("[REDACTED INVITE LINK]", html or "")
+    out = _SECRET_PARAM.sub(lambda m: f"{m.group(1)}{m.group(2)}[REDACTED]", out)
+    return out
 
 
 def _smtp_send(host: str, port: int, user: str, password: str, sender: str, to: str,
@@ -35,7 +48,7 @@ def _smtp_send(host: str, port: int, user: str, password: str, sender: str, to: 
 async def send_email(to: str, subject: str, html: str, reply_to: str | None = None) -> dict:
     host = os.environ.get("SMTP_HOST", "")
     record = {
-        "to": to, "subject": subject, "html": html,
+        "to": to, "subject": subject, "html": redact_for_outbox(html),
         "created_at": datetime.now(timezone.utc),
     }
     if host:

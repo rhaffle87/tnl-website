@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lib.quality import normalize_phone, publish_blockers, run_scan, scan_social_reuse  # noqa: E402
 from lib.sanitize import sanitize_html  # noqa: E402
+from routers.siteadmin import _sanitize_props  # noqa: E402
 
 ADMIN_EMAIL = os.environ.get("SEED_ADMIN_EMAIL", "rhaffle87@gmail.com")
 ADMIN_PASSWORD = os.environ.get("SEED_ADMIN_PASSWORD", "TnlStudio2026!")
@@ -323,6 +324,19 @@ def test_sanitizer_keeps_safe_formatting_and_links():
     clean = sanitize_html('<p>Visit <a href="https://www.its.ac.id">ITS</a></p><ul><li>One</li></ul>')
     assert "<a" in clean and "https://www.its.ac.id" in clean
     assert "<li>One</li>" in clean
+
+
+def test_page_blocks_sanitize_indonesian_rich_text_too():
+    block = _sanitize_props({
+        "type": "rich_text",
+        "props": {
+            "html": "<p>English</p>",
+            "html_id": '<p onclick="steal()">Indonesia<script>alert(1)</script></p>',
+        },
+    })
+    assert "onclick" not in block["props"]["html_id"].lower()
+    assert "script" not in block["props"]["html_id"].lower()
+    assert "Indonesia" in block["props"]["html_id"]
 
 
 # ---------------------------------------------------------------- public API keys

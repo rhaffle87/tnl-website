@@ -590,8 +590,7 @@ SYSTEM_PAGES = [
                      "consent timestamp, policy version 2026.1), contact messages, and minimal public validation records for /verify (name, event, date, code). "
                      "Zero ad tracking pixels or marketing cookies are deployed.</p>"
                      "<h3>Sub-processors & Backups</h3>"
-                     "<p>Data infrastructure utilizes Cloudflare (Edge CDN/WAF), Google Workspace (authorized operational sheet sync), "
-                     "and isolated on-premises Proxmox LXC server clusters. Compressed database and media backups undergo an automated 14-day safe rotation.</p>"
+                     "<p>Data infrastructure utilizes Cloudflare (Edge CDN/WAF) and isolated on-premises Proxmox LXC server clusters. Compressed database and media backups undergo an automated 14-day safe rotation.</p>"
                      "<h3>Data Subject Rights & 3x24h SLA</h3>"
                      "<p>Under Articles 5–13 UU PDP, data subjects hold rights of access, rectification, erasure, and consent withdrawal. "
                      "Submit requests to telconnetlab@gmail.com with subject '[UU PDP Request]'. Verified requests are processed within a 3x24 working hour SLA.</p>"),
@@ -603,8 +602,8 @@ SYSTEM_PAGES = [
                         "stempel persetujuan, versi kebijakan 2026.1), pesan formulir kontak, serta data verifikasi minimal di /verify (nama, acara, tanggal, kode). "
                         "Situs ini bebas dari cookie pelacak iklan komersial maupun pixel pemasaran lintas platform.</p>"
                         "<h3>Pemroses Pihak Ketiga & Cadangan Data</h3>"
-                        "<p>Layanan berinteraksi terbatas dengan Cloudflare (CDN/WAF tepi), Google Workspace (sinkronisasi panitia), "
-                        "dan klaster server Proxmox LXC internal ITS. Arsip cadangan otomatis server diputar secara aman dengan rotasi 14 hari.</p>"
+                        "<p>Layanan berinteraksi terbatas dengan Cloudflare (CDN/WAF tepi) dan klaster server Proxmox LXC internal ITS. "
+                        "Arsip cadangan otomatis server diputar secara aman dengan rotasi 14 hari.</p>"
                         "<h3>Hak Subjek Data & SLA 3×24 Jam</h3>"
                         "<p>Sesuai Pasal 5–13 UU PDP, Anda berhak mengakses, memperbaiki, menghapus, atau menarik persetujuan data pribadi Anda. "
                         "Kirim permohonan ke telconnetlab@gmail.com dengan subjek '[Permintaan UU PDP]'. Permintaan diproses maksimal 3×24 jam kerja.</p>"),

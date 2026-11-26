@@ -15,7 +15,7 @@ from lib.auth import (allowed, audit, lab_assistant_for_request, principal, requ
 from lib.practicum_access import RESTRICTED_MEDIA_NOTE, media_path_is_restricted
 from lib.db import db
 from lib.serialize import jsonable
-from lib.storage import MEDIA_DIR, delete_object, local_path, put_object, safe_name
+from lib.storage import MEDIA_DIR, delete_object, local_path, put_object, safe_name, sniff_content_type
 
 router = APIRouter(tags=["media"])
 
@@ -33,6 +33,10 @@ DOC_TYPES = {
     "application/json",
 }
 DOC_EXTENSIONS = {".pdf", ".doc", ".docx", ".pkt", ".py", ".zip", ".txt", ".csv", ".json"}
+EXECUTABLE_EXTENSIONS = {
+    ".html", ".htm", ".xhtml", ".svg", ".php", ".phtml", ".js", ".mjs", ".jsx",
+    ".ts", ".tsx", ".exe", ".bat", ".cmd", ".sh", ".ps1", ".asp", ".aspx", ".jsp",
+}
 MAX_BYTES = 10 * 1024 * 1024
 DERIVATIVES = (480, 960, 1600)
 
@@ -60,21 +64,23 @@ def youtube_id(url: str) -> str | None:
     return m.group(1) if m else None
 
 
+DOC_EXT_BY_MIME = {
+    "application/pdf": ".pdf", "application/msword": ".doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "application/zip": ".zip", "application/x-zip-compressed": ".zip",
+    "text/plain": ".txt", "text/x-python": ".py", "application/x-python-code": ".py",
+    "text/csv": ".csv", "application/json": ".json",
+}
+
 def _validate_magic_bytes(data: bytes, ctype: str, ext: str) -> bool:
-    """Validate header magic bytes for common web media to prevent mime spoofing."""
-    if not data:
+    """Positive magic-byte check. Unknown document formats are allowed only for
+    the small allowlist of non-executable academic extensions."""
+    sniffed = sniff_content_type(data)
+    if sniffed:
+        return True
+    if ctype in IMAGE_TYPES or ctype == "application/pdf":
         return False
-    if ctype == "image/jpeg" or ext in (".jpg", ".jpeg"):
-        return data.startswith(b"\xff\xd8\xff")
-    if ctype == "image/png" or ext == ".png":
-        return data.startswith(b"\x89PNG\r\n\x1a\n")
-    if ctype == "image/gif" or ext == ".gif":
-        return data.startswith(b"GIF87a") or data.startswith(b"GIF89a")
-    if ctype == "image/webp" or ext == ".webp":
-        return len(data) >= 12 and data.startswith(b"RIFF") and data[8:12] == b"WEBP"
-    if ctype == "application/pdf" or ext == ".pdf":
-        return data.startswith(b"%PDF-")
-    return True
+    return ext in DOC_EXTENSIONS and ext not in EXECUTABLE_EXTENSIONS
 
 
 def _derive(data: bytes, base_key: str) -> dict:
@@ -222,10 +228,32 @@ async def upload_media(
 
     ctype = file.content_type or "application/octet-stream"
     original_filename = file.filename or "file"
-    ext = os.path.splitext(original_filename)[1].lower()
-    is_image = ctype in IMAGE_TYPES
-    is_doc = (ctype in DOC_TYPES) or (ext in DOC_EXTENSIONS)
+    requested_ext = os.path.splitext(original_filename)[1].lower()
+    sniffed = sniff_content_type(data)
+    if sniffed:
+        # The bytes are the authority. A PNG called evil.html is stored as a PNG.
+        ctype, ext = sniffed
+    else:
+        if ctype in IMAGE_TYPES or ctype == "application/pdf":
+            raise HTTPException(
+                status_code=422,
+                detail="File content header does not match the claimed file type.",
+            )
+        if requested_ext in EXECUTABLE_EXTENSIONS:
+            raise HTTPException(status_code=415, detail="This file extension is not allowed.")
+        ext = requested_ext or DOC_EXT_BY_MIME.get(ctype)
+        if not ext and ctype in DOC_EXT_BY_MIME:
+            ext = DOC_EXT_BY_MIME[ctype]
+        if ext not in DOC_EXTENSIONS or (ctype not in DOC_TYPES and ctype != "application/octet-stream"):
+            raise HTTPException(
+                status_code=415,
+                detail="Only images (JPG, PNG, WebP, GIF) and academic/lab documents (PDF, Word, PKT, Python, ZIP) are allowed.",
+            )
+        if ctype not in DOC_TYPES:
+            ctype = "application/octet-stream"
 
+    is_image = ctype in IMAGE_TYPES
+    is_doc = not is_image
     if not (is_image or is_doc):
         raise HTTPException(
             status_code=415,
@@ -242,7 +270,7 @@ async def upload_media(
     width, height = None, None
     final_data = data
     final_ctype = ctype
-    final_filename = original_filename
+    final_filename = safe_name(f"{os.path.splitext(original_filename)[0]}{ext}")
 
     # Optimization logic for raster images
     is_raster = ctype in ("image/jpeg", "image/png") or ext in (".jpg", ".jpeg", ".png")
@@ -269,7 +297,7 @@ async def upload_media(
             final_ctype = "image/webp"
 
             stem = os.path.splitext(original_filename)[0]
-            final_filename = f"{stem}.webp"
+            final_filename = safe_name(f"{stem}.webp")
         except Exception:  # noqa: BLE001
             # Fallback to original bytes if optimization encounters issues
             final_data = data
@@ -285,7 +313,7 @@ async def upload_media(
         except Exception:  # noqa: BLE001
             pass
 
-    key = f"{clean_folder}/{safe_name(final_filename)}"
+    key = f"{clean_folder}/{final_filename}"
     url = put_object(final_data, key, final_ctype)
 
     attached_to = None

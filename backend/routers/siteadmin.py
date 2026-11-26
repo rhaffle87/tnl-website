@@ -3,7 +3,7 @@ publish behind quality gates) + global settings + theme token editor with a
 WCAG-AA contrast check that blocks publishing an unreadable theme."""
 
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -19,7 +19,7 @@ from models.core import BlockAdd, BlockPatch, PagePatch, PageUpsert, ReorderIn, 
 
 router = APIRouter(prefix="/admin", tags=["pages-settings"])
 
-RICH_KEYS = ("html", "body", "content")
+RICH_KEYS = ("html", "body", "content", "html_id", "body_id", "content_id")
 MAX_REVISIONS = 20
 
 
@@ -345,22 +345,42 @@ async def reset_theme(request: Request):
 
 
 # ---------------------------------------------------------------- audit log
-@router.get("/audit", dependencies=[Depends(require("audit:read"))])
-async def list_audit(limit: int = 100, offset: int = 0, action: str | None = None):
+AUDIT_RANGES = {
+    "hour": timedelta(hours=1),
+    "day": timedelta(days=1),
+    "week": timedelta(days=7),
+    "month": timedelta(days=30),
+    "year": timedelta(days=365),
+}
+
+
+def _audit_query(action: str | None, period: str | None) -> dict:
     q: dict = {}
     if action:
         q["action"] = action
+    if period:
+        if period not in AUDIT_RANGES:
+            raise HTTPException(status_code=422, detail="period must be hour, day, week, month or year.")
+        q["created_at"] = {"$gte": datetime.now(timezone.utc) - AUDIT_RANGES[period]}
+    return q
+
+
+@router.get("/audit", dependencies=[Depends(require("audit:read"))])
+async def list_audit(limit: int = 100, offset: int = 0, action: str | None = None, period: str | None = None):
+    q = _audit_query(action, period)
     total = await db.audit_log.count_documents(q)
     docs = await db.audit_log.find(q).sort("created_at", -1).skip(offset).limit(min(limit, 500)).to_list(500)
     return {"items": jsonable(docs), "total": total}
 
 
 @router.get("/audit/export", dependencies=[Depends(require("audit:read"))])
-async def export_audit():
+async def export_audit(period: str | None = None, limit: int = 1000, offset: int = 0):
     import csv
     import io
     from fastapi.responses import Response
-    docs = await db.audit_log.find({}).sort("created_at", -1).to_list(5000)
+    if limit < 1 or limit > 5000 or offset < 0:
+        raise HTTPException(status_code=422, detail="limit must be 1..5000 and offset must be non-negative.")
+    docs = await db.audit_log.find(_audit_query(None, period)).sort("created_at", -1).skip(offset).limit(limit).to_list(limit)
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(["when", "who", "action", "resource", "target", "detail"])
@@ -370,7 +390,8 @@ async def export_audit():
                     d.get("actor_email"), d.get("action"), d.get("resource"),
                     d.get("target_id") or "", str(d.get("detail") or "")])
     return Response(content=buf.getvalue(), media_type="text/csv",
-                    headers={"Content-Disposition": 'attachment; filename="tnl-audit-log.csv"'})
+                    headers={"Content-Disposition": 'attachment; filename="tnl-audit-log.csv"',
+                             **({"X-Audit-Truncated": "true"} if len(docs) >= limit else {})})
 
 
 # ---------------------------------------------------------------- dashboard

@@ -61,7 +61,7 @@ def test_route_guard_introspection_reaches_the_api():
 # Endpoints only a super admin should ever reach. They are guarded by a permission no other
 # role holds, which is deliberate - and the admin sidebar already hides them from everyone
 # else. Anything outside this set that no role holds is a typo, not a policy.
-SUPER_ADMIN_ONLY = {"users:manage"}
+SUPER_ADMIN_ONLY = {"users:manage", "outbox:read"}
 
 
 def test_no_route_requires_an_orphan_permission():

@@ -12,14 +12,14 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
-from lib.auth import audit, lab_assistant_for_request, require
+from lib.auth import audit, aware, client_ip, lab_assistant_for_request, rate_limit, require
 from lib.practicum_access import public_practicum_doc
 from lib.db import db
 from lib.quality import publish_blockers, run_scan
 from lib.sanitize import sanitize_html
 from lib.serialize import jsonable
 from models.content import Member, Post
-from models.core import ApiKeyCreate, V1Import
+from models.core import ApiKeyCreate, V1Import, V1_IMPORT_MAX_ITEMS
 
 router = APIRouter(tags=["api-v1"])
 
@@ -30,16 +30,31 @@ def hash_key(raw: str) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+async def audit_api_key(action: str, actor: dict, resource: str,
+                        target_id: str | None = None, detail: dict | None = None) -> None:
+    """One canonical identity/hash-chain writer for all API-key events."""
+    await audit(None, action, resource, target_id, detail, actor={
+        "id": actor.get("key_id") or actor.get("id") or "",
+        "email": "api-key:***",  # never store a key name/secret here
+    })
+
+
 async def api_key_principal(x_api_key: str | None = Header(default=None)) -> dict:
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing X-API-Key header.")
     doc = await db.api_keys.find_one({"key_hash": hash_key(x_api_key), "active": True})
     if not doc:
         raise HTTPException(status_code=401, detail="Invalid or revoked API key.")
+    expires = doc.get("expires_at")
+    if expires and aware(expires) <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=401, detail="This API key has expired.")
     await db.api_keys.update_one({"id": doc["id"]}, {"$set": {"last_used_at": datetime.now(timezone.utc)},
                                                     "$inc": {"calls": 1}})
+    scopes = set(doc.get("scopes") or ["read"])
+    if "write" in scopes:  # documented: a write key can also read
+        scopes.add("read")
     return {"principal_type": "api_key", "key_id": doc["id"], "name": doc.get("name"),
-            "scopes": doc.get("scopes") or ["read"]}
+            "scopes": sorted(scopes)}
 
 
 def require_scope(scope: str):
@@ -56,18 +71,28 @@ def slugify(text: str) -> str:
 
 # ---------------------------------------------------------------- key management (Super Admin)
 @router.get("/admin/api-keys", dependencies=[Depends(require("users:manage"))])
-async def list_keys():
-    docs = await db.api_keys.find({}, {"key_hash": 0}).sort("created_at", -1).to_list(100)
-    return {"items": jsonable(docs)}
+async def list_keys(status: str | None = None):
+    q: dict = {}
+    if status:
+        if status not in ("active", "revoked"):
+            raise HTTPException(status_code=422, detail="status must be 'active' or 'revoked'.")
+        q["active"] = status == "active"
+    docs = await db.api_keys.find(q, {"key_hash": 0}).sort("created_at", -1).to_list(100)
+    counts = {
+        "active": await db.api_keys.count_documents({"active": True}),
+        "revoked": await db.api_keys.count_documents({"active": False}),
+    }
+    return {"items": jsonable(docs), "counts": counts}
 
 
 @router.post("/admin/api-keys", status_code=201, dependencies=[Depends(require("users:manage"))])
 async def create_key(payload: ApiKeyCreate, request: Request):
+    rate_limit(f"apikey-write:{client_ip(request)}", 20, 300)
     raw = "tnl_" + secrets.token_urlsafe(28)
     doc = {
         "id": str(uuid4()), "name": payload.name.strip() or "Unnamed key",
         "scopes": payload.scopes or ["read"], "key_hash": hash_key(raw),
-        "prefix": raw[:12], "active": True, "calls": 0,
+        "prefix": raw[:12], "active": True, "calls": 0, "expires_at": payload.expires_at,
         "created_at": datetime.now(timezone.utc), "last_used_at": None,
     }
     await db.api_keys.insert_one(doc)
@@ -79,10 +104,25 @@ async def create_key(payload: ApiKeyCreate, request: Request):
 
 @router.delete("/admin/api-keys/{key_id}", dependencies=[Depends(require("users:manage"))])
 async def revoke_key(key_id: str, request: Request):
+    rate_limit(f"apikey-write:{client_ip(request)}", 20, 300)
     res = await db.api_keys.update_one({"id": key_id}, {"$set": {"active": False}})
     if not res.matched_count:
         raise HTTPException(status_code=404, detail="API key not found.")
     await audit(request, "revoke", "api_keys", key_id)
+    return {"ok": True}
+
+
+@router.delete("/admin/api-keys/{key_id}/purge", dependencies=[Depends(require("users:manage"))])
+async def purge_key(key_id: str, request: Request):
+    """Permanently remove a key that has already been revoked. Reversible only by creating a new key."""
+    rate_limit(f"apikey-write:{client_ip(request)}", 20, 300)
+    key = await db.api_keys.find_one({"id": key_id}, {"key_hash": 0, "_id": 0})
+    if not key:
+        raise HTTPException(status_code=404, detail="API key not found.")
+    if key.get("active"):
+        raise HTTPException(status_code=409, detail="Revoke this key before deleting it permanently.")
+    await db.api_keys.delete_one({"id": key_id})
+    await audit(request, "delete", "api_keys", key_id, {"name": key.get("name")})
     return {"ok": True}
 
 
@@ -176,12 +216,7 @@ async def v1_create(resource: str, payload: dict, principal: dict = Depends(requ
         if publishing and not doc.get("published_at"):
             doc["published_at"] = datetime.now(timezone.utc)
     await db[key].insert_one(doc)
-    await db.audit_log.insert_one({
-        "id": str(uuid4()), "actor_id": principal["key_id"],
-        "actor_email": f"api-key:{principal['name']}", "action": "create",
-        "resource": key, "target_id": doc["id"], "detail": {"via": "v1"},
-        "created_at": datetime.now(timezone.utc),
-    })
+    await audit_api_key("create", principal, key, doc["id"], {"via": "v1"})
     return jsonable(doc)
 
 
@@ -192,6 +227,8 @@ async def v1_import(resource: str, payload: V1Import, principal: dict = Depends(
     model = WRITE_RESOURCES.get(key)
     if not model:
         raise HTTPException(status_code=404, detail="This resource cannot be imported. Importable: news, members.")
+    if len(payload.items) > V1_IMPORT_MAX_ITEMS:
+        raise HTTPException(status_code=422, detail=f"At most {V1_IMPORT_MAX_ITEMS} items may be imported per request.")
     created, failed = 0, []
     for index, item in enumerate(payload.items):
         try:
@@ -217,13 +254,7 @@ async def v1_import(resource: str, payload: V1Import, principal: dict = Depends(
             created += 1
         except Exception as exc:  # noqa: BLE001 — one bad row must not abort the import
             failed.append({"row": index, "error": str(exc)})
-    await db.audit_log.insert_one({
-        "id": str(uuid4()), "actor_id": principal["key_id"],
-        "actor_email": f"api-key:{principal['name']}", "action": "import",
-        "resource": key, "target_id": None,
-        "detail": {"created": created, "failed": len(failed)},
-        "created_at": datetime.now(timezone.utc),
-    })
+    await audit_api_key("import", principal, key, None, {"created": created, "failed": len(failed)})
     return {"created": created, "failed": failed}
 
 
@@ -238,7 +269,8 @@ async def v1_openapi():
             "version": "1.0.0",
             "description": ("Read published laboratory content, and publish News and Members from "
                             "automation scripts. Authenticate with an `X-API-Key` header. Read keys "
-                            "can only read; write keys can also create."),
+                            "can only read; write keys can also read and create. Keys may have an "
+                            "optional `expires_at`. Bulk imports accept at most 200 items."),
         },
         "servers": [{"url": "/api"}],
         "components": {
@@ -282,9 +314,10 @@ async def v1_openapi():
                 "post": {
                     "summary": "Bulk import items from JSON (write scope)",
                     "requestBody": {"required": True, "content": {"application/json": {"schema": {
-                        "type": "object", "properties": {"items": {"type": "array", "items": {"type": "object"}}},
+                        "type": "object", "properties": {"items": {"type": "array", "maxItems": 200, "items": {"type": "object"}}},
                         "required": ["items"]}}}},
-                    "responses": {"200": {"description": "Per-row import result"}},
+                        "responses": {"200": {"description": "Per-row import result"},
+                                  "422": {"description": "More than 200 items"}},
                 },
             },
         },

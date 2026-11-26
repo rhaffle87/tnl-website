@@ -125,10 +125,18 @@ async def with_seats(evs: list[dict], today: str) -> list[dict]:
 async def public_settings():
     s = await get_settings()
     published_theme = (s.get("theme") or {}).get("published") or s.get("theme_tokens") or ThemeTokens().model_dump()
-    s.pop("theme", None)
-    s["theme_tokens"] = published_theme
-    s["server_today"] = today_iso()
-    return jsonable(s)
+    # Explicit allowlist: never expose the whole settings document (Figma token
+    # hashes/prefixes, retention policy, internal identifiers, audit metadata, ...).
+    public_fields = (
+        "site_title", "site_title_id", "short_name", "logo_url", "logo_url_dark",
+        "its_logo_url", "contact", "social", "seo", "focus_areas",
+        "language_default", "analytics_snippet", "maintenance_mode", "announcement",
+    )
+    out = {key: s.get(key) for key in public_fields}
+    out["theme_tokens"] = published_theme
+    out["theme_published"] = True
+    out["server_today"] = today_iso()
+    return jsonable(out)
 
 
 @router.get("/public/stats", dependencies=[Depends(check_maintenance)])
@@ -493,12 +501,11 @@ async def submit_registration(event_id: str, request: Request):
         raise
 
     now_utc = datetime.now(timezone.utc)
-    cert_code = secrets.token_hex(4).upper()
     reg = {
         "id": str(uuid.uuid4()), "event_id": actual_event_id, "event_title": ev.get("title", ""),
         "data": data, "email": email.lower(), "nim": nim, "status": "accepted",
         "consent": True, "consent_timestamp": now_utc.isoformat(), "consent_policy_version": "2026.1",
-        "certificate_code": cert_code, "notes": "",
+        "notes": "",  # certificate_code/certificate_issued_at are added on check-in + issue only
         "created_at": now_utc,
     }
     await db.registrations.insert_one(reg)
@@ -508,9 +515,10 @@ async def submit_registration(event_id: str, request: Request):
             {"event_id": actual_event_id, "status": {"$in": ["pending", "accepted", "attended"]}}
         )
         if active_count > cap:
-            await db.registrations.delete_one({"id": reg["id"]})
-            _discard_uploads(saved_uploads)
-            raise HTTPException(status_code=409, detail="Kuota pendaftaran sudah penuh.")
+            # Keep the data (and any uploads) as a waitlisted record — never send a
+            # confirmation and never delete data after it has been collected.
+            await db.registrations.update_one({"id": reg["id"]}, {"$set": {"status": "waitlisted"}})
+            raise HTTPException(status_code=409, detail="Kuota pendaftaran sudah penuh. Pendaftaran Anda masuk daftar tunggu.")
 
     name = next((v for v in data.values() if isinstance(v, str) and 2 < len(v) < 80), email)
     state = "accepted and confirmed"
@@ -566,9 +574,11 @@ def _participant_name(reg: dict) -> str:
 
 
 @router.get("/verify/{code}")
-async def verify_certificate(code: str):
+async def verify_certificate(code: str, request: Request):
+    rate_limit(f"cert-verify:{client_ip(request)}", 30, 300)
     reg = await db.registrations.find_one({"certificate_code": code.upper()})
-    if not reg or reg.get("status") == "rejected" or not reg.get("certificate_code"):
+    if (not reg or reg.get("status") != "attended" or not reg.get("certificate_code")
+            or not reg.get("certificate_issued_at")):
         return {"valid": False, "message": "No valid certificate found for this code."}
     ev = await db.events.find_one({"id": reg.get("event_id")}) or {}
     return {
@@ -587,7 +597,8 @@ async def verify_certificate(code: str):
 @router.get("/public/certificates/{code}/download")
 async def certificate_pdf(code: str):
     reg = await db.registrations.find_one({"certificate_code": code.upper()})
-    if not reg or reg.get("status") == "rejected" or not reg.get("certificate_code"):
+    if (not reg or reg.get("status") != "attended" or not reg.get("certificate_code")
+            or not reg.get("certificate_issued_at")):
         raise HTTPException(status_code=404, detail="Certificate not found.")
     try:
         import tempfile

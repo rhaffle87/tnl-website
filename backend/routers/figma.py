@@ -21,7 +21,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from lib.auth import audit, require, user_for_request
+from lib.auth import allowed, audit, principal, require, user_for_request
 from lib.db import db
 from lib.serialize import jsonable
 from models.core import ThemeTokens
@@ -71,6 +71,17 @@ async def get_figma_actor(
 def slugify(text: str) -> str:
     s = re.sub(r"[^a-zA-Z0-9]+", "-", (text or "").lower()).strip("-")
     return s or f"figma-page-{secrets.token_hex(4)}"
+
+
+def require_actor_permission(request: Request, actor: dict, action: str) -> None:
+    """A session cookie alone is not authority: enforce the user's CMS permission.
+
+    Plugin/token actors are scoped by their token capability and stay unaffected."""
+    if actor.get("actor_type") != "user":
+        return
+    user = getattr(request.state, "user", None) or {}
+    if not allowed(principal(user), action):
+        raise HTTPException(status_code=403, detail="Your role does not allow this Figma action.")
 
 
 # ---------------------------------------------------------------- token management
@@ -165,6 +176,7 @@ async def import_figma_tokens(
 
     Validates colors, evaluates WCAG AA contrast, and saves to settings draft.
     """
+    require_actor_permission(request, actor, "settings:write")
     settings = await db.settings.find_one({"id": "settings"}) or {}
     current_tokens = settings.get("theme", {}).get("draft") or settings.get("theme_tokens") or ThemeTokens().model_dump()
 
@@ -279,6 +291,7 @@ async def sync_figma_frame(
     GUARANTEE: The created/updated page is ALWAYS saved as 'draft' (published: False)
     so administrators retain full editorial control before going live.
     """
+    require_actor_permission(request, actor, "pages:edit")
     slug = slugify(payload.slug or payload.title or payload.frame_name or "figma-draft")
     now = datetime.now(timezone.utc)
 

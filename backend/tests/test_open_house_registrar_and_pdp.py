@@ -1,4 +1,4 @@
-"""Tests for Open House registration pipeline, Google Sheets sync, Excel/CSV exports, and UU PDP compliance."""
+"""Tests for Open House registration pipeline, MongoDB storage, Excel/CSV exports, and UU PDP compliance."""
 
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -201,4 +201,25 @@ async def test_event_draft_isolation_and_delete_constraint(async_client, mock_db
     err_detail = del_res.json().get("detail", "")
     assert "Set status to Draft to hide it temporarily" in err_detail
     assert "export and delete the registrations first before deleting permanently" in err_detail
+
+
+@pytest.mark.asyncio
+async def test_triage_empty_message_returns_422_without_writing_triage(async_client, mock_db, admin_cookies):
+    """K1: an empty message must stay eligible for /messages/triage-all."""
+    msg_id = str(uuid4())
+    await mock_db.messages.insert_one({
+        "id": msg_id,
+        "name": "",
+        "subject": "",
+        "body": "",
+        "status": "new",
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    res = await async_client.post(f"/admin/messages/{msg_id}/triage", cookies=admin_cookies)
+    assert res.status_code == 422
+
+    stored = await mock_db.messages.find_one({"id": msg_id})
+    assert stored is not None
+    assert "triage" not in stored
 

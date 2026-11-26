@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from lib.auth import audit, require
 from lib.db import db
 from lib.serialize import jsonable
-from lib.storage import put_object, safe_name
+from lib.storage import put_object, safe_name, sniff_content_type
 
 router = APIRouter(tags=["lab-photos"])
 
@@ -104,14 +104,16 @@ async def replace_lab_photo(slot_id: str, request: Request,
     data = await file.read()
     if len(data) > MAX_BYTES:
         raise HTTPException(status_code=413, detail="Photos must be under 10 MB.")
-    ctype = file.content_type or ""
-    if ctype not in IMAGE_TYPES:
-        raise HTTPException(status_code=415, detail="Only JPG, PNG or WebP photos are allowed.")
-
-    key = f"lab-photos/{safe_name(file.filename or 'photo.jpg')}"
+    sniffed = sniff_content_type(data)
+    if not sniffed or sniffed[0] not in IMAGE_TYPES:
+        raise HTTPException(status_code=422, detail="File content does not match a real JPG, PNG or WebP image.")
+    ctype, ext = sniffed
+    stem = os.path.splitext(file.filename or "photo.jpg")[0]
+    filename = safe_name(f"{stem}{ext}")
+    key = f"lab-photos/{filename}"
     url = put_object(data, key, ctype)
     media_doc = {
-        "id": str(uuid4()), "filename": file.filename or "photo.jpg", "url": url, "key": key,
+        "id": str(uuid4()), "filename": filename, "url": url, "key": key,
         "alt": alt.strip(), "folder": "lab-photos", "kind": "image",
         "content_type": ctype, "bytes": len(data), "sizes": {},
         "created_at": datetime.now(timezone.utc),

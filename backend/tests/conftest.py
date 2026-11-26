@@ -12,6 +12,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+# Test-only signing value generated at runtime: never committed, never used in production.
+os.environ.setdefault("UPLOAD_SIGNING_SECRET", "pytest-upload-" + uuid4().hex)
+
 import httpx
 import pytest
 import pytest_asyncio

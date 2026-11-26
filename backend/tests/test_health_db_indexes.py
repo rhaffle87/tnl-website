@@ -43,7 +43,8 @@ async def test_health_check_degraded_on_error(async_client, monkeypatch):
     assert res.status_code == 503
     data = res.json()
     assert data.get("status") == "degraded"
-    assert "Simulated connection timeout" in data.get("database", "")
+    assert data.get("database") == "unavailable"
+    assert "Simulated connection timeout" not in res.text
 
 
 @pytest.mark.asyncio

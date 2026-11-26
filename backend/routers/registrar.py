@@ -1,25 +1,37 @@
 """Registrar dashboard: registration pipeline, bulk email, CSV export, QR check-in,
 certificate issuing, and UU PDP tools (delete / anonymize per registrant, retention sweep).
-Plus the contact inbox with Jev triage and reply-by-email."""
+Plus the contact inbox with local triage and reply-by-email."""
 
 import csv
 import io
+import posixpath
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
+from urllib.parse import unquote, urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 
 from lib.auth import audit, require
 from lib.db import db
-from lib.jev import triage_message
+from lib.advisor import triage_message
 from lib.mailer import send_email
 from lib.serialize import jsonable
+from lib.storage import delete_object
 from models.core import BulkEmailIn, CheckinIn, IssueCertificatesIn, MessagePatch, RegistrationPatch
 
 router = APIRouter(prefix="/admin", tags=["registrar"])
 
 STATUSES = ("pending", "accepted", "rejected", "attended", "waitlisted")
+
+
+def _formula_safe(value) -> str:
+    """Neutralise CSV/XLSX formula injection while preserving the visible text."""
+    text = "" if value is None else str(value)
+    if text[:1] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + text
+    return text
 
 
 def _display_name(reg: dict) -> str:
@@ -28,6 +40,27 @@ def _display_name(reg: dict) -> str:
         if isinstance(value, str) and ("nama" in key.lower() or "name" in key.lower()) and value.strip():
             return value.strip()
     return reg.get("email") or "Participant"
+
+
+def _private_upload_key(value: str) -> str | None:
+    """Extract a canonical storage key below uploads/ from an upload URL."""
+    if not value or "\\" in value or "\x00" in value:
+        return None
+    try:
+        path = unquote(urlsplit(value).path)
+    except ValueError:
+        return None
+    if "\\" in path or "\x00" in path:
+        return None
+    marker = "/api/media-files/"
+    if marker in path:
+        path = path.split(marker, 1)[1]
+    key = path.lstrip("/")
+    parts = key.split("/")
+    if (not key.startswith("uploads/") or posixpath.normpath(key) != key
+            or any(part in ("", ".", "..") for part in parts)):
+        return None
+    return key
 
 
 # ---------------------------------------------------------------- registrations
@@ -40,9 +73,10 @@ async def list_registrations(event_id: str | None = None, status: str | None = N
     if status in STATUSES:
         query["status"] = status
     if q:
-        query["$or"] = [{"email": {"$regex": q, "$options": "i"}},
-                        {"nim": {"$regex": q, "$options": "i"}},
-                        {"event_title": {"$regex": q, "$options": "i"}}]
+        regex = re.escape(q.strip())
+        query["$or"] = [{"email": {"$regex": regex, "$options": "i"}},
+                        {"nim": {"$regex": regex, "$options": "i"}},
+                        {"event_title": {"$regex": regex, "$options": "i"}}]
     total = await db.registrations.count_documents(query)
     docs = await db.registrations.find(query).sort("created_at", -1).skip(offset).limit(min(limit, 200)).to_list(200)
     for d in docs:
@@ -120,12 +154,13 @@ async def export_registrations(event_id: str | None = None, status: str | None =
                [k.replace("f_", "").replace("-", " ") for k in keys])
     for r in regs:
         when = r.get("created_at")
-        row = [when.isoformat() if hasattr(when, "isoformat") else when,
-               r.get("event_title", ""), r.get("status", ""), r.get("email", ""),
-               r.get("nim", ""), r.get("certificate_code") or ""]
+        row = [_formula_safe(when.isoformat() if hasattr(when, "isoformat") else when),
+               _formula_safe(r.get("event_title", "")), r.get("status", ""), _formula_safe(r.get("email", "")),
+               _formula_safe(r.get("nim", "")), _formula_safe(r.get("certificate_code") or "")]
         for k in keys:
             v = (r.get("data") or {}).get(k, "")
-            row.append(v.get("name") if isinstance(v, dict) else v)
+            row.append(_formula_safe((v.get("absolute_url") or v.get("url") or v.get("name") or "")
+                                     if isinstance(v, dict) else v))
         w.writerow(row)
     return Response(content=buf.getvalue(), media_type="text/csv",
                     headers={"Content-Disposition": 'attachment; filename="tnl-registrations.csv"'})
@@ -158,7 +193,7 @@ async def export_registrations_excel(event_id: str | None = None, status: str | 
             if k not in keys:
                 keys.append(k)
 
-    headers = ["No", "Waktu Daftar", "Event", "Status", "Email", "NRP / NIM"] + \
+    headers = ["No", "Waktu Daftar", "Event", "Status", "Email", "NRP / NIM", "Certificate Code"] + \
               [k.replace("f_", "").replace("-", " ").title() for k in keys]
     ws.append(headers)
 
@@ -170,14 +205,15 @@ async def export_registrations_excel(event_id: str | None = None, status: str | 
     for idx, r in enumerate(regs, 1):
         when = r.get("created_at")
         when_str = when.strftime("%Y-%m-%d %H:%M:%S") if hasattr(when, "strftime") else str(when)
-        row = [idx, when_str, r.get("event_title", ""), r.get("status", ""), r.get("email", ""),
-               r.get("nim", "")]
+        row = [idx, _formula_safe(when_str), _formula_safe(r.get("event_title", "")), r.get("status", ""),
+               _formula_safe(r.get("email", "")), _formula_safe(r.get("nim", "")),
+               _formula_safe(r.get("certificate_code") or "")]
         for k in keys:
             v = (r.get("data") or {}).get(k, "")
             if isinstance(v, dict):
-                row.append(v.get("absolute_url") or v.get("url") or v.get("name") or "")
+                row.append(_formula_safe(v.get("absolute_url") or v.get("url") or v.get("name") or ""))
             else:
-                row.append(str(v))
+                row.append(_formula_safe(v))
         ws.append(row)
 
     for col in ws.columns:
@@ -239,23 +275,26 @@ async def issue_certificates(payload: IssueCertificatesIn, request: Request):
     year = start_date[:4] if len(start_date) >= 4 else str(datetime.now(timezone.utc).year)
     ev_type = (event.get("type") or "evt")[:3].upper()
 
-    statuses = payload.statuses if payload.statuses else ["attended"]
+    # A certificate is an attendance record: never issue one from an accepted-only
+    # registration, even if a caller supplies other statuses. Check-in may already
+    # have generated a code, so select on the missing issue timestamp instead.
     query = {
         "event_id": payload.event_id,
-        "status": {"$in": statuses},
+        "status": {"$in": ["attended"]},
         "$or": [
-            {"certificate_code": {"$exists": False}},
-            {"certificate_code": None},
-            {"certificate_code": ""},
+            {"certificate_issued_at": {"$exists": False}},
+            {"certificate_issued_at": None},
         ],
     }
     candidates = await db.registrations.find(query).to_list(2000)
     issued_count = 0
     now = datetime.now(timezone.utc)
     for reg in candidates:
-        code = f"TNL-{year}-{ev_type}-{secrets.token_hex(3).upper()}"
-        while await db.registrations.find_one({"certificate_code": code}):
+        code = reg.get("certificate_code")
+        if not code:
             code = f"TNL-{year}-{ev_type}-{secrets.token_hex(3).upper()}"
+            while await db.registrations.find_one({"certificate_code": code}):
+                code = f"TNL-{year}-{ev_type}-{secrets.token_hex(3).upper()}"
         await db.registrations.update_one(
             {"id": reg["id"]},
             {"$set": {"certificate_code": code, "certificate_issued_at": now}},
@@ -283,9 +322,20 @@ async def anonymize_registration(reg_id: str, request: Request):
 
 @router.delete("/registrations/{reg_id}", dependencies=[Depends(require("registrations:manage"))])
 async def delete_registration(reg_id: str, request: Request):
+    reg = await db.registrations.find_one({"id": reg_id})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registration not found.")
     res = await db.registrations.delete_one({"id": reg_id})
     if not res.deleted_count:
         raise HTTPException(status_code=404, detail="Registration not found.")
+    # UU PDP erasure covers uploaded CV/portfolio files too. Only keys under the
+    # private uploads/ directory are removed; never touch the public media library.
+    for value in (reg.get("data") or {}).values():
+        if not isinstance(value, dict):
+            continue
+        key = _private_upload_key(value.get("url") or value.get("absolute_url") or "")
+        if key:
+            delete_object(key)
     await audit(request, "delete", "registrations", reg_id)
     return {"ok": True}
 
@@ -328,14 +378,14 @@ async def list_messages(status: str | None = None, category: str | None = None):
 
 @router.post("/messages/{msg_id}/triage", dependencies=[Depends(require("messages:manage"))])
 async def triage_one(msg_id: str, request: Request):
-    """Jev: sort this message into a bucket, score urgency, flag spam."""
+    """Local triage: sort this message into a bucket, score urgency, flag spam."""
     msg = await db.messages.find_one({"id": msg_id})
     if not msg:
         raise HTTPException(status_code=404, detail="Message not found.")
-    result = await triage_message(msg.get("name", ""), msg.get("subject", ""), msg.get("body", ""))
-    await db.messages.update_one({"id": msg_id}, {"$set": {"triage": result}})
+    result = triage_message(msg.get("name", ""), msg.get("subject", ""), msg.get("body", ""))
     if not result.get("ai_ok"):
-        raise HTTPException(status_code=503, detail="The triage service is busy. Please try again shortly.")
+        raise HTTPException(status_code=422, detail="This message is empty, so there is nothing to triage.")
+    await db.messages.update_one({"id": msg_id}, {"$set": {"triage": result}})
     return result
 
 
@@ -343,8 +393,8 @@ async def triage_one(msg_id: str, request: Request):
 async def triage_all(request: Request):
     msgs = await db.messages.find({"triage": {"$exists": False}}).limit(10).to_list(10)
     done = 0
-    for msg in msgs:  # sequential: respects the universal key's concurrency limit
-        result = await triage_message(msg.get("name", ""), msg.get("subject", ""), msg.get("body", ""))
+    for msg in msgs:  # sequential: keeps the triage order and audit trail stable
+        result = triage_message(msg.get("name", ""), msg.get("subject", ""), msg.get("body", ""))
         await db.messages.update_one({"id": msg["id"]}, {"$set": {"triage": result}})
         if result.get("ai_ok"):
             done += 1
@@ -378,8 +428,8 @@ async def delete_message(msg_id: str, request: Request):
     return {"ok": True}
 
 
-@router.get("/outbox", dependencies=[Depends(require("messages:manage"))])
+@router.get("/outbox", dependencies=[Depends(require("outbox:read"))])
 async def list_outbox():
-    """Every email the app generated. With no SMTP configured these are status=logged."""
+    """Every email the app generated (redacted). With no SMTP configured these are status=logged."""
     docs = await db.outbox.find({}).sort("created_at", -1).limit(200).to_list(200)
     return {"items": jsonable(docs), "smtp_configured": bool(__import__("os").environ.get("SMTP_HOST"))}

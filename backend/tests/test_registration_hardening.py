@@ -131,7 +131,8 @@ async def _certified_registration(mock_db, data):
     await mock_db.registrations.insert_one({
         "id": str(uuid4()), "event_id": "hardening-event", "event_title": "Hardening Event",
         "email": "private.person@example.org", "nim": "", "status": "attended", "data": data,
-        "certificate_code": code, "created_at": datetime.now(timezone.utc),
+        "certificate_code": code, "certificate_issued_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(timezone.utc),
     })
     return code
 
@@ -162,7 +163,8 @@ async def test_certificate_pdf_survives_non_latin_text(async_client, mock_db):
         "event_title": "Open Recruitment \u2014 Asisten Laboratorium",
         "email": "pdf.person@example.org", "nim": "", "status": "attended",
         "data": {"f_full-name": "Budi \u65e5\u672c Santoso"},
-        "certificate_code": code, "created_at": datetime.now(timezone.utc),
+        "certificate_code": code, "certificate_issued_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(timezone.utc),
     })
     res = await async_client.get(f"/certificates/{code}/pdf")
     assert res.status_code == 200, res.text

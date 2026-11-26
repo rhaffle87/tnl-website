@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -13,7 +12,6 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
 from lib.db import client, db, ensure_indexes  # noqa: E402
-from lib.jev import close_jev  # noqa: E402
 from routers import (  # noqa: E402
     apiv1, auth, content, figma, google_auth, labphotos, media, public, pubimport, registrar, seo, siteadmin,
 )
@@ -21,9 +19,13 @@ from routers import (  # noqa: E402
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.index_task = asyncio.create_task(ensure_indexes())
+    # Index creation is awaited so boot failures are visible, but each index is
+    # individually guarded in ensure_indexes() so a stale spec never blocks boot.
+    try:
+        await ensure_indexes()
+    except Exception:  # noqa: BLE001
+        logging.getLogger(__name__).exception("Index initialisation failed; continuing startup")
     yield
-    await close_jev()
     client.close()
 
 
@@ -46,8 +48,10 @@ async def health():
     try:
         await db.command("ping")
         return {"status": "ok", "database": "connected"}
-    except Exception as exc:  # noqa: BLE001
-        return JSONResponse(status_code=503, content={"status": "degraded", "database": str(exc)})
+    except Exception:  # noqa: BLE001 — never leak driver/DSN details to an unauthenticated caller
+        return JSONResponse(status_code=503, content={
+            "status": "degraded", "database": "unavailable",
+            "message": "The database is temporarily unavailable."})
 
 
 # Public reads, contact inbox, registration engine, certificate verification.
