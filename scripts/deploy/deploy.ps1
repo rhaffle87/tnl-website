@@ -59,7 +59,7 @@ function Invoke-PsScriptChecked {
     if ($dryRun) { Write-Host "[DRY RUN] $Description (script: $Script)"; return }
     Write-Host $Description -ForegroundColor Yellow
     $global:LASTEXITCODE = 0
-    & $Script @Arguments
+    if ($Arguments) { & $Script @Arguments } else { & $Script }
     $code = $LASTEXITCODE
     if ($null -eq $code -or $code -ne 0) { throw "$Description failed with exit code $code" }
 }
