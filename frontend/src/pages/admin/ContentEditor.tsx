@@ -13,7 +13,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, Eye, Monitor, Save, Smartphone } from "lucide-react";
-import { apiGet, apiPost, apiPut } from "@/lib/api";
+import { apiGet, apiPost, apiPut } from "@/lib/api/api";
 import { AdminSelect, AdminSwitch, IssueList, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
@@ -29,7 +29,7 @@ import {
     type ResourceSpec,
     type Row,
 } from "@/pages/admin/ContentManager";
-import type { FormField, ListResponse, Member, QualityIssue } from "@/lib/types";
+import type { FormField, ListResponse, Member, QualityIssue } from "@/lib/types/types";
 
 /* ------------------------------------------------------------------ helpers */
 

@@ -3,9 +3,9 @@ import { Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { LazyMotion, domAnimation } from "motion/react";
 import { Toaster } from "@/components/ui/sonner";
 import RouteErrorBoundary from "@/components/RouteErrorBoundary";
-import { lazyWithRetry as lazy } from "@/lib/lazy";
+import { lazyWithRetry as lazy } from "@/lib/utils/lazy";
 import SiteLayout, { LocaleProvider } from "@/components/site/SiteLayout";
-import { AdminLocaleProvider } from "@/lib/admin-i18n";
+import { AdminLocaleProvider } from "@/lib/i18n/admin-i18n";
 import Home from "@/pages/Home";
 
 // Public secondary routes — code-split to keep initial landing bundle light

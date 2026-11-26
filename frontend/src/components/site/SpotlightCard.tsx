@@ -1,5 +1,5 @@
 import { type HTMLAttributes, type PointerEvent, forwardRef, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 
 const rectCache = new WeakMap<HTMLElement, DOMRect>();
 const frameCache = new WeakMap<HTMLElement, number>();

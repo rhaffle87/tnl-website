@@ -28,7 +28,7 @@ import {
     Undo2,
 } from "lucide-react";
 import { MediaPickerModal } from "@/components/admin/media";
-import type { MediaAsset } from "@/lib/types";
+import type { MediaAsset } from "@/lib/types/types";
 
 export interface RichTextFieldProps {
     id?: string;

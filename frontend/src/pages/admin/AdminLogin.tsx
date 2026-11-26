@@ -5,12 +5,12 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Eye, EyeOff, KeyRound, LogIn } from "lucide-react";
-import { ApiError, apiGet, apiPost } from "@/lib/api";
-import { beginSession } from "@/lib/session";
-import { useApplyThemeTokens } from "@/lib/theme";
+import { ApiError, apiGet, apiPost } from "@/lib/api/api";
+import { beginSession } from "@/lib/api/session";
+import { useApplyThemeTokens } from "@/lib/theme/theme";
 import { useQuery } from "@tanstack/react-query";
 import { TnlLogo } from "@/components/site/TnlLogo";
-import type { AuthUser, GoogleAuthConfig } from "@/lib/types";
+import type { AuthUser, GoogleAuthConfig } from "@/lib/types/types";
 
 function errorText(err: unknown, fallback: string): string {
     if (err instanceof ApiError) {

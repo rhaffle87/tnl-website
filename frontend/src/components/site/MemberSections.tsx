@@ -9,10 +9,10 @@ import { useSearchParams } from "react-router-dom";
 import { m, AnimatePresence } from "motion/react";
 import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
 import { BookOpen, Briefcase, ExternalLink, FileText, Github, Instagram, Linkedin, Mail, Users, X } from "lucide-react";
-import { pick, useLocale } from "@/lib/i18n";
-import { useMembers, usePublications } from "@/lib/hooks";
+import { pick, useLocale } from "@/lib/i18n/i18n";
+import { useMembers, usePublications } from "@/lib/api/hooks";
 import { EmptyState, SectionHeading, Spinner } from "@/components/site/Primitives";
-import type { Member } from "@/lib/types";
+import type { Member } from "@/lib/types/types";
 
 const ACTIVE_DIVISIONS = ["BPH", "Academic", "Research", "Social", "Internal", "External"];
 const ALUMNI_DIVISIONS = ["Coordinator", "Academics", "Event", "Media", "Research"];

@@ -20,15 +20,15 @@ import {
     Users,
     Wrench,
 } from "lucide-react";
-import { pick, pickProp, useLocale } from "@/lib/i18n";
-import { categoryKey, localizeCategory } from "@/lib/categoryLabels";
-import { useMembers, usePartners, usePosts, useSettings, useStats } from "@/lib/hooks";
+import { pick, pickProp, useLocale } from "@/lib/i18n/i18n";
+import { categoryKey, localizeCategory } from "@/lib/i18n/categoryLabels";
+import { useMembers, usePartners, usePosts, useSettings, useStats } from "@/lib/api/hooks";
 import { EmptyState, SectionHeading, formatDate } from "@/components/site/Primitives";
 import { MemberSections } from "@/components/site/MemberSections";
 import { ContactForm } from "@/components/site/ContactForm";
 import { SignalHero } from "@/components/site/SignalHero";
 import { SignalGallery } from "@/components/site/SignalGallery";
-import type { Block } from "@/lib/types";
+import type { Block } from "@/lib/types/types";
 
 const ICONS = [Radio, Wrench, GraduationCap, Users, ActivityIcon];
 

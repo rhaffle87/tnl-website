@@ -17,12 +17,13 @@ import {
     Sun,
     X,
 } from "lucide-react";
-import { useLocale, pick } from "@/lib/i18n";
-import { useFocusTrap } from "@/lib/useFocusTrap";
-import { useEvents, useSettings } from "@/lib/hooks";
+import { useLocale, pick } from "@/lib/i18n/i18n";
+import { useThemeMode } from "@/lib/theme/theme";
+import { useFocusTrap } from "@/lib/a11y/useFocusTrap";
+import { useEvents, useSettings } from "@/lib/api/hooks";
 import { TnlLogo } from "@/components/site/TnlLogo";
 import { useSmoothScroll } from "@/components/site/SmoothScrollProvider";
-import type { SiteSettings } from "@/lib/types";
+import type { SiteSettings } from "@/lib/types/types";
 import "./signal-chrome.css";
 
 const NAV = [
@@ -194,7 +195,7 @@ export function SiteHeader() {
     const triggerRef = useRef<HTMLButtonElement>(null);
     const logoRef = useRef<HTMLAnchorElement>(null);
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
+    const { isDark: dark, toggleTheme } = useThemeMode();
 
     useEffect(() => setMobileOpen(false), [location.key]);
 
@@ -208,14 +209,6 @@ export function SiteHeader() {
         return () => window.removeEventListener("resize", closeOnDesktop);
     }, [mobileOpen]);
 
-    const toggleDark = () => {
-        const next = !dark;
-        setDark(next);
-        document.documentElement.classList.toggle("dark", next);
-        const meta = document.querySelector('meta[name="color-scheme"]');
-        if (meta) meta.setAttribute("content", next ? "dark" : "light");
-        localStorage.setItem("tnl-theme", next ? "dark" : "light");
-    };
 
     const title = pick(locale, settings?.site_title, settings?.site_title_id).trim() ||
         (locale === "id" ? "Laboratorium Jaringan Telekomunikasi" : "Telecommunication Network Laboratory");
@@ -260,7 +253,7 @@ export function SiteHeader() {
                         </button>
                         <button
                             type="button"
-                            onClick={toggleDark}
+                            onClick={toggleTheme}
                             className="signal-control"
                             aria-label={dark ? t("light_mode") : t("dark_mode")}
                             data-testid="theme-toggle-button"

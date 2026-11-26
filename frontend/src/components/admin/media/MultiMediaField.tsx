@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { MediaPickerModal } from "./MediaPickerModal";
-import type { MediaAsset } from "@/lib/types";
-import { useAdminT } from "@/lib/admin-i18n";
+import type { MediaAsset } from "@/lib/types/types";
+import { useAdminT } from "@/lib/i18n/admin-i18n";
 
 export interface MultiMediaFieldProps {
     label?: string;

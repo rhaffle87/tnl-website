@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { SectionHeading } from "./Primitives";
-import { pick, pickProp, useLocale } from "@/lib/i18n";
+import { pick, pickProp, useLocale } from "@/lib/i18n/i18n";
 import "./signal-editorial.css";
 
 type Photo = { url: string; alt?: string; caption?: string; caption_id?: string };

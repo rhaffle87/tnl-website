@@ -21,7 +21,7 @@ import {
     Phone,
     GraduationCap,
 } from "lucide-react";
-import type { FormField } from "@/lib/types";
+import type { FormField } from "@/lib/types/types";
 import { AdminSelect, AdminSwitch } from "@/components/admin/controls";
 
 export interface FormFieldsBuilderProps {

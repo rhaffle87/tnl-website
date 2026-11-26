@@ -14,8 +14,8 @@ import {
     Calendar,
     XCircle,
 } from "lucide-react";
-import { useEvent, useSubmitRegistration } from "@/lib/hooks";
-import { useLocale, pick } from "@/lib/i18n";
+import { useEvent, useSubmitRegistration } from "@/lib/api/hooks";
+import { useLocale, pick } from "@/lib/i18n/i18n";
 import { toast } from "sonner";
 import { FadeCarousel } from "@/components/site/MediaCarousel";
 import { TnlLogo } from "@/components/site/TnlLogo";

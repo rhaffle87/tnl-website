@@ -8,12 +8,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Download, Link2, Plus, Search } from "lucide-react";
-import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
-import { useAdminT } from "@/lib/admin-i18n";
+import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api/api";
+import { useAdminT } from "@/lib/i18n/admin-i18n";
 import { AdminErrorBanner, AdminHeader, AdminLoadMore, ConfirmButton, Panel, StatusPill, adminError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { MEMBER_SOCIAL_PRESETS, type RepeaterFieldSpec, type PresetKeyConfig } from "@/components/admin/repeaters";
-import type { ListResponse, QualityIssue } from "@/lib/types";
+import type { ListResponse, QualityIssue } from "@/lib/types/types";
 
 export type FieldType =
     | "text"

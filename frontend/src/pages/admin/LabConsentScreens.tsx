@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Camera, Check, Download, ImageOff, Loader2, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { apiDelete, apiGet, apiPost } from "@/lib/api";
+import { apiDelete, apiGet, apiPost } from "@/lib/api/api";
 import { AdminCard, AdminPageHeader, AdminStatusBadge, AdminSwitch, adminError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
-import type { CrossrefHit, CrossrefSearch, ImportResult, LabPhotoSlot, LabPhotoSlots } from "@/lib/types";
+import type { CrossrefHit, CrossrefSearch, ImportResult, LabPhotoSlot, LabPhotoSlots } from "@/lib/types/types";
 
 // Small local form primitives: AdminUI exports a value/onChange Field, these wrap arbitrary
 // controls (file inputs, numeric boxes) so the labels stay consistent with the rest of the CMS.

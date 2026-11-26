@@ -15,12 +15,12 @@ import {
     Save,
     Trash2,
 } from "lucide-react";
-import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api/api";
 import { AdminErrorBanner, AdminPageHeader, AdminSectionHeader, AdminStatusBadge, ConfirmButton, IssueList, Panel, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
 import { KeyValueMapEditor } from "@/components/admin/repeaters";
-import type { Block, ListResponse, PageDoc, PageRevisionBrief, QualityIssue } from "@/lib/types";
+import type { Block, ListResponse, PageDoc, PageRevisionBrief, QualityIssue } from "@/lib/types/types";
 
 const BLOCK_LIBRARY: { type: string; label: string; description: string }[] = [
     { type: "hero", label: "Hero", description: "Big opening panel with a badge, title and two buttons." },

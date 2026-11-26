@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
-import { useEvent } from "@/lib/hooks";
-import { useLocale } from "@/lib/i18n";
+import { useEvent } from "@/lib/api/hooks";
+import { useLocale } from "@/lib/i18n/i18n";
 import { EmptyState, Spinner } from "@/components/site/Primitives";
 import { EventCard } from "@/pages/ActivityPage";
 import "@/pages/activity-editorial.css";

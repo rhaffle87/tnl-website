@@ -1,5 +1,5 @@
 """Pydantic v2 models for lab content resources. Every TS interface in
-frontend/src/lib/types.ts mirrors these — keep the two in sync in the same edit.
+frontend/src/lib/types/types.ts mirrors these — keep the two in sync in the same edit.
 
 Dates are ISO strings (YYYY-MM-DD) for event/publication dates; created_at/updated_at
 are aware UTC datetimes so JavaScript `new Date(...)` parses them correctly.

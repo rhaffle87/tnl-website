@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Calendar, ClipboardList, Image, Plus } from "lucide-react";
-import { apiGet } from "@/lib/api";
-import { useAdminT } from "@/lib/admin-i18n";
+import { apiGet } from "@/lib/api/api";
+import { useAdminT } from "@/lib/i18n/admin-i18n";
 import { AdminErrorBanner, AdminLoadMore, AdminPageHeader, AdminSectionHeader, AdminSelect, IssueList, Panel, adminError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
-import type { AuditEntry, DashboardStats, ListResponse, ReviewQueueItem } from "@/lib/types";
+import type { AuditEntry, DashboardStats, ListResponse, ReviewQueueItem } from "@/lib/types/types";
 
 export default function AdminDashboard() {
     const { data, isLoading } = useQuery({
@@ -420,7 +420,7 @@ const GUIDE = [
     {
         title: "Back up the site",
         steps: [
-            "Backups are a script on the server: scripts/backup.sh.",
+            "Backups are a script on the server: scripts/ops/backup.sh.",
             "It saves the database and the uploaded files, keeping the last 14 days.",
             "Ask the department IT staff to run it nightly with cron.",
             "Restore instructions are in the README under “Backup and restore”.",

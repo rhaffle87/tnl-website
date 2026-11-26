@@ -27,13 +27,13 @@ import {
     Sparkles,
     Users,
 } from "lucide-react";
-import { useActivities, useEquipment, useEvents, usePage, usePracticum, useProjects } from "@/lib/hooks";
-import { pick, useLocale } from "@/lib/i18n";
+import { useActivities, useEquipment, useEvents, usePage, usePracticum, useProjects } from "@/lib/api/hooks";
+import { pick, useLocale } from "@/lib/i18n/i18n";
 import { BlockRenderer } from "@/components/site/Blocks";
 import { EmptyState, SectionHeading, Spinner, formatDate } from "@/components/site/Primitives";
 import { RegistrationDialog } from "@/components/site/RegistrationDialog";
 import { FadeCarousel, ImageLightboxModal, type CarouselImage } from "@/components/site/MediaCarousel";
-import type { Activity, Equipment, LabEvent, PracticumModule, Project } from "@/lib/types";
+import type { Activity, Equipment, LabEvent, PracticumModule, Project } from "@/lib/types/types";
 
 type TabKey = "rd" | "practicum" | "events" | "assistant";
 

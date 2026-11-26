@@ -14,10 +14,10 @@ import {
     Sparkles,
     ArrowUpRight,
 } from "lucide-react";
-import { apiPost, ApiError } from "@/lib/api";
-import { useLocale } from "@/lib/i18n";
-import { useSettings } from "@/lib/hooks";
-import { getContactMapLinks } from "@/lib/contact-map";
+import { apiPost, ApiError } from "@/lib/api/api";
+import { useLocale } from "@/lib/i18n/i18n";
+import { useSettings } from "@/lib/api/hooks";
+import { getContactMapLinks } from "@/lib/utils/contact-map";
 import "./editorial-content.css";
 
 interface ContactResponse {

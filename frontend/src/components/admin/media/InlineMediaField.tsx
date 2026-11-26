@@ -14,8 +14,8 @@ import {
 import { toast } from "sonner";
 import { MediaPickerModal } from "./MediaPickerModal";
 import { ImageCropDialog, type CropSource } from "./ImageCropDialog";
-import type { MediaAsset } from "@/lib/types";
-import { useAdminT } from "@/lib/admin-i18n";
+import type { MediaAsset } from "@/lib/types/types";
+import { useAdminT } from "@/lib/i18n/admin-i18n";
 
 export interface InlineMediaFieldProps {
     label?: string;

@@ -2,10 +2,10 @@
 
 import { useId, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, Info, TriangleAlert } from "lucide-react";
-import { ApiError } from "@/lib/api";
-import { useFocusTrap } from "@/lib/useFocusTrap";
-import { cn } from "@/lib/utils";
-import type { QualityIssue } from "@/lib/types";
+import { ApiError } from "@/lib/api/api";
+import { useFocusTrap } from "@/lib/a11y/useFocusTrap";
+import { cn } from "@/lib/utils/utils";
+import type { QualityIssue } from "@/lib/types/types";
 import "@/components/admin/admin-editorial.css";
 
 export function adminError(err: unknown, fallback: string): string {

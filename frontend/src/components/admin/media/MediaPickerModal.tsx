@@ -15,9 +15,9 @@ import {
     X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { apiGet, apiPatch } from "@/lib/api";
-import { useAdminT } from "@/lib/admin-i18n";
-import type { MediaAsset } from "@/lib/types";
+import { apiGet, apiPatch } from "@/lib/api/api";
+import { useAdminT } from "@/lib/i18n/admin-i18n";
+import type { MediaAsset } from "@/lib/types/types";
 import {
     Dialog,
     DialogContent,

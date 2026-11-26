@@ -300,7 +300,7 @@ docker run --rm -v tnl-website_media-data:/data -v "$PWD/backups":/in alpine \
   tar -xzf /in/media-YYYY-MM-DD.tar.gz -C /data
 ```
 
-`scripts/backup.sh` remains for the original single-container layout (`/app/backend/.env`,
+`scripts/ops/backup.sh` remains for the original single-container layout (`/app/backend/.env`,
 `mongodump` on the PATH); it does not run inside the Compose backend container.
 
 ---

@@ -1,8 +1,8 @@
 // Block-driven public pages. Each reads its page record from the CMS and renders
 // the authored blocks; static chrome renders even when the fetch fails.
 
-import { usePage } from "@/lib/hooks";
-import { useLocale } from "@/lib/i18n";
+import { usePage } from "@/lib/api/hooks";
+import { useLocale } from "@/lib/i18n/i18n";
 import { BlockRenderer } from "@/components/site/Blocks";
 import { EmptyState, Spinner } from "@/components/site/Primitives";
 

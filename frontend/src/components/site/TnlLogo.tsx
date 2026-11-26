@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 
 export interface TnlLogoProps {
     variant?: "auto" | "light" | "dark" | "white" | "badge";

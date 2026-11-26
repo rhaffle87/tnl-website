@@ -12,7 +12,7 @@ import {
     ShieldCheck,
     Sparkles,
 } from "lucide-react";
-import { useLocale } from "@/lib/i18n";
+import { useLocale } from "@/lib/i18n/i18n";
 import { useSmoothScroll } from "@/components/site/SmoothScrollProvider";
 
 export const POLICY_VERSION = "2026.1";

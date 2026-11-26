@@ -6,13 +6,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Award, Check, Copy, Download, FileJson, FileSpreadsheet, KeyRound, Sparkles, Upload } from "lucide-react";
-import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
-import { useAdminT } from "@/lib/admin-i18n";
-import { useFocusTrap } from "@/lib/useFocusTrap";
-import { FEATURES } from "@/lib/features";
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/api/api";
+import { useAdminT } from "@/lib/i18n/admin-i18n";
+import { useFocusTrap } from "@/lib/a11y/useFocusTrap";
+import { FEATURES } from "@/lib/utils/features";
 import { AdminCard, AdminErrorBanner, AdminLoadMore, AdminPageHeader, AdminSectionHeader, AdminSelect, AdminStatusBadge, AdminSwitch, ConfirmButton, Panel, adminError } from "@/pages/admin/AdminUI";
-import { useMe } from "@/lib/hooks";
-import { applyThemeTokens } from "@/lib/theme";
+import { useMe } from "@/lib/api/hooks";
+import { applyThemeTokens } from "@/lib/theme/theme";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField } from "@/components/admin/media";
 import type {
@@ -29,7 +29,7 @@ import type {
     SiteSettings,
     ThemeResponse,
     ThemeTokens,
-} from "@/lib/types";
+} from "@/lib/types/types";
 
 // ---------------------------------------------------------------- media
 export function MediaLibrary() {

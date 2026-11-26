@@ -6,9 +6,9 @@ import { Outlet, useLocation } from "react-router-dom";
 import { AnnouncementPopup, MobileRegistrationBar, SiteCollaborationBand, SiteFooter, SiteHeader } from "@/components/site/Chrome";
 import { ReadingProgressBar } from "@/components/site/ReadingProgressBar";
 import { SmoothScrollProvider } from "@/components/site/SmoothScrollProvider";
-import { LOCALE_STORAGE_KEY, LocaleContext, STRINGS, useLocale, type Locale, type StringKey } from "@/lib/i18n";
-import { useApplyThemeTokens } from "@/lib/theme";
-import { useSettings } from "@/lib/hooks";
+import { LOCALE_STORAGE_KEY, LocaleContext, STRINGS, useLocale, type Locale, type StringKey } from "@/lib/i18n/i18n";
+import { useApplyThemeTokens, useThemeMode } from "@/lib/theme/theme";
+import { useSettings } from "@/lib/api/hooks";
 
 const ROUTE_META: Record<string, { titleId: string; titleEn: string; descId: string; descEn: string }> = {
     "/": {
@@ -241,19 +241,8 @@ export default function SiteLayout() {
         window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     }, [location.pathname]);
 
-    useEffect(() => {
-        const stored = localStorage.getItem("tnl-theme");
-        const isDark = stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
-        if (isDark) {
-            document.documentElement.classList.add("dark");
-        } else {
-            document.documentElement.classList.remove("dark");
-        }
-        const meta = document.querySelector('meta[name="color-scheme"]');
-        if (meta) meta.setAttribute("content", stored ? (stored === "dark" ? "dark" : "light") : "light dark");
-    }, []);
-
     useApplyThemeTokens();
+    useThemeMode();
 
     return (
         <SmoothScrollProvider>

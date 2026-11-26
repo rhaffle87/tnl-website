@@ -3,10 +3,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiPost } from "@/lib/api";
-import { beginSession } from "@/lib/session";
+import { apiPost } from "@/lib/api/api";
+import { beginSession } from "@/lib/api/session";
 import { Spinner } from "@/components/site/Primitives";
-import type { AuthUser } from "@/lib/types";
+import type { AuthUser } from "@/lib/types/types";
 
 export default function AuthCallback() {
     const navigate = useNavigate();

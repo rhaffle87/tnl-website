@@ -4,9 +4,9 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Check, CheckCircle2, Copy, MessageCircle, X } from "lucide-react";
-import { useLocale, pick } from "@/lib/i18n";
-import type { LabEvent } from "@/lib/types";
-import { useFocusTrap } from "@/lib/useFocusTrap";
+import { useLocale, pick } from "@/lib/i18n/i18n";
+import type { LabEvent } from "@/lib/types/types";
+import { useFocusTrap } from "@/lib/a11y/useFocusTrap";
 
 function fieldKey(label: string): string {
     const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");

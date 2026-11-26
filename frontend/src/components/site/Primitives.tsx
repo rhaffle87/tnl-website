@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Inbox } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 
 export function SectionHeading({
     title,

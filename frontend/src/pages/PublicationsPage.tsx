@@ -4,12 +4,12 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLink, FileText, Copy, Users } from "lucide-react";
 import { toast } from "sonner";
-import { usePublications } from "@/lib/hooks";
-import type { Publication } from "@/lib/types";
-import { useLocale } from "@/lib/i18n";
+import { usePublications } from "@/lib/api/hooks";
+import type { Publication } from "@/lib/types/types";
+import { useLocale } from "@/lib/i18n/i18n";
 import { EmptyState, SectionHeading } from "@/components/site/Primitives";
 
-import { usePage } from "@/lib/hooks";
+import { usePage } from "@/lib/api/hooks";
 import { BlockRenderer } from "@/components/site/Blocks";
 import "./editorial-content.css";
 

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useLocale } from "@/lib/i18n";
+import { cn } from "@/lib/utils/utils";
+import { useLocale } from "@/lib/i18n/i18n";
 import "./media-carousel.css";
 
 export interface CarouselImage {

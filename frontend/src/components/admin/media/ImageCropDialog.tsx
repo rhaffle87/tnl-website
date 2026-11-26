@@ -9,7 +9,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Crop, Loader2, X } from "lucide-react";
-import { useAdminT } from "@/lib/admin-i18n";
+import { useAdminT } from "@/lib/i18n/admin-i18n";
 
 export type CropSource = { file?: File; url?: string; suggestedName?: string };
 

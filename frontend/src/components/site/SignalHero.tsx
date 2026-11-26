@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { pickProp, useLocale } from "@/lib/i18n";
+import { pickProp, useLocale } from "@/lib/i18n/i18n";
 import "./signal-editorial.css";
 
 const text = (props: Record<string, unknown>, key: string, fallback = "") => typeof props[key] === "string" ? props[key] as string : fallback;

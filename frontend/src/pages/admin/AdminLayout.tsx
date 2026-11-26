@@ -26,23 +26,25 @@ import {
     LifeBuoy,
     LogOut,
     Menu,
+    Moon,
     Newspaper,
     Palette,
     ScrollText,
     Search,
     Settings,
+    Sun,
     UserCog,
     Users,
     X,
 } from "lucide-react";
-import { useMe } from "@/lib/hooks";
-import { useAdminT } from "@/lib/admin-i18n";
-import { useFocusTrap } from "@/lib/useFocusTrap";
-import { useApplyThemeTokens } from "@/lib/theme";
-import { endSession } from "@/lib/session";
+import { useMe } from "@/lib/api/hooks";
+import { useAdminT } from "@/lib/i18n/admin-i18n";
+import { useFocusTrap } from "@/lib/a11y/useFocusTrap";
+import { useApplyThemeTokens, useThemeMode } from "@/lib/theme/theme";
+import { endSession } from "@/lib/api/session";
 import { Spinner } from "@/components/site/Primitives";
 import { TnlLogo } from "@/components/site/TnlLogo";
-import type { AuthUser } from "@/lib/types";
+import type { AuthUser } from "@/lib/types/types";
 
 const ROLE_LABELS: Record<AuthUser["role"], string> = {
     super_admin: "Super Admin",
@@ -140,6 +142,7 @@ function loadCollapsedState(): Record<string, boolean> {
 
 export default function AdminLayout() {
     useApplyThemeTokens();
+    const { isDark, toggleTheme } = useThemeMode();
     const t = useAdminT();
     const { data: user, isLoading, isError } = useMe();
     const location = useLocation();
@@ -280,17 +283,29 @@ export default function AdminLayout() {
                             </span>
                         </div>
                     </Link>
-                    {isMobile && (
+                    <div className="flex items-center gap-1">
                         <button
                             type="button"
-                            onClick={() => setMobileOpen(false)}
-                            className="rounded-md p-1.5 text-white/60 hover:bg-white/10 hover:text-white lg:hidden"
-                            aria-label="Close navigation"
-                            data-testid="admin-mobile-drawer-close"
+                            onClick={toggleTheme}
+                            className="rounded-md p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                            aria-label={isDark ? t("adminLightMode") : t("adminDarkMode")}
+                            title={isDark ? t("adminLightMode") : t("adminDarkMode")}
+                            data-testid="admin-theme-toggle-button"
                         >
-                            <X className="h-4 w-4" />
+                            {isDark ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
                         </button>
-                    )}
+                        {isMobile && (
+                            <button
+                                type="button"
+                                onClick={() => setMobileOpen(false)}
+                                className="rounded-md p-1.5 text-white/60 hover:bg-white/10 hover:text-white lg:hidden"
+                                aria-label="Close navigation"
+                                data-testid="admin-mobile-drawer-close"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Quick Menu Search */}
