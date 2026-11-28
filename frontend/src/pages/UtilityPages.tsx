@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import "./utility-editorial.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { BadgeCheck, Download, QrCode, RotateCcw, Search, ShieldAlert, ShieldCheck } from "lucide-react";
-import { apiGet } from "@/lib/api/api";
+import { apiGet, apiUrl } from "@/lib/api/api";
 import { useLocale } from "@/lib/i18n/i18n";
 import { Spinner } from "@/components/site/Primitives";
 import { TnlLogo } from "@/components/site/TnlLogo";
@@ -14,7 +14,7 @@ export { TermsPage, PrivacyPage } from "@/pages/LegalPages";
 /** Any page the admin creates renders here via its slug. */
 export function DynamicCmsPage() {
     const { slug } = useParams<{ slug: string }>();
-    return <CmsPage slug={slug ?? ""} testId={`cms-page-${slug ?? "unknown"}`} />;
+    return <CmsPage slug={slug ?? ""} testId={`cms-page-${slug ?? "unknown"}`} missing="not-found" />;
 }
 
 interface VerifyResponse {
@@ -168,19 +168,19 @@ export function VerifyPage() {
                                     </p>
                                 )}
                                 <div className="my-4 border-t border-dashed" style={{ borderColor: "var(--tnl-border)" }} />
-                                <p className="verify-record-code">
-                                    {data.code}
-                                </p>
+                                {data.code ? <p className="verify-record-code">{data.code}</p> : null}
                                 <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                                    <a
-                                        href={`/api/certificates/${data.code}/pdf`}
-                                        download
-                                        className="utility-button utility-button-primary"
-                                        data-testid="download-certificate-btn"
-                                    >
-                                        <Download className="h-4 w-4" aria-hidden="true" />
-                                        {locale === "id" ? "Unduh PDF Resmi" : "Download PDF Certificate"}
-                                    </a>
+                                    {data.code ? (
+                                        <a
+                                            href={apiUrl(`/certificates/${encodeURIComponent(data.code)}/pdf`)}
+                                            download
+                                            className="utility-button utility-button-primary"
+                                            data-testid="download-certificate-btn"
+                                        >
+                                            <Download className="h-4 w-4" aria-hidden="true" />
+                                            {locale === "id" ? "Unduh PDF Resmi" : "Download PDF Certificate"}
+                                        </a>
+                                    ) : null}
                                     <button
                                         type="button"
                                         onClick={handleReset}

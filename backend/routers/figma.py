@@ -15,6 +15,7 @@ import hashlib
 import re
 import secrets
 from datetime import datetime, timezone
+from html import escape
 from typing import Any
 from uuid import uuid4
 
@@ -23,9 +24,10 @@ from pydantic import BaseModel, Field
 
 from lib.auth import allowed, audit, principal, require, user_for_request
 from lib.db import db
-from lib.serialize import jsonable
+from lib.publishing import sanitize_blocks
 from models.core import ThemeTokens
-from routers.siteadmin import theme_contrast_report
+from routers.siteadmin import _get_page, _save_page, theme_contrast_report
+from models.content import PageDoc
 
 router = APIRouter(prefix="/admin/figma", tags=["figma-sync"])
 
@@ -180,9 +182,6 @@ async def import_figma_tokens(
     settings = await db.settings.find_one({"id": "settings"}) or {}
     current_tokens = settings.get("theme", {}).get("draft") or settings.get("theme_tokens") or ThemeTokens().model_dump()
 
-    # Normalize extracted colors
-    extracted: dict[str, str] = {}
-
     primary = (
         search_nested_token(payload, ["primary_color", "primary", "deep_forest", "forest", "brand-primary", "color_green"])
         or current_tokens.get("primary_color")
@@ -233,7 +232,7 @@ async def import_figma_tokens(
     # Persist as draft theme tokens
     await db.settings.update_one(
         {"id": "settings"},
-        {"$set": {"theme.draft": updated_tokens, "theme_tokens": updated_tokens, "updated_at": datetime.now(timezone.utc)}},
+        {"$set": {"theme.draft": updated_tokens, "updated_at": datetime.now(timezone.utc)}},
         upsert=True,
     )
 
@@ -293,8 +292,6 @@ async def sync_figma_frame(
     """
     require_actor_permission(request, actor, "pages:edit")
     slug = slugify(payload.slug or payload.title or payload.frame_name or "figma-draft")
-    now = datetime.now(timezone.utc)
-
     # 1. Assemble valid Blocks for the Page Builder
     assembled_blocks: list[dict[str, Any]] = []
 
@@ -318,8 +315,8 @@ async def sync_figma_frame(
                     "eyebrow": payload.frame_name or "TNL Lab Showcase",
                     "title": payload.heading or payload.title,
                     "title_id": payload.heading or payload.title,
-                    "lead": payload.subheading or payload.description or "",
-                    "lead_id": payload.subheading or payload.description or "",
+                    "description": payload.subheading or payload.description or "",
+                    "description_id": payload.subheading or payload.description or "",
                 },
                 "hidden": False,
             })
@@ -332,7 +329,7 @@ async def sync_figma_frame(
                 "props": {
                     "heading": "Highlights & Agenda",
                     "heading_id": "Sorotan & Agenda",
-                    "items": [c.model_dump() for c in payload.cards],
+                    "tiles": [{"title": c.title, "description": c.description, **({"href": c.link} if c.link else {}), **({"icon": c.icon} if c.icon else {})} for c in payload.cards],
                 },
                 "hidden": False,
             })
@@ -357,32 +354,26 @@ async def sync_figma_frame(
             "id": str(uuid4()),
             "type": "rich_text",
             "props": {
-                "content": f"<h2>{payload.title}</h2><p>{payload.description or 'Konten draf dari Figma.'}</p>",
+                "html": f"<h2>{escape(payload.title)}</h2><p>{escape(payload.description or 'Konten draf dari Figma.')}</p>",
             },
             "hidden": False,
         })
 
     # 2. Check for existing page by slug
     existing = await db.pages.find_one({"slug": slug})
-    page_id = existing["id"] if existing else str(uuid4())
-
-    page_doc = {
-        "id": page_id,
-        "slug": slug,
-        "title": payload.title,
-        "title_id": payload.title,
-        "blocks": assembled_blocks,
-        "status": "draft",  # STRICTLY DRAFT
-        "is_system": False,
-        "needs_review": True,
-        "issues": [],
-        "revisions": (existing.get("revisions") or []) if existing else [],
-        "updated_at": now,
-    }
-    if not existing:
-        page_doc["created_at"] = now
-
-    await db.pages.update_one({"slug": slug}, {"$set": page_doc}, upsert=True)
+    if existing and existing.get("is_system"):
+        raise HTTPException(409, detail="Figma cannot overwrite a built-in page. Choose a new page slug.")
+    assembled_blocks = sanitize_blocks(assembled_blocks)
+    if existing:
+        page_doc = await _get_page(existing["id"])
+        page_doc.update({"title": payload.title, "title_id": payload.title, "blocks": assembled_blocks})
+        await _save_page(page_doc, request)
+    else:
+        page_doc = PageDoc(slug=slug, title=payload.title, title_id=payload.title, blocks=assembled_blocks).model_dump()
+        await db.pages.insert_one(page_doc)
+        page_doc = await _get_page(page_doc["id"])
+        await _save_page(page_doc, request)
+    page_id = page_doc["id"]
 
     await audit(
         request,
@@ -405,6 +396,6 @@ async def sync_figma_frame(
         "title": payload.title,
         "status": "draft",
         "blocks_count": len(assembled_blocks),
-        "admin_page_url": f"/admin/pages/{page_id}",
+        "admin_page_url": f"/admin/pages?selected={page_id}",
         "message": f"Frame successfully synced as draft page '/{slug}'. Admin review required before publishing.",
     }

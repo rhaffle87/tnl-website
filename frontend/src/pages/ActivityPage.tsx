@@ -31,6 +31,7 @@ import { useActivities, useEquipment, useEvents, usePage, usePracticum, useProje
 import { pick, useLocale } from "@/lib/i18n/i18n";
 import { BlockRenderer } from "@/components/site/Blocks";
 import { EmptyState, SectionHeading, Spinner, formatDate } from "@/components/site/Primitives";
+import { PublicRequestError } from "@/components/site/PublicRequestError";
 import { RegistrationDialog } from "@/components/site/RegistrationDialog";
 import { FadeCarousel, ImageLightboxModal, type CarouselImage } from "@/components/site/MediaCarousel";
 import type { Activity, Equipment, LabEvent, PracticumModule, Project } from "@/lib/types/types";
@@ -755,14 +756,20 @@ export default function ActivityPage() {
     const tab = normalizeTab(params.get("tab"));
     const [equipCat, setEquipCat] = useState<string>("all");
 
-    const { data: page } = usePage("activity");
+    const pageQuery = usePage("activity");
+    const { data: page } = pageQuery;
     const pageBlocks = page?.blocks ?? [];
 
-    const { data: projects, isLoading: projectsLoading } = useProjects();
-    const { data: practicum, isLoading: practicumLoading } = usePracticum();
-    const { data: equipment, isLoading: equipLoading } = useEquipment();
-    const { data: events, isLoading: eventsLoading } = useEvents();
-    const { data: activities, isLoading: activitiesLoading } = useActivities();
+    const projectsQuery = useProjects();
+    const practicumQuery = usePracticum();
+    const equipmentQuery = useEquipment();
+    const eventsQuery = useEvents();
+    const activitiesQuery = useActivities();
+    const { data: projects, isLoading: projectsLoading, isError: projectsError, isFetching: projectsFetching, refetch: retryProjects } = projectsQuery;
+    const { data: practicum, isLoading: practicumLoading, isError: practicumError, isFetching: practicumFetching, refetch: retryPracticum } = practicumQuery;
+    const { data: equipment, isLoading: equipLoading, isError: equipError, isFetching: equipFetching, refetch: retryEquipment } = equipmentQuery;
+    const { data: events, isLoading: eventsLoading, isError: eventsError, isFetching: eventsFetching, refetch: retryEvents } = eventsQuery;
+    const { data: activities, isLoading: activitiesLoading, isError: activitiesError, isFetching: activitiesFetching, refetch: retryActivities } = activitiesQuery;
 
     const clusters = useMemo(() => (projects ?? []).filter((p) => p.kind === "rd" && !p.is_testbed), [projects]);
     const testbeds = useMemo(() => (projects ?? []).filter((p) => p.is_testbed), [projects]);
@@ -791,6 +798,17 @@ export default function ActivityPage() {
                     <p>{t("events_subtitle")}</p>
                 </header>
             )}
+            {pageQuery.isError ? (
+                <div className="tnl-container mt-4" data-testid="activity-page-request-error">
+                    <PublicRequestError
+                        onRetry={() => void pageQuery.refetch()}
+                        retrying={pageQuery.isFetching}
+                        locale={locale}
+                        testId="activity-cms-error"
+                        stale={Boolean(page)}
+                    />
+                </div>
+            ) : null}
 
 
             <section className="tnl-section activity-collection">
@@ -803,9 +821,18 @@ export default function ActivityPage() {
                                 countLabel={locale === "id" ? "klaster" : "clusters"}
                                 testId="rd-clusters-heading"
                             />
-                            {projectsLoading ? (
+                            {projectsError ? (
+                                <PublicRequestError
+                                    onRetry={() => void retryProjects()}
+                                    retrying={projectsFetching}
+                                    locale={locale}
+                                    testId="rd-projects-error"
+                                    stale={Boolean(projects)}
+                                />
+                            ) : null}
+                            {projectsLoading && !projects ? (
                                 <Spinner label={t("loading")} />
-                            ) : clusters.length === 0 ? (
+                            ) : projectsError && !projects ? null : clusters.length === 0 ? (
                                 <EmptyState
                                     title={t("coming_soon")}
                                     body={t("empty_projects")}
@@ -862,11 +889,22 @@ export default function ActivityPage() {
                                     ))}
                                 </div>
 
-                                {equipLoading ? (
+                                {equipError ? (
+                                    <div className="mt-8">
+                                        <PublicRequestError
+                                            onRetry={() => void retryEquipment()}
+                                            retrying={equipFetching}
+                                            locale={locale}
+                                            testId="equipment-error"
+                                            stale={Boolean(equipment)}
+                                        />
+                                    </div>
+                                ) : null}
+                                {equipLoading && !equipment ? (
                                     <div className="mt-8">
                                         <Spinner label={t("loading")} />
                                     </div>
-                                ) : filteredEquip.length === 0 ? (
+                                ) : equipError && !equipment ? null : filteredEquip.length === 0 ? (
                                     <div className="mt-8">
                                         <EmptyState
                                             title={t("coming_soon")}
@@ -894,9 +932,18 @@ export default function ActivityPage() {
                                 countLabel={locale === "id" ? "modul" : "modules"}
                                 testId="practicum-heading"
                             />
-                            {practicumLoading ? (
+                            {practicumError ? (
+                                <PublicRequestError
+                                    onRetry={() => void retryPracticum()}
+                                    retrying={practicumFetching}
+                                    locale={locale}
+                                    testId="practicum-error"
+                                    stale={Boolean(practicum)}
+                                />
+                            ) : null}
+                            {practicumLoading && !practicum ? (
                                 <Spinner label={t("loading")} />
-                            ) : (practicum ?? []).length === 0 ? (
+                            ) : practicumError && !practicum ? null : (practicum ?? []).length === 0 ? (
                                 <EmptyState title={t("coming_soon")} body={t("coming_soon_body")} testId="practicum-empty-state" />
                             ) : (
                                 <div className="practicum-collection">
@@ -919,9 +966,18 @@ export default function ActivityPage() {
                             <p className="mt-1 text-sm max-w-3xl" style={{ color: "var(--tnl-body)" }}>
                                 {t("events_subtitle")}
                             </p>
-                            {eventsLoading ? (
+                            {eventsError ? (
+                                <PublicRequestError
+                                    onRetry={() => void retryEvents()}
+                                    retrying={eventsFetching}
+                                    locale={locale}
+                                    testId="events-error"
+                                    stale={Boolean(events)}
+                                />
+                            ) : null}
+                            {eventsLoading && !events ? (
                                 <Spinner label={t("loading")} />
-                            ) : (events ?? []).length === 0 ? (
+                            ) : eventsError && !events ? null : (events ?? []).length === 0 ? (
                                 <EmptyState
                                     title={t("coming_soon")}
                                     body={t("empty_events")}
@@ -946,9 +1002,18 @@ export default function ActivityPage() {
                                 countLabel={locale === "id" ? "kegiatan" : "activities"}
                                 testId="assistant-activity-heading"
                             />
-                            {activitiesLoading ? (
+                            {activitiesError ? (
+                                <PublicRequestError
+                                    onRetry={() => void retryActivities()}
+                                    retrying={activitiesFetching}
+                                    locale={locale}
+                                    testId="activities-error"
+                                    stale={Boolean(activities)}
+                                />
+                            ) : null}
+                            {activitiesLoading && !activities ? (
                                 <Spinner label={t("loading")} />
-                            ) : (activities ?? []).length === 0 ? (
+                            ) : activitiesError && !activities ? null : (activities ?? []).length === 0 ? (
                                 <EmptyState
                                     title={t("coming_soon")}
                                     body={t("empty_activities")}

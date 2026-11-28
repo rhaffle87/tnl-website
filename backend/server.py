@@ -1,5 +1,6 @@
 import logging
 import os
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -11,7 +12,11 @@ from starlette.middleware.cors import CORSMiddleware
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
+from lib.cache import close_public_cache  # noqa: E402
 from lib.db import client, db, ensure_indexes  # noqa: E402
+from lib.rate_limit import close_rate_limiter, get_rate_limiter  # noqa: E402
+from lib.workflow_worker import run_workflow_worker  # noqa: E402
+from redis.exceptions import RedisError  # noqa: E402
 from routers import (  # noqa: E402
     apiv1, auth, content, figma, google_auth, labphotos, media, public, pubimport, registrar, seo, siteadmin,
 )
@@ -25,8 +30,34 @@ async def lifespan(app: FastAPI):
         await ensure_indexes()
     except Exception:  # noqa: BLE001
         logging.getLogger(__name__).exception("Index initialisation failed; continuing startup")
-    yield
-    client.close()
+    stop = asyncio.Event()
+    worker = None
+    if os.environ.get("WORKFLOW_WORKER_ENABLED", "1").lower() not in ("0", "false", "no"):
+        worker = asyncio.create_task(run_workflow_worker(stop), name="tnl-workflows")
+    try:
+        yield
+    finally:
+        stop.set()
+        try:
+            if worker is not None:
+                try:
+                    await asyncio.wait_for(worker, timeout=20)
+                except asyncio.TimeoutError:
+                    worker.cancel()
+                    await asyncio.gather(worker, return_exceptions=True)
+                except asyncio.CancelledError:
+                    if not worker.cancelled():
+                        raise
+                except Exception:
+                    logging.getLogger(__name__).exception("Workflow worker stopped with an error")
+        finally:
+            try:
+                await close_rate_limiter()
+            finally:
+                try:
+                    await close_public_cache()
+                finally:
+                    client.close()
 
 
 app = FastAPI(
@@ -38,6 +69,12 @@ app = FastAPI(
 api_router = APIRouter(prefix="/api")
 
 
+@api_router.get("/openapi.json", include_in_schema=False)
+async def openapi_schema():
+    """Expose the generated schema through the same /api proxy as every API route."""
+    return JSONResponse(app.openapi())
+
+
 @api_router.get("/")
 async def root():
     return {"service": "TNL Studio", "status": "ok"}
@@ -47,18 +84,24 @@ async def root():
 async def health():
     try:
         await db.command("ping")
-        return {"status": "ok", "database": "connected"}
     except Exception:  # noqa: BLE001 — never leak driver/DSN details to an unauthenticated caller
         return JSONResponse(status_code=503, content={
             "status": "degraded", "database": "unavailable",
             "message": "The database is temporarily unavailable."})
+    try:
+        await get_rate_limiter().ping()
+    except RedisError:
+        return JSONResponse(status_code=503, content={
+            "status": "degraded", "database": "connected", "rate_limiter": "unavailable",
+            "message": "Request protection is temporarily unavailable."})
+    return {"status": "ok", "database": "connected", "rate_limiter": "connected"}
 
 
 # Public reads, contact inbox, registration engine, certificate verification.
 api_router.include_router(public.router)
 # Session auth (email+password) and staff user management.
 api_router.include_router(auth.router)
-# Emergent-managed Google sign-in (domain-allowlisted, invite-only).
+# Direct Google OIDC (domain-allowlisted, invite-only; credentials required).
 api_router.include_router(google_auth.router)
 # Admin content CRUD across every content type + admin-defined Collections.
 api_router.include_router(content.router)

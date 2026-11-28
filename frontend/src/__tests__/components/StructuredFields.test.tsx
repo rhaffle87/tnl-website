@@ -277,7 +277,7 @@ describe("Visual Repeater & Structured Field Builder Tests", () => {
             fireEvent.click(previewToggle);
 
             expect(screen.getByTestId("form-builder-preview-pane")).toBeInTheDocument();
-            expect(screen.getByText("Pratinjau Formulir Pendaftar (Read-Only)")).toBeInTheDocument();
+            expect(screen.getByText("Registration Form Preview (Read-Only)")).toBeInTheDocument();
         });
     });
 });

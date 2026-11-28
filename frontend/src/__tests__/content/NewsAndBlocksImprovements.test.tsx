@@ -3,13 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Route, Routes } from "react-router-dom";
 import { BlockRenderer } from "@/components/site/Blocks";
 import { NewsArticlePage } from "@/pages/NewsPage";
+import { CmsPage } from "@/pages/Home";
+import { ApiError, apiUrl } from "@/lib/api/api";
 import { renderWithProviders } from "./test-utils";
 
 vi.mock("@/components/site/MemberSections", () => ({ MemberSections: () => null, MemberSectionsPlaceholder: () => null }));
 vi.mock("@/lib/api/hooks", () => ({
   usePage: vi.fn(),
+  usePagePreview: vi.fn(),
   usePost: vi.fn(),
   usePosts: vi.fn(),
+  usePublicCollection: vi.fn(),
   useSettings: vi.fn(),
   useStats: vi.fn(),
   useMembers: vi.fn(),
@@ -27,7 +31,7 @@ vi.mock("@/components/site/Primitives", async (importOriginal) => {
       : <actual.EmptyState title={title} body={body} testId={testId} icon={icon} />,
   };
 });
-import { usePage, usePost, usePosts, useSettings, useStats, useMembers, usePartners } from "@/lib/api/hooks";
+import { usePage, usePagePreview, usePost, usePosts, usePublicCollection, useSettings, useStats, useMembers, usePartners } from "@/lib/api/hooks";
 
 const article = {
   id: "one", slug: "network", title: "Network research", title_id: "Riset jaringan",
@@ -45,6 +49,7 @@ describe("news and block content improvements", () => {
     localStorage.setItem("tnl-locale", "en");
     vi.mocked(useSettings).mockReturnValue({ data: { contact: { email: "cms@example.edu" } } } as never);
     vi.mocked(usePage).mockReturnValue({ data: { blocks: [] }, isLoading: false } as never);
+    vi.mocked(usePagePreview).mockReturnValue({ data: undefined, isLoading: false, isError: false } as never);
     vi.mocked(usePost).mockReturnValue({ data: article, isLoading: false } as never);
     vi.mocked(usePosts).mockReturnValue({
       data: {
@@ -53,6 +58,7 @@ describe("news and block content improvements", () => {
       },
       isLoading: false, isFetching: false,
     } as never);
+    vi.mocked(usePublicCollection).mockReturnValue({ data: undefined, isLoading: false, isError: false } as never);
     vi.mocked(useStats).mockReturnValue({ data: { lecturers: 2, assistants: 4, research_tracks: 3, room: "B-301" } } as never);
     vi.mocked(useMembers).mockReturnValue({ data: [], isLoading: false } as never);
     vi.mocked(usePartners).mockReturnValue({ data: [], isLoading: false } as never);
@@ -69,6 +75,95 @@ describe("news and block content improvements", () => {
     expect(screen.getByTestId("news-category-quantum-optics-button")).toHaveTextContent("Quantum & Optics");
     fireEvent.click(screen.getByTestId("news-category-research-button"));
     expect(usePosts).toHaveBeenLastCalledWith(expect.objectContaining({ category: "Research" }));
+  });
+
+  it("paginates with the server total and resets to the first offset on filters", () => {
+    vi.mocked(usePosts).mockReturnValue({
+      data: { items: [article], total: 7, categories: ["Research"] },
+      isLoading: false, isFetching: false, isError: false,
+    } as never);
+    renderWithProviders(<BlockRenderer blocks={[{ id: "feed", type: "news_feed", hidden: false, props: { show_filters: true, count: 3 } }]} />);
+    expect(screen.getByTestId("news-pagination-summary")).toHaveTextContent("Showing 1–3 of 7 articles");
+    fireEvent.click(screen.getByTestId("news-next-page"));
+    expect(usePosts).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 3, offset: 3 }));
+    expect(screen.getByTestId("news-pagination-summary")).toHaveTextContent("Showing 4–6 of 7 articles");
+    fireEvent.click(screen.getByTestId("news-category-research-button"));
+    expect(usePosts).toHaveBeenLastCalledWith(expect.objectContaining({ category: "Research", offset: 0 }));
+  });
+
+  it("distinguishes a failed news request from an empty result and retries it", () => {
+    const retry = vi.fn();
+    vi.mocked(usePosts).mockReturnValue({
+      data: undefined, isLoading: false, isFetching: false, isError: true, refetch: retry,
+    } as never);
+    renderWithProviders(<BlockRenderer blocks={[{ id: "feed", type: "news_feed", hidden: false, props: { show_filters: true, count: 3 } }]} />);
+    expect(screen.getByTestId("news-request-error")).toHaveAttribute("role", "alert");
+    expect(screen.queryByTestId("news-empty-state")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("news-request-error-retry"));
+    expect(retry).toHaveBeenCalledOnce();
+  });
+
+  it("shows a retryable CMS error but keeps an intentional not-found state distinct", () => {
+    const retry = vi.fn();
+    vi.mocked(usePage).mockReturnValue({ data: undefined, isLoading: false, isError: true, error: new Error("offline"), refetch: retry } as never);
+    renderWithProviders(<CmsPage slug="about" testId="cms-about" />);
+    fireEvent.click(screen.getByTestId("cms-about-request-error-retry"));
+    expect(retry).toHaveBeenCalledOnce();
+    expect(screen.queryByTestId("cms-about-empty-state")).not.toBeInTheDocument();
+
+    vi.mocked(usePage).mockReturnValue({ data: undefined, isLoading: false, isError: true, error: new ApiError(404, null) } as never);
+    renderWithProviders(<CmsPage slug="unknown" testId="cms-unknown" missing="not-found" />);
+    expect(screen.getByTestId("cms-unknown-empty-state")).toBeInTheDocument();
+    expect(screen.queryByTestId("cms-unknown-request-error")).not.toBeInTheDocument();
+  });
+
+  it("loads preview by the authenticated endpoint only and checks the route slug", () => {
+    const draft = { id: "page-1", slug: "draft-page", title: "Draft page", blocks: [] };
+    vi.mocked(usePage).mockReturnValue({ data: undefined, isLoading: false, isError: false } as never);
+    vi.mocked(usePagePreview).mockReturnValue({ data: draft, isLoading: false, isError: false } as never);
+    renderWithProviders(<Routes><Route path="/p/:slug" element={<CmsPage slug="draft-page" testId="cms-preview" />} /></Routes>, { route: "/p/draft-page?preview=page-1" });
+    expect(usePage).toHaveBeenLastCalledWith("draft-page", { enabled: false });
+    expect(usePagePreview).toHaveBeenLastCalledWith("draft-page", "page-1");
+    expect(screen.getByTestId("cms-preview-preview-banner")).toHaveTextContent("Studio preview");
+    expect(screen.getByTestId("cms-preview")).toBeInTheDocument();
+  });
+
+  it("constructs API URLs under the configured public base path", () => {
+    expect(apiUrl("/registrations/event/id", "/lab-tnl/")).toBe("/lab-tnl/api/registrations/event/id");
+    expect(apiUrl("certificates/TNL-1/pdf", "/")).toBe("/api/certificates/TNL-1/pdf");
+  });
+
+  it("renders custom collection fields as safe content using the selected template", () => {
+    vi.mocked(usePublicCollection).mockReturnValue({
+      data: {
+        definition: {
+          id: "collection-1", key: "resources", name: "Resources", template: "list", created_at: "",
+          fields: [
+            { key: "title", label: "Title", type: "text" },
+            { key: "link", label: "Link", type: "url" },
+            { key: "description", label: "Description", type: "html" },
+          ],
+        },
+        items: [
+          { id: "resource-1", collection_key: "resources", status: "published", created_at: "", updated_at: "", values: {
+            title: "Handbook", link: "javascript:alert(1)", description: "<script>alert(1)</script><b>Published description</b>",
+          } },
+          { id: "resource-draft", collection_key: "resources", status: "draft", created_at: "", updated_at: "", values: { title: "Private draft" } },
+        ],
+        total: 31,
+      },
+      isLoading: false, isError: false,
+    } as never);
+    renderWithProviders(<BlockRenderer blocks={[{ id: "custom-list", type: "collection_list", hidden: false, props: { collection_key: "resources" } }]} />);
+    expect(screen.getByTestId("collection-resources-list")).toBeInTheDocument();
+    expect(screen.getByText("Handbook")).toBeInTheDocument();
+    expect(screen.queryByText("Private draft")).not.toBeInTheDocument();
+    expect(screen.getByText("javascript:alert(1)")).not.toHaveAttribute("href");
+    expect(screen.getByText("alert(1) Published description")).toBeInTheDocument();
+    expect(document.querySelector("script:not([data-tnl-jsonld])")).not.toBeInTheDocument();
+    expect(screen.getByText("Showing 1–24 of 31 items")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("collection-resources-next"));
+    expect(usePublicCollection).toHaveBeenLastCalledWith("resources", { limit: 24, offset: 24 });
   });
 
   it("gives every category pill and the location link a 44px minimum hit area", () => {
@@ -104,7 +199,7 @@ describe("news and block content improvements", () => {
   });
 
   it("renders the not-found EmptyState as an h1", () => {
-    vi.mocked(usePost).mockReturnValue({ data: undefined, isLoading: false, isError: true } as never);
+    vi.mocked(usePost).mockReturnValue({ data: undefined, isLoading: false, isError: true, error: new ApiError(404, null) } as never);
     renderArticle("/news/missing");
     expect(screen.getByTestId("article-empty-state").tagName).toBe("H1");
   });

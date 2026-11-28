@@ -38,15 +38,15 @@ export interface MediaPickerModalProps {
 }
 
 const FOLDERS = [
-    { value: "all", label: "All folders" },
-    { value: "events", label: "Events & Programs" },
-    { value: "members", label: "Members" },
-    { value: "posts", label: "News & Posts" },
-    { value: "partners", label: "Partners" },
-    { value: "practicum", label: "Training" },
-    { value: "equipment", label: "Lab Equipment" },
-    { value: "pages", label: "Pages" },
-    { value: "general", label: "General" },
+    { value: "all", label: "adminMediaFolderAll" as const },
+    { value: "events", label: "adminMediaFolderEvents" as const },
+    { value: "members", label: "adminMediaFolderMembers" as const },
+    { value: "posts", label: "adminMediaFolderPosts" as const },
+    { value: "partners", label: "adminMediaFolderPartners" as const },
+    { value: "practicum", label: "adminMediaFolderTraining" as const },
+    { value: "equipment", label: "adminMediaFolderEquipment" as const },
+    { value: "pages", label: "adminMediaFolderPages" as const },
+    { value: "general", label: "adminMediaFolderGeneral" as const },
 ].filter((f) => f.value !== "test");
 
 function formatBytes(bytes?: number): string {
@@ -160,6 +160,7 @@ export function MediaPickerModal({
 
     const items = allItems;
     const totalItems = data?.total ?? items.length;
+    const focusedFolder = FOLDERS.find((entry) => entry.value === focusedAsset?.folder);
 
     // Pre-select assets matching selectedUrls if items are loaded
     useEffect(() => {
@@ -198,7 +199,7 @@ export function MediaPickerModal({
 
     const handleConfirmSelection = () => {
         if (selectedItems.length === 0) {
-            toast.error("Please select at least one asset.");
+            toast.error(t("adminMediaSelectAtLeastOne"));
             return;
         }
         onSelect(selectedItems);
@@ -208,7 +209,7 @@ export function MediaPickerModal({
     const handleQuickSaveAlt = async () => {
         if (!focusedAsset) return;
         if (!altDraft.trim()) {
-            toast.error("Alt text cannot be empty.");
+            toast.error(t("adminMediaAltEmptyError"));
             return;
         }
         setIsSavingAlt(true);
@@ -219,9 +220,9 @@ export function MediaPickerModal({
             setFocusedAsset(updated);
             setSelectedItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
             void qc.invalidateQueries({ queryKey: ["admin", "media"] });
-            toast.success("Alt text updated.");
+            toast.success(t("adminMediaAltUpdated"));
         } catch {
-            toast.error("Failed to update alt text.");
+            toast.error(t("adminMediaAltSaveError"));
         } finally {
             setIsSavingAlt(false);
         }
@@ -256,7 +257,7 @@ export function MediaPickerModal({
 
     const handleBatchUpload = async () => {
         if (uploadQueue.length === 0) {
-            toast.error("No files selected to upload.");
+            toast.error(t("adminMediaNoUploadFiles"));
             return;
         }
 
@@ -300,7 +301,7 @@ export function MediaPickerModal({
 
                 if (!res.ok) {
                     const err = (await res.json().catch(() => null)) as { detail?: string } | null;
-                    throw new Error(err?.detail || `Upload failed (HTTP ${res.status})`);
+                    throw new Error(err?.detail || t("adminMediaHttpUploadError").replace("{status}", String(res.status)));
                 }
 
                 const asset = (await res.json()) as MediaAsset;
@@ -312,13 +313,13 @@ export function MediaPickerModal({
                     )
                 );
             } catch (err: any) {
-                const msg = err.message || "Upload error";
+                const msg = err.message || t("adminMediaUploadError");
                 setUploadQueue((prev) =>
                     prev.map((item, idx) =>
                         idx === i ? { ...item, status: "error", errorMsg: msg } : item
                     )
                 );
-                toast.error(`Failed to upload ${qItem.file.name}: ${msg}`);
+                toast.error(t("adminMediaUploadFailure").replace(/\{filename\}|\{error\}/g, (key) => key === "{filename}" ? qItem.file.name : msg));
             }
         }
 
@@ -326,7 +327,7 @@ export function MediaPickerModal({
         void qc.invalidateQueries({ queryKey: ["admin", "media"] });
 
         if (uploadedAssets.length > 0) {
-            toast.success(`Successfully uploaded ${uploadedAssets.length} asset(s).`);
+            toast.success(t("adminMediaUploadSuccess").replace("{count}", String(uploadedAssets.length)));
             // Automatically insert newly uploaded items
             onSelect(uploadedAssets);
             onOpenChange(false);
@@ -341,19 +342,19 @@ export function MediaPickerModal({
                 className="bg-[var(--tnl-surface)] border border-[var(--tnl-border)] text-[var(--tnl-heading)] shadow-2xl rounded-2xl"
                 data-testid="media-picker-modal"
             >
-                {/* Zone 1 — single-row chrome: identity | tab switcher | explicit close */}
-                <DialogHeader className="shrink-0 h-14 px-5 border-b border-[var(--tnl-border)] flex flex-row items-center justify-between gap-4 space-y-0">
+                {/* Keep the desktop row; wrap identity and controls on narrow screens. */}
+                <DialogHeader data-testid="media-picker-header" className="shrink-0 h-auto min-h-14 py-3 md:h-14 md:py-0 px-5 border-b border-[var(--tnl-border)] flex flex-row flex-wrap md:flex-nowrap items-center justify-between gap-4 space-y-0">
                     <div className="flex items-center gap-3 min-w-0">
                         <DialogTitle className="text-base font-bold flex items-center gap-2 whitespace-nowrap">
                             <ImageIcon className="h-4 w-4 shrink-0 text-[var(--tnl-green)]" />
-                            <span>Media Library</span>
+                            <span>{t("adminMediaLibrary")}</span>
                         </DialogTitle>
                         <span className="text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap border border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] text-[var(--tnl-body)]">
-                            {mode === "single" ? "Single select" : "Multi select"}
+                            {mode === "single" ? t("adminMediaSingleSelect") : t("adminMediaMultiSelect")}
                         </span>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex flex-wrap md:flex-nowrap w-full md:w-auto items-center justify-between gap-3 shrink-0">
                         {/* Tab Navigation */}
                         <div className="flex items-center gap-1 bg-[var(--tnl-surface-2)] border border-[var(--tnl-border)] p-1 rounded-lg">
                             <button
@@ -366,7 +367,7 @@ export function MediaPickerModal({
                                 }`}
                                 data-testid="media-picker-tab-library"
                             >
-                                Browse Library
+                                {t("adminMediaBrowseLibrary")}
                             </button>
                             <button
                                 type="button"
@@ -378,15 +379,15 @@ export function MediaPickerModal({
                                 }`}
                                 data-testid="media-picker-tab-upload"
                             >
-                                Upload New
+                                {t("adminMediaUploadNew")}
                             </button>
                         </div>
 
                         <button
                             type="button"
                             onClick={() => onOpenChange(false)}
-                            aria-label="Close media picker"
-                            title="Close"
+                            aria-label={t("adminMediaClosePicker")}
+                            title={t("adminMediaClose")}
                             className="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg border border-[var(--tnl-border)] text-[var(--tnl-body)] hover:text-[var(--tnl-heading)] hover:bg-[var(--tnl-surface-2)] transition-colors"
                             data-testid="media-picker-close"
                         >
@@ -407,7 +408,7 @@ export function MediaPickerModal({
                                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--tnl-body)] opacity-60" />
                                     <input
                                         type="text"
-                                        placeholder="Search by filename or alt..."
+                                        placeholder={t("adminSearchMediaPlaceholder")}
                                         aria-label={t("adminSearch")}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -418,7 +419,7 @@ export function MediaPickerModal({
                                         <button
                                             type="button"
                                             onClick={() => setSearchQuery("")}
-                                            aria-label="Clear search"
+                                            aria-label={t("adminMediaClearSearch")}
                                             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--tnl-body)] hover:text-[var(--tnl-heading)]"
                                         >
                                             <X className="h-3.5 w-3.5" />
@@ -430,14 +431,14 @@ export function MediaPickerModal({
                                 <AdminSelect
                                     value={folder}
                                     onChange={(e) => setFolder(e.target.value)}
-                                    aria-label="Filter by folder"
+                                    aria-label={t("adminMediaFilterFolder")}
                                     className="text-sm"
                                     wrapperClassName="w-40 shrink-0"
                                     data-testid="media-picker-folder"
                                 >
                                     {FOLDERS.map((f) => (
                                         <option key={f.value} value={f.value}>
-                                            {f.label}
+                                            {t(f.label)}
                                         </option>
                                     ))}
                                 </AdminSelect>
@@ -446,14 +447,14 @@ export function MediaPickerModal({
                                 <AdminSelect
                                     value={kind}
                                     onChange={(e) => setKind(e.target.value)}
-                                    aria-label="Filter by kind"
+                                    aria-label={t("adminMediaFilterKind")}
                                     className="text-sm"
                                     wrapperClassName="w-32 shrink-0"
                                     data-testid="media-picker-kind"
                                 >
-                                    <option value="all">All kinds</option>
-                                    <option value="image">Images</option>
-                                    <option value="document">Docs</option>
+                                    <option value="all">{t("adminMediaAllKinds")}</option>
+                                    <option value="image">{t("adminMediaImages")}</option>
+                                    <option value="document">{t("adminMediaDocs")}</option>
                                 </AdminSelect>
 
                                 {/* Refresh Button */}
@@ -462,8 +463,8 @@ export function MediaPickerModal({
                                     onClick={() => void refetch()}
                                     disabled={isRefetching}
                                     className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--tnl-border)] text-[var(--tnl-body)] hover:text-[var(--tnl-heading)] hover:bg-[var(--tnl-surface-2)] transition-colors"
-                                    title="Refresh library"
-                                    aria-label="Refresh library"
+                                    title={t("adminMediaRefreshLibrary")}
+                                    aria-label={t("adminMediaRefreshLibrary")}
                                     data-testid="media-picker-refresh"
                                 >
                                     <RefreshCw className={`h-3.5 w-3.5 ${isRefetching ? "animate-spin" : ""}`} />
@@ -477,9 +478,9 @@ export function MediaPickerModal({
                             >
                                 {error ? (
                                     <div role="alert" data-testid="media-picker-error" className="flex flex-col items-center justify-center gap-3 p-6 text-center text-sm">
-                                        <p className="font-semibold text-[var(--tnl-danger)]">Could not load the media library.</p>
+                                        <p className="font-semibold text-[var(--tnl-danger)]">{t("adminMediaLibraryLoadError")}</p>
                                         <button type="button" onClick={() => void refetch()} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs">
-                                            Coba lagi
+                                            {t("adminRetry")}
                                         </button>
                                     </div>
                                 ) : isLoading ? (
@@ -489,9 +490,9 @@ export function MediaPickerModal({
                                 ) : items.length === 0 ? (
                                     <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[var(--tnl-body)]">
                                         <Folder className="h-10 w-10 stroke-1 mb-2 opacity-40" />
-                                        <p className="text-sm font-semibold">No media assets found</p>
+                                        <p className="text-sm font-semibold">{t("adminMediaNoAssetsFound")}</p>
                                         <p className="text-xs opacity-70 mt-1">
-                                            Try adjusting your search terms or upload new assets.
+                                            {t("adminMediaEmptyHint")}
                                         </p>
                                     </div>
                                 ) : (
@@ -568,7 +569,7 @@ export function MediaPickerModal({
                                 )}
                                 {!error && !isLoading && items.length > 0 ? (
                                     <div className="flex flex-wrap items-center justify-between gap-2 px-1 pt-3 text-xs text-[var(--tnl-body)]">
-                                        <span>{items.length} dari {totalItems}</span>
+                                        <span>{items.length} {t("adminOf")} {totalItems}</span>
                                         {items.length < totalItems ? (
                                             <button
                                                 type="button"
@@ -576,7 +577,7 @@ export function MediaPickerModal({
                                                 className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs"
                                                 data-testid="load-more-media"
                                             >
-                                                Muat lebih banyak
+                                                {t("adminLoadMore")}
                                             </button>
                                         ) : null}
                                     </div>
@@ -589,7 +590,7 @@ export function MediaPickerModal({
                             {focusedAsset ? (
                                 <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
                                     <h3 className="text-[11px] font-bold uppercase tracking-wider text-[var(--tnl-body)]">
-                                        Asset Details
+                                        {t("adminAssetDetails")}
                                     </h3>
 
                                     {/* Preview container — object-contain so nothing is cropped */}
@@ -608,7 +609,7 @@ export function MediaPickerModal({
                                     {/* Structured metadata */}
                                     <div className="text-xs space-y-2 text-[var(--tnl-body)]">
                                         <div>
-                                            <span className="block text-[10px] uppercase tracking-wider opacity-60">Filename</span>
+                                            <span className="block text-[10px] uppercase tracking-wider opacity-60">{t("adminMediaFilename")}</span>
                                             <span
                                                 className="block font-semibold text-[var(--tnl-heading)] break-all"
                                                 title={focusedAsset.original_name || focusedAsset.filename}
@@ -618,23 +619,23 @@ export function MediaPickerModal({
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
                                             <div>
-                                                <span className="block text-[10px] uppercase tracking-wider opacity-60">Folder</span>
-                                                <span className="capitalize">{focusedAsset.folder}</span>
+                                                <span className="block text-[10px] uppercase tracking-wider opacity-60">{t("adminFolder")}</span>
+                                                <span className="capitalize">{focusedFolder ? t(focusedFolder.label) : focusedAsset.folder}</span>
                                             </div>
                                             <div>
-                                                <span className="block text-[10px] uppercase tracking-wider opacity-60">Size</span>
+                                                <span className="block text-[10px] uppercase tracking-wider opacity-60">{t("adminMediaSize")}</span>
                                                 <span>{formatBytes(focusedAsset.size_bytes || focusedAsset.bytes)}</span>
                                             </div>
                                             {focusedAsset.width && focusedAsset.height && (
                                                 <div>
-                                                    <span className="block text-[10px] uppercase tracking-wider opacity-60">Dimensions</span>
+                                                    <span className="block text-[10px] uppercase tracking-wider opacity-60">{t("adminMediaDimensions")}</span>
                                                     <span>{focusedAsset.width} × {focusedAsset.height} px</span>
                                                 </div>
                                             )}
                                             {focusedAsset.used_in !== undefined && (
                                                 <div>
-                                                    <span className="block text-[10px] uppercase tracking-wider opacity-60">Used in</span>
-                                                    <span>{focusedAsset.used_in} place(s)</span>
+                                                    <span className="block text-[10px] uppercase tracking-wider opacity-60">{t("adminMediaUsedIn")}</span>
+                                                    <span>{focusedAsset.used_in} {t("adminMediaPlaces")}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -646,7 +647,7 @@ export function MediaPickerModal({
                                             htmlFor="media-picker-alt"
                                             className="text-[11px] font-semibold text-[var(--tnl-heading)] block"
                                         >
-                                            Alt text (screen readers)
+                                            {t("adminMediaAltLabel")}
                                         </label>
                                         <textarea
                                             id="media-picker-alt"
@@ -654,7 +655,7 @@ export function MediaPickerModal({
                                             onChange={(e) => setAltDraft(e.target.value)}
                                             rows={3}
                                             className="tnl-field font-sans text-sm w-full"
-                                            placeholder="Describe this asset for screen readers..."
+                                            placeholder={t("adminMediaAltHint")}
                                             data-testid="media-picker-alt-input"
                                         />
                                         <button
@@ -664,7 +665,7 @@ export function MediaPickerModal({
                                             className="tnl-btn tnl-btn-secondary text-xs py-2 w-full disabled:opacity-40"
                                             data-testid="media-picker-save-alt"
                                         >
-                                            {isSavingAlt ? "Saving..." : "Save Alt Text"}
+                                            {isSavingAlt ? t("adminSaving") : t("adminMediaSaveAlt")}
                                         </button>
                                     </div>
                                 </div>
@@ -672,7 +673,7 @@ export function MediaPickerModal({
                                 <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-2 p-6 text-center">
                                     <ImageIcon className="h-8 w-8 text-[var(--tnl-body)] opacity-30" />
                                     <p className="text-xs text-[var(--tnl-body)]">
-                                        Select an asset to view details
+                                        {t("adminMediaSelectForDetails")}
                                     </p>
                                 </div>
                             )}
@@ -723,8 +724,8 @@ export function MediaPickerModal({
                                 <p className="text-sm font-semibold text-[var(--tnl-heading)]">
                                     {t("adminDropFiles")} <span className="text-[var(--tnl-green)] underline">{t("adminBrowse")}</span>
                                 </p>
-                                <p className="text-xs text-[var(--tnl-body)] mt-1">
-                                    JPG, PNG, WebP, GIF, or academic docs up to 10 MB.
+                                <p className="text-xs text-[var(--tnl-body)] mt-1" data-testid="media-picker-drop-hint">
+                                    {t("adminDropFileTypes")}
                                 </p>
                             </button>
                             <input
@@ -754,7 +755,7 @@ export function MediaPickerModal({
                                 >
                                     {FOLDERS.filter((f) => f.value !== "all").map((f) => (
                                         <option key={f.value} value={f.value}>
-                                            {f.label}
+                                            {t(f.label)}
                                         </option>
                                     ))}
                                 </AdminSelect>
@@ -765,7 +766,7 @@ export function MediaPickerModal({
                                 <input
                                     id="media-picker-upload-alt"
                                     type="text"
-                                    placeholder="Leave blank to use clean filename"
+                                    placeholder={t("adminMediaUploadAltHint")}
                                     value={uploadAlt}
                                     onChange={(e) => setUploadAlt(e.target.value)}
                                     className="tnl-field text-xs h-9"
@@ -776,8 +777,8 @@ export function MediaPickerModal({
 
                         {/* Optimization toggle — house switch, not a raw checkbox */}
                         <AdminSwitch
-                            label="Auto-optimize to WebP (recommended)"
-                            description="Resizes camera photos to 1920px max and converts to light, crisp WebP."
+                            label={t("adminMediaAutoOptimize")}
+                            description={t("adminMediaOptimizeHint")}
                             checked={optimizeWebP}
                             onCheckedChange={setOptimizeWebP}
                             testId="media-picker-optimize-check"
@@ -787,7 +788,7 @@ export function MediaPickerModal({
                         {uploadQueue.length > 0 && (
                             <div className="space-y-2 pt-2 border-t border-[var(--tnl-border)]">
                                 <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--tnl-body)]">
-                                    Files to upload ({uploadQueue.length})
+                                    {t("adminMediaFilesToUpload")} ({uploadQueue.length})
                                 </h4>
                                 <div className="space-y-1.5 max-h-48 overflow-y-auto">
                                     {uploadQueue.map((item) => (
@@ -839,7 +840,7 @@ export function MediaPickerModal({
                                                 <button
                                                     type="button"
                                                     onClick={() => handleRemoveFromQueue(item.id)}
-                                                    aria-label={`Remove ${item.file.name} from queue`}
+                                                    aria-label={`${t("adminRemoveFromQueue")}: ${item.file.name}`}
                                                     className="p-1 text-[var(--tnl-body)] hover:text-[var(--tnl-heading)]"
                                                 >
                                                     <X className="h-3.5 w-3.5" />
@@ -858,7 +859,7 @@ export function MediaPickerModal({
                 {activeTab === "library" && focusedAsset ? (
                     <details className="md:hidden shrink-0 border-t border-[var(--tnl-border)] px-5 py-2">
                         <summary className="cursor-pointer text-xs font-semibold text-[var(--tnl-heading)]">
-                            Detail aset
+                            {t("adminAssetDetails")}
                         </summary>
                         <div className="mt-2 flex gap-3">
                             {focusedAsset.kind === "image" ? (
@@ -872,7 +873,7 @@ export function MediaPickerModal({
                                 <p className="truncate font-medium text-[var(--tnl-heading)]">
                                     {focusedAsset.original_name || focusedAsset.filename}
                                 </p>
-                                <p className="mt-1 text-[var(--tnl-body)]">{focusedAsset.alt || "No alt text yet"}</p>
+                                <p className="mt-1 text-[var(--tnl-body)]">{focusedAsset.alt || t("adminMediaNoAltYet")}</p>
                                 <p className="mt-1 text-[var(--tnl-body)]">{formatBytes(focusedAsset.size_bytes || focusedAsset.bytes)}</p>
                             </div>
                         </div>
@@ -890,10 +891,10 @@ export function MediaPickerModal({
                         {activeTab === "library"
                             ? mode === "single"
                                 ? selectedItems[0]
-                                    ? `Selected: ${selectedItems[0].original_name || selectedItems[0].filename} · ${formatBytes(selectedItems[0].size_bytes || selectedItems[0].bytes)}`
-                                    : "Nothing selected yet"
-                                : `${selectedItems.length} asset(s) selected`
-                            : `${uploadQueue.length} file(s) queued`}
+                                    ? `${t("adminMediaSelectedLabel")}: ${selectedItems[0].original_name || selectedItems[0].filename} · ${formatBytes(selectedItems[0].size_bytes || selectedItems[0].bytes)}`
+                                    : t("adminMediaNothingSelectedYet")
+                                : `${selectedItems.length} ${t("adminMediaAssetsSelected")}`
+                            : `${uploadQueue.length} ${t("adminMediaFilesQueued")}`}
                     </p>
 
                     <div className="flex items-center gap-2 shrink-0">
@@ -903,7 +904,7 @@ export function MediaPickerModal({
                             className="tnl-btn tnl-btn-secondary text-xs py-2 px-4"
                             data-testid="media-picker-cancel"
                         >
-                            Cancel
+                            {t("adminCancel")}
                         </button>
 
                         {activeTab === "library" ? (
@@ -915,8 +916,8 @@ export function MediaPickerModal({
                                 data-testid="media-picker-insert-button"
                             >
                                 {mode === "single"
-                                    ? "Use Selected Image"
-                                    : `Insert ${selectedItems.length} Images`}
+                                    ? t("adminMediaUseSelected")
+                                    : t("adminMediaInsertImages").replace("{count}", String(selectedItems.length))}
                             </button>
                         ) : (
                             <button
@@ -931,7 +932,7 @@ export function MediaPickerModal({
                                         <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Uploading...
                                     </>
                                 ) : (
-                                    "Upload & Insert"
+                                    t("adminMediaUploadInsert")
                                 )}
                             </button>
                         )}

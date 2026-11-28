@@ -1,16 +1,18 @@
 // Dashboard + Needs-review queue + Activity log + Maintainer guide.
 
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Calendar, ClipboardList, Image, Plus } from "lucide-react";
+import { ArrowUpRight, Calendar, ClipboardList, Image, Plus, ShieldCheck } from "lucide-react";
 import { apiGet } from "@/lib/api/api";
 import { useAdminT } from "@/lib/i18n/admin-i18n";
 import { AdminErrorBanner, AdminLoadMore, AdminPageHeader, AdminSectionHeader, AdminSelect, IssueList, Panel, adminError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
+import { AccountSecurity } from "@/components/admin/AccountSecurity";
 import type { AuditEntry, DashboardStats, ListResponse, ReviewQueueItem } from "@/lib/types/types";
 
 export default function AdminDashboard() {
+    const t = useAdminT();
     const { data, isLoading } = useQuery({
         queryKey: ["admin", "dashboard"],
         queryFn: () => apiGet<DashboardStats>("/admin/dashboard"),
@@ -176,6 +178,7 @@ export default function AdminDashboard() {
                                 { to: "/admin/registrations", label: "Export registrations (.xlsx)" },
                                 { to: "/admin/theme", label: "Change site colours" },
                                 { to: "/admin/guide", label: "Read maintainer guide" },
+                                { to: "/admin/content/collections", label: t("adminCollections") },
                             ].map((item) => (
                                 <li key={item.to}>
                                     <Link to={item.to} className="font-medium hover:underline text-[var(--tnl-green)] block truncate">
@@ -187,11 +190,13 @@ export default function AdminDashboard() {
                     </Panel>
                 </div>
             </div>
+            <AccountSecurity />
         </div>
     );
 }
 
 export function ReviewQueuePage() {
+    const t = useAdminT();
     const { data, isLoading } = useQuery({
         queryKey: ["admin", "review-queue"],
         queryFn: () => apiGet<ListResponse<ReviewQueueItem>>("/admin/review-queue"),
@@ -202,16 +207,16 @@ export function ReviewQueuePage() {
     return (
         <div data-testid="review-queue-page">
             <AdminPageHeader
-                title="Needs review"
-                description="These items cannot be published until the problems below are fixed. Open the item, correct it, then publish."
+                title={t("adminReviewTitle")}
+                description={t("adminReviewDescription")}
                 testId="review-queue-header"
             />
             {isLoading ? (
-                <Spinner label="Loading…" />
+                <Spinner label={t("adminLoading")} />
             ) : items.length === 0 ? (
                 <Panel>
                     <p className="text-sm text-[var(--tnl-body)]" data-testid="review-queue-empty">
-                        Nothing needs review. Everything saved so far passes the content checks.
+                        {t("adminReviewEmpty")}
                     </p>
                 </Panel>
             ) : (
@@ -230,7 +235,7 @@ export function ReviewQueuePage() {
                                     className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm"
                                     data-testid={`review-open-${item.id}`}
                                 >
-                                    Open and fix
+                                    {t("adminReviewOpenAndFix")}
                                 </Link>
                             </div>
                             <IssueList issues={item.issues} testId={`review-issues-${item.id}`} />
@@ -242,37 +247,106 @@ export function ReviewQueuePage() {
     );
 }
 
+interface AuditVerifyResult {
+    checked: number;
+    skipped: number;
+    ok: boolean;
+    broken_at?: { id?: string; seq?: number; reason?: string } | null;
+}
+
 export function AuditLogPage() {
     const t = useAdminT();
     const [period, setPeriod] = useState("");
-    // Backend caps a page at 200; grow the page in smaller steps on demand.
+    // Keep the UI's existing 200-row ceiling; the API accepts up to 500.
     const [limit, setLimit] = useState(50);
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ["admin", "audit", period, limit],
         queryFn: () => apiGet<{ items: AuditEntry[]; total: number }>(`/admin/audit?limit=${limit}${period ? `&period=${period}` : ""}`),
         retry: false,
     });
+    const verify = useMutation({
+        mutationFn: () => apiGet<AuditVerifyResult>("/admin/audit/verify"),
+    });
     useEffect(() => {
         setLimit(50);
     }, [period]);
     const items = data?.items ?? [];
-    const total = Math.min(data?.total ?? items.length, 200);
+    const total = data?.total ?? items.length;
+    const canLoadMore = limit < 200 && items.length < total;
+    const canExport = !isLoading && !error && data !== undefined;
+    // The anchor download cannot read response headers, so the truncation flag the
+    // endpoint sets (X-Audit-Truncated) never reaches the browser. Surface the gap in
+    // the UI instead: the export is scoped to `limit`, exactly the rows on screen.
+    const exportedRows = Math.min(items.length, limit);
+    const truncated = total > exportedRows;
+
+    const verifyBanner = (() => {
+        if (verify.error) {
+            return { ok: false, text: adminError(verify.error, t("adminAuditVerifyError")) };
+        }
+        if (!verify.data) return null;
+        if (verify.data.ok) {
+            return {
+                ok: true,
+                text: t("adminAuditVerifyOk")
+                    .replace("{checked}", String(verify.data.checked))
+                    .replace("{skipped}", String(verify.data.skipped)),
+            };
+        }
+        const where = verify.data.broken_at?.seq !== undefined
+            ? `#${verify.data.broken_at.seq}`
+            : (verify.data.broken_at?.id ?? "?");
+        const reason = verify.data.broken_at?.reason ?? "mismatch";
+        return {
+            ok: false,
+            text: t("adminAuditVerifyBroken")
+                .replace("{where}", where)
+                .replace("{reason}", reason)
+                .replace("{checked}", String(verify.data.checked))
+                .replace("{skipped}", String(verify.data.skipped)),
+        };
+    })();
 
     return (
         <div data-testid="audit-log-page">
             <AdminPageHeader
                 title={t("adminActivityLog")}
-                description="Every change made in TNL Studio, with who made it and when. Filter by time range; export the visible range as a spreadsheet. Useful when handing the site to the next batch."
+                description={t("adminAuditDescription")}
                 actions={
-                    <a href={`/api/admin/audit/export?${period ? `period=${period}&` : ""}limit=${limit}`} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="audit-export-button">
-                        Export to spreadsheet
-                    </a>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => verify.mutate()}
+                            disabled={verify.isPending}
+                            className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm"
+                            data-testid="audit-verify-button"
+                        >
+                            <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                            {t(verify.isPending ? "adminAuditVerifying" : "adminAuditVerify")}
+                        </button>
+                        <a href={canExport ? `/api/admin/audit/export?${period ? `period=${period}&` : ""}limit=${limit}` : undefined} aria-disabled={!canExport} className="tnl-btn tnl-btn-outline h-10 min-h-[40px] text-sm" data-testid="audit-export-button">
+                            {t("adminAuditExport")}
+                        </a>
+                    </div>
                 }
                 testId="audit-header"
             />
+            {verifyBanner ? (
+                <div
+                    role={verifyBanner.ok ? "status" : "alert"}
+                    data-testid="audit-verify-result"
+                    className={`mb-4 rounded-xl border px-4 py-3 text-sm font-medium ${
+                        verifyBanner.ok
+                            ? "border-[var(--tnl-green)] bg-[var(--tnl-green)]/10 text-[var(--tnl-green)]"
+                            : "border-red-500 bg-red-500/10 text-red-600 dark:text-red-400"
+                    }`}
+                >
+                    {verifyBanner.text}
+                </div>
+            ) : null}
             <Panel className="mb-6">
                 <div className="flex flex-wrap items-center gap-3">
-                    <label htmlFor="audit-period-filter" className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>Time range</label>
+                    <label htmlFor="audit-period-filter" className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>{t("adminAuditTimeRange")}</label>
                     <AdminSelect
                         id="audit-period-filter"
                         data-testid="audit-period-filter"
@@ -280,34 +354,40 @@ export function AuditLogPage() {
                         value={period}
                         onChange={(e) => setPeriod(e.target.value)}
                     >
-                        <option value="">All time</option>
-                        <option value="hour">Last hour</option>
-                        <option value="day">Last 24 hours</option>
-                        <option value="week">Last 7 days</option>
-                        <option value="month">Last 30 days</option>
-                        <option value="year">Last 12 months</option>
+                        <option value="">{t("adminAuditAllTime")}</option>
+                        <option value="hour">{t("adminAuditHour")}</option>
+                        <option value="day">{t("adminAuditDay")}</option>
+                        <option value="week">{t("adminAuditWeek")}</option>
+                        <option value="month">{t("adminAuditMonth")}</option>
+                        <option value="year">{t("adminAuditYear")}</option>
                     </AdminSelect>
                     <span className="text-xs" style={{ color: "var(--tnl-tan-text)" }} data-testid="audit-count">
-                        {items.length} dari {total} {total === 1 ? "event" : "events"}
+                        {items.length} {t("adminOf")} {total} {total === 1 ? t("adminEventWord") : t("adminEventsWord")}
                     </span>
                 </div>
+                {truncated ? (
+                    <p className="mt-3 text-xs" style={{ color: "var(--tnl-tan-text)" }} data-testid="audit-export-truncated">
+                        {t("adminExportTruncatedPrefix")} {exportedRows} {t(limit >= 200 ? "adminAuditAtCap" : "adminExportTruncatedSuffix")}
+                    </p>
+                ) : null}
+
             </Panel>
             {error ? (
                 <AdminErrorBanner
-                    message={adminError(error, "Could not load the activity log.")}
+                    message={adminError(error, t("adminAuditLoadError"))}
                     onRetry={() => void refetch()}
                 />
             ) : isLoading ? (
-                <Spinner label="Loading…" />
+                <Spinner label={t("adminLoading")} />
             ) : (
                 <Panel className="overflow-x-auto">
                     <table className="w-full text-sm" data-testid="audit-table">
                         <thead>
                             <tr className="text-left" style={{ color: "var(--tnl-tan-text)" }}>
-                                <th className="pb-2 pr-4 font-semibold">When</th>
-                                <th className="pb-2 pr-4 font-semibold">Who</th>
-                                <th className="pb-2 pr-4 font-semibold">Action</th>
-                                <th className="pb-2 font-semibold">Item</th>
+                                <th className="pb-2 pr-4 font-semibold">{t("adminAuditWhen")}</th>
+                                <th className="pb-2 pr-4 font-semibold">{t("adminAuditWho")}</th>
+                                <th className="pb-2 pr-4 font-semibold">{t("adminAuditAction")}</th>
+                                <th className="pb-2 font-semibold">{t("adminAuditItem")}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -322,7 +402,7 @@ export function AuditLogPage() {
                             {items.length === 0 ? (
                                 <tr>
                                     <td colSpan={4} className="py-6 text-center text-[var(--tnl-body)]">
-                                        No activity recorded yet.
+                                        {t("adminAuditEmpty")}
                                     </td>
                                 </tr>
                             ) : null}
@@ -334,6 +414,7 @@ export function AuditLogPage() {
                 <AdminLoadMore
                     shown={items.length}
                     total={total}
+                    hasMore={canLoadMore}
                     onMore={() => setLimit((current) => Math.min(current + 50, 200))}
                 />
             ) : null}
@@ -366,8 +447,8 @@ const GUIDE = [
         title: "Change the colours",
         steps: [
             "Open Colours & theme.",
-            "Adjust any colour. The contrast check runs as you type.",
-            "Click “Save draft” to keep working, or “Publish theme” to make it live.",
+            "Adjust any colour. The preview updates immediately and server contrast checks refresh after a short pause.",
+            "Click “Save draft” to keep working. “Publish theme” saves and validates the current draft before making it live.",
             "If a pair of colours is too hard to read, publishing is blocked until you fix it.",
             "“Reset to TNL default” puts the original black, tan and dark green back.",
         ],
@@ -446,11 +527,12 @@ const GUIDE = [
 ];
 
 export function MaintainerGuidePage() {
+    const t = useAdminT();
     return (
         <div data-testid="maintainer-guide-page">
             <AdminPageHeader
-                title="Maintainer guide"
-                description="Everything an incoming assistant needs, in plain language. No coding knowledge required."
+                title={t("adminGuideTitle")}
+                description={t("adminGuideDescription")}
                 testId="guide-header"
             />
             <div className="grid gap-4 lg:grid-cols-2">

@@ -4,8 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Send } from "lucide-react";
-import { apiPost } from "@/lib/api/api";
-import { ApiError } from "@/lib/api/api";
+import { apiPost, ApiError } from "@/lib/api/api";
 import { useLocale } from "@/lib/i18n/i18n";
 import { SectionHeading } from "@/components/site/Primitives";
 

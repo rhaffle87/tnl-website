@@ -211,10 +211,11 @@ describe("status badge and announcement contract", () => {
 
     it("labels the activity tab as Training while the route key stays stable", () => {
         const chrome = read("components/site/Chrome.tsx");
+        const translations = read("lib/i18n/i18n.ts");
         expect(chrome).toContain('{ key: "nav_training", to: "/activity?tab=practicum" }');
         expect(chrome).not.toContain('key: "nav_practicum"');
-        expect(read("lib/i18n.ts")).not.toMatch(/nav_practicum: "Practicum"/);
-        expect(read("lib/i18n.ts")).not.toMatch(/practicum_modules: "Practicum modules"/);
+        expect(translations).toMatch(/nav_practicum: "Training"/);
+        expect(translations).toMatch(/practicum_modules: "Training modules"/);
     });
 
     it("keeps the CMS editor bar opaque so content cannot ghost through it", () => {

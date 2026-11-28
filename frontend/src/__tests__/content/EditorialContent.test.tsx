@@ -9,7 +9,7 @@ const editorialStyles = readFileSync("src/pages/editorial-content.css", "utf8");
 import { renderWithProviders } from "./test-utils";
 // Member content is outside these pages; isolate concurrent redesign work.
 vi.mock("@/components/site/MemberSections", () => ({ MemberSections: () => null }));
-vi.mock("@/lib/api/hooks", () => ({ usePage: vi.fn(), usePost: vi.fn(), usePosts: vi.fn(), useSettings: vi.fn(), usePublications: vi.fn() }));
+vi.mock("@/lib/api/hooks", () => ({ usePage: vi.fn(), usePagePreview: vi.fn(() => ({ data: undefined, isLoading: false, isError: false })), usePost: vi.fn(), usePosts: vi.fn(), useSettings: vi.fn(), usePublications: vi.fn() }));
 import { usePage, usePost, usePosts, useSettings, usePublications } from "@/lib/api/hooks";
 const post = { id: "one", slug: "network", title: "Network research", title_id: "Riset jaringan", category: "Research", body: "<p>CMS article body</p>", body_id: "<p>Isi artikel CMS</p>", published_at: "2026-01-12T10:00:00Z", author: "Lab team", tags: ["network"], related: [{ id: "two", slug: "next", title: "Next article", category: "Research" }] };
 describe("editorial content pages", () => {

@@ -4,9 +4,10 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
+import os
 from lib.auth import hash_password
 
-SEED_PASSWORD = "ChangeMe2026!"
+SEED_PASSWORD = os.environ["SEED_ADMIN_PASSWORD"]
 
 
 @pytest.mark.asyncio

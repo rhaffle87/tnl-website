@@ -6,9 +6,9 @@ import { Outlet, useLocation } from "react-router-dom";
 import { AnnouncementPopup, MobileRegistrationBar, SiteCollaborationBand, SiteFooter, SiteHeader } from "@/components/site/Chrome";
 import { ReadingProgressBar } from "@/components/site/ReadingProgressBar";
 import { SmoothScrollProvider } from "@/components/site/SmoothScrollProvider";
-import { LOCALE_STORAGE_KEY, LocaleContext, STRINGS, useLocale, type Locale, type StringKey } from "@/lib/i18n/i18n";
+import { LOCALE_STORAGE_KEY, LocaleContext, STRINGS, pick, useLocale, type Locale, type StringKey } from "@/lib/i18n/i18n";
 import { useApplyThemeTokens, useThemeMode } from "@/lib/theme/theme";
-import { useSettings } from "@/lib/api/hooks";
+import { useEvent, usePage, usePagePreview, usePost, useSettings } from "@/lib/api/hooks";
 
 const ROUTE_META: Record<string, { titleId: string; titleEn: string; descId: string; descEn: string }> = {
     "/": {
@@ -77,10 +77,41 @@ function useHeadTags() {
     const { data: settings } = useSettings();
     const location = useLocation();
     const { locale } = useLocale();
+    const postSlug = routeSlug(location.pathname, /^\/news\/([^/]+)\/?$/);
+    const eventSlug = routeSlug(location.pathname, /^\/activity\/events\/([^/]+)\/?$/);
+    const pageSlug = routeSlug(location.pathname, /^\/p\/([^/]+)\/?$/);
+    const previewId = pageSlug ? new URLSearchParams(location.search).get("preview") || undefined : undefined;
+    const postQuery = usePost(postSlug);
+    const eventQuery = useEvent(eventSlug);
+    const pageQuery = usePage(pageSlug, { enabled: !previewId });
+    const previewQuery = usePagePreview(pageSlug, previewId);
 
     useEffect(() => {
         if (!settings) return;
-        const metaInfo = ROUTE_META[location.pathname] || {
+        const dynamicLoading = postSlug
+            ? postQuery.isLoading && !postQuery.data
+            : eventSlug
+                ? eventQuery.isLoading && !eventQuery.data
+                : pageSlug && (previewId ? previewQuery.isLoading && !previewQuery.data : pageQuery.isLoading && !pageQuery.data);
+        if (dynamicLoading) return;
+
+        const dynamicPage = previewId ? previewQuery.data : pageQuery.data;
+        const metaInfo = postSlug && postQuery.data ? {
+            titleId: postQuery.data.seo?.title || `${pick("id", postQuery.data.title, postQuery.data.title_id)} — Kabar Lab TNL ITS`,
+            titleEn: postQuery.data.seo?.title || `${postQuery.data.title} — Kabar Lab TNL ITS`,
+            descId: postQuery.data.seo?.description || pick("id", postQuery.data.excerpt, postQuery.data.excerpt_id) || settings.seo?.default_description || "",
+            descEn: postQuery.data.seo?.description || postQuery.data.excerpt || settings.seo?.default_description || "",
+        } : eventSlug && eventQuery.data ? {
+            titleId: `${pick("id", eventQuery.data.title, eventQuery.data.title_id)} — Laboratorium Jaringan Telekomunikasi ITS`,
+            titleEn: `${eventQuery.data.title} — Telecommunication Network Laboratory ITS`,
+            descId: pick("id", eventQuery.data.description, eventQuery.data.description_id) || settings.seo?.default_description || "",
+            descEn: eventQuery.data.description || settings.seo?.default_description || "",
+        } : pageSlug && dynamicPage ? {
+            titleId: `${pick("id", dynamicPage.title, dynamicPage.title_id)} — Laboratorium Jaringan Telekomunikasi ITS`,
+            titleEn: `${dynamicPage.title} — Telecommunication Network Laboratory ITS`,
+            descId: dynamicPage.meta_description || settings.seo?.default_description || "",
+            descEn: dynamicPage.meta_description || settings.seo?.default_description || "",
+        } : ROUTE_META[location.pathname] || {
             titleId: settings.site_title,
             titleEn: settings.site_title,
             descId: settings.seo?.default_description ?? "",
@@ -109,7 +140,12 @@ function useHeadTags() {
         metaDesc.setAttribute("content", pageDesc);
 
         // Canonical URL
-        const canonicalUrl = `https://labtnl.site${location.pathname === "/" ? "" : location.pathname}`;
+        const canonicalOrigin = new URL(
+            document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href || "https://labtnl.site",
+        ).origin;
+        const basePath = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL.slice(0, -1) : import.meta.env.BASE_URL;
+        const canonicalPath = `${basePath}${location.pathname === "/" ? "" : location.pathname}`;
+        const canonicalUrl = `${canonicalOrigin}${canonicalPath || "/"}`;
         const canonicalTag = ensure('link[rel="canonical"]', () => {
             const l = document.createElement("link");
             l.setAttribute("rel", "canonical");
@@ -118,12 +154,14 @@ function useHeadTags() {
         canonicalTag.setAttribute("href", canonicalUrl);
 
         // Open Graph
+        const socialImage = postQuery.data?.cover_url || postQuery.data?.seo?.og_image_url || eventQuery.data?.cover_image || eventQuery.data?.poster_urls?.[0] || settings.seo?.og_image_url || "https://labtnl.site/assets/brand/tnl-logo-badge.png";
+        const absoluteSocialImage = socialImage.startsWith("http") ? socialImage : `${canonicalOrigin}${socialImage.startsWith("/") ? "" : "/"}${socialImage}`;
         for (const [prop, value] of [
             ["og:title", pageTitle],
             ["og:description", pageDesc],
-            ["og:type", "website"],
+            ["og:type", postSlug ? "article" : "website"],
             ["og:url", canonicalUrl],
-            ["og:image", "https://labtnl.site/assets/brand/tnl-logo-badge.png"],
+            ["og:image", absoluteSocialImage],
         ] as const) {
             const tag = ensure(`meta[property="${prop}"]`, () => {
                 const m = document.createElement("meta");
@@ -138,7 +176,7 @@ function useHeadTags() {
             ["twitter:card", "summary_large_image"],
             ["twitter:title", pageTitle],
             ["twitter:description", pageDesc],
-            ["twitter:image", "https://labtnl.site/assets/brand/tnl-logo-badge.png"],
+            ["twitter:image", absoluteSocialImage],
         ] as const) {
             const tag = ensure(`meta[name="${name}"]`, () => {
                 const m = document.createElement("meta");
@@ -146,6 +184,19 @@ function useHeadTags() {
                 return m;
             });
             tag.setAttribute("content", value);
+        }
+
+        const previewRobots = document.head.querySelector('meta[name="robots"][data-tnl-preview="1"]');
+        if (previewId) {
+            const robots = ensure('meta[name="robots"]', () => {
+                const meta = document.createElement("meta");
+                meta.setAttribute("name", "robots");
+                meta.dataset.tnlPreview = "1";
+                return meta;
+            });
+            robots.setAttribute("content", "noindex,nofollow,noarchive");
+        } else {
+            previewRobots?.remove();
         }
 
         // JSON-LD Structured Data
@@ -177,7 +228,17 @@ function useHeadTags() {
                 addressCountry: "ID",
             },
         });
-    }, [settings, location.pathname, locale]);
+    }, [settings, location.pathname, location.search, locale, postSlug, eventSlug, pageSlug, previewId, postQuery.data, postQuery.isLoading, eventQuery.data, eventQuery.isLoading, pageQuery.data, pageQuery.isLoading, previewQuery.data, previewQuery.isLoading]);
+}
+
+function routeSlug(pathname: string, pattern: RegExp): string | undefined {
+    const match = pathname.match(pattern);
+    if (!match) return undefined;
+    try {
+        return decodeURIComponent(match[1]);
+    } catch {
+        return match[1];
+    }
 }
 
 export function LocaleProvider({ children }: { children: ReactNode }) {

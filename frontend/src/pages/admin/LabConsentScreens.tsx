@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Camera, Check, Download, ImageOff, Loader2, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminT } from "@/lib/i18n/admin-i18n";
 import { apiDelete, apiGet, apiPost } from "@/lib/api/api";
 import { AdminCard, AdminPageHeader, AdminStatusBadge, AdminSwitch, adminError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
@@ -32,17 +33,18 @@ function EmptyRow({ colSpan, label }: { colSpan: number; label: string }) {
 
 // ---------------------------------------------------------------- lab photos
 function SlotCard({ slot, onChanged }: { slot: LabPhotoSlot; onChanged: () => void }) {
+    const t = useAdminT();
     const [file, setFile] = useState<File | null>(null);
     const [alt, setAlt] = useState("");
     const [busy, setBusy] = useState(false);
 
     const upload = async () => {
         if (!file) {
-            toast.error("Choose a photo first.");
+            toast.error(t("adminPagesChoosePhoto"));
             return;
         }
         if (!alt.trim()) {
-            toast.error("Describe what the photo shows — it is read aloud to visitors using a screen reader.");
+            toast.error(t("adminPagesDescribePhoto"));
             return;
         }
         setBusy(true);
@@ -53,22 +55,22 @@ function SlotCard({ slot, onChanged }: { slot: LabPhotoSlot; onChanged: () => vo
         setBusy(false);
         if (!res.ok) {
             const err = (await res.json().catch(() => null)) as { detail?: string } | null;
-            toast.error(err?.detail ?? "Could not upload that photo.");
+            toast.error(err?.detail ?? t("adminPagesUploadPhotoError"));
             return;
         }
         setFile(null);
         setAlt("");
         onChanged();
-        toast.success(`${slot.label} now shows your photo.`);
+        toast.success(`${slot.label} ${t("adminPagesPhotoUploadedSuffix")}`);
     };
 
     const clear = useMutation({
         mutationFn: () => apiDelete<{ ok: boolean }>(`/admin/lab-photos/${slot.id}`),
         onSuccess: () => {
             onChanged();
-            toast.success("Photo removed from this slot.");
+            toast.success(t("adminPagesPhotoRemoved"));
         },
-        onError: (err) => toast.error(adminError(err, "Could not clear this slot.")),
+        onError: (err) => toast.error(adminError(err, t("adminPagesClearSlotError"))),
     });
 
     return (
@@ -88,14 +90,14 @@ function SlotCard({ slot, onChanged }: { slot: LabPhotoSlot; onChanged: () => vo
                         <h3 className="text-sm font-bold" data-testid={`lab-photo-label-${slot.id}`}>{slot.label}</h3>
                         {slot.is_illustrative ? (
                             <AdminStatusBadge variant="warning" testId={`lab-photo-illustrative-${slot.id}`}>
-                                Stock photo
+                                {t("adminPagesStockPhoto")}
                             </AdminStatusBadge>
                         ) : slot.has_photo ? (
                             <AdminStatusBadge variant="published" testId={`lab-photo-real-${slot.id}`}>
-                                <Check className="h-3 w-3" aria-hidden="true" /> Your photo
+                                <Check className="h-3 w-3" aria-hidden="true" /> {t("adminPagesYourPhoto")}
                             </AdminStatusBadge>
                         ) : (
-                            <AdminStatusBadge variant="neutral">Empty</AdminStatusBadge>
+                            <AdminStatusBadge variant="neutral">{t("adminPagesEmptyPhoto")}</AdminStatusBadge>
                         )}
                     </div>
                     <p className="mt-1 text-xs text-[var(--tnl-body)]">{slot.hint}</p>
@@ -104,7 +106,7 @@ function SlotCard({ slot, onChanged }: { slot: LabPhotoSlot; onChanged: () => vo
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1.4fr_auto] sm:items-end">
-                <Labelled label="Photo">
+                <Labelled label={t("adminPagesPhoto")}>
                     <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
@@ -113,11 +115,11 @@ function SlotCard({ slot, onChanged }: { slot: LabPhotoSlot; onChanged: () => vo
                         data-testid={`lab-photo-file-${slot.id}`}
                     />
                 </Labelled>
-                <Labelled label="What does it show?">
+                <Labelled label={t("adminPagesPhotoDescriptionLabel")}>
                     <input
                         value={alt}
                         onChange={(e) => setAlt(e.target.value)}
-                        placeholder="Students configuring routers in Room B-301"
+                        placeholder={t("adminPagesPhotoPlaceholder")}
                         className="w-full rounded-lg border px-3 py-2 text-sm"
                         data-testid={`lab-photo-alt-${slot.id}`}
                     />
@@ -131,14 +133,14 @@ function SlotCard({ slot, onChanged }: { slot: LabPhotoSlot; onChanged: () => vo
                         data-testid={`lab-photo-upload-${slot.id}`}
                     >
                         {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Camera className="h-4 w-4" aria-hidden="true" />}
-                        Replace
+                        {t("adminReplace")}
                     </button>
                     {slot.has_photo ? (
                         <button
                             type="button"
                             onClick={() => clear.mutate()}
                             className="rounded-lg border px-3 py-2 text-sm text-[var(--tnl-body)] hover:bg-[var(--tnl-surface-2)]"
-                            aria-label={`Clear ${slot.label}`}
+                            aria-label={`${t("adminClear")} ${slot.label}`}
                             data-testid={`lab-photo-clear-${slot.id}`}
                         >
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -151,10 +153,16 @@ function SlotCard({ slot, onChanged }: { slot: LabPhotoSlot; onChanged: () => vo
 }
 
 export function LabPhotosPage() {
+    const t = useAdminT();
     const qc = useQueryClient();
     const { data, isLoading } = useQuery({
         queryKey: ["admin", "lab-photos"],
         queryFn: () => apiGet<LabPhotoSlots>("/admin/lab-photos"),
+        retry: false,
+    });
+    const { data: storage, error: storageError } = useQuery({
+        queryKey: ["admin", "lab-photos", "storage"],
+        queryFn: () => apiGet<{ backend: string; media_dir: string }>("/admin/lab-photos/storage"),
         retry: false,
     });
     const refresh = () => {
@@ -165,21 +173,34 @@ export function LabPhotosPage() {
     return (
         <div data-testid="lab-photos-page">
             <AdminPageHeader
-                title="Lab photos"
-                description="Replace the stock networking imagery with your own photographs of Room B-301."
+                title={t("adminPagesLabPhotos")}
+                description={t("adminPagesLabPhotosDescription")}
             />
+            {storage ? (
+                <AdminCard className="mb-4 p-3 sm:p-3 text-xs flex flex-wrap items-center gap-4" testId="lab-photos-storage-info">
+                    <span className="font-semibold text-[var(--tnl-heading)]">{t("adminLabPhotosStorage")}:</span>
+                    <span>
+                        {t("adminLabPhotosStorageBackend")}: <code className="font-mono">{storage.backend}</code>
+                    </span>
+                    <span>
+                        {t("adminLabPhotosStorageDir")}: <code className="font-mono break-all">{storage.media_dir}</code>
+                    </span>
+                </AdminCard>
+            ) : storageError ? (
+                <p role="alert" className="mb-4 text-xs text-[var(--tnl-danger)]" data-testid="lab-photos-storage-error">
+                    {t("adminLabPhotosStorageError")}
+                </p>
+            ) : null}
             {data && data.illustrative_count > 0 ? (
                 <div
                     className="mb-5 rounded-xl border border-[color-mix(in_srgb,var(--tnl-warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--tnl-warning)_12%,transparent)] px-4 py-3 text-sm text-[var(--tnl-warning)]"
                     data-testid="lab-photos-stock-warning"
                 >
-                    <strong>{data.illustrative_count}</strong> {data.illustrative_count === 1 ? "slot still shows" : "slots still show"} a stock
-                    photo, captioned on the site as “not a photo of Room B-301”. Upload a real photo and that caption disappears
-                    automatically.
+                    <strong>{data.illustrative_count}</strong> {t(data.illustrative_count === 1 ? "adminPagesStockSlotSingular" : "adminPagesStockSlotPlural")} {t("adminPagesStockWarning")}
                 </div>
             ) : null}
             {isLoading ? (
-                <Spinner label="Loading photo slots…" />
+                <Spinner label={t("adminPagesLoadingPhotoSlots")} />
             ) : (
                 <div className="grid gap-4">
                     {(data?.slots ?? []).map((slot: LabPhotoSlot) => (
@@ -193,6 +214,7 @@ export function LabPhotosPage() {
 
 // ---------------------------------------------------------------- publication import
 export function PublicationImportPage() {
+    const t = useAdminT();
     const qc = useQueryClient();
     const [author, setAuthor] = useState("Achmad Affandi");
     const [q, setQ] = useState("");
@@ -211,9 +233,9 @@ export function PublicationImportPage() {
         onSuccess: (data) => {
             setHits(data.items);
             setPicked({});
-            if (!data.items.length) toast.info("No papers matched. Try a different name or keyword.");
+            if (!data.items.length) toast.info(t("adminPagesNoPapersToast"));
         },
-        onError: (err) => toast.error(adminError(err, "Could not search for papers.")),
+        onError: (err) => toast.error(adminError(err, t("adminPagesSearchPapersError"))),
     });
 
     const doImport = useMutation({
@@ -222,12 +244,15 @@ export function PublicationImportPage() {
                 dois: Object.keys(picked).filter((d) => picked[d]),
             }),
         onSuccess: (res) => {
-            toast.success(res.message);
+            const summary = [`${res.imported.length} ${t("adminPagesImportedSummary")}`];
+            if (res.duplicates.length) summary.push(`${res.duplicates.length} ${t("adminPagesDuplicateSummary")}`);
+            if (res.failed.length) summary.push(`${res.failed.length} ${t("adminPagesFailedSummary")}`);
+            toast.success(summary.join(", "));
             setPicked({});
             void search.mutateAsync().catch(() => undefined);
             void qc.invalidateQueries({ queryKey: ["admin", "content", "publications"] });
         },
-        onError: (err) => toast.error(adminError(err, "Could not import those papers.")),
+        onError: (err) => toast.error(adminError(err, t("adminPagesImportPapersError"))),
     });
 
     const selectedCount = Object.values(picked).filter(Boolean).length;
@@ -235,19 +260,16 @@ export function PublicationImportPage() {
     return (
         <div data-testid="publication-import-page">
             <AdminPageHeader
-                title="Import publications"
-                description="Search Crossref by author or title and bring papers in with their confirmed DOI — no typing."
+                title={t("adminPagesImportPublications")}
+                description={t("adminPagesImportDescription")}
             />
 
             <AdminCard className="mb-4 p-4 sm:p-4 text-sm" testId="import-source-note">
-                Papers are read from <strong>Crossref</strong>, the registry that issues DOIs. SINTA blocks automated access and Google
-                Scholar has no public API, so neither can be read directly — but almost everything indexed there (IEEE, Elsevier,
-                Springer, Sewagati, Jurnal RESTI) is registered with Crossref. Imports arrive as <strong>drafts</strong> for you to check
-                before they appear on the site.
+                {t("adminPagesImportSourcePrefix")}<strong>Crossref</strong>{t("adminPagesImportSourceBody")}<strong>{t("adminPagesImportDrafts")}</strong>{t("adminPagesImportSourceSuffix")}
             </AdminCard>
 
             <AdminCard className="grid gap-3 p-4 sm:p-4 sm:grid-cols-[1.2fr_1.2fr_0.6fr_auto] sm:items-end">
-                <Labelled label="Author name">
+                <Labelled label={t("adminPagesAuthorName")}>
                     <input
                         value={author}
                         onChange={(e) => setAuthor(e.target.value)}
@@ -256,16 +278,16 @@ export function PublicationImportPage() {
                         data-testid="import-author-input"
                     />
                 </Labelled>
-                <Labelled label="Title or keyword (optional)">
+                <Labelled label={t("adminPagesTitleKeyword")}>
                     <input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="underwater acoustic network"
+                        placeholder={t("adminPagesKeywordPlaceholder")}
                         className="w-full rounded-lg border px-3 py-2 text-sm"
                         data-testid="import-query-input"
                     />
                 </Labelled>
-                <Labelled label="Published from">
+                <Labelled label={t("adminPagesPublishedFrom")}>
                     <input
                         value={yearFrom}
                         onChange={(e) => setYearFrom(e.target.value)}
@@ -282,7 +304,7 @@ export function PublicationImportPage() {
                     data-testid="import-search-button"
                 >
                     {search.isPending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Search className="h-4 w-4" aria-hidden="true" />}
-                    Search
+                    {t("adminSearch")}
                 </button>
             </AdminCard>
 
@@ -290,7 +312,7 @@ export function PublicationImportPage() {
                 <div className="mt-5">
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                         <p className="text-sm text-[var(--tnl-body)]" data-testid="import-result-count">
-                            {hits.length} {hits.length === 1 ? "paper" : "papers"} found
+                            {hits.length} {t(hits.length === 1 ? "adminPagesPaperSingular" : "adminPagesPaperPlural")} {t("adminPagesFound")}
                         </p>
                         <button
                             type="button"
@@ -304,7 +326,7 @@ export function PublicationImportPage() {
                             ) : (
                                 <Download className="h-4 w-4" aria-hidden="true" />
                             )}
-                            Import {selectedCount || ""} as draft
+                            {t("adminImport")} {selectedCount || ""} {t("adminPagesAsDraft")}
                         </button>
                     </div>
 
@@ -313,20 +335,20 @@ export function PublicationImportPage() {
                             <thead className="bg-[var(--tnl-surface-2)] text-left text-xs uppercase tracking-wide text-[var(--tnl-body)]">
                                 <tr>
                                     <th className="w-10 px-4 py-3" />
-                                    <th className="px-4 py-3">Paper</th>
-                                    <th className="w-24 px-4 py-3">Year</th>
-                                    <th className="w-28 px-4 py-3">Kind</th>
+                                    <th className="px-4 py-3">{t("adminPagesPaperColumn")}</th>
+                                    <th className="w-24 px-4 py-3">{t("adminPagesYearColumn")}</th>
+                                    <th className="w-28 px-4 py-3">{t("adminPagesKindColumn")}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {hits.length === 0 ? (
-                                    <EmptyRow colSpan={4} label="No papers matched that search." />
+                                    <EmptyRow colSpan={4} label={t("adminPagesNoPapers")} />
                                 ) : (
                                     hits.map((hit) => (
                                         <tr key={hit.doi} className="border-t" data-testid={`import-row-${hit.doi}`}>
                                             <td className="px-4 py-3 align-top">
                                                 <AdminSwitch
-                                                    label={`Select ${hit.title}`}
+                                                    label={`${t("adminPagesSelectPaper")} ${hit.title}`}
                                                     labelHidden
                                                     checked={Boolean(picked[hit.doi])}
                                                     disabled={hit.already_imported}
@@ -336,7 +358,7 @@ export function PublicationImportPage() {
                                             </td>
                                             <td className="px-4 py-3 align-top">
                                                 <p className="font-medium leading-snug">{hit.title}</p>
-                                                <p className="mt-0.5 text-xs text-[var(--tnl-body)]">{hit.authors || "Authors not listed"}</p>
+                                                <p className="mt-0.5 text-xs text-[var(--tnl-body)]">{hit.authors || t("adminPagesAuthorsMissing")}</p>
                                                 <p className="text-xs text-[var(--tnl-body)]">{hit.venue}</p>
                                                 <a
                                                     href={`https://doi.org/${hit.doi}`}
@@ -348,7 +370,7 @@ export function PublicationImportPage() {
                                                 </a>
                                                 {hit.already_imported ? (
                                                     <AdminStatusBadge variant="neutral" testId={`import-already-${hit.doi}`} className="ml-2">
-                                                        Already in library
+                                                        {t("adminPagesAlreadyImported")}
                                                     </AdminStatusBadge>
                                                 ) : null}
                                             </td>
@@ -364,7 +386,7 @@ export function PublicationImportPage() {
             ) : (
                 <AdminCard className="mt-6 flex items-center gap-3 px-5 py-8 text-sm">
                     <BookOpen className="h-5 w-5" aria-hidden="true" />
-                    Search for an author to see their registered papers.
+                    {t("adminPagesSearchPrompt")}
                 </AdminCard>
             )}
         </div>

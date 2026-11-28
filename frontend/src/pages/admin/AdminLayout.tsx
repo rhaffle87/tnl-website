@@ -21,6 +21,7 @@ import {
     Image,
     Inbox,
     KeyRound,
+    Layers,
     LayoutDashboard,
     Library,
     LifeBuoy,
@@ -80,6 +81,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Content & Editorial",
         items: [
             { to: "/admin/pages", label: "Pages", icon: FileStack, roles: ["super_admin", "editor"] },
+            { to: "/admin/content/collections", label: "Collections", icon: Layers, roles: ["super_admin", "editor", "contributor", "viewer"] },
             { to: "/admin/content/posts", label: "News", icon: Newspaper, roles: ["super_admin", "editor", "contributor", "viewer"] },
             { to: "/admin/content/members", label: "Members", icon: Users, roles: ["super_admin", "editor", "contributor", "viewer"] },
             { to: "/admin/content/partners", label: "Partners", icon: Handshake, roles: ["super_admin", "editor", "contributor", "viewer"] },
@@ -175,9 +177,6 @@ export default function AdminLayout() {
         drawerWasOpen.current = mobileOpen;
     }, [mobileOpen]);
 
-    // Skip the guard while the Google callback is still exchanging its session id.
-    const isAuthCallback = window.location.hash?.includes("session_id=");
-
     useEffect(() => {
         document.title = "TNL Studio";
     }, []);
@@ -240,8 +239,6 @@ export default function AdminLayout() {
             activeLink.scrollIntoView({ block: "nearest", behavior: "smooth" });
         }
     }, [location.pathname]);
-
-    if (isAuthCallback) return <Outlet />;
 
     if (isLoading) {
         return (
@@ -382,6 +379,7 @@ export default function AdminLayout() {
                                         {group.items.map(({ to, label, icon: Icon, end }) => {
                                             const active = end ? location.pathname === to : location.pathname.startsWith(to);
                                             const testId = `admin-nav-${label.toLowerCase().replace(/[^a-z]+/g, "-")}`;
+                                            const displayLabel = label === "Collections" ? t("adminCollectionsNav") : label;
                                             return (
                                                 <Link
                                                     key={to}
@@ -397,7 +395,7 @@ export default function AdminLayout() {
                                                     data-testid={testId}
                                                 >
                                                     <Icon className={`h-4 w-4 shrink-0 ${active ? "text-[var(--gsm-emerald)]" : "text-white/50"}`} aria-hidden="true" />
-                                                    <span className="truncate">{label}</span>
+                                                    <span className="truncate">{displayLabel}</span>
                                                 </Link>
                                             );
                                         })}

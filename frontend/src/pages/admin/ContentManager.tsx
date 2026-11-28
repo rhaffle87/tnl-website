@@ -13,6 +13,7 @@ import { useAdminT } from "@/lib/i18n/admin-i18n";
 import { AdminErrorBanner, AdminHeader, AdminLoadMore, ConfirmButton, Panel, StatusPill, adminError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { MEMBER_SOCIAL_PRESETS, type RepeaterFieldSpec, type PresetKeyConfig } from "@/components/admin/repeaters";
+import { CollectionsManager } from "@/components/admin/CollectionsManager";
 import type { ListResponse, QualityIssue } from "@/lib/types/types";
 
 export type FieldType =
@@ -352,6 +353,7 @@ export function toForm(row: Row, spec: ResourceSpec): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const field of spec.fields) {
         const value = row[field.key];
+        if (field.key === "whatsapp_group_url" && !Object.hasOwn(row, field.key)) continue;
         if (field.type === "tags") {
             out[field.key] = Array.isArray(value) ? value : (typeof value === "string" ? value.split(",").map((s) => s.trim()).filter(Boolean) : []);
         } else if (field.type === "media_list") {
@@ -363,7 +365,7 @@ export function toForm(row: Row, spec: ResourceSpec): Record<string, unknown> {
         } else if (field.type === "repeater" || field.type === "form_fields") {
             out[field.key] = Array.isArray(value) ? value : [];
         } else if (field.type === "json") {
-            out[field.key] = value ? JSON.stringify(value, null, 2) : "";
+            out[field.key] = value === undefined ? "" : JSON.stringify(value, null, 2);
         } else if (field.type === "checkbox") {
             out[field.key] = Boolean(value);
         } else if (field.type === "number") {
@@ -378,6 +380,7 @@ export function toForm(row: Row, spec: ResourceSpec): Record<string, unknown> {
 export function toPayload(form: Record<string, unknown>, spec: ResourceSpec): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const field of spec.fields) {
+        if (!Object.hasOwn(form, field.key)) continue;
         const value = form[field.key];
         if (field.type === "tags") {
             const list = Array.isArray(value)
@@ -570,6 +573,7 @@ export default function ContentManager() {
         return <Navigate to={`/admin/content/${resource}/${legacyEditId}`} replace />;
     }
 
+    if (resource === "collections") return <CollectionsManager />;
     if (!spec) {
         return (
             <div data-testid="content-unknown">

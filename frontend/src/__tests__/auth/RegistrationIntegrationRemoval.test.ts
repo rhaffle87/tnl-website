@@ -1,6 +1,11 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { render, screen } from "@testing-library/react";
+import { FormFieldsBuilder } from "@/components/admin/repeaters/FormFieldsBuilder";
+import { AdminLocaleProvider } from "@/lib/i18n/admin-i18n";
+import { LocaleContext, STRINGS } from "@/lib/i18n/i18n";
 
 const read = (relative: string) => readFileSync(path.resolve(process.cwd(), relative), "utf8");
 
@@ -21,12 +26,17 @@ describe("registration integration removal copy", () => {
         expect(legal).toContain('data-testid="terms-toc"');
     });
 
-    it("describes registration form answers as database records available through CMS and exports", () => {
+    it.each(["en", "id"] as const)("describes rendered registration answers as database records available through CMS and exports in %s", (locale) => {
         const builder = read("src/components/admin/repeaters/FormFieldsBuilder.tsx");
         expect(builder.match(/Google Sheets|Apps Script|webhook/i)).toBeNull();
-        expect(builder).toContain("Answers are stored in the database");
-        expect(builder).toContain("managed through the CMS");
-        expect(builder).toContain("CSV/XLSX exports");
+        render(createElement(LocaleContext.Provider, {
+            value: { locale, setLocale: () => {}, t: (key) => STRINGS[locale][key] },
+        }, createElement(AdminLocaleProvider, null,
+            createElement(FormFieldsBuilder, { value: [], onChange: () => {} }))));
+        const help = screen.getByText(locale === "en" ? /Answers are stored in the database/ : /Jawaban disimpan di basis data/);
+        expect(help).toHaveTextContent(locale === "en" ? "managed through the CMS" : "dikelola melalui CMS");
+        expect(help).toHaveTextContent(locale === "en" ? "manual CSV/XLSX exports" : "ekspor CSV/XLSX manual");
+        expect(help.textContent?.match(/Google Sheets|Apps Script|webhook/i)).toBeNull();
     });
 
     it("keeps the backend test description aligned with database storage and exports", () => {

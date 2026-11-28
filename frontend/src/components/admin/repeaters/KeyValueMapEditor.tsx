@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { JsonValueField } from "@/components/admin/JsonValueField";
+import { useAdminT } from "@/lib/i18n/admin-i18n";
 import {
     Linkedin,
     Instagram,
@@ -39,7 +41,8 @@ export const MEMBER_SOCIAL_PRESETS: PresetKeyConfig[] = [
 export interface KeyValueMapEditorProps {
     label?: string;
     value: Record<string, unknown> | string | null | undefined;
-    onChange: (val: Record<string, string>) => void;
+    onChange: (val: Record<string, unknown>) => void;
+    onValidityChange?: (valid: boolean) => void;
     presetKeys?: PresetKeyConfig[];
     help?: string;
     testId?: string;
@@ -80,35 +83,25 @@ export function KeyValueMapEditor({
     testId = "key-value-editor",
     keyPlaceholder = "Property key",
     valuePlaceholder = "Property value",
+    onValidityChange,
 }: KeyValueMapEditorProps) {
+    const t = useAdminT();
     const [rawMode, setRawMode] = useState(false);
     const [rawJsonText, setRawJsonText] = useState("");
     const [jsonError, setJsonError] = useState<string | null>(null);
 
-    // Normalize value into a clean Record<string, string>
-    const normalizedMap: Record<string, string> = (() => {
+    const [invalidKeys, setInvalidKeys] = useState<string[]>([]);
+    const normalizedMap: Record<string, unknown> = (() => {
         if (!value) return {};
         if (typeof value === "string") {
             try {
                 const parsed = JSON.parse(value);
-                if (typeof parsed === "object" && parsed !== null) {
-                    const res: Record<string, string> = {};
-                    for (const [k, v] of Object.entries(parsed)) {
-                        if (v !== null && v !== undefined) res[k] = String(v);
-                    }
-                    return res;
-                }
+                if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) return parsed;
             } catch {
                 return {};
             }
         }
-        if (typeof value === "object") {
-            const res: Record<string, string> = {};
-            for (const [k, v] of Object.entries(value)) {
-                if (v !== null && v !== undefined) res[k] = String(v);
-            }
-            return res;
-        }
+        if (typeof value === "object" && !Array.isArray(value)) return value;
         return {};
     })();
 
@@ -117,20 +110,18 @@ export function KeyValueMapEditor({
         ? Object.keys(normalizedMap).filter((k) => !presetKeys.some((p) => p.key === k))
         : Object.keys(normalizedMap);
 
-    const updateKey = (key: string, val: string) => {
+    const updateKey = (key: string, val: unknown) => {
         const next = { ...normalizedMap };
-        const trimmed = val.trim();
-        if (!trimmed) {
-            delete next[key];
-        } else {
-            next[key] = trimmed;
-        }
+        next[key] = val;
         onChange(next);
     };
 
     const removeCustomKey = (key: string) => {
         const next = { ...normalizedMap };
         delete next[key];
+        const remaining = invalidKeys.filter((k) => k !== key);
+        setInvalidKeys(remaining);
+        onValidityChange?.(remaining.length === 0);
         onChange(next);
     };
 
@@ -145,16 +136,13 @@ export function KeyValueMapEditor({
     };
 
     const renameCustomKey = (oldKey: string, newKeyRaw: string) => {
-        const newKey = newKeyRaw.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "_");
+        const newKey = newKeyRaw.trim();
         if (!newKey || newKey === oldKey) return;
-        const next: Record<string, string> = {};
-        for (const [k, v] of Object.entries(normalizedMap)) {
-            if (k === oldKey) {
-                next[newKey] = v;
-            } else {
-                next[k] = v;
-            }
+        if (Object.hasOwn(normalizedMap, newKey)) {
+            setJsonError(t("adminPropsKeyExists"));
+            return;
         }
+        const next = Object.fromEntries(Object.entries(normalizedMap).map(([k, v]) => [k === oldKey ? newKey : k, v]));
         onChange(next);
     };
 
@@ -171,13 +159,9 @@ export function KeyValueMapEditor({
                     setJsonError("Raw JSON must be an object (e.g. { ... })");
                     return;
                 }
-                const clean: Record<string, string> = {};
-                for (const [k, v] of Object.entries(parsed)) {
-                    if (v !== null && v !== undefined && String(v).trim()) {
-                        clean[k] = String(v).trim();
-                    }
-                }
-                onChange(clean);
+                onChange(parsed);
+                onValidityChange?.(true);
+                setInvalidKeys([]);
                 setJsonError(null);
                 setRawMode(false);
             } catch (err: unknown) {
@@ -192,18 +176,15 @@ export function KeyValueMapEditor({
             const parsed = text.trim() ? JSON.parse(text) : {};
             if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
                 setJsonError(null);
-                const clean: Record<string, string> = {};
-                for (const [k, v] of Object.entries(parsed)) {
-                    if (v !== null && v !== undefined && String(v).trim()) {
-                        clean[k] = String(v).trim();
-                    }
-                }
-                onChange(clean);
+                onChange(parsed);
+                onValidityChange?.(true);
             } else {
                 setJsonError("Must be a JSON object");
+                onValidityChange?.(false);
             }
         } catch (err: unknown) {
             setJsonError((err as Error).message);
+            onValidityChange?.(false);
         }
     };
 
@@ -235,6 +216,7 @@ export function KeyValueMapEditor({
                         value={rawJsonText}
                         onChange={(e) => handleRawTextChange(e.target.value)}
                         rows={7}
+                        aria-label={label ? `${label} JSON` : "JSON"}
                         aria-invalid={jsonError ? true : undefined}
                         aria-describedby={jsonError ? `${testId}-raw-error` : undefined}
                         className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
@@ -255,7 +237,7 @@ export function KeyValueMapEditor({
                     {presetKeys && presetKeys.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {presetKeys.map((item) => {
-                                const currentVal = normalizedMap[item.key] || "";
+                                const currentVal = typeof normalizedMap[item.key] === "string" ? normalizedMap[item.key] as string : "";
                                 const hasValue = Boolean(currentVal.trim());
                                 const isInvalidUrl =
                                     item.validateUrl &&
@@ -276,6 +258,7 @@ export function KeyValueMapEditor({
                                             )}
                                         </div>
                                         <input
+                                            aria-label={item.label}
                                             type="text"
                                             value={currentVal}
                                             onChange={(e) => updateKey(item.key, e.target.value)}
@@ -312,19 +295,18 @@ export function KeyValueMapEditor({
                                             defaultValue={keyName}
                                             onBlur={(e) => renameCustomKey(keyName, e.target.value)}
                                             placeholder={keyPlaceholder}
+                                            aria-label={`${keyPlaceholder}: ${keyName}`}
                                             className="w-1/3 rounded-lg border px-2.5 py-1.5 font-mono text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                                             style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }}
                                             data-testid={`${testId}-key-${keyName}`}
                                         />
-                                        <input
-                                            type="text"
-                                            value={normalizedMap[keyName] || ""}
-                                            onChange={(e) => updateKey(keyName, e.target.value)}
-                                            placeholder={valuePlaceholder}
-                                            className="flex-1 rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
-                                            style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }}
-                                            data-testid={`${testId}-val-${keyName}`}
-                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <JsonValueField value={normalizedMap[keyName]} onChange={(next) => updateKey(keyName, next)} label={`${valuePlaceholder}: ${keyName}`} testId={`${testId}-val-${keyName}`} onValidityChange={(valid) => {
+                                                const next = valid ? invalidKeys.filter((k) => k !== keyName) : [...new Set([...invalidKeys, keyName])];
+                                                setInvalidKeys(next);
+                                                onValidityChange?.(next.length === 0);
+                                            }} />
+                                        </div>
                                         <button
                                             type="button"
                                             onClick={() => removeCustomKey(keyName)}

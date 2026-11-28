@@ -22,6 +22,8 @@ import {
     GraduationCap,
 } from "lucide-react";
 import type { FormField } from "@/lib/types/types";
+import { useAdminT, type AdminStringKey } from "@/lib/i18n/admin-i18n";
+import { ADMIN_BUILDER_DEFAULT_KEYS } from "@/lib/i18n/admin-builders-strings";
 import { AdminSelect, AdminSwitch } from "@/components/admin/controls";
 
 export interface FormFieldsBuilderProps {
@@ -32,15 +34,15 @@ export interface FormFieldsBuilderProps {
     testId?: string;
 }
 
-const FIELD_TYPES: { value: string; label: string; icon: typeof Type }[] = [
-    { value: "text", label: "Short Text", icon: Type },
-    { value: "textarea", label: "Long Text / Paragraph", icon: AlignLeft },
-    { value: "email", label: "Email Address", icon: Mail },
-    { value: "nim", label: "NRP / NIM (Student ID)", icon: GraduationCap },
-    { value: "tel", label: "Phone / WhatsApp", icon: Phone },
-    { value: "select", label: "Dropdown Select", icon: ListFilter },
-    { value: "checkbox", label: "Checkbox (Yes / No)", icon: CheckSquare },
-    { value: "file", label: "File Upload (PDF / Image)", icon: UploadCloud },
+const FIELD_TYPES: { value: string; labelKey: AdminStringKey; icon: typeof Type }[] = [
+    { value: "text", labelKey: "adminBuilderTypeText", icon: Type },
+    { value: "textarea", labelKey: "adminBuilderTypeTextarea", icon: AlignLeft },
+    { value: "email", labelKey: "adminBuilderTypeEmail", icon: Mail },
+    { value: "nim", labelKey: "adminBuilderTypeStudent", icon: GraduationCap },
+    { value: "tel", labelKey: "adminBuilderPhone", icon: Phone },
+    { value: "select", labelKey: "adminBuilderTypeSelect", icon: ListFilter },
+    { value: "checkbox", labelKey: "adminBuilderTypeCheckbox", icon: CheckSquare },
+    { value: "file", labelKey: "adminBuilderTypeFile", icon: UploadCloud },
 ];
 
 function deriveKey(label: string): string {
@@ -49,16 +51,24 @@ function deriveKey(label: string): string {
 }
 
 export function FormFieldsBuilder({
-    label = "Registration Form Fields",
+    label,
     value,
     onChange,
-    help = "Configure questions asked during event registration. Answers are stored in the database, managed through the CMS, and available in manual CSV/XLSX exports.",
+    help,
     testId = "form-fields-builder",
 }: FormFieldsBuilderProps) {
+    const t = useAdminT();
+    const resolveCopy = (text: string): string => {
+        const key = Object.prototype.hasOwnProperty.call(ADMIN_BUILDER_DEFAULT_KEYS, text)
+            ? ADMIN_BUILDER_DEFAULT_KEYS[text as keyof typeof ADMIN_BUILDER_DEFAULT_KEYS]
+            : undefined;
+        return key ? t(key) : text;
+    };
+    const resolvedHelp = help === undefined ? t("adminBuilderFormHelp") : resolveCopy(help);
     const [rawMode, setRawMode] = useState(false);
     const [previewMode, setPreviewMode] = useState(false);
     const [rawJsonText, setRawJsonText] = useState("");
-    const [jsonError, setJsonError] = useState<string | null>(null);
+    const [jsonError, setJsonError] = useState<AdminStringKey | null>(null);
     const [collapsedMap, setCollapsedMap] = useState<Record<number, boolean>>({});
     const [unlockedKeys, setUnlockedKeys] = useState<Record<number, boolean>>({});
 
@@ -91,7 +101,7 @@ export function FormFieldsBuilder({
         const count = fields.length + 1;
         const newField: FormField = {
             type: "text",
-            label: `Pertanyaan Baru ${count}`,
+            label: t("adminBuilderNewQuestion").replace("{number}", String(count)),
             required: false,
             options: [],
             show_if_field: null,
@@ -104,7 +114,7 @@ export function FormFieldsBuilder({
         const orig = fields[idx];
         const clone: FormField = {
             ...orig,
-            label: `${orig.label} (Copy)`,
+            label: `${orig.label} ${t("adminBuilderCopySuffix")}`,
             options: [...(orig.options || [])],
         };
         const next = [...fields];
@@ -138,6 +148,7 @@ export function FormFieldsBuilder({
     const addOption = (idx: number) => {
         const f = fields[idx];
         const opts = [...(f.options || [])];
+        // Option text becomes submitted schema data; retain the legacy default value.
         opts.push(`Pilihan ${opts.length + 1}`);
         updateField(idx, { options: opts });
     };
@@ -166,14 +177,14 @@ export function FormFieldsBuilder({
             try {
                 const parsed = rawJsonText.trim() ? JSON.parse(rawJsonText) : [];
                 if (!Array.isArray(parsed)) {
-                    setJsonError("Form fields must be an array of questions (e.g. [ { type, label, ... } ])");
+                    setJsonError("adminBuilderFormArray");
                     return;
                 }
                 onChange(parsed);
                 setJsonError(null);
                 setRawMode(false);
-            } catch (err: unknown) {
-                setJsonError((err as Error).message || "Invalid JSON syntax");
+            } catch {
+                setJsonError("adminBuilderInvalidJson");
             }
         }
     };
@@ -186,10 +197,10 @@ export function FormFieldsBuilder({
                 setJsonError(null);
                 onChange(parsed);
             } else {
-                setJsonError("Must be a JSON array of questions");
+                setJsonError("adminBuilderJsonQuestionsArray");
             }
-        } catch (err: unknown) {
-            setJsonError((err as Error).message);
+        } catch {
+            setJsonError("adminBuilderInvalidJson");
         }
     };
 
@@ -199,12 +210,12 @@ export function FormFieldsBuilder({
             <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5" style={{ borderColor: "var(--tnl-border)" }}>
                 <div>
                     <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-semibold tracking-tight">{label}</h4>
+                        <h4 className="text-sm font-semibold tracking-tight">{label === undefined ? t("adminBuilderFormLabel") : resolveCopy(label)}</h4>
                         <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ backgroundColor: "var(--tnl-bg)", color: "var(--tnl-gold)" }}>
-                            {fields.length} {fields.length === 1 ? "question" : "questions"}
+                            {fields.length} {t(fields.length === 1 ? "adminBuilderQuestion" : "adminBuilderQuestions")}
                         </span>
                     </div>
-                    {help && <p className="text-xs mt-0.5" style={{ color: "var(--tnl-tan-text)" }}>{help}</p>}
+                    {resolvedHelp && <p className="text-xs mt-0.5" style={{ color: "var(--tnl-tan-text)" }}>{resolvedHelp}</p>}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -217,7 +228,7 @@ export function FormFieldsBuilder({
                             data-testid={`${testId}-preview-toggle`}
                         >
                             {previewMode ? <EyeOff className="h-3.5 w-3.5" aria-hidden="true" /> : <Eye className="h-3.5 w-3.5" aria-hidden="true" />}
-                            <span>{previewMode ? "Close Preview" : "Preview Form"}</span>
+                            <span>{t(previewMode ? "adminBuilderClosePreview" : "adminBuilderPreviewForm")}</span>
                         </button>
                     )}
                     <button
@@ -228,7 +239,7 @@ export function FormFieldsBuilder({
                         data-testid={`${testId}-raw-toggle`}
                     >
                         <Code className="h-3.5 w-3.5" aria-hidden="true" />
-                        <span>{rawMode ? "Visual Editor" : "</> Raw JSON"}</span>
+                        <span>{t(rawMode ? "adminBuilderVisualEditor" : "adminBuilderRawJson")}</span>
                     </button>
                 </div>
             </div>
@@ -238,19 +249,19 @@ export function FormFieldsBuilder({
                 <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }} data-testid={`${testId}-preview-pane`}>
                     <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: "var(--tnl-border)" }}>
                         <span className="text-xs font-semibold uppercase tracking-wider text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)]">
-                            Pratinjau Formulir Pendaftar (Read-Only)
+                            {t("adminBuilderPreviewHeading")}
                         </span>
-                        <span className="text-[11px] opacity-60">Sesuai tampilan di RegistrationDialog</span>
+                        <span className="text-[11px] opacity-60">{t("adminBuilderPreviewHint")}</span>
                     </div>
 
                     {fields.length === 0 ? (
-                        <p className="text-xs italic py-4 text-center opacity-60">Belum ada pertanyaan formulir.</p>
+                        <p className="text-xs italic py-4 text-center opacity-60">{t("adminBuilderNoQuestions")}</p>
                     ) : (
                         <div className="space-y-3.5 max-w-xl mx-auto py-2">
                             {fields.map((f, i) => (
                                 <div key={i} className="space-y-1.5">
                                     <label className="block text-xs font-medium">
-                                        <span>{f.label || `Pertanyaan #${i + 1}`}</span>
+                                        <span>{f.label || t("adminBuilderPreviewQuestion").replace("{number}", String(i + 1))}</span>
                                         {f.required && <span className="text-rose-500 ml-1">*</span>}
                                     </label>
 
@@ -258,10 +269,10 @@ export function FormFieldsBuilder({
                                         public registration form renders, so it must not adopt the
                                         admin house style (AdminSelect / AdminSwitch). */}
                                     {f.type === "textarea" ? (
-                                        <textarea rows={3} disabled placeholder="Jawaban panjang Anda..." className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} />
+                                        <textarea rows={3} disabled placeholder={t("adminBuilderLongAnswer")} className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} />
                                     ) : f.type === "select" ? (
                                         <select disabled className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}>
-                                            <option>-- Pilih opsi --</option>
+                                            <option>{t("adminBuilderChooseOption")}</option>
                                             {(f.options || []).map((o, oi) => (
                                                 <option key={oi}>{o}</option>
                                             ))}
@@ -269,15 +280,15 @@ export function FormFieldsBuilder({
                                     ) : f.type === "checkbox" ? (
                                         <label className="flex items-center gap-2 text-xs py-1 cursor-not-allowed opacity-75">
                                             <input type="checkbox" disabled className="rounded border" />
-                                            <span>Ya, saya menyetujui / mengisi poin ini</span>
+                                            <span>{t("adminBuilderAgree")}</span>
                                         </label>
                                     ) : f.type === "file" ? (
                                         <div className="rounded-lg border border-dashed p-3 text-center text-xs opacity-75 cursor-not-allowed" style={{ borderColor: "var(--tnl-border)", backgroundColor: "var(--tnl-card-bg)" }}>
                                             <UploadCloud className="mx-auto h-5 w-5 mb-1 opacity-50" aria-hidden="true" />
-                                            <span>Klik atau seret file PDF / Foto (Maks 10MB)</span>
+                                            <span>{t("adminBuilderFileHint")}</span>
                                         </div>
                                     ) : (
-                                        <input type="text" disabled placeholder={f.type === "email" ? "nama@domain.com" : f.type === "nim" ? "Contoh: 5024201001" : "Jawaban Anda..."} className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} />
+                                        <input type="text" disabled placeholder={t(f.type === "email" ? "adminBuilderPreviewEmail" : f.type === "nim" ? "adminBuilderPreviewStudent" : "adminBuilderAnswer")} className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} />
                                     )}
                                 </div>
                             ))}
@@ -303,7 +314,7 @@ export function FormFieldsBuilder({
                     {jsonError && (
                         <div id={`${testId}-raw-error`} role="alert" className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                            <span>{jsonError}</span>
+                            <span>{t(jsonError)}</span>
                         </div>
                     )}
                 </div>
@@ -315,7 +326,7 @@ export function FormFieldsBuilder({
                     {fields.length === 0 ? (
                         <div className="rounded-lg border border-dashed py-8 text-center text-xs" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-tan-text)" }}>
                             <HelpCircle className="mx-auto h-6 w-6 opacity-40 mb-2" aria-hidden="true" />
-                            <p>Belum ada pertanyaan formulir. Klik tombol di bawah untuk menambahkan.</p>
+                            <p>{t("adminBuilderEmptyQuestions")}</p>
                         </div>
                     ) : (
                         fields.map((field, idx) => {
@@ -346,11 +357,11 @@ export function FormFieldsBuilder({
                                             </span>
                                             <TypeIcon className="h-3.5 w-3.5 text-neutral-400 shrink-0" aria-hidden="true" />
                                             <span className="text-xs font-semibold truncate max-w-[240px] md:max-w-[380px]" data-testid={`${testId}-question-title-${idx}`}>
-                                                {field.label || `Untitled Question #${idx + 1}`}
+                                                {field.label || t("adminBuilderUntitledQuestion").replace("{number}", String(idx + 1))}
                                             </span>
                                             {field.required && (
                                                 <span className="rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
-                                                    Wajib
+                                                    {t("adminRequired")}
                                                 </span>
                                             )}
                                         </div>
@@ -361,8 +372,8 @@ export function FormFieldsBuilder({
                                                 onClick={() => moveQuestion(idx, "up")}
                                                 disabled={idx === 0}
                                                 className="rounded p-1 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-20"
-                                                title="Move up"
-                                                aria-label="Move question up"
+                                                title={t("adminBuilderMoveUp")}
+                                                aria-label={t("adminBuilderMoveQuestionUp")}
                                                 data-testid={`${testId}-question-up-${idx}`}
                                             >
                                                 <ChevronUp className="h-4 w-4" aria-hidden="true" />
@@ -372,8 +383,8 @@ export function FormFieldsBuilder({
                                                 onClick={() => moveQuestion(idx, "down")}
                                                 disabled={idx === fields.length - 1}
                                                 className="rounded p-1 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-20"
-                                                title="Move down"
-                                                aria-label="Move question down"
+                                                title={t("adminBuilderMoveDown")}
+                                                aria-label={t("adminBuilderMoveQuestionDown")}
                                                 data-testid={`${testId}-question-down-${idx}`}
                                             >
                                                 <ChevronDown className="h-4 w-4" aria-hidden="true" />
@@ -382,8 +393,8 @@ export function FormFieldsBuilder({
                                                 type="button"
                                                 onClick={() => duplicateQuestion(idx)}
                                                 className="rounded p-1 text-neutral-400 hover:text-[var(--gsm-primary)] hover:bg-[var(--gsm-primary-soft)] dark:hover:text-[var(--gsm-accent)]"
-                                                title="Duplicate question"
-                                                aria-label="Duplicate question"
+                                                title={t("adminBuilderDuplicateQuestion")}
+                                                aria-label={t("adminBuilderDuplicateQuestion")}
                                                 data-testid={`${testId}-question-dup-${idx}`}
                                             >
                                                 <Copy className="h-3.5 w-3.5" aria-hidden="true" />
@@ -392,8 +403,8 @@ export function FormFieldsBuilder({
                                                 type="button"
                                                 onClick={() => removeQuestion(idx)}
                                                 className="rounded p-1 text-neutral-400 hover:text-rose-600 hover:bg-rose-500/10"
-                                                title="Delete question"
-                                                aria-label="Delete question"
+                                                title={t("adminBuilderDeleteQuestion")}
+                                                aria-label={t("adminBuilderDeleteQuestion")}
                                                 data-testid={`${testId}-question-remove-${idx}`}
                                             >
                                                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -402,8 +413,8 @@ export function FormFieldsBuilder({
                                                 type="button"
                                                 onClick={() => toggleCollapse(idx)}
                                                 className="rounded p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 ml-1"
-                                                title={isCollapsed ? "Expand" : "Collapse"}
-                                                aria-label={isCollapsed ? "Expand question" : "Collapse question"}
+                                                title={t(isCollapsed ? "adminBuilderExpand" : "adminBuilderCollapse")}
+                                                aria-label={t(isCollapsed ? "adminBuilderExpandQuestion" : "adminBuilderCollapseQuestion")}
                                             >
                                                 {isCollapsed ? (
                                                     <ChevronDown className="h-4 w-4" aria-hidden="true" />
@@ -421,13 +432,13 @@ export function FormFieldsBuilder({
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                                 <div className="md:col-span-2 space-y-1">
                                                     <label className="block text-xs font-medium">
-                                                        Label Pertanyaan
+                                                        {t("adminBuilderQuestionLabel")}
                                                     </label>
                                                     <input
                                                         type="text"
                                                         value={field.label}
                                                         onChange={(e) => updateField(idx, { label: e.target.value })}
-                                                        placeholder="Contoh: Nama Lengkap / Bukti Follow Instagram"
+                                                        placeholder={t("adminBuilderQuestionExample")}
                                                         className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                                                         style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
                                                         data-testid={`${testId}-label-${idx}`}
@@ -437,23 +448,23 @@ export function FormFieldsBuilder({
                                                 <div className="space-y-1">
                                                     <div className="flex items-center justify-between">
                                                         <label className="block text-xs font-medium">
-                                                            Field Key (Slug)
+                                                            {t("adminBuilderFieldKey")}
                                                         </label>
                                                         <button
                                                             type="button"
                                                             onClick={() => toggleLockKey(idx)}
                                                             className="flex items-center gap-1 text-[11px] text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)] hover:underline"
-                                                            title={isKeyUnlocked ? "Kunci slug" : "Buka kunci untuk ubah slug"}
+                                                            title={t(isKeyUnlocked ? "adminBuilderLockSlug" : "adminBuilderUnlockSlug")}
                                                         >
                                                             {isKeyUnlocked ? (
                                                                 <>
                                                                     <Unlock className="h-3 w-3" aria-hidden="true" />
-                                                                    <span>Unlocked</span>
+                                                                    <span>{t("adminBuilderUnlocked")}</span>
                                                                 </>
                                                             ) : (
                                                                 <>
                                                                     <Lock className="h-3 w-3" aria-hidden="true" />
-                                                                    <span>Locked</span>
+                                                                    <span>{t("adminBuilderLocked")}</span>
                                                                 </>
                                                             )}
                                                         </button>
@@ -474,7 +485,7 @@ export function FormFieldsBuilder({
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
                                                 <div className="space-y-1 md:col-span-2">
                                                     <label className="block text-xs font-medium">
-                                                        Tipe Input Pendaftar
+                                                        {t("adminBuilderInputType")}
                                                     </label>
                                                     <AdminSelect
                                                         value={field.type}
@@ -482,9 +493,9 @@ export function FormFieldsBuilder({
                                                         className="text-xs"
                                                         data-testid={`${testId}-type-${idx}`}
                                                     >
-                                                        {FIELD_TYPES.map((t) => (
-                                                            <option key={t.value} value={t.value}>
-                                                                {t.label}
+                                                        {FIELD_TYPES.map((fieldType) => (
+                                                            <option key={fieldType.value} value={fieldType.value}>
+                                                                {t(fieldType.labelKey)}
                                                             </option>
                                                         ))}
                                                     </AdminSelect>
@@ -492,8 +503,8 @@ export function FormFieldsBuilder({
 
                                                 <div className="pt-4">
                                                     <AdminSwitch
-                                                        label="Wajib Diisi (Required)"
-                                                        description="Pendaftar tidak bisa mengirim formulir tanpa mengisi pertanyaan ini."
+                                                        label={t("adminBuilderRequiredInput")}
+                                                        description={t("adminBuilderRequiredHelp")}
                                                         checked={Boolean(field.required)}
                                                         onCheckedChange={(next) => updateField(idx, { required: next })}
                                                         testId={`${testId}-required-${idx}`}
@@ -506,7 +517,7 @@ export function FormFieldsBuilder({
                                                 <div className="rounded-lg border p-3 space-y-2.5" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} data-testid={`${testId}-options-pane-${idx}`}>
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-xs font-semibold uppercase tracking-wider text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)]">
-                                                            Pilihan Dropdown (Options)
+                                                            {t("adminBuilderDropdownOptions")}
                                                         </span>
                                                         <button
                                                             type="button"
@@ -515,12 +526,12 @@ export function FormFieldsBuilder({
                                                             data-testid={`${testId}-add-option-${idx}`}
                                                         >
                                                             <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                                                            <span>+ Tambah Opsi</span>
+                                                            <span>{t("adminBuilderAddOption")}</span>
                                                         </button>
                                                     </div>
 
                                                     {(field.options || []).length === 0 ? (
-                                                        <p className="text-xs italic opacity-60">Belum ada pilihan. Klik + Tambah Opsi di atas.</p>
+                                                        <p className="text-xs italic opacity-60">{t("adminBuilderNoOptions")}</p>
                                                     ) : (
                                                         <div className="space-y-1.5">
                                                             {(field.options || []).map((opt, optIdx) => (
@@ -532,7 +543,7 @@ export function FormFieldsBuilder({
                                                                         type="text"
                                                                         value={opt}
                                                                         onChange={(e) => updateOption(idx, optIdx, e.target.value)}
-                                                                        placeholder={`Opsi #${optIdx + 1}`}
+                                                                        placeholder={t("adminBuilderOptionPlaceholder").replace("{number}", String(optIdx + 1))}
                                                                         className="flex-1 rounded-md border px-2.5 py-1 text-xs outline-none focus:ring-1 focus:ring-[var(--gsm-emerald)] focus:border-[var(--gsm-emerald)]"
                                                                         style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }}
                                                                         data-testid={`${testId}-option-${idx}-${optIdx}`}
@@ -541,7 +552,7 @@ export function FormFieldsBuilder({
                                                                         type="button"
                                                                         onClick={() => removeOption(idx, optIdx)}
                                                                         className="rounded p-1 text-neutral-400 hover:text-rose-600 transition-colors"
-                                                                        aria-label={`Remove option ${opt}`}
+                                                                        aria-label={t("adminBuilderRemoveOption").replace("{option}", opt)}
                                                                         data-testid={`${testId}-option-remove-${idx}-${optIdx}`}
                                                                     >
                                                                         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -568,7 +579,7 @@ export function FormFieldsBuilder({
                         data-testid={`${testId}-add-question`}
                     >
                         <Plus className="h-4 w-4" aria-hidden="true" />
-                        <span>+ Tambah Pertanyaan Formulir</span>
+                        <span>{t("adminBuilderAddQuestion")}</span>
                     </button>
                 </div>
             )}

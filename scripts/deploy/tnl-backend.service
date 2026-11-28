@@ -1,6 +1,7 @@
 [Unit]
 Description=TNL Studio Backend API
-After=network.target
+After=network.target redis-server.service
+Wants=redis-server.service
 
 [Service]
 Type=simple

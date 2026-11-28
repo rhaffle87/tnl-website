@@ -6,6 +6,7 @@ Production MongoDB (CT 116 / 100.111.32.102) is NEVER connected to or modified.
 """
 
 import asyncio
+from unittest.mock import AsyncMock
 import os
 import sys
 from datetime import datetime, timezone
@@ -14,8 +15,16 @@ from uuid import uuid4
 
 # Test-only signing value generated at runtime: never committed, never used in production.
 os.environ.setdefault("UPLOAD_SIGNING_SECRET", "pytest-upload-" + uuid4().hex)
+os.environ["MONGO_URL"] = "mongodb://127.0.0.1:1"
+os.environ["DB_NAME"] = "tnl_pytest_only"
+os.environ["SEED_ADMIN_EMAIL"] = "admin@its.ac.id"
+os.environ["SEED_ADMIN_PASSWORD"] = "TnlStudio2026!"
+os.environ["WORKFLOW_WORKER_ENABLED"] = "0"
+os.environ["SMTP_HOST"] = ""
 
 import httpx
+import fakeredis
+import fakeredis.aioredis
 import pytest
 import pytest_asyncio
 from mongomock_motor import AsyncMongoMockClient
@@ -54,6 +63,9 @@ for mod in (
     if hasattr(mod, "client"):
         setattr(mod, "client", _MOCK_CLIENT)
 
+import lib.cache  # noqa: E402
+import lib.rate_limit  # noqa: E402
+
 SEED_PASSWORD = os.environ.get("SEED_ADMIN_PASSWORD", "ChangeMe2026!")
 ADMIN_EMAILS = [
     "admin@its.ac.id",
@@ -62,11 +74,29 @@ ADMIN_EMAILS = [
 ]
 
 
-@pytest.fixture(autouse=True)
-def reset_rate_limits():
-    """Clear in-memory rate limit buckets before every test."""
-    if hasattr(lib.auth, "_buckets"):
-        lib.auth._buckets.clear()
+@pytest_asyncio.fixture(autouse=True)
+async def reset_rate_limits(monkeypatch):
+    """Execute the production Lua script and public cache against a fresh isolated Redis store per test."""
+    server = fakeredis.FakeServer()
+    monkeypatch.setattr(lib.rate_limit, "_limiter", None)
+    monkeypatch.setattr(lib.cache, "_cache", None)
+    monkeypatch.setattr(
+        lib.rate_limit.redis,
+        "from_url",
+        lambda *args, **kwargs: fakeredis.aioredis.FakeRedis(
+            server=server, decode_responses=True
+        ),
+    )
+    monkeypatch.setattr(
+        lib.cache.redis,
+        "from_url",
+        lambda *args, **kwargs: fakeredis.aioredis.FakeRedis(
+            server=server, decode_responses=True
+        ),
+    )
+    yield server
+    await lib.rate_limit.close_rate_limiter()
+    await lib.cache.close_public_cache()
 
 
 async def _init_test_database():
@@ -75,6 +105,7 @@ async def _init_test_database():
     await lib.db.ensure_indexes()
 
     # Seed core data
+    seed._store_remote_image = AsyncMock(return_value=None)
     await seed.seed_settings()
     await seed.seed_admin()
     await seed.seed_pages()

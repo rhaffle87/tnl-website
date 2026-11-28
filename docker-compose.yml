@@ -3,7 +3,7 @@
 # Admin sign-in:         http://localhost:3000/admin/login  (see README)
 services:
   mongodb:
-    image: mongo:7
+    image: mongo:7@sha256:41e8195b2791692695e1dc9bd21cd51d0a3af05fff8ace9304a5c1acf94f1ae1
     restart: unless-stopped
     volumes:
       - mongo-data:/data/db
@@ -13,6 +13,18 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine@sha256:7f7d30b7fdd09467bac58198a1f166dd69789d348d4fe859cccb20e0cf287fbe
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -21,19 +33,30 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     # backend/.env is the single source of truth (see README). Only container-specific
     # values are pinned here; do NOT re-declare ${VAR:-default} entries, because variables
     # already present in the environment win over load_dotenv() and would silently shadow
     # backend/.env (e.g. COOKIE_SECURE, SEED_ADMIN_PASSWORD).
-    env_file: ./backend/.env
+    env_file:
+      - path: ${TNL_BACKEND_ENV_FILE:-./backend/.env}
+        required: false
     environment:
       MONGO_URL: mongodb://mongodb:27017
       MEDIA_DIR: /data/media
+      REDIS_URL: redis://redis:6379
     volumes:
       - ./backend:/app
       - media-data:/data/media
     ports:
       - "127.0.0.1:8001:8001"
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:8001/api/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
   frontend:
     build:
@@ -41,12 +64,21 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
+        VITE_FEATURE_DOOR_CHECKIN: ${VITE_FEATURE_DOOR_CHECKIN:-false}
+        VITE_FEATURE_CERTIFICATES: ${VITE_FEATURE_CERTIFICATES:-false}
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "3000:3000"
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://127.0.0.1:3000/" ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
 volumes:
   mongo-data:
   media-data:
+  redis-data:

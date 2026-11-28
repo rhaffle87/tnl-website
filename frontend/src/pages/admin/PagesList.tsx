@@ -20,42 +20,48 @@ import { AdminErrorBanner, AdminPageHeader, AdminSectionHeader, AdminStatusBadge
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
 import { KeyValueMapEditor } from "@/components/admin/repeaters";
+import { useAdminT, type AdminStringKey } from "@/lib/i18n/admin-i18n";
+import { ReusableBlocks } from "@/components/admin/ReusableBlocks";
 import type { Block, ListResponse, PageDoc, PageRevisionBrief, QualityIssue } from "@/lib/types/types";
 
-const BLOCK_LIBRARY: { type: string; label: string; description: string }[] = [
-    { type: "hero", label: "Hero", description: "Big opening panel with a badge, title and two buttons." },
-    { type: "inner_hero", label: "Inner-page hero", description: "Gradient banner with a title and one-line description." },
-    { type: "rich_text", label: "Rich text", description: "Headings, paragraphs and lists." },
-    { type: "image", label: "Image", description: "A single picture with a caption." },
-    { type: "gallery", label: "Gallery", description: "Several pictures with a lightbox." },
-    { type: "video", label: "Video", description: "A YouTube video." },
-    { type: "feature_tiles", label: "Feature tiles", description: "A grid of small icon tiles." },
-    { type: "stats", label: "Stats counters", description: "Live numbers from the database." },
-    { type: "numbered_cards", label: "Numbered cards", description: "Cards numbered 01, 02, 03 with an accent border." },
-    { type: "about", label: "About section", description: "A paragraph beside a grid of focus tiles." },
-    { type: "carousel", label: "Carousel", description: "Slides with arrows and dots." },
-    { type: "quick_links", label: "Quick links", description: "Three linked cards." },
-    { type: "member_sections", label: "Member sections", description: "The whole member directory with batch tabs." },
-    { type: "news_feed", label: "News feed", description: "The latest articles." },
-    { type: "partners", label: "Partner logos", description: "The partner strip." },
-    { type: "cta_band", label: "Call-to-action band", description: "A dark panel with one button." },
-    { type: "contact_panel", label: "Contact panel", description: "Address and email tiles from Settings." },
-    { type: "contact_form", label: "Contact form", description: "The message form." },
-    { type: "map", label: "Map", description: "A link to the laboratory on Google Maps." },
-    { type: "timeline", label: "Timeline", description: "Numbered steps down a line." },
-    { type: "accordion", label: "Accordion", description: "Questions that open and close." },
-    { type: "download_list", label: "Download list", description: "A list of files to download." },
-    { type: "html", label: "Custom HTML", description: "Advanced: raw HTML, cleaned automatically." },
+type WorkingPage = PageDoc & { has_draft?: boolean; live_status?: string; meta_description?: string | null; meta_description_id?: string | null };
+
+const BLOCK_LIBRARY: { type: string; label: AdminStringKey; description: AdminStringKey }[] = [
+    { type: "hero", label: "adminPagesWidgetHero", description: "adminPagesWidgetHeroDescription" },
+    { type: "inner_hero", label: "adminPagesWidgetInnerHero", description: "adminPagesWidgetInnerHeroDescription" },
+    { type: "rich_text", label: "adminPagesWidgetRichText", description: "adminPagesWidgetRichTextDescription" },
+    { type: "image", label: "adminImage", description: "adminPagesWidgetImageDescription" },
+    { type: "gallery", label: "adminPagesWidgetGallery", description: "adminPagesWidgetGalleryDescription" },
+    { type: "video", label: "adminVideo", description: "adminPagesWidgetVideoDescription" },
+    { type: "feature_tiles", label: "adminPagesWidgetFeatureTiles", description: "adminPagesWidgetFeatureTilesDescription" },
+    { type: "stats", label: "adminPagesWidgetStats", description: "adminPagesWidgetStatsDescription" },
+    { type: "numbered_cards", label: "adminPagesWidgetNumberedCards", description: "adminPagesWidgetNumberedCardsDescription" },
+    { type: "about", label: "adminPagesWidgetAbout", description: "adminPagesWidgetAboutDescription" },
+    { type: "carousel", label: "adminPagesWidgetCarousel", description: "adminPagesWidgetCarouselDescription" },
+    { type: "quick_links", label: "adminPagesWidgetQuickLinks", description: "adminPagesWidgetQuickLinksDescription" },
+    { type: "member_sections", label: "adminPagesWidgetMemberSections", description: "adminPagesWidgetMemberSectionsDescription" },
+    { type: "news_feed", label: "adminPagesWidgetNewsFeed", description: "adminPagesWidgetNewsFeedDescription" },
+    { type: "partners", label: "adminPagesWidgetPartners", description: "adminPagesWidgetPartnersDescription" },
+    { type: "cta_band", label: "adminPagesWidgetCtaBand", description: "adminPagesWidgetCtaBandDescription" },
+    { type: "contact_panel", label: "adminPagesWidgetContactPanel", description: "adminPagesWidgetContactPanelDescription" },
+    { type: "contact_form", label: "adminPagesWidgetContactForm", description: "adminPagesWidgetContactFormDescription" },
+    { type: "map", label: "adminPagesWidgetMap", description: "adminPagesWidgetMapDescription" },
+    { type: "timeline", label: "adminPagesWidgetTimeline", description: "adminPagesWidgetTimelineDescription" },
+    { type: "accordion", label: "adminPagesWidgetAccordion", description: "adminPagesWidgetAccordionDescription" },
+    { type: "download_list", label: "adminPagesWidgetDownloadList", description: "adminPagesWidgetDownloadListDescription" },
+    { type: "html", label: "adminPagesWidgetHtml", description: "adminPagesWidgetHtmlDescription" },
+    { type: "collection_list", label: "adminCollectionWidget", description: "adminCollectionWidgetDescription" },
 ];
 
 export default function PagesList() {
+    const t = useAdminT();
     const { data, isLoading } = useQuery({
         queryKey: ["admin", "pages"],
         queryFn: () => apiGet<ListResponse<PageDoc>>("/admin/pages"),
         retry: false,
     });
     const qc = useQueryClient();
-    const [selected, setSelected] = useState<string | null>(null);
+    const [selected, setSelected] = useState<string | null>(() => new URLSearchParams(window.location.search).get("selected"));
     const [newSlug, setNewSlug] = useState("");
     const [newTitle, setNewTitle] = useState("");
 
@@ -66,9 +72,9 @@ export default function PagesList() {
             setNewSlug("");
             setNewTitle("");
             setSelected(page.id);
-            toast.success("Page created.");
+            toast.success(t("adminPagesCreated"));
         },
-        onError: (err) => toast.error(adminError(err, "Could not create the page.")),
+        onError: (err) => toast.error(adminError(err, t("adminPagesCreateError"))),
     });
 
     if (selected) {
@@ -80,28 +86,29 @@ export default function PagesList() {
     return (
         <div data-testid="pages-list-page">
             <AdminPageHeader
-                title="Pages"
-                description="Every page on the public site is built from widgets. Click a page to change what is on it."
+                title={t("adminPagesTitle")}
+                description={t("adminPagesDescription")}
+                actions={<a href={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/admin/content/collections`} className="tnl-btn tnl-btn-outline">{t("adminCollections")}</a>}
                 testId="pages-header"
             />
 
             <Panel className="mb-6">
-                <AdminSectionHeader title="Create a new page" />
+                <AdminSectionHeader title={t("adminPagesCreateHeading")} />
                 <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
                     <input
                         className="tnl-field"
-                        placeholder="Page title"
+                        placeholder={t("adminPagesTitlePlaceholder")}
                         value={newTitle}
                         onChange={(e) => setNewTitle(e.target.value)}
-                        aria-label="New page title"
+                        aria-label={t("adminPagesNewTitle")}
                         data-testid="new-page-title-input"
                     />
                     <input
                         className="tnl-field"
-                        placeholder="Web address (optional)"
+                        placeholder={t("adminPagesSlugPlaceholder")}
                         value={newSlug}
                         onChange={(e) => setNewSlug(e.target.value)}
-                        aria-label="New page web address"
+                        aria-label={t("adminPagesNewSlug")}
                         data-testid="new-page-slug-input"
                     />
                     <button
@@ -112,13 +119,13 @@ export default function PagesList() {
                         data-testid="new-page-create-button"
                     >
                         <Plus className="h-4 w-4" aria-hidden="true" />
-                        Create
+                        {t("adminCreate")}
                     </button>
                 </div>
             </Panel>
 
             {isLoading ? (
-                <Spinner label="Loading…" />
+                <Spinner label={t("adminPagesLoading")} />
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {pages.map((page) => (
@@ -136,7 +143,7 @@ export default function PagesList() {
                             <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
                                 /{page.slug === "home" ? "" : page.slug}
                             </p>
-                            <p className="mt-3 text-sm text-[var(--tnl-body)]">{(page.blocks ?? []).length} widget(s)</p>
+                            <p className="mt-3 text-sm text-[var(--tnl-body)]">{(page.blocks ?? []).length} {t("adminPagesWidgetCount")}</p>
                         </button>
                     ))}
                 </div>
@@ -146,17 +153,20 @@ export default function PagesList() {
 }
 
 function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void }) {
+    const t = useAdminT();
+    const invalidJson = t("adminPagesInvalidJson");
     const qc = useQueryClient();
     const [showLibrary, setShowLibrary] = useState(false);
     const [showRevisions, setShowRevisions] = useState(false);
     const [editingBlock, setEditingBlock] = useState<string | null>(null);
     const [propsText, setPropsText] = useState("");
     const [propsError, setPropsError] = useState<string | null>(null);
+    const [visualPropsValid, setVisualPropsValid] = useState(true);
     const [issues, setIssues] = useState<QualityIssue[]>([]);
 
     const { data: page, isLoading, isError, error, refetch } = useQuery({
         queryKey: ["admin", "page", pageId],
-        queryFn: () => apiGet<PageDoc>(`/admin/pages/${pageId}`),
+        queryFn: () => apiGet<WorkingPage>(`/admin/pages/${pageId}`),
         retry: false,
     });
 
@@ -174,12 +184,13 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
             return;
         }
         try {
-            JSON.parse(propsText);
+            const parsed: unknown = JSON.parse(propsText);
+            if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("object required");
             setPropsError(null);
         } catch {
-            setPropsError("JSON tidak valid: periksa tanda kurung dan koma.");
+            setPropsError(invalidJson);
         }
-    }, [propsText]);
+    }, [propsText, invalidJson]);
 
     const refresh = (updated?: PageDoc) => {
         if (updated) qc.setQueryData(["admin", "page", pageId], updated);
@@ -196,20 +207,20 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
             .catch((err) => {
                 const found = issuesFromError(err);
                 if (found.length) setIssues(found);
-                toast.error(adminError(err, "Could not save that change."));
+                toast.error(adminError(err, t("adminPagesSaveError")));
             });
     };
 
     if (isError) {
         return (
             <AdminErrorBanner
-                message={adminError(error, "Could not load this page.")}
+                message={adminError(error, t("adminPagesLoadError"))}
                 onRetry={() => void refetch()}
             />
         );
     }
     if (isLoading || !page) {
-        return <Spinner label="Loading page…" />;
+        return <Spinner label={t("adminPagesLoadingPage")} />;
     }
 
     const blocks = page.blocks ?? [];
@@ -219,29 +230,29 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
         const target = index + delta;
         if (target < 0 || target >= next.length) return;
         [next[index], next[target]] = [next[target], next[index]];
-        mutate(() => apiPost<PageDoc>(`/admin/pages/${pageId}/reorder`, { order: next.map((b) => b.id) }), "Order updated.");
+        mutate(() => apiPost<PageDoc>(`/admin/pages/${pageId}/reorder`, { order: next.map((b) => b.id) }), t("adminPagesOrderUpdated"));
     };
 
     const addBlock = (type: string) => {
         setShowLibrary(false);
-        mutate(() => apiPost<PageDoc>(`/admin/pages/${pageId}/blocks`, { type, props: {} }), "Widget added.");
+        mutate(() => apiPost<PageDoc>(`/admin/pages/${pageId}/blocks`, { type, props: type === "collection_list" ? { collection_key: "" } : {} }), t("adminPagesWidgetAdded"));
     };
 
     const saveProps = (block: Block) => {
         let parsed: Record<string, unknown>;
         try {
             parsed = propsText.trim() ? JSON.parse(propsText) : {};
+            if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("object required");
         } catch {
-            setPropsError("JSON tidak valid: periksa tanda kurung dan koma.");
+            setPropsError(invalidJson);
             return;
         }
-        setEditingBlock(null);
-        mutate(() => apiPatch<PageDoc>(`/admin/pages/${pageId}/blocks/${block.id}`, { props: parsed }), "Widget updated.");
+        mutate(() => apiPatch<PageDoc>(`/admin/pages/${pageId}/blocks/${block.id}`, { props: parsed }), t("adminPagesWidgetUpdated"));
     };
 
     const publish = (status: string) => {
         setIssues([]);
-        mutate(() => apiPatch<PageDoc>(`/admin/pages/${pageId}`, { status }), status === "published" ? "Page published." : "Page unpublished.");
+        mutate(() => apiPatch<PageDoc>(`/admin/pages/${pageId}`, { status }), status === "published" ? t("adminPagesPublished") : t("adminPagesUnpublished"));
     };
 
     return (
@@ -258,22 +269,22 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                             {page.title}
                         </h1>
                         <p className="text-xs text-[var(--tnl-body)] truncate">
-                            /{page.slug === "home" ? "" : page.slug} · Status: <span className="font-semibold capitalize">{page.status}</span>
+                            /{page.slug === "home" ? "" : page.slug} · {t("adminStatus")}: <span className="font-semibold capitalize">{page.status === "published" ? t("adminPublished").toLowerCase() : page.status === "draft" ? t("adminDraft").toLowerCase() : page.status}</span>
                         </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
                         <button type="button" onClick={onBack} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs" data-testid="page-back-button">
-                            All pages
+                            {t("adminPagesAllPages")}
                         </button>
                         <a
-                            href={`/${page.slug === "home" ? "" : page.slug}`}
+                            href={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/p/${encodeURIComponent(page.slug)}?preview=${encodeURIComponent(page.id)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs"
                             data-testid="page-preview-link"
                         >
-                            Preview
+                            {t("adminPagesPreview")}
                         </a>
                         <button
                             type="button"
@@ -282,31 +293,39 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                             data-testid="page-revisions-button"
                         >
                             <History className="h-3.5 w-3.5" aria-hidden="true" />
-                            Revisions
+                            {t("adminPagesRevisions")}
                         </button>
                         {page.status === "published" ? (
+                            <>
+                            {page.has_draft ? <button type="button" onClick={() => publish("published")} className="tnl-btn tnl-btn-primary h-9 min-h-[36px] text-xs" data-testid="page-publish-button">{t("adminDraftPublish")}</button> : null}
                             <button type="button" onClick={() => publish("draft")} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs" data-testid="page-unpublish-button">
-                                Unpublish
+                                {t("adminUnpublish")}
                             </button>
+                            </>
                         ) : (
                             <button type="button" onClick={() => publish("published")} className="tnl-btn tnl-btn-primary h-9 min-h-[36px] text-xs" data-testid="page-publish-button">
-                                Publish
+                                {t("adminPublish")}
                             </button>
                         )}
                     </div>
                 </div>
             </div>
 
+            {page.has_draft ? <p className="mb-4 text-sm" role="status">{t("adminDraftStaged")}</p> : null}
+            <PageDetails key={`${page.id}:${page.updated_at}`} page={page} onSave={(values) => mutate(() => apiPatch<PageDoc>(`/admin/pages/${pageId}`, values), t("adminPagesWidgetUpdated"))} onDelete={() => apiDelete(`/admin/pages/${pageId}`).then(() => { void qc.invalidateQueries({ queryKey: ["admin", "pages"] }); onBack(); }).catch((err) => toast.error(adminError(err, t("adminPagesSaveError"))))} />
+
             {issues.length ? (
                 <Panel className="mb-5">
-                    <p className="mb-2 text-sm font-semibold">This page cannot be published yet</p>
+                    <p className="mb-2 text-sm font-semibold">{t("adminPagesCannotPublish")}</p>
                     <IssueList issues={issues} testId="page-builder-issues" />
                 </Panel>
             ) : null}
 
+            <ReusableBlocks pageId={pageId} blocks={blocks} onApplied={refresh} />
+
             {showRevisions ? (
                 <Panel className="mb-5">
-                    <AdminSectionHeader title="Revisions" />
+                    <AdminSectionHeader title={t("adminPagesRevisions")} />
                     <ul className="mt-3 space-y-2 text-sm">
                         {(revisions?.items ?? []).map((rev) => (
                             <li
@@ -316,23 +335,23 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                 data-testid={`revision-${rev.id}`}
                             >
                                 <span>
-                                    {new Date(rev.saved_at).toLocaleString()} · {rev.saved_by || "unknown"} · {rev.block_count} widget(s)
+                                    {new Date(rev.saved_at).toLocaleString()} · {rev.saved_by || t("adminPagesUnknownAuthor")} · {rev.block_count} {t("adminPagesWidgetCount")}
                                 </span>
                                 <button
                                     type="button"
                                     onClick={() =>
-                                        mutate(() => apiPost<PageDoc>(`/admin/pages/${pageId}/revisions/${rev.id}/restore`), "Version restored.")
+                                        mutate(() => apiPost<PageDoc>(`/admin/pages/${pageId}/revisions/${rev.id}/restore`), t("adminPagesRestored"))
                                     }
                                     className="rounded-[6px] border px-3 py-1.5 text-xs font-medium"
                                     style={{ borderColor: "var(--tnl-border)" }}
                                     data-testid={`revision-restore-${rev.id}`}
                                 >
-                                    Restore
+                                    {t("adminPagesRestore")}
                                 </button>
                             </li>
                         ))}
                         {!(revisions?.items ?? []).length ? (
-                            <li className="text-[var(--tnl-body)]">No earlier versions yet.</li>
+                            <li className="text-[var(--tnl-body)]">{t("adminPagesNoRevisions")}</li>
                         ) : null}
                     </ul>
                 </Panel>
@@ -341,13 +360,13 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
             <div className="mb-5">
                 <button type="button" onClick={() => setShowLibrary((v) => !v)} className="tnl-btn tnl-btn-primary" data-testid="add-widget-button">
                     <Plus className="h-4 w-4" aria-hidden="true" />
-                    Add widget
+                    {t("adminPagesAddWidget")}
                 </button>
             </div>
 
             {showLibrary ? (
                 <Panel className="mb-5">
-                    <AdminSectionHeader title="Choose a widget" />
+                    <AdminSectionHeader title={t("adminPagesChooseWidget")} />
                     <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {BLOCK_LIBRARY.map((item) => (
                             <button
@@ -358,9 +377,9 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                 style={{ borderColor: "var(--tnl-border)" }}
                                 data-testid={`widget-option-${item.type}`}
                             >
-                                <span className="block text-sm font-bold">{item.label}</span>
+                                <span className="block text-sm font-bold">{t(item.label)}</span>
                                 <span className="mt-1 block text-xs" style={{ color: "var(--tnl-body)" }}>
-                                    {item.description}
+                                    {t(item.description)}
                                 </span>
                             </button>
                         ))}
@@ -379,33 +398,33 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                         {String(index + 1).padStart(2, "0")}
                                     </span>
                                     <h3 className="text-[17px] font-bold" data-testid={`block-title-${block.id}`}>
-                                        {meta?.label ?? block.type}
-                                        {block.hidden ? " · hidden" : ""}
+                                        {meta ? t(meta.label) : block.type}
+                                        {block.hidden ? t("adminPagesHiddenSuffix") : ""}
                                     </h3>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="flex h-9 w-9 items-center justify-center rounded-[6px] border disabled:opacity-40" style={{ borderColor: "var(--tnl-border)" }} aria-label="Move up" data-testid={`block-up-${block.id}`}>
+                                    <button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="flex h-9 w-9 items-center justify-center rounded-[6px] border disabled:opacity-40" style={{ borderColor: "var(--tnl-border)" }} aria-label={t("adminPagesMoveUp")} data-testid={`block-up-${block.id}`}>
                                         <ArrowUp className="h-4 w-4" />
                                     </button>
-                                    <button type="button" onClick={() => move(index, 1)} disabled={index === blocks.length - 1} className="flex h-9 w-9 items-center justify-center rounded-[6px] border disabled:opacity-40" style={{ borderColor: "var(--tnl-border)" }} aria-label="Move down" data-testid={`block-down-${block.id}`}>
+                                    <button type="button" onClick={() => move(index, 1)} disabled={index === blocks.length - 1} className="flex h-9 w-9 items-center justify-center rounded-[6px] border disabled:opacity-40" style={{ borderColor: "var(--tnl-border)" }} aria-label={t("adminPagesMoveDown")} data-testid={`block-down-${block.id}`}>
                                         <ArrowDown className="h-4 w-4" />
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => mutate(() => apiPatch<PageDoc>(`/admin/pages/${pageId}/blocks/${block.id}`, { hidden: !block.hidden }), block.hidden ? "Widget shown." : "Widget hidden.")}
+                                        onClick={() => mutate(() => apiPatch<PageDoc>(`/admin/pages/${pageId}/blocks/${block.id}`, { hidden: !block.hidden }), block.hidden ? t("adminPagesWidgetShown") : t("adminPagesWidgetHidden"))}
                                         className="flex h-9 w-9 items-center justify-center rounded-[6px] border"
                                         style={{ borderColor: "var(--tnl-border)" }}
-                                        aria-label={block.hidden ? "Show widget" : "Hide widget"}
+                                        aria-label={block.hidden ? t("adminPagesShowWidget") : t("adminPagesHideWidget")}
                                         data-testid={`block-toggle-${block.id}`}
                                     >
                                         {block.hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => mutate(() => apiPost<PageDoc>(`/admin/pages/${pageId}/blocks/${block.id}/duplicate`), "Widget duplicated.")}
+                                        onClick={() => mutate(() => apiPost<PageDoc>(`/admin/pages/${pageId}/blocks/${block.id}/duplicate`), t("adminPagesWidgetDuplicated"))}
                                         className="flex h-9 w-9 items-center justify-center rounded-[6px] border"
                                         style={{ borderColor: "var(--tnl-border)" }}
-                                        aria-label="Duplicate widget"
+                                        aria-label={t("adminPagesDuplicateWidget")}
                                         data-testid={`block-duplicate-${block.id}`}
                                     >
                                         <Copy className="h-4 w-4" />
@@ -413,21 +432,22 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setEditingBlock(editingBlock === block.id ? null : block.id);
+                                             setEditingBlock(editingBlock === block.id ? null : block.id);
+                                             setVisualPropsValid(true);
                                             setPropsText(JSON.stringify(block.props ?? {}, null, 2));
                                         }}
                                         className="rounded-[6px] border px-3 py-1.5 text-xs font-medium"
                                         style={{ borderColor: "var(--tnl-border)" }}
                                         data-testid={`block-edit-${block.id}`}
                                     >
-                                        Settings
+                                        {t("adminSettings")}
                                     </button>
                                     <ConfirmButton
-                                        label="Remove"
-                                        confirmLabel="Remove it"
-                                        question="Remove this widget?"
+                                        label={t("adminRemove")}
+                                        confirmLabel={t("adminPagesRemoveConfirm")}
+                                        question={t("adminPagesRemoveQuestion")}
                                         onConfirm={() =>
-                                            mutate(() => apiDelete<PageDoc>(`/admin/pages/${pageId}/blocks/${block.id}`), "Widget removed.")
+                                            mutate(() => apiDelete<PageDoc>(`/admin/pages/${pageId}/blocks/${block.id}`), t("adminPagesWidgetRemoved"))
                                         }
                                         testId={`block-delete-${block.id}`}
                                     />
@@ -438,7 +458,7 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                 <div className="mt-4 space-y-3">
                                     {block.type === "image" && (
                                         <InlineMediaField
-                                            label="Block Image"
+                                            label={t("adminPagesBlockImage")}
                                             value={(() => {
                                                 try {
                                                     const p = JSON.parse(propsText);
@@ -453,7 +473,7 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                                     p.url = newUrl;
                                                     setPropsText(JSON.stringify(p, null, 2));
                                                 } catch {
-                                                    setPropsError("JSON tidak valid: periksa tanda kurung dan koma.");
+                                                    setPropsError(invalidJson);
                                                 }
                                             }}
                                             defaultFolder="pages"
@@ -464,7 +484,7 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
 
                                     {block.type === "gallery" && (
                                         <MultiMediaField
-                                            label="Gallery Images"
+                                            label={t("adminPagesGalleryImages")}
                                             value={(() => {
                                                 try {
                                                     const p = JSON.parse(propsText);
@@ -479,10 +499,14 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                             onChange={(newUrls: string[]) => {
                                                 try {
                                                     const p = JSON.parse(propsText);
-                                                    p.images = newUrls.map((u) => ({ url: u, alt: "" }));
+                                                    const remaining: unknown[] = Array.isArray(p.images) ? [...p.images] : [];
+                                                    p.images = newUrls.map((url) => {
+                                                        const existing = remaining.findIndex((item) => typeof item === "string" ? item === url : item !== null && typeof item === "object" && "url" in item && item.url === url);
+                                                        return existing < 0 ? { url, alt: "" } : remaining.splice(existing, 1)[0];
+                                                    });
                                                     setPropsText(JSON.stringify(p, null, 2));
                                                 } catch {
-                                                    setPropsError("JSON tidak valid: periksa tanda kurung dan koma.");
+                                                    setPropsError(invalidJson);
                                                 }
                                             }}
                                             defaultFolder="pages"
@@ -492,21 +516,22 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
 
                                     <div className="pt-1">
                                         <label htmlFor={`props-raw-${block.id}`} className="mb-1 block text-xs font-medium">
-                                            Widget properties JSON
+                                            {t("adminPagesPropsJson")}
                                         </label>
                                         <textarea
                                             id={`props-raw-${block.id}`}
-                                            aria-label="Widget properties JSON"
+                                            aria-label={t("adminPagesPropsJson")}
                                             rows={4}
                                             value={propsText}
+                                            aria-invalid={Boolean(propsError)}
                                             onChange={(e) => setPropsText(e.target.value)}
                                             className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none"
                                             style={{ borderColor: propsError ? "var(--tnl-danger)" : "var(--tnl-border)" }}
                                         />
                                     </div>
                                     <div className="pt-1">
-                                        <KeyValueMapEditor
-                                            label="Widget Settings & Properties"
+                                        {!propsError ? <KeyValueMapEditor
+                                            label={t("adminPagesWidgetSettings")}
                                             value={(() => {
                                                 try {
                                                     return JSON.parse(propsText);
@@ -517,18 +542,19 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                             onChange={(newObj) => {
                                                 setPropsText(JSON.stringify(newObj, null, 2));
                                             }}
-                                            help="Text properties ending in _id hold the Indonesian version. Use </> Raw JSON for nested structures or raw view."
+                                            onValidityChange={setVisualPropsValid}
+                                            help={t("adminPagesPropsHelp")}
                                             testId={`block-props-${block.id}`}
-                                        />
+                                        /> : null}
                                     </div>
                                     {propsError ? (
                                         <p role="alert" data-testid="pages-json-error" className="mt-2 text-xs" style={{ color: "var(--tnl-danger)" }}>
                                             {propsError}
                                         </p>
                                     ) : null}
-                                    <button type="button" onClick={() => saveProps(block)} disabled={Boolean(propsError)} className="tnl-btn tnl-btn-primary mt-3 h-10 min-h-[40px] text-sm disabled:opacity-50" data-testid={`block-props-save-${block.id}`}>
+                                    <button type="button" onClick={() => saveProps(block)} disabled={Boolean(propsError) || !visualPropsValid} className="tnl-btn tnl-btn-primary mt-3 h-10 min-h-[40px] text-sm disabled:opacity-50" data-testid={`block-props-save-${block.id}`}>
                                         <Save className="h-4 w-4" aria-hidden="true" />
-                                        Save settings
+                                        {t("adminPagesSaveSettings")}
                                     </button>
                                 </div>
                             ) : null}
@@ -538,7 +564,7 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                 {blocks.length === 0 ? (
                     <Panel>
                         <p className="text-sm text-[var(--tnl-body)]" data-testid="page-builder-empty">
-                            This page has no widgets yet. Click “Add widget” to start.
+                            {t("adminPagesEmptyBuilder")}
                         </p>
                     </Panel>
                 ) : null}
@@ -548,3 +574,26 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
 }
 
 export { Trash2 };
+
+function PageDetails({ page, onSave, onDelete }: { page: WorkingPage; onSave: (values: { title: string; title_id: string; meta_description: string; meta_description_id: string }) => void; onDelete: () => void }) {
+    const t = useAdminT();
+    const [title, setTitle] = useState(page.title);
+    const [titleId, setTitleId] = useState(page.title_id ?? "");
+    const [description, setDescription] = useState(page.meta_description ?? "");
+    const [descriptionId, setDescriptionId] = useState(page.meta_description_id ?? "");
+    return <details className="mb-5 rounded-xl border border-[var(--tnl-border)] p-4">
+        <summary className="cursor-pointer text-sm font-semibold">{t("adminPageMetadata")}</summary>
+        <form className="mt-3 space-y-3" aria-label={t("adminPageMetadata")} onSubmit={(event) => { event.preventDefault(); onSave({ title, title_id: titleId, meta_description: description, meta_description_id: descriptionId }); }}>
+            <label htmlFor="page-title-en" className="block text-sm">{t("adminTitle")} (English)</label>
+            <input id="page-title-en" name="title" className="tnl-field" value={title} onChange={(event) => setTitle(event.target.value)} required />
+            <label htmlFor="page-title-id" className="block text-sm">{t("adminTitle")} (Bahasa Indonesia)</label>
+            <input id="page-title-id" name="title_id" className="tnl-field" value={titleId} onChange={(event) => setTitleId(event.target.value)} />
+            <label htmlFor="page-description-en" className="block text-sm">{t("adminPageDescriptionEn")}</label>
+            <textarea id="page-description-en" name="meta_description" className="tnl-field" value={description} onChange={(event) => setDescription(event.target.value)} />
+            <label htmlFor="page-description-id" className="block text-sm">{t("adminPageDescriptionId")}</label>
+            <textarea id="page-description-id" name="meta_description_id" className="tnl-field" value={descriptionId} onChange={(event) => setDescriptionId(event.target.value)} />
+            <button type="submit" className="tnl-btn tnl-btn-outline">{t("adminSave")}</button>
+            {!page.is_system ? <ConfirmButton label={t("adminDelete")} question={t("adminPageDeleteQuestion")} confirmLabel={t("adminConfirm")} onConfirm={onDelete} testId="page-delete" /> : null}
+        </form>
+    </details>;
+}

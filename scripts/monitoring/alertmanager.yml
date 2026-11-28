@@ -1,0 +1,15 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: no_delivery_configured
+  group_by: [alertname, instance]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: no_delivery_configured
+
+# The installer renders a webhook receiver only when TNL_ALERTMANAGER_WEBHOOK_URL
+# is supplied from /etc/tnl/alertmanager.env. No recipient or endpoint is invented.

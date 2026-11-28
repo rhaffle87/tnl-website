@@ -5,6 +5,8 @@ YouTube links are stored as video items. Scoped asset attachment for TNL Studio 
 import os
 import re
 from datetime import datetime, timezone
+from html import unescape
+from urllib.parse import unquote
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
@@ -113,30 +115,56 @@ def _derive(data: bytes, base_key: str) -> dict:
     return out
 
 
+def _media_aliases(asset: dict) -> set[str]:
+    urls = {asset.get("url"), asset.get("webp_url"), *(asset.get("sizes") or {}).values()}
+    key = asset.get("key")
+    if isinstance(key, str) and key:
+        base = key.rsplit(".", 1)[0]
+        keys = {key, f"{base}.webp", *(f"{base}-{size}.webp" for size in DERIVATIVES)}
+        urls.update(f"/api/media-files/{k}" for k in keys)
+        original = asset.get("url") or ""
+        if original and "." in original.rsplit("/", 1)[-1]:
+            root = original.rsplit(".", 1)[0]
+            urls.update({f"{root}.webp", *(f"{root}-{size}.webp" for size in DERIVATIVES)})
+    return {unquote(unescape(u)).split("?", 1)[0].split("#", 1)[0] for u in urls if isinstance(u, str) and u}
+
+
+async def _media_usage_counts(assets: list[dict]) -> list[int]:
+    """Scan each content document once per batch, including working drafts and snapshots."""
+    aliases: dict[str, set[int]] = {}
+    for index, asset in enumerate(assets):
+        for alias in _media_aliases(asset):
+            aliases.setdefault(alias, set()).add(index)
+    counts = [0 for _ in assets]
+    if not aliases:
+        return counts
+    pattern = re.compile("(?:" + "|".join(re.escape(a) for a in sorted(aliases, key=len, reverse=True)) + r")(?=$|[\s\"'<>),;?#])")
+
+    def referenced(value) -> set[int]:
+        hits: set[int] = set()
+        if isinstance(value, dict):
+            for child in value.values():
+                hits.update(referenced(child))
+        elif isinstance(value, list):
+            for child in value:
+                hits.update(referenced(child))
+        elif isinstance(value, str):
+            for match in pattern.finditer(unquote(unescape(value))):
+                hits.update(aliases[match.group(0)])
+        return hits
+
+    for name in ("pages", "posts", "members", "events", "activities", "projects", "publications", "partners", "practicum", "equipment", "settings", "saved_blocks", "collection_items"):
+        async for document in db[name].find({}):
+            for index in referenced(document):
+                counts[index] += 1
+    return counts
+
+
 async def usage_count(url: str) -> int:
-    """How many published/draft documents reference this file."""
     if not url:
         return 0
-    total = 0
-    needle = {"$regex": re.escape(url)}
-    for coll, fields in (
-        ("pages", ["blocks"]),
-        ("posts", ["cover_url", "body", "body_id", "seo.og_image_url"]),
-        ("members", ["photo_url", "social.cv_url"]),
-        ("events", ["cover_image", "poster_urls", "gallery_images", "documentation"]),
-        ("activities", ["cover_image", "gallery_images", "images"]),
-        ("projects", ["images"]),
-        ("partners", ["logo_url"]),
-        ("practicum", ["cover_image", "gallery_images", "resources"]),
-        ("equipment", ["photo_url", "gallery_images"]),
-    ):
-        for field in fields:
-            total += await db[coll].count_documents({field: needle})
-    settings = await db.settings.find_one({"id": "settings"}) or {}
-    for key in ("logo_url", "logo_url_dark", "its_logo_url"):
-        if settings.get(key) == url:
-            total += 1
-    return total
+    asset = await db.media.find_one({"$or": [{"url": url}, {"webp_url": url}, *[{f"sizes.{s}": url} for s in DERIVATIVES]]})
+    return (await _media_usage_counts([asset or {"url": url}]))[0]
 
 
 @router.get("/admin/media", dependencies=[Depends(require("media:manage"))])
@@ -169,8 +197,9 @@ async def list_media(
     total = await db.media.count_documents(query)
     docs = await db.media.find(query).sort("created_at", -1).skip(offset).limit(limit).to_list(limit)
 
-    for d in docs:
-        d["used_in"] = await usage_count(d.get("url", ""))
+    counts = await _media_usage_counts(docs)
+    for d, count in zip(docs, counts):
+        d["used_in"] = count
         d.setdefault("size_bytes", d.get("bytes", 0))
         d.setdefault("bytes", d.get("size_bytes", 0))
 
@@ -434,7 +463,8 @@ async def delete_media(media_id: str, request: Request):
     return {"ok": True}
 
 
-@router.api_route("/media-files/{path:path}", methods=["GET", "HEAD"])
+@router.head("/media-files/{path:path}", include_in_schema=False)
+@router.get("/media-files/{path:path}")
 async def serve_media(path: str, request: Request):
     """Serve locally stored media. Path traversal is strictly rejected before touching disk."""
     if ".." in path or path.startswith("/") or "\\" in path:
@@ -452,6 +482,9 @@ async def serve_media(path: str, request: Request):
     # Restrict uploads subfolder (participant registrations) to authorized staff or signed URLs
     is_upload = path.startswith("uploads/") or path == "uploads"
     if is_upload:
+        from lib.privacy import upload_is_servable
+        if not await upload_is_servable(path):
+            raise HTTPException(status_code=404, detail="File not found.")
         sig = request.query_params.get("sig")
         filename = os.path.basename(full)
         has_valid_sig = verify_upload_sig(filename, sig)

@@ -10,13 +10,15 @@ import secrets
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 
-from lib.auth import audit, aware, client_ip, lab_assistant_for_request, rate_limit, require
+from lib.auth import audit, aware, client_ip, lab_assistant_for_request, require
+from lib.cache import invalidate_public_cache
+from lib.rate_limit import rate_limit_async
 from lib.practicum_access import public_practicum_doc
 from lib.db import db
 from lib.quality import publish_blockers, run_scan
-from lib.sanitize import sanitize_html
+from lib.publishing import public_content_projection, sanitize_html
 from lib.serialize import jsonable
 from models.content import Member, Post
 from models.core import ApiKeyCreate, V1Import, V1_IMPORT_MAX_ITEMS
@@ -87,7 +89,7 @@ async def list_keys(status: str | None = None):
 
 @router.post("/admin/api-keys", status_code=201, dependencies=[Depends(require("users:manage"))])
 async def create_key(payload: ApiKeyCreate, request: Request):
-    rate_limit(f"apikey-write:{client_ip(request)}", 20, 300)
+    await rate_limit_async("api_key_write", f"apikey-write:{client_ip(request)}", 20, 300)
     raw = "tnl_" + secrets.token_urlsafe(28)
     doc = {
         "id": str(uuid4()), "name": payload.name.strip() or "Unnamed key",
@@ -104,7 +106,7 @@ async def create_key(payload: ApiKeyCreate, request: Request):
 
 @router.delete("/admin/api-keys/{key_id}", dependencies=[Depends(require("users:manage"))])
 async def revoke_key(key_id: str, request: Request):
-    rate_limit(f"apikey-write:{client_ip(request)}", 20, 300)
+    await rate_limit_async("api_key_write", f"apikey-write:{client_ip(request)}", 20, 300)
     res = await db.api_keys.update_one({"id": key_id}, {"$set": {"active": False}})
     if not res.matched_count:
         raise HTTPException(status_code=404, detail="API key not found.")
@@ -115,7 +117,7 @@ async def revoke_key(key_id: str, request: Request):
 @router.delete("/admin/api-keys/{key_id}/purge", dependencies=[Depends(require("users:manage"))])
 async def purge_key(key_id: str, request: Request):
     """Permanently remove a key that has already been revoked. Reversible only by creating a new key."""
-    rate_limit(f"apikey-write:{client_ip(request)}", 20, 300)
+    await rate_limit_async("api_key_write", f"apikey-write:{client_ip(request)}", 20, 300)
     key = await db.api_keys.find_one({"id": key_id}, {"key_hash": 0, "_id": 0})
     if not key:
         raise HTTPException(status_code=404, detail="API key not found.")
@@ -142,7 +144,8 @@ V1_READ = {
 # Fields never returned by the public v1 reads. The WhatsApp group URL must only be revealed
 # post-registration, so a read-scope key must not be able to see it.
 V1_PROJECTION = {"issues": 0, "ai_review": 0, "nim": 0, "email_personal": 0, "phone": 0,
-                 "whatsapp_group_url": 0}
+                 "whatsapp_group_url": 0, "draft": 0, "revisions": 0, "_cms_version": 0,
+                 "needs_review": 0, "has_draft": 0, "live_status": 0}
 
 
 async def _practicum_view(request: Request, items: list) -> list:
@@ -152,7 +155,7 @@ async def _practicum_view(request: Request, items: list) -> list:
 
 
 @router.get("/v1/{resource}")
-async def v1_list(resource: str, request: Request, limit: int = 50, offset: int = 0,
+async def v1_list(resource: str, request: Request, limit: int = Query(50, ge=1, le=100), offset: int = Query(0, ge=0),
                   principal: dict = Depends(require_scope("read"))):
     spec = V1_READ.get(resource)
     if not spec:
@@ -161,7 +164,7 @@ async def v1_list(resource: str, request: Request, limit: int = 50, offset: int 
     projection = V1_PROJECTION
     total = await db[coll].count_documents(query)
     docs = await db[coll].find(query, projection).sort("created_at", -1).skip(offset).limit(min(limit, 100)).to_list(100)
-    items = jsonable(docs)
+    items = jsonable([public_content_projection(doc) for doc in docs])
     if coll == "practicum":
         items = await _practicum_view(request, items)
     return {"resource": resource, "total": total, "limit": limit, "offset": offset, "items": items}
@@ -178,7 +181,7 @@ async def v1_get(resource: str, item_id: str, request: Request,
                                   V1_PROJECTION)
     if not doc:
         raise HTTPException(status_code=404, detail="Item not found.")
-    item = jsonable(doc)
+    item = jsonable(public_content_projection(doc))
     if coll == "practicum":
         item = (await _practicum_view(request, [item]))[0]
     return item
@@ -192,8 +195,10 @@ async def v1_create(resource: str, payload: dict, principal: dict = Depends(requ
     if not model:
         raise HTTPException(status_code=404, detail="This resource is read-only. Writable: news, members.")
     payload.pop("id", None)
-    if key == "posts" and isinstance(payload.get("body"), str):
-        payload["body"] = sanitize_html(payload["body"])
+    if key == "posts":
+        for field in ("body", "body_id"):
+            if isinstance(payload.get(field), str):
+                payload[field] = sanitize_html(payload[field])
     try:
         doc = model(**payload).model_dump()
     except Exception as exc:  # noqa: BLE001
@@ -216,6 +221,7 @@ async def v1_create(resource: str, payload: dict, principal: dict = Depends(requ
         if publishing and not doc.get("published_at"):
             doc["published_at"] = datetime.now(timezone.utc)
     await db[key].insert_one(doc)
+    await invalidate_public_cache(key, *(["stats", "publications"] if key == "members" else []))
     await audit_api_key("create", principal, key, doc["id"], {"via": "v1"})
     return jsonable(doc)
 
@@ -233,8 +239,10 @@ async def v1_import(resource: str, payload: V1Import, principal: dict = Depends(
     for index, item in enumerate(payload.items):
         try:
             item.pop("id", None)
-            if key == "posts" and isinstance(item.get("body"), str):
-                item["body"] = sanitize_html(item["body"])
+            if key == "posts":
+                for field in ("body", "body_id"):
+                    if isinstance(item.get(field), str):
+                        item[field] = sanitize_html(item[field])
             doc = model(**item).model_dump()
             issues = run_scan(key, doc)
             doc["issues"] = issues
@@ -254,6 +262,8 @@ async def v1_import(resource: str, payload: V1Import, principal: dict = Depends(
             created += 1
         except Exception as exc:  # noqa: BLE001 — one bad row must not abort the import
             failed.append({"row": index, "error": str(exc)})
+    if created:
+        await invalidate_public_cache(key, *(["stats", "publications"] if key == "members" else []))
     await audit_api_key("import", principal, key, None, {"created": created, "failed": len(failed)})
     return {"created": created, "failed": failed}
 

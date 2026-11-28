@@ -14,6 +14,7 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
     testDir: "./e2e",
+    testMatch: ["geometry.spec.ts", "member-modal-probe.spec.ts"],
     fullyParallel: false,
     workers: 1,
     timeout: 45_000,

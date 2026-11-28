@@ -1,0 +1,6 @@
+target-version = "py311"
+
+[lint]
+# Start with correctness checks across the whole backend. Import ordering,
+# unused imports/locals and formatting need a separate, scoped cleanup first.
+select = ["E9", "F63", "F7", "F82", "B006", "B012", "B018"]

@@ -12,11 +12,13 @@ import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "r
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, Monitor, Save, Smartphone } from "lucide-react";
-import { apiGet, apiPost, apiPut } from "@/lib/api/api";
-import { AdminSelect, AdminSwitch, IssueList, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
+import { ArrowLeft, Eye, History, Monitor, Save, Smartphone } from "lucide-react";
+import { apiGet, apiPost, apiPatch } from "@/lib/api/api";
+import { useMe } from "@/lib/api/hooks";
+import { AdminErrorBanner, AdminSelect, AdminSwitch, ConfirmButton, IssueList, StatusPill, adminError, issuesFromError } from "@/pages/admin/AdminUI";
 import { Spinner } from "@/components/site/Primitives";
 import { InlineMediaField, MultiMediaField } from "@/components/admin/media";
+import { useAdminT } from "@/lib/i18n/admin-i18n";
 import { RichTextField } from "@/components/admin/editor";
 import { TagChipsField, KeyValueMapEditor, ObjectListRepeater, FormFieldsBuilder } from "@/components/admin/repeaters";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -29,7 +31,7 @@ import {
     type ResourceSpec,
     type Row,
 } from "@/pages/admin/ContentManager";
-import type { FormField, ListResponse, Member, QualityIssue } from "@/lib/types/types";
+import type { FormField, Member, QualityIssue } from "@/lib/types/types";
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -185,7 +187,7 @@ function renderControl(field: FieldSpec, form: Record<string, unknown>, setField
                     id={id}
                     value={String(value ?? "")}
                     onChange={(html) => setField(field.key, html)}
-                    placeholder={field.placeholder || "Write the article..."}
+                    placeholder={field.placeholder}
                     defaultFolder={ctx.resource}
                     attachedTo={{ resource: ctx.resource, item_id: ctx.itemId }}
                     testId={testId}
@@ -469,9 +471,12 @@ export default function ContentEditor() {
     const routeId = params.id;
     const isNew = !routeId;
     const navigate = useNavigate();
+    const t = useAdminT();
     const qc = useQueryClient();
+    const { data: me } = useMe();
 
-    const spec = RESOURCE_SPECS[resource];
+    const baseSpec = RESOURCE_SPECS[resource];
+    const spec = useMemo(() => baseSpec && ({ ...baseSpec, fields: baseSpec.fields.filter((field) => field.key !== "whatsapp_group_url" || ["super_admin", "editor", "contributor"].includes(me?.role ?? "")) }), [baseSpec, me?.role]);
     const listUrl = `/admin/content/${resource}`;
 
     const [form, setForm] = useState<Record<string, unknown>>({});
@@ -488,6 +493,30 @@ export default function ContentEditor() {
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
     const [previewLang, setPreviewLang] = useState<"en" | "id">("en");
+    const [revisionsOpen, setRevisionsOpen] = useState(false);
+
+    const { data: revisionsData, isLoading: revisionsLoading, error: revisionsError } = useQuery({
+        queryKey: ["admin", "content-revisions", resource, routeId],
+        queryFn: () => apiGet<{ items: Array<{ id: string; saved_at?: string; saved_by?: string; [k: string]: unknown }> }>(`/admin/content/${resource}/${routeId}/revisions`),
+        enabled: !isNew && Boolean(routeId) && revisionsOpen,
+        retry: false,
+    });
+
+    const restoreRevision = useMutation({
+        mutationFn: (revisionId: string) => apiPost<Row>(`/admin/content/${resource}/${routeId}/revisions/${revisionId}/restore`, {}),
+        onSuccess: (restored) => {
+            if (spec) {
+                const next = toForm(restored, spec);
+                setForm(next);
+                setSnapshot(JSON.stringify(next));
+            }
+            setIssues((restored?.issues as QualityIssue[]) ?? []);
+            void qc.invalidateQueries({ queryKey: ["admin", "content", resource] });
+            void qc.invalidateQueries({ queryKey: ["admin", "content-revisions", resource, routeId] });
+            toast.success(t("adminContentRevisionsRestored"));
+        },
+        onError: (err) => toast.error(adminError(err, t("adminContentRevisionsRestoreError"))),
+    });
 
     const needsMembers = Boolean(spec?.fields.some((f) => f.type === "member_multiselect"));
     const { data: membersList } = useQuery({
@@ -497,22 +526,17 @@ export default function ContentEditor() {
         enabled: needsMembers,
     });
 
-    const { data, isLoading } = useQuery({
-        queryKey: ["admin", "content", resource],
-        queryFn: () => apiGet<ListResponse<Row>>(`/admin/content/${resource}?limit=200`),
+    const { data: row, isLoading, error, refetch } = useQuery({
+        queryKey: ["admin", "content", resource, routeId],
+        queryFn: () => apiGet<Row>(`/admin/content/${resource}/${encodeURIComponent(routeId!)}`),
         retry: false,
         enabled: Boolean(spec) && !isNew,
     });
 
-    const row = useMemo(
-        () => (!isNew && data?.items ? data.items.find((r) => r.id === routeId) : undefined),
-        [data, isNew, routeId]
-    );
-
     // Hydrate the form exactly once per item (or once for a new item).
     useEffect(() => {
-        if (!spec) return;
-        const key = isNew ? "__new__" : routeId ?? null;
+        if (!spec || !me) return;
+        const key = `${resource}:${isNew ? "__new__" : routeId ?? ""}`;
         if (!key || loadedKey === key) return;
         if (isNew) {
             const draft = emptyDraft(spec);
@@ -529,7 +553,7 @@ export default function ContentEditor() {
             setLoadedKey(key);
             setIssues((row.issues as QualityIssue[]) ?? []);
         }
-    }, [spec, isNew, routeId, row, loadedKey]);
+    }, [spec, isNew, routeId, row, loadedKey, me, resource]);
 
     // Check for existing local autosave on hydration
     useEffect(() => {
@@ -579,7 +603,7 @@ export default function ContentEditor() {
 
     const saveMutation = useMutation({
         mutationFn: async (payload: Record<string, unknown>) => {
-            if (!isNew && routeId) return apiPut<Row>(`/admin/content/${resource}/${routeId}`, payload);
+            if (!isNew && routeId) return apiPatch<Row>(`/admin/content/${resource}/${routeId}`, payload);
             return apiPost<Row>(`/admin/content/${resource}`, payload);
         },
         onSuccess: (saved) => {
@@ -643,7 +667,9 @@ export default function ContentEditor() {
     const submit = () => {
         if (!spec) return;
         try {
-            saveMutation.mutate(toPayload(form, spec));
+            const payload = toPayload(form, spec);
+            if (!isNew && (row?.live_status === "published" || row?.status === "published" || row?.published === true)) payload.save_as_draft = true;
+            saveMutation.mutate(payload);
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Please check the fields.");
         }
@@ -659,6 +685,7 @@ export default function ContentEditor() {
     }
 
     if (!isNew && !row) {
+        if (error) return <AdminErrorBanner message={adminError(error, "Could not load this item.")} onRetry={() => void refetch()} />;
         return (
             <div data-testid="content-editor-loading" className="p-6">
                 {isLoading ? (
@@ -720,7 +747,7 @@ export default function ContentEditor() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         {lastAutosaved ? (
                             <span className="hidden sm:inline text-xs text-[var(--tnl-body)] mr-1" data-testid="content-autosave-indicator">
                                 Autosaved locally {lastAutosaved}
@@ -757,8 +784,10 @@ export default function ContentEditor() {
                                     ? publishedNow
                                         ? "Create & Publish"
                                         : "Create as Draft"
-                                    : "Save changes"}
+                                    : row?.live_status === "published" ? t("adminDraftSave") : "Save changes"}
                         </button>
+                        {!isNew && (row?.has_draft || row?.live_status === "published") && ["editor", "super_admin"].includes(me?.role ?? "") ? <button type="button" className="tnl-btn tnl-btn-primary h-10 text-sm" disabled={dirty || saveMutation.isPending} onClick={() => saveMutation.mutate(spec.publishField === "published" ? { published: true } : { status: "published" })} data-testid="content-publish-saved-button">{t("adminDraftPublish")}</button> : null}
+                        {!isNew && row?.live_status === "published" && ["editor", "super_admin"].includes(me?.role ?? "") ? <button type="button" className="tnl-btn tnl-btn-outline h-10 text-sm" disabled={dirty || saveMutation.isPending} onClick={() => saveMutation.mutate(spec.publishField === "published" ? { published: false } : { status: "draft" })} data-testid="content-unpublish-button">{t("adminUnpublish")}</button> : null}
                     </div>
                 </div>
             </div>
@@ -812,6 +841,7 @@ export default function ContentEditor() {
                     <IssueList issues={issues} testId="content-editor-issues" />
                 </div>
             ) : null}
+            {row?.has_draft ? <p className="mb-4 text-sm" role="status">{t("adminDraftStaged")}</p> : null}
 
             <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
                 {/* Left: grouped content cards */}
@@ -913,6 +943,59 @@ export default function ContentEditor() {
                             ))}
                         </SectionCard>
                     ) : null}
+
+                    {!isNew && routeId ? (
+                        <div className="tnl-card p-5" data-testid="content-revisions-panel">
+                            <button
+                                type="button"
+                                onClick={() => setRevisionsOpen((v) => !v)}
+                                aria-expanded={revisionsOpen}
+                                className="flex w-full items-center justify-between text-left text-sm font-semibold text-[var(--tnl-heading)]"
+                                data-testid="content-revisions-toggle"
+                            >
+                                <span className="inline-flex items-center gap-2">
+                                    <History className="h-4 w-4" aria-hidden="true" />
+                                    {t("adminContentRevisions")}
+                                </span>
+                                <span className="text-xs font-normal text-[var(--tnl-body)]">{revisionsOpen ? "−" : "+"}</span>
+                            </button>
+                            {revisionsOpen ? (
+                                <div className="mt-3 space-y-2 border-t pt-3" style={{ borderColor: "var(--tnl-border)" }}>
+                                    {revisionsLoading ? (
+                                        <p role="status" className="text-xs text-[var(--tnl-body)]">{t("adminLoading")}</p>
+                                    ) : revisionsError ? (
+                                        <p role="alert" className="text-xs text-[var(--tnl-danger)]">{t("adminContentRevisionsLoadError")}</p>
+                                    ) : (revisionsData?.items ?? []).length === 0 ? (
+                                        <p className="text-xs text-[var(--tnl-body)]" data-testid="content-revisions-empty">{t("adminContentRevisionsEmpty")}</p>
+                                    ) : (
+                                        <ul className="space-y-2">
+                                            {(revisionsData?.items ?? []).map((rev) => {
+                                                const revTitle = String(rev[spec.titleField] ?? rev.title ?? rev.name ?? rev.id);
+                                                return (
+                                                    <li key={rev.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2.5 text-xs" style={{ borderColor: "var(--tnl-border)" }} data-testid={`content-revision-${rev.id}`}>
+                                                        <div className="min-w-0">
+                                                            <p className="truncate font-medium text-[var(--tnl-heading)]">{revTitle}</p>
+                                                            <p className="text-[11px] text-[var(--tnl-body)]">
+                                                                {rev.saved_by || t("adminContentRevisionsUnknownAuthor")}
+                                                                {rev.saved_at ? ` · ${new Date(rev.saved_at).toLocaleString()}` : ""}
+                                                            </p>
+                                                        </div>
+                                                        <ConfirmButton
+                                                            label={t("adminContentRevisionsRestore")}
+                                                            confirmLabel={t("adminConfirm")}
+                                                            question={t("adminContentRevisionsRestoreQuestion")}
+                                                            onConfirm={() => restoreRevision.mutate(rev.id)}
+                                                            testId={`content-revision-restore-${rev.id}`}
+                                                        />
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    )}
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : null}
                 </div>
             </div>
 
@@ -983,17 +1066,10 @@ export default function ContentEditor() {
                                     </h1>
                                     {form.cover_url ? (
                                         <div className="aspect-video w-full rounded-xl overflow-hidden border">
-                                            <img src={String(form.cover_url)} alt="Cover" className="h-full w-full object-cover" />
+                                            <img src={String(form.cover_url)} alt={t("adminCoverAlt")} className="h-full w-full object-cover" />
                                         </div>
                                     ) : null}
-                                    <div
-                                        className="tnl-prose editorial-prose max-w-none pt-4"
-                                        dangerouslySetInnerHTML={{
-                                            __html: String(
-                                                previewLang === "id" && form.body_id ? form.body_id : form.body || "<p>No content written yet.</p>"
-                                            ),
-                                        }}
-                                    />
+                                    <iframe title="Article body preview" sandbox="" referrerPolicy="no-referrer" className="min-h-80 w-full border-0" srcDoc={`<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><style>body{font:16px/1.7 system-ui,sans-serif;margin:0;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style></head><body>${String(previewLang === "id" && form.body_id ? form.body_id : form.body || "<p>No content written yet.</p>")}</body></html>`} />
                                 </article>
                             ) : resource === "events" ? (
                                 <div className="space-y-4">
@@ -1003,7 +1079,7 @@ export default function ContentEditor() {
                                     </h1>
                                     {(form.cover_url || form.cover_image) ? (
                                         <div className="aspect-video w-full rounded-xl overflow-hidden border">
-                                            <img src={String(form.cover_url || form.cover_image)} alt="Event Cover" className="h-full w-full object-cover" />
+                                            <img src={String(form.cover_url || form.cover_image)} alt={t("adminEventCoverAlt")} className="h-full w-full object-cover" />
                                         </div>
                                     ) : null}
                                     <p className="text-sm leading-relaxed text-[var(--tnl-body)]">

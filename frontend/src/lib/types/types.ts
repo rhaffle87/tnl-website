@@ -163,6 +163,7 @@ export interface LabEvent {
   is_deadline_passed?: boolean;
   registration_closed?: boolean;
   closed_reason?: "full" | "deadline" | "closed" | "upcoming" | "past" | null;
+  waitlist_open?: boolean;
 }
 
 export interface Activity {
@@ -335,6 +336,7 @@ export interface PageDoc {
   slug: string;
   title: string;
   title_id?: string | null;
+  meta_description?: string | null;
   blocks: Block[];
   status: string;
   is_system: boolean;
@@ -446,6 +448,9 @@ export interface AuthUser {
   divisions: string[];
   active: boolean;
   totp_enabled: boolean;
+  invite_pending?: boolean;
+  invite_expires_at?: string | null;
+  recovery_codes_remaining?: number;
   created_at?: string | null;
   last_login_at?: string | null;
 }
@@ -617,13 +622,39 @@ export interface ReviewQueueItem {
   issues: QualityIssue[];
 }
 
+export interface CollectionField {
+  key: string;
+  label: string;
+  type: string;
+  required?: boolean;
+  options?: string[];
+}
+
 export interface CollectionDef {
   id: string;
   key: string;
   name: string;
-  fields: { key: string; label: string; type: string; required?: boolean }[];
+  fields: CollectionField[];
   template: string;
   created_at: string;
+}
+
+export interface CollectionItem {
+  id: string;
+  collection_key: string;
+  values: Record<string, unknown>;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PublicCollectionResponse {
+  definition: CollectionDef;
+  items: CollectionItem[];
+  total: number;
+  offset?: number;
+  limit?: number;
+  has_more?: boolean;
 }
 
 export interface SavedBlock {

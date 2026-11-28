@@ -230,6 +230,35 @@
       ],
       "title": "Edge Gateway Network Throughput (bps)",
       "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "description": "Healthy only when CT 103 /api/health returns HTTP 2xx; the endpoint checks MongoDB and the Redis rate limiter.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "UNAVAILABLE" }, "1": { "color": "green", "text": "HEALTHY" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 23 },
+      "id": 9,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "Prometheus" }, "expr": "probe_success{job=\"backend_health\"}", "refId": "A" }
+      ],
+      "title": "Backend Health (MongoDB + Redis)",
+      "type": "stat"
     }
   ],
   "refresh": "15s",
@@ -241,5 +270,5 @@
   "timezone": "browser",
   "title": "TNL Application & Edge",
   "uid": "tnl-app-edge",
-  "version": 1
+  "version": 2
 }

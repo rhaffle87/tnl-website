@@ -107,7 +107,7 @@ describe("admin UX/a11y audit fixes", () => {
     expect(screen.queryByText(/No .* found|No data|Nothing/)).toBeNull();
 
     mocks.failContent = false;
-    fireEvent.click(screen.getByRole("button", { name: "Coba lagi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(screen.getByTestId("content-row-p1")).toBeInTheDocument());
   });
 
@@ -137,19 +137,19 @@ describe("admin UX/a11y audit fixes", () => {
     fireEvent.click(await screen.findByTestId("content-clear-filters"));
     expect(screen.getByTestId("content-search-input")).toHaveValue("");
     expect(screen.getByTestId("content-tab-all")).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByTestId("content-count")).toHaveTextContent("1 dari 2");
+    expect(screen.getByTestId("content-count")).toHaveTextContent("1 of 2");
     await waitFor(() => expect(screen.getByTestId("content-row-p1")).toBeInTheDocument());
   });
 
-  it("loads more content pages with an X dari Y count", async () => {
+  it("loads more content pages with a default-English X of Y count", async () => {
     renderContentManager();
     await screen.findByTestId("content-row-p1");
-    expect(screen.getByText("1 dari 2")).toBeInTheDocument();
+    expect(screen.getByText("1 of 2")).toBeInTheDocument();
 
     mocks.contentPage = 1;
     fireEvent.click(screen.getByTestId("load-more-content"));
     await waitFor(() => expect(screen.getByTestId("content-row-d1")).toBeInTheDocument());
-    expect(screen.getByText("2 dari 2")).toBeInTheDocument();
+    expect(screen.getByText("2 of 2")).toBeInTheDocument();
     expect(screen.queryByTestId("load-more-content")).toBeNull();
   });
 
@@ -226,7 +226,7 @@ describe("admin UX/a11y audit fixes", () => {
     const onRetry = vi.fn();
     renderWithProviders(<AdminErrorBanner message="Gagal memuat" onRetry={onRetry} />);
     expect(screen.getByRole("alert")).toHaveTextContent("Gagal memuat");
-    fireEvent.click(screen.getByRole("button", { name: "Coba lagi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
@@ -273,7 +273,7 @@ describe("admin UX/a11y audit fixes", () => {
     okSpy.mockRestore();
   });
 
-  it("paginates the users list with an X dari Y count", async () => {
+  it("paginates the users list with a default-English X of Y count", async () => {
     mocks.apiGet.mockImplementation((url: string) => {
       if (url.includes("/admin/users")) {
         const items = Array.from({ length: 51 }, (_, i) => ({
@@ -290,12 +290,12 @@ describe("admin UX/a11y audit fixes", () => {
 
     renderWithProviders(<UsersPage />);
     await screen.findByTestId("user-row-u49");
-    expect(screen.getByText("50 dari 51")).toBeInTheDocument();
+    expect(screen.getByText("50 of 51")).toBeInTheDocument();
     expect(screen.queryByTestId("user-row-u50")).toBeNull();
 
     fireEvent.click(screen.getByTestId("load-more-users"));
     await screen.findByTestId("user-row-u50");
-    expect(screen.getByText("51 dari 51")).toBeInTheDocument();
+    expect(screen.getByText("51 of 51")).toBeInTheDocument();
     expect(screen.queryByTestId("load-more-users")).toBeNull();
   });
 

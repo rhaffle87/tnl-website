@@ -54,6 +54,15 @@ groups:
           summary: "MongoDB daily backup is stale on CT 116"
           description: "Last successful MongoDB backup was more than 28 hours ago."
 
+      - alert: MongodbBackupMetricMissing
+        expr: absent(tnl_backup_last_timestamp_seconds{type="mongodb"})
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MongoDB backup freshness metric is missing"
+          description: "Prometheus has no successful backup timestamp metric from CT 116."
+
       - alert: MediaBackupStale
         expr: (time() - tnl_backup_last_timestamp_seconds{type="media"}) > 100800
         labels:
@@ -62,11 +71,65 @@ groups:
           summary: "Media & uploads daily backup is stale on CT 103"
           description: "Last successful Media backup was more than 28 hours ago."
 
+      - alert: MediaBackupMetricMissing
+        expr: absent(tnl_backup_last_timestamp_seconds{type="media"})
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Media backup freshness metric is missing"
+          description: "Prometheus has no successful media backup timestamp metric from CT 103."
+
       - alert: NginxExporterDown
-        expr: nginx_up == 0
+        expr: up{job="nginx"} == 0
         for: 2m
         labels:
           severity: critical
         annotations:
           summary: "Nginx reverse proxy on CT 102 is failing to report status"
           description: "Nginx exporter cannot scrape stub_status on CT 102."
+
+      - alert: NginxUnavailable
+        expr: nginx_up{job="nginx"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Nginx on CT 102 is unavailable"
+          description: "The Nginx exporter is reachable but cannot scrape its local stub_status endpoint."
+
+      - alert: BackendHealthProbeFailed
+        expr: probe_success{job="backend_health"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend health probe failed on CT 103"
+          description: "The public health endpoint is not returning HTTP 2xx; this also detects a degraded Redis rate limiter."
+
+      - alert: BlackboxExporterDown
+        expr: up{job="blackbox_exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Blackbox exporter is unavailable on CT 117"
+          description: "Backend health probes cannot run until the local exporter is restored."
+
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alertmanager is unavailable on CT 117"
+          description: "Prometheus can evaluate alerts but cannot deliver them while Alertmanager is unavailable."
+
+      - alert: AlertmanagerNotificationsFailing
+        expr: increase(alertmanager_notifications_failed_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alertmanager notification delivery is failing"
+          description: "Alertmanager reported failed notification attempts in the last five minutes."

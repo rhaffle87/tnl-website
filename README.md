@@ -231,11 +231,17 @@ no personal data written to the audit log, and no public participant lists.
 
 Two ways in, both ending in the same httpOnly cookie session:
 
-1. **Email + password** — bcrypt, rate limited, optional TOTP.
-2. **Google sign-in** (Emergent-managed) — restricted to `GOOGLE_ALLOWED_DOMAINS`
-   (`its.ac.id`, `student.its.ac.id`) plus any address in `GOOGLE_ALLOWED_EMAILS`.
-   **Invite-only**: the address must already exist as a user, otherwise sign-in is
-   refused with a clear message. No self-signup.
+1. **Email + password** — bcrypt, rate limited, optional TOTP with single-use recovery codes.
+2. **Google sign-in** (Direct Google OIDC with PKCE, when configured) — restricted to `GOOGLE_ALLOWED_DOMAINS`
+    (`its.ac.id`, `student.its.ac.id`) plus any address in `GOOGLE_ALLOWED_EMAILS`.
+    **Invite-only**: the address must already exist as a user, otherwise sign-in is
+    refused with a clear message. It remains disabled until `GOOGLE_CLIENT_ID`,
+    `GOOGLE_CLIENT_SECRET`, and `APP_URL` are configured. No self-signup.
+
+Password recovery uses a generic request response and a single-use link that expires
+after 30 minutes; sending the link requires configured outbound email. Successful reset
+revokes existing sessions. Users can also change their password after proving the
+current password, and administrators can rotate or revoke pending invitations.
 
 Roles: **Super Admin**, **Editor**, **Contributor** (drafts require approval),
 **Registrar**, **Viewer**. Division scoping narrows writes — Media edits News, Academics
@@ -256,15 +262,18 @@ curl -H "X-API-Key: tnl_…" -H 'Content-Type: application/json' \
      https://riset.its.ac.id/lab-tnl/api/v1/news/import
 ```
 
-OpenAPI description: `GET /api/v1-docs/openapi`. Interactive FastAPI docs: `/docs`.
+Versioned API contract: `GET /api/v1-docs/openapi`. Full generated OpenAPI schema:
+`GET /api/openapi.json` (also `/openapi.json`). Interactive FastAPI docs: `/docs`.
 
 ### Current API contract notes
 
 - **Self-service TOTP:** `POST /admin/users/{id}/totp-setup` returns the provisioning payload
   and `POST /admin/users/{id}/totp-confirm` activates it with the one-time code. The
   last-active-Super-Admin guard still applies.
-- **Upload signing:** `UPLOAD_SIGNING_SECRET` (empty placeholder in `.env.example`) must be set
-  in `backend/.env` when uploads are enabled; signed URLs fail closed without it.
+- **Upload signing:** Set a dedicated `UPLOAD_SIGNING_SECRET` in `backend/.env` when
+  uploads are enabled. If it is absent, signing falls back to `SESSION_SECRET` and then
+  `JWT_SECRET`; URL generation fails closed if none is configured. Keep the signing key
+  stable across deployments so existing signed links remain verifiable until expiry.
 - **Public settings:** `/api/public/settings` returns only an explicit allowlist of
   contact/theme fields, never the whole Settings document.
 - **Outbox:** notification outbox endpoints are restricted to Super Admin.
@@ -277,38 +286,34 @@ OpenAPI description: `GET /api/v1-docs/openapi`. Interactive FastAPI docs: `/doc
 
 ## Backup and restore
 
-With the Docker Compose stack, back up from the **host**: the backend image contains neither
-`scripts/` nor the MongoDB tools, but the `mongo:7` image ships `mongodump` / `mongorestore`.
+The production database and media backup timers, retention, freshness metrics, off-site
+pull, and safe local restore drill are documented in
+[`docs/ops/BACKUP-AND-CI-RUNBOOK.md`](docs/ops/BACKUP-AND-CI-RUNBOOK.md). Timer files in
+the repository do not prove the timers are enabled on a guest. Do not use a production
+database or Compose data volume as a restore target for routine verification.
 
-```bash
-mkdir -p backups
-docker compose exec -T mongodb mongodump --db=tnl --archive --gzip > backups/db-$(date +%F).archive.gz
-docker run --rm -v tnl-website_media-data:/data -v "$PWD/backups":/out alpine \
-  tar -czf /out/media-$(date +%F).tar.gz -C /data .
-# nightly: 0 2 * * *  cd /path/to/tnl-website && <the two commands above>
+On Windows, after a verified workstation copy is available, the isolated drill is:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\ops\restore-drill.ps1 `
+  -DatabaseArchive backups\offsite\latest-db.archive.gz `
+  -MediaArchive backups\offsite\latest-media.tar.gz
 ```
 
-`tnl-website_media-data` is `<compose project>_media-data`; confirm the name with
-`docker volume ls`. Replace `tnl` with `DB_NAME` if you changed it. Keep copies **off** the
-server, and test a restore at least once.
+It requires Docker Engine. Mongo runs in a network-isolated disposable container; media
+is extracted under a unique temporary directory. The drill never uses `--drop`, a
+production connection string, or a persistent volume.
 
-Restore:
-
-```bash
-docker compose exec -T mongodb mongorestore --drop --archive --gzip < backups/db-YYYY-MM-DD.archive.gz
-docker run --rm -v tnl-website_media-data:/data -v "$PWD/backups":/in alpine \
-  tar -xzf /in/media-YYYY-MM-DD.tar.gz -C /data
-```
-
-`scripts/ops/backup.sh` remains for the original single-container layout (`/app/backend/.env`,
-`mongodump` on the PATH); it does not run inside the Compose backend container.
+`scripts/ops/backup.sh` remains for the original single-container layout
+(`/app/backend/.env`, `mongodump` on the PATH); it does not run inside the Compose backend
+container.
 
 ---
 
 ## Tests
 
 ```bash
-cd backend && pip install -r requirements-dev.txt   # test tooling is not in requirements.txt
+cd backend && python -m pip install --require-hashes -r requirements-dev.txt
 cd backend && pytest                     # auth & permissions, registration uniqueness,
                                          # block renderer contract, quality gates
 cd frontend && npm ci
@@ -321,19 +326,39 @@ cd frontend && npm run typecheck && npm run lint && npm test
 
 In production at `https://labtnl.site`, the application runs across an isolated Proxmox LXC cluster networked over Tailscale:
 - **CT 102 (`labtnl-web` / `100.102.105.77`)**: Public entry point via Cloudflare Tunnel (`cloudflared`). Nginx terminates traffic, applies security headers, restores client IP via `CF-Connecting-IP`, and reverse proxies to CT 103.
-- **CT 103 (`labtnl-app` / `100.65.129.8`)**: FastAPI backend uvicorn on port 8001 (configured with `--proxy-headers --forwarded-allow-ips "100.102.105.77,127.0.0.1"`) and Nginx serving frontend dist on port 3000 with `@seo_shell` server-rendering.
-- **CT 116 (`labtnl-db` / `100.111.32.102`)**: MongoDB database service with automated nightly backup scripts (`/usr/local/bin/tnl-backup-db.sh`) and Prometheus node-exporter textfile metrics.
-- **CT 117 (`labtnl-monitor` / `100.114.215.48`)**: Prometheus & Grafana monitoring stack (`https://grafana.labtnl.site`).
+- **CT 103 (`labtnl-app` / `100.65.129.8`)**: FastAPI backend uvicorn on port 8001 (configured with `--proxy-headers --forwarded-allow-ips "100.102.105.77,127.0.0.1"`), Nginx serving frontend dist on port 3000 with `@seo_shell` server-rendering, and loopback-only Redis for shared rate limits. Redis uses AOF with `appendfsync everysec`.
+- **CT 116 (`labtnl-db` / `100.111.32.102`)**: MongoDB database service; scheduled backup units and Prometheus node-exporter textfile metrics are defined in the repository and must be checked on-host before relying on them.
+- **CT 117 (`labtnl-monitor` / `100.114.215.48`)**: Prometheus & Grafana (Grafana API on port 3000). The repository now defines local Alertmanager/blackbox exporters and Redis-aware backend health probes, but those additions require the guarded monitoring installer before they are active on the guest.
+
+The monitoring deployment hook is plan-only unless explicitly invoked with `-Execute`;
+optional Nginx exporter setup on CT 102 additionally requires `-InstallNginxExporter`.
+Alertmanager has no external receiver by default. No recipient or credential is stored
+in this repository. Guest installation, Tailscale ACL/firewall restriction, and optional
+delivery credentials remain operator-managed and unverified here.
 
 To deploy updates from the project root (the script is a **dry run by default**; add
 `-Execute` only when you intend to change the servers — it backs up the database first,
-snapshots config/bundle for rollback, and aborts when any health check fails):
+snapshots source, Python venv, config, and frontend for rollback, and aborts when any health check fails):
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\deploy\deploy.ps1            # dry run
 powershell -ExecutionPolicy Bypass -File scripts\deploy\deploy.ps1 -Execute   # real deploy
 # health-check exits 0 on all-pass, 1 on any failure (safe for CI / deploy gate)
 powershell -ExecutionPolicy Bypass -File scripts\deploy\health-check.ps1
 ```
+
+Redis must already be installed and running on CT 103; deployment checks it before
+changing the app. The default `REDIS_URL` is `redis://127.0.0.1:6379/0`. The CI Compose
+gate starts MongoDB, Redis, backend, and frontend with disposable project-scoped
+volumes, then removes those volumes. A separate Mongo 7 service runs the real
+multi-process workflow harness against a generated test database.
+The backend briefly stops while source and dependencies are replaced. Failed releases
+restore the saved venv and source, preserve `.env`, media, and downloaded files, then
+verify the restored services. Snapshot paths are printed by the deployment script.
+
+Offline support stores only a bilingual fallback document and the public manifest.
+Known public information routes display that fallback when navigation fails; API,
+admin/auth, uploads/media, dynamic, and query-bearing routes remain network-only.
+Submissions are never queued or replayed, and worker updates wait for old tabs to close.
 
 ---
 

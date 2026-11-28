@@ -329,14 +329,16 @@ async def test_registration_quota_cutoff_and_wa_protection(async_client, mock_db
     assert p2.status_code == 200
     assert p2.json().get("status") == "accepted"
 
-    # Participant 3 (Quota Full) -> 409, detail indicates full, WA URL NEVER leaked!
+    # Participant 3 joins the durable waitlist without receiving the accepted-only group URL.
     p3 = await async_client.post(
         f"/registrations/{ev['id']}",
         data={"consent": "1", "f_full-name": "Peserta Tiga", "f_email": "tiga@example.com"},
     )
-    assert p3.status_code == 409
-    assert "kuota" in p3.json().get("detail", "").lower()
+    assert p3.status_code == 200
+    assert p3.json()["status"] == "waitlisted"
+    stored = await mock_db.registrations.find_one({"id": p3.json()["id"]})
+    assert stored and stored["status"] == "waitlisted"
+    assert await mock_db.registrations.count_documents({"event_id": ev["id"], "status": "accepted"}) == 2
     assert DUMMY_WA_GROUP not in p3.text
     assert "whatsapp_group_url" not in p3.json()
-
 

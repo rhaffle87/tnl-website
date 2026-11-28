@@ -7,7 +7,7 @@ param (
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $remoteArchive = "/tmp/${Database}-backup-${timestamp}.archive"
-$localDir = (Resolve-Path -Path $PSScriptRoot\..\..).Path + "\backups\db"
+$localDir = [System.IO.Path]::GetFullPath($OutputDir)
 if (-not (Test-Path $localDir)) {
     New-Item -ItemType Directory -Path $localDir -Force | Out-Null
 }

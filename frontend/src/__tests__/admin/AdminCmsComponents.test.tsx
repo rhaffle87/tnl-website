@@ -8,6 +8,8 @@ import { RegistrarPage, ThemePage, publishedEventQuota } from "@/pages/admin/Adm
 import { renderWithProviders } from "./test-utils";
 import * as api from "@/lib/api/api";
 import type { LabEvent } from "@/lib/types/types";
+import { AdminLocaleProvider } from "@/lib/i18n/admin-i18n";
+import { LocaleContext, STRINGS } from "@/lib/i18n/i18n";
 
 vi.mock("@/lib/api/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api/api")>("@/lib/api/api");
@@ -62,6 +64,7 @@ vi.mock("@/lib/api/api", async () => {
         });
       }
       if (url.includes("/admin/content/members")) {
+        if (url === "/admin/content/members/m-1") return Promise.resolve({ id: "m-1", name: "Dr. Ir. Achmad Affandi, DEA.", role: "lecturer", position: "head", division: "BPH", status: "active", is_head: true, published: true, show_nim: false });
         return Promise.resolve({
           items: [
             {
@@ -80,6 +83,7 @@ vi.mock("@/lib/api/api", async () => {
         });
       }
       if (url.includes("/admin/content/events")) {
+        if (url === "/admin/content/events/ev-1") return Promise.resolve({ id: "ev-1", title: "Cisco Packet Tracer Training", status: "published" });
         return Promise.resolve({
           items: [{ id: "ev-1", title: "Cisco Packet Tracer Training", status: "published" }],
           total: 1,
@@ -95,11 +99,27 @@ vi.mock("@/lib/api/api", async () => {
     }),
     apiPost: vi.fn().mockResolvedValue({ ok: true, synced: 1 }),
     apiPut: vi.fn().mockResolvedValue({ id: "ev-1", status: "draft" }),
+    apiPatch: vi.fn().mockResolvedValue({ id: "ev-1", status: "draft" }),
     apiDelete: vi.fn().mockResolvedValue({ ok: true }),
   };
 });
 
 describe("Admin CMS Components", () => {
+  it.each(["en", "id"] as const)("ContentEditor delegates the empty article placeholder to the %s editor locale", async (locale) => {
+    renderWithProviders(
+      <LocaleContext.Provider value={{ locale, setLocale: vi.fn(), t: (key) => STRINGS[locale][key] }}>
+        <AdminLocaleProvider>
+          <Routes>
+            <Route path="/admin/content/:resource/new" element={<ContentEditor />} />
+          </Routes>
+        </AdminLocaleProvider>
+      </LocaleContext.Provider>,
+      { route: "/admin/content/posts/new" }
+    );
+    await waitFor(() => expect(screen.getByTestId("content-field-body-editor").querySelector("[data-placeholder]"))
+      .toHaveAttribute("data-placeholder", locale === "id" ? "Tulis artikel…" : "Write the article…"));
+  });
+
   it("AdminLogin renders sign-in form with email and password inputs", () => {
     renderWithProviders(<AdminLogin />, { route: "/admin/login" });
 
@@ -241,6 +261,7 @@ describe("Admin CMS Components", () => {
     expect(screen.getByTestId("content-editor-title")).toHaveTextContent("New Event");
     expect(screen.getByTestId("content-editor-back")).toHaveAttribute("href", "/admin/content/events");
     expect(screen.getByTestId("content-editor-status")).toHaveTextContent("Draft");
+    expect(screen.getByTestId("content-save-button").parentElement).toHaveClass("flex-wrap");
     expect(screen.getByTestId("content-save-button")).toHaveTextContent("Create as Draft");
 
     // Publishing the draft must update the action label, not keep a stale promise.
@@ -257,7 +278,7 @@ describe("Admin CMS Components", () => {
     expect(screen.getByTestId("content-section-publish")).toBeInTheDocument();
   });
 
-  it("ContentEditor edit route loads the item, flags dirty state and saves via apiPut", async () => {
+  it("ContentEditor edit route loads the item, flags dirty state and saves via PATCH", async () => {
     renderWithProviders(
       <Routes>
         <Route path="/admin/content/:resource/:id" element={<ContentEditor />} />
@@ -277,7 +298,7 @@ describe("Admin CMS Components", () => {
     fireEvent.click(screen.getByTestId("content-save-button"));
 
     await waitFor(() => {
-      expect(api.apiPut).toHaveBeenCalledWith(
+      expect(api.apiPatch).toHaveBeenCalledWith(
         "/admin/content/events/ev-1",
         expect.objectContaining({ title: "Updated title" })
       );
@@ -309,7 +330,7 @@ describe("Admin CMS Components", () => {
     // Saving emits both values.
     fireEvent.click(screen.getByTestId("content-save-button"));
     await waitFor(() => {
-      expect(api.apiPut).toHaveBeenCalledWith(
+      expect(api.apiPatch).toHaveBeenCalledWith(
         "/admin/content/events/ev-1",
         expect.objectContaining({ title: "English headline", title_id: "Judul Bahasa Indonesia" })
       );

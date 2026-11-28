@@ -9,6 +9,7 @@ from fastapi import APIRouter, Query
 from fastapi.responses import HTMLResponse, Response
 
 from lib.db import db
+from lib.publishing import public_page_projection
 from lib.settings import get_settings
 
 router = APIRouter(tags=["seo"])
@@ -158,6 +159,7 @@ async def render_ssr_shell(path: str = Query("/")) -> HTMLResponse:
                 page_slug = page_slug[2:]
             page = await db.pages.find_one({"slug": page_slug, "status": "published"})
             if page:
+                page = public_page_projection(page)
                 title = f"{page.get('title')} — Laboratorium Jaringan Telekomunikasi ITS"
                 if page.get("meta_description"):
                     desc = page["meta_description"]
@@ -267,7 +269,8 @@ async def render_ssr_shell(path: str = Query("/")) -> HTMLResponse:
     )
 
 
-@router.api_route("/sitemap.xml", methods=["GET", "HEAD"])
+@router.head("/sitemap.xml", include_in_schema=False)
+@router.get("/sitemap.xml")
 async def sitemap():
     base = site_base()
     urls: list[tuple[str, str | None]] = [
@@ -301,7 +304,8 @@ async def sitemap():
     return Response(content="\n".join(body), media_type="application/xml")
 
 
-@router.api_route("/robots.txt", methods=["GET", "HEAD"])
+@router.head("/robots.txt", include_in_schema=False)
+@router.get("/robots.txt")
 async def robots():
     base = site_base()
     s = await get_settings()

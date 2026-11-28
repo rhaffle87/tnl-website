@@ -2,134 +2,399 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  backend-tests:
-    name: Backend Pytest Suite
-    runs-on: ubuntu-latest
+  backend-checks:
+    name: Backend Checks (Python ${{ matrix.python }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11 matches backend/Dockerfile; retain 3.12 compatibility coverage.
+        include:
+          - python: "3.11"
+            lock: backend/requirements-dev.txt
+          - python: "3.12"
+            lock: backend/requirements-dev-py312.lock
+    env:
+      TESTING: "1"
+      MONGO_URL: "mongodb://127.0.0.1:27017"
+      DB_NAME: "tnl_ci_isolated"
+      MEDIA_DIR: "/tmp/tnl-ci-media"
+      JWT_SECRET: "test-ci-secret-key-for-tnl-mock-testing-only-1234567890"
+      SEED_ADMIN_PASSWORD: "ChangeMe2026!"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
-          python-version: "3.12"
-          cache: "pip"
-          cache-dependency-path: "backend/requirements-dev.txt"
+          persist-credentials: false
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r backend/requirements-dev.txt
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+            backend/requirements-dev-py312.lock
 
-      - name: Run Backend Unit & Integration Tests
-        env:
-          TESTING: "1"
-          MONGO_URL: "mongodb://127.0.0.1:27017"
-          DB_NAME: "tnl_ci_isolated"
-          MEDIA_DIR: "/tmp/media"
-          JWT_SECRET: "test-ci-secret-key-for-tnl-mock-testing-only-1234567890"
-          SEED_ADMIN_PASSWORD: "ChangeMe2026!"
-        run: |
-          python -m pytest backend/tests -v --cov=backend --cov-report=term-missing
+      - name: Install backend and development dependencies
+        run: python -m pip install --require-hashes -r ${{ matrix.lock }}
+
+      - name: Ruff correctness checks
+        run: python -m ruff check backend
+
+      - name: Typecheck schemas and rate limiter
+        working-directory: backend
+        # Legacy seed/router typing is not yet a clean repository-wide baseline.
+        run: python -m mypy models lib/rate_limit.py --follow-imports=silent --ignore-missing-imports
+
+      - name: Backend unit and integration tests
+        # MongoDB is patched by conftest; Redis behavior uses fakeredis with Lua.
+        run: python -m pytest backend/tests -v --cov=backend --cov-report=term-missing --cov-report=xml:coverage.xml
+
+      - name: Upload backend coverage
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: backend-coverage-python-${{ matrix.python }}
+          path: coverage.xml
+          if-no-files-found: ignore
+          retention-days: 7
 
   frontend-checks:
-    name: Frontend Typecheck, Vitest & Build
-    runs-on: ubuntu-latest
+    name: Frontend Lint, Types, Tests and Build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
-          cache: "npm"
-          cache-dependency-path: "frontend/package-lock.json"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install Frontend Dependencies
-        run: |
-          npm --prefix frontend ci
+      - name: Install frontend dependencies
+        run: npm ci
 
-      - name: TypeScript Typecheck
-        run: |
-          npm --prefix frontend run typecheck
+      - name: Lint frontend
+        run: npm run lint
 
-      - name: Run Vitest Suite
-        run: |
-          npm --prefix frontend run test
+      - name: TypeScript typecheck
+        run: npm run typecheck
 
-      - name: Build Frontend Production Bundle
-        run: |
-          npm --prefix frontend run build
+      - name: Vitest suite
+        run: npm run test
+
+      - name: Build production bundle
+        run: npm run build
 
       - name: Install Playwright Chromium
-        run: |
-          cd frontend && npx playwright install --with-deps chromium
+        run: npx --no-install playwright install --with-deps chromium
 
-      - name: Playwright Layout Geometry Gate
-        run: |
-          npm --prefix frontend run test:geometry
+      - name: Playwright layout geometry gate
+        run: npm run test:geometry
 
-  web-standards-guard:
-    name: Repository Hygiene & Security Guard
-    runs-on: ubuntu-latest
+      - name: Accessibility checks
+        run: npm run test:a11y
+
+      - name: Offline and service worker checks
+        run: npm run test:pwa
+
+      - name: Upload production bundle
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload browser failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: playwright-results
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  dependency-security:
+    name: Dependency Security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
 
-      - name: Verify No Secrets or .env Tracked in Git
+      - name: Set up Node.js 22
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Audit npm lockfile (high and critical)
+        run: npm --prefix frontend audit --audit-level=high
+
+      - name: Install Python dependency auditor
+        run: python -m pip install --require-hashes -r backend/requirements-dev-py312.lock
+
+      - name: Audit production Python requirements
+        run: python -m pip_audit -r backend/requirements.txt --progress-spinner off
+
+  docker-build:
+    name: Docker Build (${{ matrix.service }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: [backend-checks, frontend-checks, dependency-security, web-standards-guard]
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [frontend, backend]
+    env:
+      DOCKER_BUILD_SUMMARY: "false"
+      DOCKER_BUILD_RECORD_UPLOAD: "false"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Build image without publishing
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: ./${{ matrix.service }}
+          push: false
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  monitoring-config:
+    name: Validate Monitoring Configuration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Check Prometheus configuration and alert rules
+        run: >-
+          docker run --rm --network none
+          -v "$GITHUB_WORKSPACE/scripts/monitoring:/etc/prometheus:ro"
+          --entrypoint /bin/promtool
+          prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
+          check config /etc/prometheus/prometheus.yml
+
+      - name: Check Alertmanager config and optional renderer fallback
         run: |
-          echo "Checking tracked files for sensitive env or secret patterns..."
-          SUSPECT=$(git ls-files | grep -E '(\.env$|\.env\.local$|\.env\.production$|token\.json|credentials\.json)' || true)
+          docker run --rm --network none \
+            -v "$GITHUB_WORKSPACE/scripts/monitoring:/etc/alertmanager:ro" \
+            --entrypoint /bin/amtool \
+            prom/alertmanager:v0.28.1@sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba \
+            check-config /etc/alertmanager/alertmanager.yml
+          env -u TNL_ALERTMANAGER_WEBHOOK_URL -u TNL_ALERTMANAGER_BEARER_TOKEN_FILE \
+            python scripts/monitoring/render-alertmanager-config.py \
+            --output "$RUNNER_TEMP/alertmanager-no-delivery.yml"
+          docker run --rm --network none \
+            -v "$RUNNER_TEMP/alertmanager-no-delivery.yml:/tmp/alertmanager.yml:ro" \
+            --entrypoint /bin/amtool \
+            prom/alertmanager:v0.28.1@sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba \
+            check-config /tmp/alertmanager.yml
+
+      - name: Check Blackbox exporter probe configuration
+        run: >-
+          docker run --rm --network none
+          -v "$GITHUB_WORKSPACE/scripts/monitoring/blackbox.yml:/etc/blackbox.yml:ro"
+          --entrypoint /bin/blackbox_exporter
+          prom/blackbox-exporter:v0.26.0@sha256:92e05d5fe0df01d3980518dc42f07b778a8997048b57392ebc7f7391ebd7bb06
+          --config.file=/etc/blackbox.yml --config.check
+
+      - name: Check monitoring Python and dashboard artifacts
+        run: |
+          python - <<'PY'
+          import ast
+          import json
+          from pathlib import Path
+
+          for source in (
+              "scripts/monitoring/render-alertmanager-config.py",
+              "scripts/test/run_e2e_smoke.py",
+          ):
+              ast.parse(Path(source).read_text(encoding="utf-8"))
+          for dashboard in Path("scripts/monitoring/dashboards").glob("*.json"):
+              json.loads(dashboard.read_text(encoding="utf-8"))
+          print("Monitoring renderer and dashboard JSON are valid.")
+          PY
+          bash -n scripts/monitoring/install-ct117-monitoring.sh
+          bash -n scripts/monitoring/setup-nginx-exporter.sh
+          bash -n scripts/ops/tnl-backup-db.sh
+          bash -n scripts/ops/tnl-backup-media.sh
+
+  compose-integration:
+    name: Disposable Compose Startup and Integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    needs: [backend-checks, frontend-checks, dependency-security, web-standards-guard, docker-build, monitoring-config]
+    env:
+      COMPOSE_PROJECT_NAME: tnl-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      TNL_BACKEND_ENV_FILE: ./.tnl-ci.env
+      JWT_SECRET: ci-only-not-a-production-secret-0123456789abcdef
+      SEED_ADMIN_PASSWORD: ci-only-not-a-production-password
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Create disposable compose environment
+        run: |
+          umask 077
+          printf 'JWT_SECRET=%s\nSEED_ADMIN_PASSWORD=%s\nCOOKIE_SECURE=false\nDB_NAME=tnl_ci\n' "$JWT_SECRET" "$SEED_ADMIN_PASSWORD" > "$TNL_BACKEND_ENV_FILE"
+          chmod 600 "$TNL_BACKEND_ENV_FILE"
+
+      - name: Start isolated Compose stack
+        run: docker compose -p "$COMPOSE_PROJECT_NAME" -f docker-compose.yml up --build --detach --wait --wait-timeout 180
+
+      - name: Verify MongoDB, Redis, backend and frontend health
+        run: |
+          docker compose -p "$COMPOSE_PROJECT_NAME" exec -T mongodb mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' | grep -qx 1
+          docker compose -p "$COMPOSE_PROJECT_NAME" exec -T redis redis-cli ping | grep -qx PONG
+          python - <<'PY'
+          import json
+          from urllib.request import urlopen
+
+          with urlopen("http://127.0.0.1:3000/api/health", timeout=10) as response:
+              health = json.load(response)
+          assert health.get("status") == "ok"
+          assert health.get("database") == "connected"
+          assert health.get("rate_limiter") == "connected"
+          with urlopen("http://127.0.0.1:3000/", timeout=10) as response:
+              assert response.status == 200
+          print("Disposable Compose services and proxied application health passed.")
+          PY
+
+      - name: Remove disposable Compose resources
+        if: always()
+        run: |
+          docker compose -p "$COMPOSE_PROJECT_NAME" -f docker-compose.yml down --volumes --remove-orphans
+          rm -f "$TNL_BACKEND_ENV_FILE"
+
+  mongo-workflow-integration:
+    name: Disposable MongoDB Workflow Integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      mongodb:
+        image: mongo:7@sha256:41e8195b2791692695e1dc9bd21cd51d0a3af05fff8ace9304a5c1acf94f1ae1
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping:1}).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TESTING: "1"
+      TNL_INTEGRATION_MONGO_URL: mongodb://127.0.0.1:27017
+      JWT_SECRET: ci-only-not-a-production-secret-0123456789abcdef
+      SEED_ADMIN_PASSWORD: ci-only-not-a-production-password
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev-py312.lock
+
+      - name: Install pinned backend test environment
+        run: python -m pip install --require-hashes -r backend/requirements-dev-py312.lock
+
+      - name: Verify MongoDB-backed multi-process workflows
+        run: python scripts/test/verify_mongo_workflows.py
+
+  web-standards-guard:
+    name: Repository Hygiene and Security Guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Verify no sensitive environment or credential files are tracked
+        run: |
+          SUSPECT=$(git ls-files | grep -E '(^|/)(\.env($|\.(local|production|development|test|staging)(\.local)?$)|token\.json$|credentials\.json$)' || true)
           if [ -n "$SUSPECT" ]; then
-            echo "::error::Found sensitive files committed to Git:"
-            echo "$SUSPECT"
+            echo "::error::Sensitive environment or credential files are tracked:"
+            printf '%s\n' "$SUSPECT"
             exit 1
           fi
-          echo "No sensitive secret files found in Git index."
 
-      - name: Verify No Tracked Archives and Clean Working Tree
+      - name: Verify no tracked archives and clean checkout
         run: |
-          echo "Ensuring no archive files are tracked and the working tree is clean..."
           ARCHIVES=$(git ls-files | grep -E '(\.tar\.gz$|\.archive\.gz$|\.archive$)' || true)
           if [ -n "$ARCHIVES" ]; then
-            echo "::error::Found archive files committed to Git:"
-            echo "$ARCHIVES"
+            echo "::error::Archive files are tracked:"
+            printf '%s\n' "$ARCHIVES"
             exit 1
           fi
           DIRTY=$(git status --porcelain --untracked-files=normal)
           if [ -n "$DIRTY" ]; then
-            echo "::error::Working tree contains uncommitted or untracked files:"
-            echo "$DIRTY"
+            echo "::error::Checkout contains uncommitted or untracked files:"
+            printf '%s\n' "$DIRTY"
             exit 1
           fi
-          echo "Repository working tree is clean."
 
-      - name: Scan Tracked Sources for Hardcoded Credential Assignments
+      - name: Scan tracked sources for hardcoded credential assignments
         run: |
-          echo "Scanning tracked source files for obvious credential assignments..."
-          # Nilai literal 16+ karakter saja; kata "secret" di docs, contoh .env,
-          # fixture test, dan workflow CI tidak ikut dipindai.
+          # Only obvious literal assignments; documentation, examples and test fixtures are excluded.
           PATTERN="(SECRET|TOKEN|PASSWORD|PASSWD|API_KEY|APIKEY|PRIVATE_KEY|ACCESS_KEY|CREDENTIAL)[A-Z0-9_]*[[:space:]]*[:=][[:space:]]*[\"']?[A-Za-z0-9+/=_-]{16,}[\"']?([[:space:]]|;|$)"
           CREDENTIALS=$(git grep -n -I -E -i -e "$PATTERN" -- . \
             ':(exclude)*.example' ':(exclude)*.example.*' ':(exclude)*.md' \
             ':(exclude)backend/tests/**' ':(exclude)**/*test*' ':(exclude)**/__tests__/**' \
             ':(exclude)frontend/e2e/**' ':(exclude).github/workflows/**' \
             ':(exclude)*.lock' ':(exclude)package-lock.json' || true)
-          CREDENTIALS=$(echo "$CREDENTIALS" | grep -v -E -i '(process\.env|os\.environ|getenv|settings\.|config\.|\$\{|placeholder|example|dummy|changeme|test-ci|redacted|<[A-Za-z])' || true)
+          CREDENTIALS=$(printf '%s\n' "$CREDENTIALS" | grep -v -E -i '(process\.env|os\.environ|getenv|settings\.|config\.|\$\{|placeholder|example|dummy|changeme|test-ci|redacted|<[A-Za-z])' || true)
           if [ -n "$CREDENTIALS" ]; then
-            echo "::error::Possible hardcoded credentials in tracked source:"
-            echo "$CREDENTIALS"
+            echo "::error::Possible hardcoded credentials in tracked source (review required):"
+            printf '%s\n' "$CREDENTIALS" | cut -d: -f1,2
             exit 1
           fi
-          echo "No hardcoded credential assignments found in tracked source."

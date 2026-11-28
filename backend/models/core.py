@@ -39,6 +39,13 @@ class UserCreate(BaseModel):
     divisions: list[str] = []
     password: str | None = None  # when omitted, an invite token is generated
 
+    @field_validator("divisions")
+    @classmethod
+    def _divisions(cls, value: list[str]) -> list[str]:
+        if set(value) - {"media", "academics", "event", "research"}:
+            raise ValueError("Unknown division.")
+        return list(dict.fromkeys(value))
+
 
 class UserUpdate(BaseModel):
     model_config = {"extra": "forbid"}
@@ -48,6 +55,11 @@ class UserUpdate(BaseModel):
     active: bool | None = None
     password: str | None = None
     totp_enabled: bool | None = None
+
+    @field_validator("divisions")
+    @classmethod
+    def _divisions(cls, value: list[str] | None) -> list[str] | None:
+        return UserCreate._divisions(value) if value is not None else None
 
 
 class LoginIn(BaseModel):
@@ -202,6 +214,8 @@ class PageUpsert(BaseModel):
     slug: str
     title: str
     title_id: str | None = None
+    meta_description: str | None = Field(default=None, max_length=600)
+    meta_description_id: str | None = Field(default=None, max_length=600)
     status: str = "draft"
 
 
@@ -209,6 +223,8 @@ class PagePatch(BaseModel):
     model_config = {"extra": "forbid"}
     title: str | None = None
     title_id: str | None = None
+    meta_description: str | None = Field(default=None, max_length=600)
+    meta_description_id: str | None = Field(default=None, max_length=600)
     status: str | None = None
 
 
@@ -256,6 +272,8 @@ class BulkEmailIn(BaseModel):
 
 class CheckinIn(BaseModel):
     code: str
+    override: bool = False
+    override_reason: str | None = Field(default=None, max_length=500)
 
 
 class IssueCertificatesIn(BaseModel):

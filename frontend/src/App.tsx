@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Outlet, Route, Routes, useLocation } from "react-router-dom";
+import { Outlet, Route, Routes } from "react-router-dom";
 import { LazyMotion, domAnimation } from "motion/react";
 import { Toaster } from "@/components/ui/sonner";
 import RouteErrorBoundary from "@/components/RouteErrorBoundary";
@@ -25,6 +25,7 @@ const VerifyPage = lazy(() => import("@/pages/UtilityPages").then((m) => ({ defa
 
 // Admin routes — code-split so public visitors never download CMS logic
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
+const AdminPasswordReset = lazy(() => import("@/pages/admin/AdminLogin").then((m) => ({ default: m.AdminPasswordReset })));
 const AdminInviteAccept = lazy(() => import("@/pages/admin/AdminLogin").then((m) => ({ default: m.AdminInviteAccept })));
 const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -34,16 +35,15 @@ const ReviewQueuePage = lazy(() => import("@/pages/admin/AdminDashboard").then((
 const ContentManager = lazy(() => import("@/pages/admin/ContentManager"));
 const ContentEditor = lazy(() => import("@/pages/admin/ContentEditor"));
 const PagesList = lazy(() => import("@/pages/admin/PagesList"));
-const AuthCallback = lazy(() => import("@/pages/admin/AuthCallback"));
 const LabPhotosPage = lazy(() => import("@/pages/admin/LabConsentScreens").then((m) => ({ default: m.LabPhotosPage })));
 const PublicationImportPage = lazy(() => import("@/pages/admin/LabConsentScreens").then((m) => ({ default: m.PublicationImportPage })));
-const ApiKeysPage = lazy(() => import("@/pages/admin/AdminScreens").then((m) => ({ default: m.ApiKeysPage })));
-const InboxPage = lazy(() => import("@/pages/admin/AdminScreens").then((m) => ({ default: m.InboxPage })));
-const MediaLibrary = lazy(() => import("@/pages/admin/AdminScreens").then((m) => ({ default: m.MediaLibrary })));
-const RegistrarPage = lazy(() => import("@/pages/admin/AdminScreens").then((m) => ({ default: m.RegistrarPage })));
-const SettingsPage = lazy(() => import("@/pages/admin/AdminScreens").then((m) => ({ default: m.SettingsPage })));
-const ThemePage = lazy(() => import("@/pages/admin/AdminScreens").then((m) => ({ default: m.ThemePage })));
-const UsersPage = lazy(() => import("@/pages/admin/AdminScreens").then((m) => ({ default: m.UsersPage })));
+const ApiKeysPage = lazy(() => import("@/pages/admin/screens/ApiKeysPage").then((m) => ({ default: m.ApiKeysPage })));
+const InboxPage = lazy(() => import("@/pages/admin/screens/InboxPage").then((m) => ({ default: m.InboxPage })));
+const MediaLibrary = lazy(() => import("@/pages/admin/screens/MediaLibraryPage").then((m) => ({ default: m.MediaLibrary })));
+const RegistrarPage = lazy(() => import("@/pages/admin/screens/RegistrarPage").then((m) => ({ default: m.RegistrarPage })));
+const SettingsPage = lazy(() => import("@/pages/admin/screens/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+const ThemePage = lazy(() => import("@/pages/admin/screens/ThemePage").then((m) => ({ default: m.ThemePage })));
+const UsersPage = lazy(() => import("@/pages/admin/screens/UsersPage").then((m) => ({ default: m.UsersPage })));
 
 function RouteFallback() {
     return (
@@ -60,22 +60,6 @@ function AdminLocaleRoute() {
 }
 
 export default function App() {
-    // Read the fragment from useLocation (reactive) — the OAuth return must be
-    // handled before any auth guard runs.
-    const location = useLocation();
-    if (location.hash?.includes("session_id=")) {
-        return (
-            <LocaleProvider>
-                <AdminLocaleProvider>
-                <Suspense fallback={<RouteFallback />}>
-                    <AuthCallback />
-                </Suspense>
-                </AdminLocaleProvider>
-                <Toaster richColors />
-            </LocaleProvider>
-        );
-    }
-
     return (
         <LocaleProvider>
             <LazyMotion features={domAnimation} strict>
@@ -85,6 +69,7 @@ export default function App() {
                     {/* Admin — TNL Studio */}
                     <Route element={<AdminLocaleRoute />}>
                     <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin/reset-password" element={<AdminPasswordReset />} />
                     <Route path="/admin/invite/:token" element={<AdminInviteAccept />} />
                     <Route path="/admin" element={<AdminLayout />}>
                         <Route index element={<AdminDashboard />} />

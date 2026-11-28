@@ -9,6 +9,11 @@ global:
 rule_files:
   - '/etc/prometheus/alert_rules.yml'
 
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['127.0.0.1:9093']
+
 scrape_configs:
   - job_name: 'prometheus'
     scrape_interval: 10s
@@ -47,3 +52,39 @@ scrape_configs:
           instance: 'labtnl-web'
           role: 'reverse-proxy'
           ct_id: '102'
+
+  - job_name: 'alertmanager'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['127.0.0.1:9093']
+        labels:
+          instance: 'labtnl-monitor'
+          role: 'monitoring-alertmanager'
+          ct_id: '117'
+
+  - job_name: 'blackbox_exporter'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['127.0.0.1:9115']
+        labels:
+          instance: 'labtnl-monitor'
+          role: 'monitoring-blackbox'
+          ct_id: '117'
+
+  - job_name: 'backend_health'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ['http://100.65.129.8:8001/api/health']
+        labels:
+          instance: 'labtnl-app'
+          role: 'application-backend'
+          ct_id: '103'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance_url
+      - target_label: __address__
+        replacement: '127.0.0.1:9115'

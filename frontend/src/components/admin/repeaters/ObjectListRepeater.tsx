@@ -14,6 +14,8 @@ import {
 import { InlineMediaField } from "@/components/admin/media";
 import { AdminSelect, AdminSwitch } from "@/components/admin/controls";
 import { TagChipsField } from "./TagChipsField";
+import { useAdminT, type AdminStringKey } from "@/lib/i18n/admin-i18n";
+import { ADMIN_BUILDER_DEFAULT_KEYS } from "@/lib/i18n/admin-builders-strings";
 
 export interface RepeaterFieldSpec {
     key: string;
@@ -51,14 +53,21 @@ export function ObjectListRepeater({
     itemTitleField = "title",
     itemSubtitleField,
     help,
-    emptyMessage = "Belum ada item. Klik tombol di bawah untuk menambahkan.",
+    emptyMessage,
     testId = "object-list-repeater",
-    addButtonLabel = "+ Add Item",
+    addButtonLabel,
     defaultFolder = "general",
 }: ObjectListRepeaterProps) {
+    const t = useAdminT();
+    const resolveCopy = (text: string): string => {
+        const key = Object.prototype.hasOwnProperty.call(ADMIN_BUILDER_DEFAULT_KEYS, text)
+            ? ADMIN_BUILDER_DEFAULT_KEYS[text as keyof typeof ADMIN_BUILDER_DEFAULT_KEYS]
+            : undefined;
+        return key ? t(key) : text;
+    };
     const [rawMode, setRawMode] = useState(false);
     const [rawJsonText, setRawJsonText] = useState("");
-    const [jsonError, setJsonError] = useState<string | null>(null);
+    const [jsonError, setJsonError] = useState<AdminStringKey | null>(null);
     const [collapsedMap, setCollapsedMap] = useState<Record<number, boolean>>({});
 
     // Normalize value to Array<Record<string, unknown>>
@@ -152,14 +161,14 @@ export function ObjectListRepeater({
             try {
                 const parsed = rawJsonText.trim() ? JSON.parse(rawJsonText) : [];
                 if (!Array.isArray(parsed)) {
-                    setJsonError("Raw JSON must be an array of objects (e.g. [ { ... } ])");
+                    setJsonError("adminBuilderJsonObjectsArray");
                     return;
                 }
                 onChange(parsed);
                 setJsonError(null);
                 setRawMode(false);
-            } catch (err: unknown) {
-                setJsonError((err as Error).message || "Invalid JSON syntax");
+            } catch {
+                setJsonError("adminBuilderInvalidJson");
             }
         }
     };
@@ -172,10 +181,10 @@ export function ObjectListRepeater({
                 setJsonError(null);
                 onChange(parsed);
             } else {
-                setJsonError("Must be a JSON array of items");
+                setJsonError("adminBuilderJsonItemsArray");
             }
-        } catch (err: unknown) {
-            setJsonError((err as Error).message);
+        } catch {
+            setJsonError("adminBuilderInvalidJson");
         }
     };
 
@@ -185,12 +194,12 @@ export function ObjectListRepeater({
             <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5" style={{ borderColor: "var(--tnl-border)" }}>
                 <div>
                     <div className="flex items-center gap-2">
-                        {label && <h4 className="text-sm font-semibold tracking-tight">{label}</h4>}
+                        {label && <h4 className="text-sm font-semibold tracking-tight">{resolveCopy(label)}</h4>}
                         <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ backgroundColor: "var(--tnl-bg)", color: "var(--tnl-gold)" }}>
-                            {items.length} {items.length === 1 ? "item" : "items"}
+                            {items.length} {t(items.length === 1 ? "adminItem" : "adminBuilderItems")}
                         </span>
                     </div>
-                    {help && <p className="text-xs mt-0.5" style={{ color: "var(--tnl-tan-text)" }}>{help}</p>}
+                    {help && <p className="text-xs mt-0.5" style={{ color: "var(--tnl-tan-text)" }}>{resolveCopy(help)}</p>}
                 </div>
                 <div className="flex items-center gap-2">
                     {items.length > 2 && !rawMode && (
@@ -198,17 +207,17 @@ export function ObjectListRepeater({
                             type="button"
                             onClick={toggleAllCollapse}
                             className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
-                            title="Toggle collapse all"
+                            title={t("adminBuilderToggleCollapseAll")}
                         >
                             {items.some((_, idx) => !collapsedMap[idx]) ? (
                                 <>
                                     <ChevronsDownUp className="h-3.5 w-3.5" aria-hidden="true" />
-                                    <span>Collapse all</span>
+                                    <span>{t("adminBuilderCollapseAll")}</span>
                                 </>
                             ) : (
                                 <>
                                     <ChevronsUpDown className="h-3.5 w-3.5" aria-hidden="true" />
-                                    <span>Expand all</span>
+                                    <span>{t("adminBuilderExpandAll")}</span>
                                 </>
                             )}
                         </button>
@@ -221,7 +230,7 @@ export function ObjectListRepeater({
                         data-testid={`${testId}-raw-toggle`}
                     >
                         <Code className="h-3.5 w-3.5" aria-hidden="true" />
-                        <span>{rawMode ? "Visual Editor" : "</> Raw JSON"}</span>
+                        <span>{t(rawMode ? "adminBuilderVisualEditor" : "adminBuilderRawJson")}</span>
                     </button>
                 </div>
             </div>
@@ -243,7 +252,7 @@ export function ObjectListRepeater({
                     {jsonError && (
                         <div id={`${testId}-raw-error`} role="alert" className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                            <span>{jsonError}</span>
+                            <span>{t(jsonError)}</span>
                         </div>
                     )}
                 </div>
@@ -253,12 +262,12 @@ export function ObjectListRepeater({
                     {items.length === 0 ? (
                         <div className="rounded-lg border border-dashed py-8 text-center text-xs" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-tan-text)" }}>
                             <FileText className="mx-auto h-6 w-6 opacity-40 mb-2" aria-hidden="true" />
-                            <p>{emptyMessage}</p>
+                            <p>{emptyMessage === undefined ? t("adminBuilderEmptyItems") : resolveCopy(emptyMessage)}</p>
                         </div>
                     ) : (
                         items.map((item, itemIdx) => {
                             const isCollapsed = Boolean(collapsedMap[itemIdx]);
-                            const titleValue = String(item[itemTitleField] || item.name || item.title_id || `Item #${itemIdx + 1}`);
+                            const titleValue = String(item[itemTitleField] || item.name || item.title_id || t("adminBuilderItemTitle").replace("{number}", String(itemIdx + 1)));
                             const subtitleValue = itemSubtitleField ? String(item[itemSubtitleField] || "") : "";
 
                             return (
@@ -296,8 +305,8 @@ export function ObjectListRepeater({
                                                 onClick={() => moveItem(itemIdx, "up")}
                                                 disabled={itemIdx === 0}
                                                 className="rounded p-1 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-20"
-                                                title="Move up"
-                                                aria-label="Move item up"
+                                                title={t("adminBuilderMoveUp")}
+                                                aria-label={t("adminBuilderMoveItemUp")}
                                                 data-testid={`${testId}-card-up-${itemIdx}`}
                                             >
                                                 <ChevronUp className="h-4 w-4" aria-hidden="true" />
@@ -307,8 +316,8 @@ export function ObjectListRepeater({
                                                 onClick={() => moveItem(itemIdx, "down")}
                                                 disabled={itemIdx === items.length - 1}
                                                 className="rounded p-1 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-20"
-                                                title="Move down"
-                                                aria-label="Move item down"
+                                                title={t("adminBuilderMoveDown")}
+                                                aria-label={t("adminBuilderMoveItemDown")}
                                                 data-testid={`${testId}-card-down-${itemIdx}`}
                                             >
                                                 <ChevronDown className="h-4 w-4" aria-hidden="true" />
@@ -317,8 +326,8 @@ export function ObjectListRepeater({
                                                 type="button"
                                                 onClick={() => duplicateItem(itemIdx)}
                                                 className="rounded p-1 text-neutral-400 hover:text-[var(--gsm-primary)] hover:bg-[var(--gsm-primary-soft)] dark:hover:text-[var(--gsm-accent)]"
-                                                title="Duplicate item"
-                                                aria-label="Duplicate item"
+                                                title={t("adminBuilderDuplicateItem")}
+                                                aria-label={t("adminBuilderDuplicateItem")}
                                                 data-testid={`${testId}-card-dup-${itemIdx}`}
                                             >
                                                 <Copy className="h-3.5 w-3.5" aria-hidden="true" />
@@ -327,8 +336,8 @@ export function ObjectListRepeater({
                                                 type="button"
                                                 onClick={() => removeItem(itemIdx)}
                                                 className="rounded p-1 text-neutral-400 hover:text-rose-600 hover:bg-rose-500/10"
-                                                title="Delete item"
-                                                aria-label="Delete item"
+                                                title={t("adminBuilderDeleteItem")}
+                                                aria-label={t("adminBuilderDeleteItem")}
                                                 data-testid={`${testId}-card-remove-${itemIdx}`}
                                             >
                                                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -337,8 +346,8 @@ export function ObjectListRepeater({
                                                 type="button"
                                                 onClick={() => toggleCollapse(itemIdx)}
                                                 className="rounded p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 ml-1"
-                                                title={isCollapsed ? "Expand" : "Collapse"}
-                                                aria-label={isCollapsed ? "Expand item" : "Collapse item"}
+                                                title={t(isCollapsed ? "adminBuilderExpand" : "adminBuilderCollapse")}
+                                                aria-label={t(isCollapsed ? "adminBuilderExpandItem" : "adminBuilderCollapseItem")}
                                             >
                                                 {isCollapsed ? (
                                                     <ChevronDown className="h-4 w-4" aria-hidden="true" />
@@ -359,7 +368,7 @@ export function ObjectListRepeater({
                                                 return (
                                                     <div key={f.key} className={isWide ? "md:col-span-2 space-y-1" : "space-y-1"}>
                                                         <label className="block text-xs font-medium">
-                                                            {f.label}
+                                                            {resolveCopy(f.label)}
                                                         </label>
 
                                                         {f.type === "textarea" ? (
@@ -367,7 +376,7 @@ export function ObjectListRepeater({
                                                                 rows={3}
                                                                 value={String(val ?? "")}
                                                                 onChange={(e) => updateItemField(itemIdx, f.key, e.target.value)}
-                                                                placeholder={f.placeholder}
+                                                                placeholder={f.placeholder === undefined ? undefined : resolveCopy(f.placeholder)}
                                                                 className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                                                                 style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
                                                                 data-testid={`${testId}-item-${itemIdx}-${f.key}`}
@@ -387,7 +396,7 @@ export function ObjectListRepeater({
                                                             </AdminSelect>
                                                         ) : f.type === "checkbox" ? (
                                                             <AdminSwitch
-                                                                label={f.placeholder || f.label}
+                                                                label={resolveCopy(f.placeholder || f.label)}
                                                                 checked={Boolean(val)}
                                                                 onCheckedChange={(next) => updateItemField(itemIdx, f.key, next)}
                                                                 testId={`${testId}-item-${itemIdx}-${f.key}`}
@@ -405,7 +414,7 @@ export function ObjectListRepeater({
                                                             <TagChipsField
                                                                 value={Array.isArray(val) ? val as string[] : String(val ?? "")}
                                                                 onChange={(newTags) => updateItemField(itemIdx, f.key, newTags)}
-                                                                placeholder={f.placeholder}
+                                                                placeholder={f.placeholder === undefined ? undefined : resolveCopy(f.placeholder)}
                                                                 testId={`${testId}-item-${itemIdx}-${f.key}`}
                                                             />
                                                         ) : (
@@ -419,7 +428,7 @@ export function ObjectListRepeater({
                                                                         f.type === "number" ? Number(e.target.value) : e.target.value
                                                                     )
                                                                 }
-                                                                placeholder={f.placeholder}
+                                                                placeholder={f.placeholder === undefined ? undefined : resolveCopy(f.placeholder)}
                                                                 className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                                                                 style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
                                                                 data-testid={`${testId}-item-${itemIdx}-${f.key}`}
@@ -428,7 +437,7 @@ export function ObjectListRepeater({
 
                                                         {f.help && (
                                                             <p className="text-[11px]" style={{ color: "var(--tnl-tan-text)" }}>
-                                                                {f.help}
+                                                                {resolveCopy(f.help)}
                                                             </p>
                                                         )}
                                                     </div>
@@ -450,7 +459,7 @@ export function ObjectListRepeater({
                         data-testid={`${testId}-add`}
                     >
                         <Plus className="h-4 w-4" aria-hidden="true" />
-                        <span>{addButtonLabel}</span>
+                        <span>{addButtonLabel === undefined ? t("adminBuilderAddItem") : resolveCopy(addButtonLabel)}</span>
                     </button>
                 </div>
             )}

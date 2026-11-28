@@ -84,6 +84,25 @@ describe("AdminLayout App Shell & Categorized Dual-Scroll Navigation", () => {
     expect(screen.getByTestId("admin-sign-out-button")).toBeInTheDocument();
   });
 
+  it("does not bypass the authenticated shell for a legacy session hash", () => {
+    mockUser = null;
+    window.location.hash = "#session_id=pending";
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/login" element={<p>Admin sign-in</p>} />
+        <Route path="/admin/*" element={<AdminLayout />}>
+          <Route path="pages" element={<p>Protected pages</p>} />
+        </Route>
+      </Routes>,
+      { route: "/admin/pages" }
+    );
+
+    expect(screen.getByText("Admin sign-in")).toBeInTheDocument();
+    expect(screen.queryByText("Protected pages")).not.toBeInTheDocument();
+    window.location.hash = "";
+  });
+
   it("toggles category accordion on click and persists state in localStorage", () => {
     renderWithProviders(
       <Routes>

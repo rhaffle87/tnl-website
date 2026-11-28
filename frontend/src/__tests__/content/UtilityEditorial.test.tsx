@@ -5,6 +5,7 @@ import OpenHousePage from "@/pages/OpenHousePage";
 import { PrivacyPage, TermsPage } from "@/pages/LegalPages";
 import { DynamicCmsPage, NotFoundPage, VerifyPage } from "@/pages/UtilityPages";
 import * as api from "@/lib/api/api";
+import { ApiError } from "@/lib/api/api";
 import { renderWithProviders } from "./test-utils";
 
 const mocks = vi.hoisted(() => ({
@@ -90,9 +91,10 @@ describe("Preserved public data flows", () => {
   });
 
   it("retains the dynamic CMS unavailable state", async () => {
-    vi.spyOn(api, "apiGet").mockRejectedValue(new Error("missing page"));
+    vi.spyOn(api, "apiGet").mockRejectedValue(new ApiError(404, { detail: "Page not found." }));
     renderWithProviders(<Routes><Route path="/page/:slug" element={<DynamicCmsPage />} /></Routes>, { route: "/page/unknown" });
     expect(await screen.findByTestId("cms-page-unknown-empty-state")).toBeInTheDocument();
+    expect(screen.queryByTestId("cms-page-unknown-request-error")).not.toBeInTheDocument();
   });
 
   it("preserves valid deep-link verification, PDF target, and reset", async () => {
@@ -105,6 +107,15 @@ describe("Preserved public data flows", () => {
     fireEvent.click(screen.getByRole("button", { name: "Verifikasi Sertifikat Lain" }));
     expect(screen.queryByTestId("verify-valid")).not.toBeInTheDocument();
     expect(screen.getByTestId("verify-input-code")).toHaveValue("");
+  });
+
+  it("does not render a certificate download without a returned code", async () => {
+    vi.spyOn(api, "apiGet").mockResolvedValue({ valid: true, name: "Research Participant", event_title: "Network Workshop", message: "Valid" });
+    renderWithProviders(<Routes><Route path="/verify/:code?" element={<VerifyPage />} /></Routes>, { route: "/verify/TNL-A1" });
+
+    expect(await screen.findByTestId("verify-valid")).toBeInTheDocument();
+    expect(screen.queryByTestId("download-certificate-btn")).not.toBeInTheDocument();
+    expect(screen.getByTestId("verify-valid")).not.toHaveTextContent("undefined");
   });
 
   it("keeps the registration FormData contract and peer-registration reset", async () => {

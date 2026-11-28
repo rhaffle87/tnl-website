@@ -2,6 +2,7 @@ import path from "node:path";
 import { defineConfig, type UserConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 // Supervisor exports DISABLE_HOT_RELOAD=true when the platform sets ENABLE_RELOAD=false.
 const hotReloadDisabled = process.env.DISABLE_HOT_RELOAD === "true";
@@ -23,15 +24,38 @@ export default defineConfig(() => {
     plugins: [
       react(),
       tailwindcss(),
+      VitePWA({
+        strategies: "injectManifest",
+        srcDir: "src/pwa",
+        filename: "sw.ts",
+        injectRegister: false,
+        includeManifestIcons: false,
+        injectManifest: { globPatterns: ["offline.html"] },
+        manifestFilename: "site.webmanifest",
+        manifest: {
+          name: "Laboratorium Jaringan Telekomunikasi ITS",
+          short_name: "Lab TNL ITS",
+          description: "Telecommunication Network Laboratory, ITS Surabaya",
+          theme_color: "#111613",
+          background_color: "#111613",
+          display: "standalone",
+          start_url: ".",
+          scope: ".",
+          icons: [
+            { src: "android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+            { src: "android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+          ],
+        },
+      }),
     ],
     resolve: {
       alias: [
         { find: "@", replacement: path.resolve(__dirname, "./src") },
-        // lucide 1.x dropped brand logos; src/lib/lucide-react.tsx restores them on top of the real package.
-        { find: /^lucide-react$/, replacement: path.resolve(__dirname, "./src/lib/lucide-react.tsx") },
+        // lucide 1.x dropped brand logos; src/lib/adapters/lucide-react.tsx restores them on top of the real package.
+        { find: /^lucide-react$/, replacement: path.resolve(__dirname, "./src/lib/adapters/lucide-react.tsx") },
         { find: "lucide-react-upstream", replacement: path.resolve(__dirname, "./node_modules/lucide-react") },
-        // recharts 3's Tooltip callback types reject the annotations agents write; src/lib/recharts.tsx adapts them.
-        { find: /^recharts$/, replacement: path.resolve(__dirname, "./src/lib/recharts.tsx") },
+        // recharts 3's Tooltip callback types reject the annotations agents write; src/lib/adapters/recharts.tsx adapts them.
+        { find: /^recharts$/, replacement: path.resolve(__dirname, "./src/lib/adapters/recharts.tsx") },
         { find: "recharts-upstream", replacement: path.resolve(__dirname, "./node_modules/recharts") },
       ],
     },
@@ -66,6 +90,33 @@ export default defineConfig(() => {
         "sonner",
         "tailwind-merge",
       ],
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          codeSplitting: { groups: [
+            // Heavy editor deps (tiptap + extensions)
+            { name: "vendor-editor", test: /node_modules[\\/](@tiptap|prosemirror-[^\\/]+)[\\/]/ },
+            // Data viz
+            { name: "vendor-viz", test: /node_modules[\\/](recharts|d3-[^\\/]+)[\\/]/ },
+            // Animation
+            { name: "vendor-motion", test: /node_modules[\\/](motion|motion-dom|motion-utils|framer-motion)[\\/]/ },
+            // React Query
+            { name: "vendor-query", test: /node_modules[\\/]@tanstack[\\/]/ },
+            // UI primitives
+            { name: "vendor-ui", test: /node_modules[\\/]@base-ui[\\/]/ },
+            // Icons
+            { name: "vendor-icons", test: /node_modules[\\/](lucide-react|@icons-pack)[\\/]/ },
+            // Date utils
+            { name: "vendor-date", test: /node_modules[\\/](date-fns|react-day-picker)[\\/]/ },
+            // Router
+            { name: "vendor-router", test: /node_modules[\\/](react-router|react-router-dom)[\\/]/ },
+            // Misc
+            { name: "vendor-misc", test: /node_modules[\\/](class-variance-authority|clsx|sonner|tailwind-merge|next-themes)[\\/]/ },
+          ] },
+        },
+      },
+      chunkSizeWarningLimit: 600,
     },
     server: {
       host: true,

@@ -11,6 +11,10 @@ let settingsData: any = undefined;
 vi.mock("@/lib/api/hooks", () => ({
   useSettings: vi.fn(() => ({ data: settingsData })),
   useEvents: vi.fn(() => ({ data: eventsData })),
+  usePost: vi.fn(() => ({ data: undefined, isLoading: false, isError: false })),
+  useEvent: vi.fn(() => ({ data: undefined, isLoading: false, isError: false })),
+  usePage: vi.fn(() => ({ data: undefined, isLoading: false, isError: false })),
+  usePagePreview: vi.fn(() => ({ data: undefined, isLoading: false, isError: false })),
 }));
 
 function setLocale(locale: "en" | "id") {

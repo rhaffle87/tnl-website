@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, Copy, X } from "lucide-react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api/api";
 import { usePost } from "@/lib/api/hooks";
 import { pick, useLocale } from "@/lib/i18n/i18n";
 import { localizeCategory } from "@/lib/i18n/categoryLabels";
 import { Breadcrumb, EmptyState, formatDate } from "@/components/site/Primitives";
+import { PublicRequestError } from "@/components/site/PublicRequestError";
 import { CmsPage } from "@/pages/Home";
 import "./editorial-content.css";
 
@@ -19,7 +21,7 @@ export function NewsArticlePage() {
     const { slug } = useParams<{ slug: string }>();
     const location = useLocation();
     const { locale, t } = useLocale();
-    const { data: post, isLoading, isError } = usePost(slug);
+    const { data: post, isLoading, isError, isFetching, error, refetch } = usePost(slug);
     const [activeLightboxImage, setActiveLightboxImage] = useState<string | null>(null);
     const bodyRef = useRef<HTMLDivElement | null>(null);
 
@@ -55,7 +57,7 @@ export function NewsArticlePage() {
         return () => container.removeEventListener("keydown", handleKeyDown);
     }, [post?.body, post?.body_id, locale, activeLightboxImage]);
 
-    if (isLoading) {
+    if (isLoading && !post) {
         return (
             <div className="tnl-container tnl-section animate-pulse space-y-6" data-testid="article-loading-skeleton">
                 <div className="h-4 w-32 bg-black/10 dark:bg-white/10 rounded" />
@@ -71,7 +73,21 @@ export function NewsArticlePage() {
         );
     }
 
-    if (isError || !post) {
+    if (isError && !post && !(error instanceof ApiError && error.status === 404)) {
+        return (
+            <div className="tnl-container tnl-section" data-testid="article-request-error">
+                <PublicRequestError onRetry={() => void refetch()} retrying={isFetching} locale={locale} testId="article-request-failure" />
+                <div className="mt-6">
+                    <Link to="/news" className="tnl-btn tnl-btn-outline" data-testid="article-back-button">
+                        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                        {t("back_to_news")}
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    if (!post) {
         return (
             <div className="tnl-container tnl-section" data-testid="article-not-found">
                 <EmptyState {...({ as: "h1" } as { as?: "h1" })} title={t("not_found_title")} body={t("not_found_body")} testId="article-empty-state" />
@@ -100,6 +116,11 @@ export function NewsArticlePage() {
 
     return (
         <article className="editorial-content editorial-article" data-testid="news-article-page">
+            {isError ? (
+                <div className="tnl-container pt-4">
+                    <PublicRequestError onRetry={() => void refetch()} retrying={isFetching} locale={locale} testId="article-request-failure" stale />
+                </div>
+            ) : null}
             <header className="editorial-masthead">
                 <div className="tnl-container py-14 lg:py-20">
                     <Breadcrumb items={[{ label: t("nav_home"), to: "/" }, { label: t("nav_news"), to: "/news" }, { label: title }]} />

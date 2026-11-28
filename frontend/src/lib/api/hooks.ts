@@ -2,10 +2,11 @@
 // these, so a failed fetch degrades to an empty region rather than a blank page.
 
 import { useMutation, useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { apiGet } from "@/lib/api/api";
+import { apiGet, apiUrl, ApiError } from "@/lib/api/api";
 import type {
   Activity,
   AuthUser,
+  PublicCollectionResponse,
   Equipment,
   LabEvent,
   ListResponse,
@@ -41,12 +42,29 @@ export function useStats(): UseQueryResult<PublicStats> {
   });
 }
 
-export function usePage(slug: string): UseQueryResult<PageDoc> {
+export function usePage(slug: string | undefined, options: { enabled?: boolean } = {}): UseQueryResult<PageDoc> {
   return useQuery({
     queryKey: ["public", "page", slug],
-    queryFn: () => apiGet<PageDoc>(`/public/pages/${slug}`),
+    queryFn: () => apiGet<PageDoc>(`/public/pages/${encodeURIComponent(slug!)}`),
+    enabled: Boolean(slug) && (options.enabled ?? true),
     retry: false,
     staleTime: STALE,
+  });
+}
+
+export function usePagePreview(slug: string | undefined, pageId: string | undefined): UseQueryResult<PageDoc> {
+  return useQuery({
+    queryKey: ["auth", "page-preview", slug, pageId],
+    queryFn: async () => {
+      if (!pageId) throw new ApiError(404, { detail: "Page preview not found." });
+      const page = await apiGet<PageDoc>(`/admin/pages/${encodeURIComponent(pageId)}/preview`);
+      if (page.slug !== slug) throw new ApiError(404, { detail: "Page preview not found." });
+      return page;
+    },
+    enabled: Boolean(slug && pageId),
+    retry: false,
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 
@@ -68,12 +86,14 @@ export function usePosts(params?: {
   q?: string;
   tag?: string;
   limit?: number;
+  offset?: number;
 }): UseQueryResult<ListResponse<Post>> {
   const search = new URLSearchParams();
   if (params?.category) search.set("category", params.category);
   if (params?.q) search.set("q", params.q);
   if (params?.tag) search.set("tag", params.tag);
   if (params?.limit) search.set("limit", String(params.limit));
+  if (params?.offset) search.set("offset", String(Math.max(0, Math.trunc(params.offset))));
   const qs = search.toString();
   return useQuery({
     queryKey: ["public", "posts", qs],
@@ -143,6 +163,20 @@ export function usePublications(params?: { year?: number; ptype?: string; member
   });
 }
 
+export function usePublicCollection(key: string | undefined, params?: { limit?: number; offset?: number }): UseQueryResult<PublicCollectionResponse> {
+  const search = new URLSearchParams();
+  if (params?.limit) search.set("limit", String(Math.min(100, Math.max(1, Math.trunc(params.limit)))));
+  if (params?.offset) search.set("offset", String(Math.max(0, Math.trunc(params.offset))));
+  const query = search.toString();
+  return useQuery({
+    queryKey: ["public", "collection", key, query],
+    queryFn: () => apiGet<PublicCollectionResponse>(`/public/collections/${encodeURIComponent(key!)}${query ? `?${query}` : ""}`),
+    enabled: Boolean(key),
+    retry: false,
+    staleTime: STALE,
+  });
+}
+
 export function usePartners(): UseQueryResult<Partner[]> {
   return useQuery({
     queryKey: ["public", "partners"],
@@ -186,9 +220,10 @@ export function useMe(): UseQueryResult<AuthUser> {
 export function useSubmitRegistration(eventIdOrSlug: string) {
   return useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch(`/api/registrations/${eventIdOrSlug}`, {
+      const res = await fetch(apiUrl(`/registrations/${encodeURIComponent(eventIdOrSlug)}`), {
         method: "POST",
         body: formData,
+        cache: "no-store",
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {

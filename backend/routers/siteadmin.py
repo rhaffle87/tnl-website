@@ -6,62 +6,63 @@ import re
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from lib.auth import audit, require
+from lib.auth import allowed, audit, principal, require
+from lib.cache import invalidate_public_cache
 from lib.db import db
 from lib.quality import publish_blockers, run_scan
-from lib.sanitize import sanitize_html
+from lib.publishing import (
+    admin_document, editorial_document, public_page_projection, replace_editorial,
+    sanitize_block, sanitize_blocks,
+)
 from lib.serialize import jsonable
 from lib.settings import get_settings
-from models.content import BlockModel, PageDoc
+from models.content import PageDoc
 from models.core import BlockAdd, BlockPatch, PagePatch, PageUpsert, ReorderIn, SettingsUpdate, ThemeTokens
 
 router = APIRouter(prefix="/admin", tags=["pages-settings"])
 
-RICH_KEYS = ("html", "body", "content", "html_id", "body_id", "content_id")
-MAX_REVISIONS = 20
-
-
 def _sanitize_props(block: dict) -> dict:
-    """Custom HTML and rich text are stored sanitized — never trust stored markup."""
-    if block.get("type") in ("html", "rich_text"):
-        props = block.setdefault("props", {})
-        for key in RICH_KEYS:
-            if isinstance(props.get(key), str):
-                props[key] = sanitize_html(props[key])
-    return block
+    return sanitize_block(block)
 
 
 async def _get_page(page_id: str) -> dict:
     page = await db.pages.find_one({"id": page_id})
     if not page:
         raise HTTPException(status_code=404, detail="Page not found.")
-    return page
+    view = admin_document(page)
+    view["_cms_version"] = page.get("_cms_version")
+    return view
 
 
 def slugify(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", (text or "").lower()).strip("-") or "page"
 
 
-async def _save_page(page: dict, request: Request, snapshot: bool = True) -> dict:
-    """Persist a page: scan quality gates, keep a revision, bump updated_at."""
-    issues = run_scan("pages", {"title": page.get("title"), "blocks": page.get("blocks", [])})
+async def _save_page(page: dict, request: Request, *, publish: bool = False, unpublish: bool = False) -> dict:
+    """Save a working version without replacing the approved live version."""
+    current = await db.pages.find_one({"id": page["id"]})
+    if not current:
+        raise HTTPException(404, detail="Page not found.")
+    if current.get("_cms_version") != page.get("_cms_version"):
+        raise HTTPException(409, detail="This page changed in another session. Reload before saving.")
+    actor = getattr(request.state, "user", None) or {}
+    if (publish or unpublish) and not allowed(principal(actor), "pages:publish"):
+        raise HTTPException(403, detail="Your role cannot publish or unpublish pages.")
+    page["blocks"] = sanitize_blocks(page.get("blocks", []))
+    issues = run_scan("pages", {"title": page.get("title"), "title_id": page.get("title_id"),
+                               "meta_description": page.get("meta_description"), "meta_description_id": page.get("meta_description_id"),
+                               "blocks": page["blocks"]})
     page["issues"] = issues
     page["needs_review"] = bool(publish_blockers(issues))
-    page["updated_at"] = datetime.now(timezone.utc)
-    if snapshot:
-        actor = (getattr(request.state, "user", None) or {}).get("email", "")
-        revisions = page.get("revisions") or []
-        revisions.append({
-            "id": str(uuid4()),
-            "saved_at": datetime.now(timezone.utc),
-            "saved_by": actor,
-            "title": page.get("title", ""),
-            "blocks": [dict(b) for b in page.get("blocks", [])],
-        })
-        page["revisions"] = revisions[-MAX_REVISIONS:]
-    await db.pages.replace_one({"id": page["id"]}, page)
+    if publish and page["needs_review"]:
+        raise HTTPException(422, detail={"message": "This page cannot be published until these issues are fixed.", "issues": publish_blockers(issues)})
+    updated = editorial_document(current, page, actor.get("email", ""), publish=publish, unpublish=unpublish)
+    await replace_editorial(db.pages, current, updated)
+    await invalidate_public_cache("pages")
+    page.clear()
+    page.update(admin_document(updated))
     return page
 
 
@@ -69,12 +70,19 @@ async def _save_page(page: dict, request: Request, snapshot: bool = True) -> dic
 @router.get("/pages", dependencies=[Depends(require("content:read"))])
 async def list_pages():
     docs = await db.pages.find({}, {"revisions": 0}).sort("created_at", 1).to_list(200)
-    return {"items": jsonable(docs)}
+    return {"items": jsonable([{k: v for k, v in admin_document(d).items() if k != "revisions"} for d in docs])}
 
 
 @router.get("/pages/{page_id}", dependencies=[Depends(require("content:read"))])
 async def get_page(page_id: str):
-    return jsonable(await _get_page(page_id))
+    return jsonable({k: v for k, v in (await _get_page(page_id)).items() if not k.startswith("_")})
+
+
+@router.get("/pages/{page_id}/preview", dependencies=[Depends(require("pages:edit"))])
+async def preview_page(page_id: str, response: Response):
+    response.headers["Cache-Control"] = "private, no-store, max-age=0"
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return jsonable(public_page_projection(await _get_page(page_id)))
 
 
 @router.post("/pages", status_code=201, dependencies=[Depends(require("pages:edit"))])
@@ -83,7 +91,10 @@ async def create_page(payload: PageUpsert, request: Request):
     if await db.pages.find_one({"slug": slug}):
         raise HTTPException(status_code=409, detail="A page with this web address already exists.")
     page = PageDoc(slug=slug, title=payload.title, title_id=payload.title_id, status="draft").model_dump()
+    page.update({"meta_description": getattr(payload, "meta_description", None),
+                 "meta_description_id": getattr(payload, "meta_description_id", None)})
     await db.pages.insert_one(page)
+    await invalidate_public_cache("pages")
     await audit(request, "create", "pages", page["id"], {"slug": slug})
     return jsonable(page)
 
@@ -92,15 +103,12 @@ async def create_page(payload: PageUpsert, request: Request):
 async def patch_page(page_id: str, payload: PagePatch, request: Request):
     page = await _get_page(page_id)
     patch = payload.model_dump(exclude_unset=True)
-    if patch.get("status") == "published":
-        blockers = publish_blockers(run_scan("pages", {"title": page.get("title"), "blocks": page.get("blocks", [])}))
-        if blockers:
-            raise HTTPException(status_code=422, detail={
-                "message": "This page cannot be published until these issues are fixed.",
-                "issues": blockers,
-            })
+    if "status" in patch and patch["status"] not in {"draft", "published"}:
+        raise HTTPException(422, detail="Status must be draft or published.")
+    if "title" in patch and (not isinstance(patch["title"], str) or not patch["title"].strip()):
+        raise HTTPException(422, detail="A page title is required.")
     page.update(patch)
-    await _save_page(page, request, snapshot=False)
+    await _save_page(page, request, publish=patch.get("status") == "published", unpublish=patch.get("status") == "draft")
     await audit(request, "update", "pages", page_id, patch)
     return jsonable(page)
 
@@ -111,6 +119,7 @@ async def delete_page(page_id: str, request: Request):
     if page.get("is_system"):
         raise HTTPException(status_code=400, detail="Built-in pages cannot be deleted. You can unpublish them instead.")
     await db.pages.delete_one({"id": page_id})
+    await invalidate_public_cache("pages")
     await audit(request, "delete", "pages", page_id, {"slug": page.get("slug")})
     return {"ok": True}
 
@@ -119,7 +128,7 @@ async def delete_page(page_id: str, request: Request):
 @router.post("/pages/{page_id}/blocks", status_code=201, dependencies=[Depends(require("pages:edit"))])
 async def add_block(page_id: str, payload: BlockAdd, request: Request):
     page = await _get_page(page_id)
-    block = _sanitize_props(BlockModel(type=payload.type, props=payload.props).model_dump())
+    block = sanitize_block({"type": payload.type, "props": payload.props})
     page.setdefault("blocks", []).append(block)
     await _save_page(page, request)
     await audit(request, "add-block", "pages", page_id, {"type": payload.type})
@@ -136,7 +145,7 @@ async def patch_block(page_id: str, block_id: str, payload: BlockPatch, request:
     patch = payload.model_dump(exclude_unset=True)
     if "props" in patch and patch["props"] is not None:
         target["props"] = patch["props"]
-        _sanitize_props(target)
+        target.update(sanitize_block(target))
     if "hidden" in patch and patch["hidden"] is not None:
         target["hidden"] = patch["hidden"]
     await _save_page(page, request)
@@ -175,7 +184,7 @@ async def delete_block(page_id: str, block_id: str, request: Request):
 async def reorder_blocks(page_id: str, payload: ReorderIn, request: Request):
     page = await _get_page(page_id)
     by_id = {b.get("id"): b for b in page.get("blocks", [])}
-    if set(payload.order) != set(by_id.keys()):
+    if len(payload.order) != len(by_id) or set(payload.order) != set(by_id.keys()):
         raise HTTPException(status_code=422, detail="The new order must list every block exactly once.")
     page["blocks"] = [by_id[bid] for bid in payload.order]
     await _save_page(page, request)
@@ -200,6 +209,10 @@ async def restore_revision(page_id: str, revision_id: str, request: Request):
     if not rev:
         raise HTTPException(status_code=404, detail="Revision not found.")
     page["title"] = rev.get("title", page.get("title"))
+    page["title_id"] = rev.get("title_id", page.get("title_id"))
+    for field in ("meta_description", "meta_description_id"):
+        if field in rev:
+            page[field] = rev[field]
     page["blocks"] = [dict(b) for b in rev.get("blocks", [])]
     await _save_page(page, request)
     await audit(request, "restore-revision", "pages", page_id, {"revision": revision_id})
@@ -215,15 +228,51 @@ async def list_saved_blocks():
 
 @router.post("/saved-blocks", status_code=201, dependencies=[Depends(require("pages:edit"))])
 async def save_block(payload: dict, request: Request):
-    name = (payload.get("name") or "").strip()
+    name = payload.get("name")
     block = payload.get("block") or {}
-    if not name or not block.get("type"):
+    if not isinstance(name, str) or not name.strip() or not isinstance(block, dict) or not block.get("type"):
         raise HTTPException(status_code=422, detail="A name and a block are required.")
-    doc = {"id": str(uuid4()), "name": name, "block": _sanitize_props(dict(block)),
+    doc = {"id": str(uuid4()), "name": name.strip(), "block": _sanitize_props(dict(block)),
            "created_at": datetime.now(timezone.utc)}
     await db.saved_blocks.insert_one(doc)
     await audit(request, "create", "saved_blocks", doc["id"], {"name": name})
     return jsonable(doc)
+
+
+@router.get("/saved-blocks/{block_id}", dependencies=[Depends(require("content:read"))])
+async def get_saved_block(block_id: str):
+    doc = await db.saved_blocks.find_one({"id": block_id})
+    if not doc:
+        raise HTTPException(404, detail="Saved block not found.")
+    return jsonable(doc)
+
+
+@router.put("/saved-blocks/{block_id}", dependencies=[Depends(require("pages:edit"))])
+@router.patch("/saved-blocks/{block_id}", dependencies=[Depends(require("pages:edit"))])
+async def update_saved_block(block_id: str, payload: dict, request: Request):
+    current = await db.saved_blocks.find_one({"id": block_id})
+    if not current:
+        raise HTTPException(404, detail="Saved block not found.")
+    name = payload.get("name", current.get("name"))
+    if not isinstance(name, str) or not name.strip():
+        raise HTTPException(422, detail="A saved block name is required.")
+    block = sanitize_block(payload.get("block", current["block"]))
+    await db.saved_blocks.update_one({"id": block_id}, {"$set": {"name": name.strip(), "block": block, "updated_at": datetime.now(timezone.utc)}})
+    await audit(request, "update", "saved_blocks", block_id)
+    return jsonable(await db.saved_blocks.find_one({"id": block_id}))
+
+
+@router.post("/pages/{page_id}/saved-blocks/{block_id}", dependencies=[Depends(require("pages:edit"))])
+async def insert_saved_block(page_id: str, block_id: str, request: Request):
+    saved = await db.saved_blocks.find_one({"id": block_id})
+    if not saved:
+        raise HTTPException(404, detail="Saved block not found.")
+    page = await _get_page(page_id)
+    block = sanitize_block({**saved["block"], "id": str(uuid4())})
+    page.setdefault("blocks", []).append(block)
+    await _save_page(page, request)
+    await audit(request, "insert-saved-block", "pages", page_id, {"saved_block": block_id})
+    return jsonable(page)
 
 
 @router.delete("/saved-blocks/{block_id}", dependencies=[Depends(require("pages:edit"))])
@@ -252,6 +301,7 @@ async def update_settings(payload: SettingsUpdate, request: Request):
         patch["announcement"]["version"] = prev + 1
     patch["updated_at"] = datetime.now(timezone.utc)
     await db.settings.update_one({"id": "settings"}, {"$set": patch}, upsert=True)
+    await invalidate_public_cache("settings", "stats")
     await audit(request, "update", "settings", "settings", {"keys": list(patch.keys())})
     return jsonable(await get_settings())
 
@@ -259,8 +309,10 @@ async def update_settings(payload: SettingsUpdate, request: Request):
 # ---------------------------------------------------------------- theme tokens
 def _luminance(hex_color: str) -> float:
     h = (hex_color or "").lstrip("#")
-    if len(h) != 6:
-        return 0.0
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if not re.fullmatch(r"[0-9A-Fa-f]{6}", h):
+        raise HTTPException(422, detail="Contrast colors must use #RGB or #RRGGBB hex notation.")
     def chan(v: float) -> float:
         v /= 255.0
         return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
@@ -300,6 +352,11 @@ def theme_contrast_report(t: dict) -> list[dict]:
     return out
 
 
+@router.post("/theme/contrast", dependencies=[Depends(require("settings:read"))])
+async def preview_theme_contrast(payload: ThemeTokens):
+    return {"contrast": theme_contrast_report(payload.model_dump())}
+
+
 @router.get("/theme", dependencies=[Depends(require("settings:read"))])
 async def get_theme():
     s = await get_settings()
@@ -315,15 +372,16 @@ async def get_theme():
 @router.put("/theme/draft", dependencies=[Depends(require("settings:write"))])
 async def save_theme_draft(payload: ThemeTokens, request: Request):
     tokens = payload.model_dump()
+    report = theme_contrast_report(tokens)
     await db.settings.update_one({"id": "settings"}, {"$set": {"theme.draft": tokens}}, upsert=True)
     await audit(request, "update", "theme", "draft")
-    return {"draft": tokens, "contrast": theme_contrast_report(tokens)}
+    return {"draft": tokens, "contrast": report}
 
 
 @router.post("/theme/publish", dependencies=[Depends(require("settings:write"))])
-async def publish_theme(request: Request):
+async def publish_theme(request: Request, payload: ThemeTokens | None = None):
     s = await get_settings()
-    draft = (s.get("theme") or {}).get("draft") or ThemeTokens().model_dump()
+    draft = payload.model_dump() if payload is not None else (s.get("theme") or {}).get("draft") or ThemeTokens().model_dump()
     report = theme_contrast_report(draft)
     failing = [c for c in report if not c["passes"]]
     if failing:
@@ -331,7 +389,8 @@ async def publish_theme(request: Request):
             "message": "This theme cannot be published: some color pairs are too low-contrast to read (WCAG AA).",
             "failing": failing,
         })
-    await db.settings.update_one({"id": "settings"}, {"$set": {"theme.published": draft, "theme_tokens": draft}}, upsert=True)
+    await db.settings.update_one({"id": "settings"}, {"$set": {"theme.draft": draft, "theme.published": draft, "theme_tokens": draft}}, upsert=True)
+    await invalidate_public_cache("settings")
     await audit(request, "publish", "theme", "published")
     return {"published": draft, "contrast": report}
 
@@ -373,6 +432,13 @@ async def list_audit(limit: int = 100, offset: int = 0, action: str | None = Non
     return {"items": jsonable(docs), "total": total}
 
 
+@router.get("/audit/verify", dependencies=[Depends(require("audit:read"))])
+async def verify_audit(limit: int | None = None):
+    """Re-walk the hash chain and report the first tampered/missing link."""
+    from lib.auth import verify_audit_chain
+    return await verify_audit_chain(limit)
+
+
 @router.get("/audit/export", dependencies=[Depends(require("audit:read"))])
 async def export_audit(period: str | None = None, limit: int = 1000, offset: int = 0):
     import csv
@@ -407,7 +473,7 @@ async def dashboard():
             open_events += 1
     needs_review = 0
     for coll in ("posts", "members", "events", "activities", "projects", "publications", "partners", "practicum", "pages"):
-        needs_review += await db[coll].count_documents({"needs_review": True})
+        needs_review += await db[coll].count_documents({"$or": [{"needs_review": True}, {"draft.needs_review": True}]})
     return {
         "posts": await db.posts.count_documents({}),
         "published_posts": await db.posts.count_documents({"status": "published"}),

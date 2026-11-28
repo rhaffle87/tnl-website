@@ -1,7 +1,6 @@
 // Public chrome uses CMS settings with static-preview-safe defaults.
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import type { KeyboardEvent, RefObject } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -245,7 +244,7 @@ export function SiteHeader() {
                             type="button"
                             onClick={() => setLocale(locale === "en" ? "id" : "en")}
                             className="signal-control signal-language"
-                            aria-label={`${t("language")}: ${locale === "en" ? "English" : "Bahasa Indonesia"}`}
+                            aria-label={`${locale.toUpperCase()} - ${t("language")}: ${locale === "en" ? "English" : "Bahasa Indonesia"}`}
                             data-testid="language-toggle-button"
                         >
                             <Globe className="h-4 w-4" aria-hidden="true" />

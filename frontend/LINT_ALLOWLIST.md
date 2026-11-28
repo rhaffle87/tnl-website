@@ -26,7 +26,7 @@ Per-file exceptions (24 symbols across 14 files):
 | `src/components/ui/button.tsx` | `buttonVariants` |
 | `src/components/ui/tabs.tsx` | `tabsListVariants` |
 | `src/pages/admin/AdminLayout.tsx` | `NAV_GROUPS` |
-| `src/pages/admin/AdminScreens.tsx` | `publishedEventQuota` |
+| `src/pages/admin/screens/RegistrarPage.tsx` | `publishedEventQuota` |
 | `src/pages/admin/AdminUI.tsx` | `adminError`, `issuesFromError` |
 | `src/pages/admin/ContentManager.tsx` | `RESOURCE_SPECS`, `emptyDraft`, `toForm`, `toPayload` |
 

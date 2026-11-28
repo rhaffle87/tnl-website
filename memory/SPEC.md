@@ -77,7 +77,7 @@ registration or certificate data.
 
 ## Auth & roles
 
-Email+password (bcrypt) and Emergent-managed Google sign-in, both ending in the SAME
+Email+password (bcrypt) and Direct Google OIDC (PKCE) sign-in, both ending in the SAME
 httpOnly cookie session (`tnl_session`, `sessions` collection). Google is restricted to
 `its.ac.id`, `student.its.ac.id` plus `GOOGLE_ALLOWED_EMAILS`, and is **invite-only** —
 the address must already exist as a user.

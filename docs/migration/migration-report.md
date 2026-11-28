@@ -212,7 +212,7 @@ CT 117 (Grafana)       100.114.215.48 Port 3000         OK     Port 3000 reachab
 
 ### 1. How to Deploy Code Updates from Windows
 Run from repository root. The script is a **dry run by default**; `-Execute` is required for
-any real change (it performs a pre-update DB backup, snapshots files for rollback, syncs
+any real change (it performs a pre-update DB backup, snapshots source, venv and configs for rollback, syncs
 frontend/backend/configs, and aborts on any failed health check):
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\deploy\deploy.ps1            # plan only
@@ -220,9 +220,20 @@ powershell -ExecutionPolicy Bypass -File scripts\deploy\deploy.ps1 -Execute   # 
 ```
 *Options:*
 - `-SkipFrontendBuild`: Deploys current `frontend/dist` and updates backend without recompiling frontend.
-- `-SkipBackendDeploy`: Only packages and updates frontend static assets.
+- `-SkipBackendDeploy`: Skips backend source, dependencies, and service-unit changes; still updates frontend and Nginx configurations.
 - `-SkipBackup`: Skips the pre-update database backup (use only when a verified backup already exists).
 - `-DryRun`: Forces plan-only output even if `-Execute` is also passed.
+
+Redis must be available locally on CT 103 before deployment. It is a shared runtime
+dependency for the two API workers; the default URL is `redis://127.0.0.1:6379/0`.
+Provisioning Redis is a separate host setup step. Keep it loopback-only with protected
+mode, AOF, and `appendfsync everysec`; the service unit starts after Redis.
+
+Rollback snapshots are stored at `/opt/tnl/.deploy-rollback/<timestamp>` on CT 103
+and `/etc/nginx/.deploy-rollback/<timestamp>` on CT 102. On failure, the script moves
+failed source and frontend files aside, restores the previous source, venv and configs,
+and verifies the restored services. Environment, uploads, and downloaded files remain
+in place. A failed restart or health check is reported as a rollback failure.
 
 ### 2. How to Run Health Checks Across the Cluster
 Run at any time from Windows:
@@ -237,11 +248,15 @@ powershell -ExecutionPolicy Bypass -File scripts\deploy\backup-db.ps1
 *Output archive is saved with a timestamp to `backups/db/tnl-backup-<TIMESTAMP>.archive`.*
 
 ### 4. How to Restore a Database Backup
-From Windows, restore any backup to CT 116:
+Routine restore validation is an isolated workstation drill. It does not connect to CT 116,
+and the repository no longer documents a production `mongorestore --drop` command here:
 ```powershell
-scp backups\db\tnl-backup-<TIMESTAMP>.archive root@100.111.32.102:/tmp/restore.archive
-ssh root@100.111.32.102 "mongorestore --drop --archive=/tmp/restore.archive && rm -f /tmp/restore.archive"
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\ops\restore-drill.ps1 `
+  -DatabaseArchive backups\offsite\latest-db.archive.gz `
+  -MediaArchive backups\offsite\latest-media.tar.gz
 ```
+The drill needs Docker Engine and temporary local storage. Production recovery requires
+a separately approved incident procedure and a separately validated target.
 
 ### 5. Managing Application Services Directly on CT 103
 ```bash
@@ -256,7 +271,7 @@ systemctl restart tnl-backend
 
 ### 6. Accessing Monitoring & Dashboards
 - **Prometheus TSDB Web UI:** [http://100.114.215.48:9090](http://100.114.215.48:9090)
-- **Grafana Metrics Dashboard:** [http://100.114.215.48:3000](http://100.114.215.48:3000) *(Default user: `admin` / `admin`)*
+- **Grafana Metrics Dashboard:** [http://100.114.215.48:3000](http://100.114.215.48:3000) (use the operator-managed account; credentials are not documented here)
 - **TNL Production Web Entry:** [http://100.102.105.77](http://100.102.105.77)
 
 ---
@@ -265,7 +280,7 @@ systemctl restart tnl-backend
 
 1. **Production Domain & TLS Binding:**
    When ITS IT/DPTSI assigns the official domain name (`riset.its.ac.id/lab-tnl` or `tnl.its.ac.id`), configure Let's Encrypt / ITS Enterprise SSL certificates on CT 102 (`labtnl-web`).
-2. **Scheduled Database Backups:**
-   Add a simple cron job on CT 116 or Windows Task Scheduler executing `backup-db.ps1` daily.
+2. **Off-site Copies and Restore Evidence:**
+   CT 116 database and CT 103 media timer definitions exist under `scripts/ops/`; verify actual guest enablement and last result before relying on them. The workstation pull now validates age, hashes, and archive integrity. Register its optional logged-on-user task with `install-offsite-backup-task.ps1 -Execute`, then copy verified archives to an independently managed destination and run the isolated restore drill. None of those installation or restore actions are performed by this report.
 3. **Local Dev Container Retention:**
    Keep Windows Docker Desktop containers active as local test sandbox; when coding new features, verify on `localhost:3000`, commit to Git, then run `deploy.ps1` to push to Proxmox.

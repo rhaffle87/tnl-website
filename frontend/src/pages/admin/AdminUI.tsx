@@ -4,6 +4,7 @@ import { useId, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, Info, TriangleAlert } from "lucide-react";
 import { ApiError } from "@/lib/api/api";
 import { useFocusTrap } from "@/lib/a11y/useFocusTrap";
+import { useAdminT, type AdminStringKey } from "@/lib/i18n/admin-i18n";
 import { cn } from "@/lib/utils/utils";
 import type { QualityIssue } from "@/lib/types/types";
 import "@/components/admin/admin-editorial.css";
@@ -135,13 +136,14 @@ export function Panel({ children, className = "" }: { children: ReactNode; class
 // every existing `from "@/pages/admin/AdminUI"` import keeps working.
 export { AdminSelect, AdminSwitch } from "@/components/admin/controls";
 
-const SEVERITY: Record<string, { Icon: typeof Info; color: string; label: string }> = {
-    error: { Icon: AlertTriangle, color: "var(--tnl-danger)", label: "Must fix before publishing" },
-    warning: { Icon: TriangleAlert, color: "var(--tnl-warning)", label: "Worth checking" },
-    info: { Icon: Info, color: "var(--tnl-info)", label: "Suggestion" },
+const SEVERITY: Record<string, { Icon: typeof Info; color: string; label: AdminStringKey }> = {
+    error: { Icon: AlertTriangle, color: "var(--tnl-danger)", label: "adminMustFix" },
+    warning: { Icon: TriangleAlert, color: "var(--tnl-warning)", label: "adminWorthChecking" },
+    info: { Icon: Info, color: "var(--tnl-info)", label: "adminSuggestion" },
 };
 
 export function IssueList({ issues, testId }: { issues: QualityIssue[]; testId?: string }) {
+    const t = useAdminT();
     if (!issues.length) return null;
     return (
         <ul className="space-y-2" data-testid={testId ?? "quality-issue-list"}>
@@ -158,7 +160,7 @@ export function IssueList({ issues, testId }: { issues: QualityIssue[]; testId?:
                         <div>
                             <p className="font-medium">{issue.message}</p>
                             <p className="mt-0.5 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
-                                {spec.label}
+                                {t(spec.label)}
                                 {issue.field ? ` · ${issue.field}` : ""}
                                 {issue.hint ? ` · ${issue.hint}` : ""}
                             </p>
@@ -185,6 +187,7 @@ export function ConfirmButton({
     testId: string;
     variant?: "destructive" | "primary";
 }) {
+    const t = useAdminT();
     const [asking, setAsking] = useState(false);
     const [pending, setPending] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -250,7 +253,7 @@ export function ConfirmButton({
                 style={{ background: "var(--tnl-danger)" }}
                 data-testid={`${testId}-confirm`}
             >
-                {pending ? "Working..." : confirmLabel}
+                {pending ? t("adminWorking") : confirmLabel}
             </button>
             <button
                 type="button"
@@ -259,7 +262,7 @@ export function ConfirmButton({
                 className="text-xs underline disabled:opacity-50"
                 data-testid={`${testId}-cancel`}
             >
-                Cancel
+                {t("adminCancel")}
             </button>
         </div>
     );
@@ -275,6 +278,7 @@ export function AdminErrorBanner({
     onRetry?: () => void;
     testId?: string;
 }) {
+    const t = useAdminT();
     return (
         <div
             role="alert"
@@ -285,7 +289,7 @@ export function AdminErrorBanner({
             <span>{message}</span>
             {onRetry ? (
                 <button type="button" onClick={onRetry} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs">
-                    Coba lagi
+                    {t("adminRetry")}
                 </button>
             ) : null}
         </div>
@@ -300,6 +304,7 @@ export function AdminLoadMore({
     testId,
     countTestId,
     loading = false,
+    hasMore = shown < total,
 }: {
     shown: number;
     total: number;
@@ -307,13 +312,15 @@ export function AdminLoadMore({
     testId?: string;
     countTestId?: string;
     loading?: boolean;
+    hasMore?: boolean;
 }) {
+    const t = useAdminT();
     return (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs" data-testid={countTestId} style={{ color: "var(--tnl-tan-text)" }}>
-                {shown} dari {total}
+                {shown} {t("adminOf")} {total}
             </span>
-            {shown < total ? (
+            {hasMore ? (
                 <button
                     type="button"
                     onClick={onMore}
@@ -321,7 +328,7 @@ export function AdminLoadMore({
                     className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-sm disabled:opacity-50"
                     data-testid={testId}
                 >
-                    {loading ? "Memuat..." : "Muat lebih banyak"}
+                    {loading ? t("adminLoadingMore") : t("adminLoadMore")}
                 </button>
             ) : null}
         </div>
@@ -330,19 +337,19 @@ export function AdminLoadMore({
 
 type StatusVariant = "published" | "draft" | "hidden" | "error" | "warning" | "neutral";
 
-const STATUS_STYLES: Record<StatusVariant, { className: string; label: string }> = {
-    published: { className: "border-[var(--tnl-green)] bg-[var(--tnl-green)] text-white", label: "Published" },
-    draft: { className: "border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] text-[var(--tnl-body)]", label: "Draft" },
-    hidden: { className: "border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] text-[var(--tnl-tan-text)]", label: "Hidden" },
+const STATUS_STYLES: Record<StatusVariant, { className: string; label: AdminStringKey | "" }> = {
+    published: { className: "border-[var(--tnl-green)] bg-[var(--tnl-green)] text-white", label: "adminPublished" },
+    draft: { className: "border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] text-[var(--tnl-body)]", label: "adminDraft" },
+    hidden: { className: "border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] text-[var(--tnl-tan-text)]", label: "adminHidden" },
     error: {
         className:
             "border-[color-mix(in_srgb,var(--tnl-danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--tnl-danger)_14%,transparent)] text-[var(--tnl-danger)]",
-        label: "Error",
+        label: "adminError",
     },
     warning: {
         className:
             "border-[color-mix(in_srgb,var(--tnl-warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--tnl-warning)_14%,transparent)] text-[var(--tnl-warning)]",
-        label: "Warning",
+        label: "adminWarning",
     },
     neutral: { className: "border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] text-[var(--tnl-body)]", label: "" },
 };
@@ -361,6 +368,7 @@ export function AdminStatusBadge({
     testId?: string;
     className?: string;
 }) {
+    const t = useAdminT();
     const spec = STATUS_STYLES[variant];
     return (
         <span
@@ -371,7 +379,7 @@ export function AdminStatusBadge({
             )}
             data-testid={testId}
         >
-            {children ?? label ?? spec.label ?? variant}
+            {children ?? label ?? (spec.label ? t(spec.label) : "")}
         </span>
     );
 }

@@ -14,6 +14,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 
 from lib.auth import audit, require
+from lib.cache import invalidate_public_cache
 from lib.db import db
 from lib.serialize import jsonable
 from lib.storage import put_object, safe_name, sniff_content_type
@@ -149,6 +150,7 @@ async def replace_lab_photo(slot_id: str, request: Request,
         {"id": page["id"]},
         {"$set": {"blocks": blocks, "updated_at": datetime.now(timezone.utc)}},
     )
+    await invalidate_public_cache("pages")
     await audit(request, "replace", "lab-photo", slot_id, {"filename": media_doc["filename"]})
     page = await _home()
     return jsonable({"ok": True, "slot": _read_slot(page, slot), "media_id": media_doc["id"]})
@@ -179,6 +181,7 @@ async def clear_lab_photo(slot_id: str, request: Request):
         {"id": page["id"]},
         {"$set": {"blocks": blocks, "updated_at": datetime.now(timezone.utc)}},
     )
+    await invalidate_public_cache("pages")
     await audit(request, "clear", "lab-photo", slot_id, {})
     page = await _home()
     return jsonable({"ok": True, "slot": _read_slot(page, slot)})

@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { MediaPickerModal } from "@/components/admin/media";
 import type { MediaAsset } from "@/lib/types/types";
+import { useAdminT } from "@/lib/i18n/admin-i18n";
 
 export interface RichTextFieldProps {
     id?: string;
@@ -143,16 +144,19 @@ export function RichTextField({
     id,
     value,
     onChange,
-    placeholder = "Write the article…",
+    placeholder,
     defaultFolder,
     attachedTo,
     testId = "rich-text",
 }: RichTextFieldProps) {
+    const t = useAdminT();
+    const resolvedPlaceholder = placeholder ?? t("adminBuilderArticlePlaceholder");
+    const placeholderRef = useRef(resolvedPlaceholder);
     const [mode, setMode] = useState<Mode>("write");
     const [pickerOpen, setPickerOpen] = useState(false);
     const [linkOpen, setLinkOpen] = useState(false);
     const [linkDraft, setLinkDraft] = useState("");
-    const [linkError, setLinkError] = useState("");
+    const [linkError, setLinkError] = useState(false);
     const lastEmitted = useRef<string>(normalizeHtml(value));
 
     const editor = useEditor({
@@ -163,7 +167,7 @@ export function RichTextField({
                 link: { openOnClick: false, autolink: false },
             }),
             Image.configure({ inline: false }),
-            Placeholder.configure({ placeholder }),
+            Placeholder.configure({ placeholder: () => placeholderRef.current }),
         ],
         content: normalizeHtml(value),
         onUpdate: ({ editor: instance }) => {
@@ -174,6 +178,12 @@ export function RichTextField({
     });
 
     useEditorState(editor);
+
+    // Refresh decorations without recreating the editor or rewriting authored HTML.
+    useEffect(() => {
+        placeholderRef.current = resolvedPlaceholder;
+        if (editor) editor.view.dispatch(editor.state.tr);
+    }, [editor, resolvedPlaceholder]);
 
     // Keep the editor in sync when the parent replaces the value (switching records).
     useEffect(() => {
@@ -192,11 +202,11 @@ export function RichTextField({
         if (!editor) return;
         const href = linkDraft.trim();
         if (!isSafeHref(href)) {
-            setLinkError("Use https://, http://, a /path or mailto: link.");
+            setLinkError(true);
             return;
         }
         editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
-        setLinkError("");
+        setLinkError(false);
         setLinkOpen(false);
         setLinkDraft("");
     }, [editor, linkDraft]);
@@ -221,55 +231,55 @@ export function RichTextField({
                 className="flex flex-wrap items-center gap-1.5 rounded-t-[var(--tnl-radius-button)] border border-b-0 p-1.5"
                 style={{ borderColor: "var(--tnl-border)", background: "var(--tnl-surface)" }}
                 role="toolbar"
-                aria-label="Formatting"
+                aria-label={t("adminBuilderFormatting")}
             >
-                <ToolButton label="Paragraph" testId={`${testId}-paragraph`} onClick={() => editor?.chain().focus().setParagraph().run()} active={editor?.isActive("paragraph")} disabled={!editor}>
+                <ToolButton label={t("adminBuilderParagraph")} testId={`${testId}-paragraph`} onClick={() => editor?.chain().focus().setParagraph().run()} active={editor?.isActive("paragraph")} disabled={!editor}>
                     <span className="text-xs font-semibold">¶</span>
                 </ToolButton>
-                <ToolButton label="Heading 3" testId={`${testId}-h3`} onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} disabled={!editor}>
+                <ToolButton label={t("adminBuilderHeading3")} testId={`${testId}-h3`} onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} disabled={!editor}>
                     <Heading3 className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Heading 4" testId={`${testId}-h4`} onClick={() => editor?.chain().focus().toggleHeading({ level: 4 }).run()} active={editor?.isActive("heading", { level: 4 })} disabled={!editor}>
+                <ToolButton label={t("adminBuilderHeading4")} testId={`${testId}-h4`} onClick={() => editor?.chain().focus().toggleHeading({ level: 4 }).run()} active={editor?.isActive("heading", { level: 4 })} disabled={!editor}>
                     <Heading4 className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Bold" testId={`${testId}-bold`} onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")} disabled={!editor}>
+                <ToolButton label={t("adminBuilderBold")} testId={`${testId}-bold`} onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")} disabled={!editor}>
                     <Bold className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Italic" testId={`${testId}-italic`} onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")} disabled={!editor}>
+                <ToolButton label={t("adminBuilderItalic")} testId={`${testId}-italic`} onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")} disabled={!editor}>
                     <Italic className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Bullet list" testId={`${testId}-bullet-list`} onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")} disabled={!editor}>
+                <ToolButton label={t("adminBuilderBulletList")} testId={`${testId}-bullet-list`} onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")} disabled={!editor}>
                     <List className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Numbered list" testId={`${testId}-ordered-list`} onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} disabled={!editor}>
+                <ToolButton label={t("adminBuilderNumberedList")} testId={`${testId}-ordered-list`} onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} disabled={!editor}>
                     <ListOrdered className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Quote" testId={`${testId}-blockquote`} onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} disabled={!editor}>
+                <ToolButton label={t("adminBuilderQuote")} testId={`${testId}-blockquote`} onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} disabled={!editor}>
                     <Quote className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Inline code" testId={`${testId}-code`} onClick={() => editor?.chain().focus().toggleCode().run()} active={editor?.isActive("code")} disabled={!editor}>
+                <ToolButton label={t("adminBuilderInlineCode")} testId={`${testId}-code`} onClick={() => editor?.chain().focus().toggleCode().run()} active={editor?.isActive("code")} disabled={!editor}>
                     <Code2 className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Divider" testId={`${testId}-horizontal-rule`} onClick={() => editor?.chain().focus().setHorizontalRule().run()} disabled={!editor}>
+                <ToolButton label={t("adminBuilderDivider")} testId={`${testId}-horizontal-rule`} onClick={() => editor?.chain().focus().setHorizontalRule().run()} disabled={!editor}>
                     <Minus className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Insert link" testId={`${testId}-link`} onClick={() => { setLinkError(""); setLinkDraft(editor?.getAttributes("link").href || ""); setLinkOpen((v) => !v); }} active={editor?.isActive("link")} disabled={!editor}>
+                <ToolButton label={t("adminBuilderInsertLink")} testId={`${testId}-link`} onClick={() => { setLinkError(false); setLinkDraft(editor?.getAttributes("link").href || ""); setLinkOpen((v) => !v); }} active={editor?.isActive("link")} disabled={!editor}>
                     <Link2 className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Remove link" testId={`${testId}-unlink`} onClick={() => editor?.chain().focus().extendMarkRange("link").unsetLink().run()} disabled={!editor || !editor.isActive("link")}>
+                <ToolButton label={t("adminBuilderRemoveLink")} testId={`${testId}-unlink`} onClick={() => editor?.chain().focus().extendMarkRange("link").unsetLink().run()} disabled={!editor || !editor.isActive("link")}>
                     <Link2Off className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Insert image" testId={`${testId}-insert-image`} onClick={() => setPickerOpen(true)} disabled={!editor}>
+                <ToolButton label={t("adminBuilderInsertImage")} testId={`${testId}-insert-image`} onClick={() => setPickerOpen(true)} disabled={!editor}>
                     <ImagePlus className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Undo" testId={`${testId}-undo`} onClick={() => editor?.chain().focus().undo().run()} disabled={!editor || !editor.can().undo()}>
+                <ToolButton label={t("adminBuilderUndo")} testId={`${testId}-undo`} onClick={() => editor?.chain().focus().undo().run()} disabled={!editor || !editor.can().undo()}>
                     <Undo2 className="h-4 w-4" />
                 </ToolButton>
-                <ToolButton label="Redo" testId={`${testId}-redo`} onClick={() => editor?.chain().focus().redo().run()} disabled={!editor || !editor.can().redo()}>
+                <ToolButton label={t("adminBuilderRedo")} testId={`${testId}-redo`} onClick={() => editor?.chain().focus().redo().run()} disabled={!editor || !editor.can().redo()}>
                     <Redo2 className="h-4 w-4" />
                 </ToolButton>
 
-                <div className="ml-auto flex items-center gap-1" role="group" aria-label="Editor mode">
+                <div className="ml-auto flex items-center gap-1" role="group" aria-label={t("adminBuilderEditorMode")}>
                     {(["write", "preview", "html"] as Mode[]).map((option) => (
                         <button
                             key={option}
@@ -284,7 +294,7 @@ export function RichTextField({
                                     : { color: "var(--tnl-body)", border: "1px solid var(--tnl-border)" }
                             }
                         >
-                            {option === "write" ? "Write" : option === "preview" ? "Preview" : "</> HTML"}
+                            {option === "write" ? t("adminBuilderWrite") : option === "preview" ? t("adminBuilderPreview") : "</> HTML"}
                         </button>
                     ))}
                 </div>
@@ -296,8 +306,8 @@ export function RichTextField({
                         id={`${testId}-link-input`}
                         className="tnl-field h-9 flex-1 text-sm"
                         value={linkDraft}
-                        placeholder="https://example.com or /news"
-                        aria-label="Link URL"
+                        placeholder={t("adminBuilderLinkPlaceholder")}
+                        aria-label={t("adminBuilderLinkUrl")}
                         aria-invalid={linkError ? true : undefined}
                         aria-describedby={linkError ? `${testId}-link-error` : undefined}
                         data-testid={`${testId}-link-input`}
@@ -305,11 +315,11 @@ export function RichTextField({
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyLink(); } }}
                     />
                     <button type="button" className="tnl-btn tnl-btn-primary h-9 text-sm" data-testid={`${testId}-link-apply`} onClick={applyLink}>
-                        Apply
+                        {t("adminApply")}
                     </button>
                     {linkError ? (
                         <p id={`${testId}-link-error`} role="alert" className="w-full text-xs text-[var(--tnl-danger)]" data-testid={`${testId}-link-error`}>
-                            {linkError}
+                            {t("adminBuilderLinkError")}
                         </p>
                     ) : null}
                 </div>
@@ -337,7 +347,7 @@ export function RichTextField({
                     id={id}
                     className="tnl-field min-h-[220px] rounded-b-[var(--tnl-radius-button)] font-mono text-xs"
                     value={html === "<p></p>" ? "" : html}
-                    aria-label="Raw HTML"
+                    aria-label={t("adminBuilderRawHtml")}
                     data-testid={`${testId}-html-source`}
                     onChange={(e) => {
                         lastEmitted.current = e.target.value;
@@ -348,7 +358,7 @@ export function RichTextField({
             )}
 
             <p className="mt-1.5 text-xs text-[var(--tnl-muted)]" data-testid={`${testId}-word-count`}>
-                {words} {words === 1 ? "word" : "words"} · about {readingMinutes(words)} min read
+                {t("adminBuilderReadingSummary").replace("{words}", String(words)).replace("{unit}", t(words === 1 ? "adminBuilderWord" : "adminBuilderWords")).replace("{minutes}", String(readingMinutes(words)))}
             </p>
 
             <MediaPickerModal

@@ -157,9 +157,13 @@ async def test_outbox_stores_redacted_html_but_sends_real_email(async_client, mo
     monkeypatch.setenv("SMTP_HOST", "smtp.example.invalid")
     monkeypatch.setattr(lib.mailer, "_smtp_send", fake_send)
     secret_link = "https://example.org/admin/invite/" + uuid4().hex
-    await lib.mailer.send_email("someone@example.org", "Invite", f'<a href="{secret_link}">{secret_link}</a>')
-    stored = await mock_db.outbox.find_one({"subject": "Invite"})
+    queued = await lib.mailer.send_email("someone@example.org", "Invite", f'<a href="{secret_link}">{secret_link}</a>')
+    assert queued["status"] == "queued"
+    delivery = await lib.mailer.deliver_pending(notification_id=queued["id"])
+    assert delivery["delivered"] == 1
+    stored = await mock_db.outbox.find_one({"id": queued["id"]})
     assert stored is not None
+    assert stored["status"] == "delivered" and "payload" not in stored
     assert secret_link not in stored["html"]
     assert "REDACTED" in stored["html"]
     assert sent["html"] == f'<a href="{secret_link}">{secret_link}</a>'  # delivery is untouched
@@ -311,9 +315,9 @@ async def test_undo_delete_checks_division_scope(async_client, mock_db):
 async def test_audit_hash_chain_and_export_offset(async_client, mock_db, admin_cookies):
     req = type("Req", (), {"state": type("State", (), {"user": {"id": "x", "email": "x@example.org"}})()})()
     await lib.auth.audit(req, "chain-test", "unit", "target-1", {"n": 1})
-    first = await mock_db.audit_log.find_one({"action": "chain-test"}, sort=[("created_at", -1)])
+    first = await mock_db.audit_log.find_one({"action": "chain-test"}, sort=[("seq", -1)])
     await lib.auth.audit(req, "chain-test", "unit", "target-2", {"n": 2})
-    second = await mock_db.audit_log.find_one({"action": "chain-test"}, sort=[("created_at", -1)])
+    second = await mock_db.audit_log.find_one({"action": "chain-test"}, sort=[("seq", -1)])
     assert first.get("hash") and second.get("hash") != first["hash"]
     assert second["prev_hash"] == first["hash"]
     assert second["target_id"] == "target-2"
@@ -385,3 +389,162 @@ def test_index_definitions_cover_audit_and_api_keys():
     names = {m.document["name"] for models in lib.db.INDEXES.values() for m in models}
     assert "audit_created_action" in names
     assert "api_keys_active" in names
+
+
+# ---------------------------------------------------------------- 14. audit hash chain
+@pytest.mark.asyncio
+async def test_audit_chain_includes_detail_and_verifies(async_client, mock_db, admin_cookies):
+    from lib.auth import verify_audit_chain
+    from starlette.requests import Request
+
+    async def _scope():
+        return Request({"type": "http", "headers": [], "method": "GET", "path": "/"})
+
+    await lib.auth.audit(await _scope(), "update", "post", "p1", {"before": {"title": "a"}}, actor={"id": "u1", "email": "a@b.c"})
+    res = await async_client.get("/admin/audit/verify", cookies=admin_cookies)
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["ok"] is True
+    assert body["checked"] >= 1
+
+    # Tampering with detail must break the chain now that detail is hashed.
+    doc = await mock_db.audit_log.find_one({"resource": "post", "target_id": "p1"})
+    assert doc and doc["hash_version"] == 2
+    await mock_db.audit_log.update_one({"id": doc["id"]}, {"$set": {"detail": {"before": {"title": "hacked"}}}})
+    broken = await async_client.get("/admin/audit/verify", cookies=admin_cookies)
+    assert broken.json()["ok"] is False
+    assert broken.json()["broken_at"] == doc["id"]
+
+
+@pytest.mark.asyncio
+async def test_audit_writes_are_serialised(async_client, mock_db):
+    """Concurrent writers must not fork the chain: every prev_hash stays unique."""
+    import asyncio as _asyncio
+    from starlette.requests import Request
+
+    # Start from an empty log: a previous test deliberately breaks the chain, and
+    # verify walks every row in the collection.
+    await mock_db.audit_log.delete_many({})
+
+    async def _one(i: int):
+        req = Request({"type": "http", "headers": [], "method": "GET", "path": "/"})
+        await lib.auth.audit(req, "concurrent", "probe", f"c{i}", None, actor={"id": "u1", "email": "a@b.c"})
+
+    await _asyncio.gather(*[_one(i) for i in range(8)])
+    docs = await mock_db.audit_log.find({"action": "concurrent"}).to_list(50)
+    assert len(docs) == 8, len(docs)
+    # A forked chain means two rows share a prev_hash; one root ("") is expected.
+    prevs = [d["prev_hash"] for d in docs]
+    assert len(set(prevs)) == len(prevs), prevs
+    assert sorted(d["seq"] for d in docs) == list(range(min(d["seq"] for d in docs),
+                                                        min(d["seq"] for d in docs) + 8))
+    chain = await lib.auth.verify_audit_chain()
+    assert chain["ok"] is True, chain
+
+
+@pytest.mark.asyncio
+async def test_legacy_v1_audit_rows_still_verify(mock_db):
+    """v1 rows hashed a live datetime whose microseconds Mongo dropped.
+
+    Dropping the collection would lose the whole history, so a v1 row must still
+    verify across every millisecond offset of its stored timestamp — while a
+    tampered v1 row must still fail.
+    """
+    import uuid
+    from datetime import datetime, timedelta, timezone
+
+    await mock_db.audit_log.delete_many({})
+    created = datetime(2026, 11, 26, 10, 0, 0, 123456, tzinfo=timezone.utc)
+    # What Mongo actually stored: millisecond-truncated.
+    stored = created.replace(microsecond=123000)
+    legacy_hash = lib.auth.audit_hash("", "u1", "legacy", "post", "p0", created)
+    await mock_db.audit_log.insert_one({
+        "id": str(uuid.uuid4()), "actor_id": "u1", "actor_email": "a@b.c",
+        "action": "legacy", "resource": "post", "target_id": "p0", "detail": {},
+        "created_at": stored, "prev_hash": "", "hash": legacy_hash,
+    })
+    assert (await lib.auth.verify_audit_chain())["ok"] is True
+
+    await mock_db.audit_log.update_one({"action": "legacy"}, {"$set": {"target_id": "p1"}})
+    broken = await lib.auth.verify_audit_chain()
+    assert broken["ok"] is False
+    assert broken["checked"] == 0
+
+
+# ---------------------------------------------------------------- 15. cross-process chain lock
+@pytest.mark.asyncio
+async def test_chain_lock_is_released_after_each_write(mock_db):
+    """The document lock must not stay held: a leaked claim stalls every later write."""
+    from starlette.requests import Request
+
+    await mock_db.audit_log.delete_many({})
+    await mock_db["audit_locks"].delete_many({})
+
+    req = Request({"type": "http", "headers": [], "method": "GET", "path": "/"})
+    await lib.auth.audit(req, "lockcheck", "probe", "l1", None, actor={"id": "u1", "email": "a@b.c"})
+    await lib.auth.audit(req, "lockcheck", "probe", "l2", None, actor={"id": "u1", "email": "a@b.c"})
+
+    doc = await mock_db["audit_locks"].find_one({"_id": lib.auth.AUDIT_LOCK_ID})
+    assert doc is not None, "the chain lock document should have been bootstrapped"
+    assert doc["held"] is False
+    assert doc["token"] is None
+    assert (await lib.auth.verify_audit_chain())["ok"] is True
+
+
+@pytest.mark.asyncio
+async def test_chain_lock_blocks_a_foreign_holder(mock_db):
+    """A lock held by another process (unexpired) is not stolen while it is live."""
+    import time as _time
+
+    await mock_db["audit_locks"].delete_many({})
+    await mock_db["audit_locks"].insert_one({
+        "_id": lib.auth.AUDIT_LOCK_ID, "held": True,
+        "token": "other-worker", "expires_at": _time.time() + 300,
+    })
+    won = await lib.auth._acquire_chain_lock("me", timeout=0.15)
+    assert won is False
+    doc = await mock_db["audit_locks"].find_one({"_id": lib.auth.AUDIT_LOCK_ID})
+    assert doc["token"] == "other-worker", "an unexpired foreign claim must be left alone"
+
+
+@pytest.mark.asyncio
+async def test_chain_lock_steals_an_expired_claim(mock_db):
+    """A holder that crashed keeps the claim only until the TTL runs out."""
+    import time as _time
+
+    await mock_db["audit_locks"].delete_many({})
+    await mock_db["audit_locks"].insert_one({
+        "_id": lib.auth.AUDIT_LOCK_ID, "held": True,
+        "token": "crashed-worker", "expires_at": _time.time() - 1,
+    })
+    won = await lib.auth._acquire_chain_lock("me", timeout=1.0)
+    assert won is True
+    doc = await mock_db["audit_locks"].find_one({"_id": lib.auth.AUDIT_LOCK_ID})
+    assert doc["token"] == "me"
+    await lib.auth._release_chain_lock("me")
+    released = await mock_db["audit_locks"].find_one({"_id": lib.auth.AUDIT_LOCK_ID})
+    assert released["held"] is False
+
+
+@pytest.mark.asyncio
+async def test_chain_lock_survives_mongo_failure(mock_db, monkeypatch):
+    """CAS failure still persists the entry, protected by the unique seq index."""
+    from starlette.requests import Request
+
+    await mock_db.audit_log.delete_many({})
+    failures = 0
+
+    async def _boom(*_a, **_k):
+        nonlocal failures
+        failures += 1
+        raise RuntimeError("no findOneAndUpdate")
+
+    # mongomock_motor returns new collection wrappers on lookup; patch the method
+    # on their shared class so the audit path really encounters the CAS failure.
+    monkeypatch.setattr(type(mock_db["audit_locks"]), "find_one_and_update", _boom)
+    req = Request({"type": "http", "headers": [], "method": "GET", "path": "/"})
+    await lib.auth.audit(req, "degraded", "probe", "d1", None, actor={"id": "u1", "email": "a@b.c"})
+    saved = await mock_db.audit_log.find_one({"action": "degraded"})
+    assert failures == 1
+    assert saved is not None and saved["hash"], "audit must never be lost to a lock failure"
+    assert (await lib.auth.verify_audit_chain())["ok"] is True

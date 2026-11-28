@@ -70,7 +70,11 @@ describe("admin core audit fixes (RED first)", () => {
     renderWithProviders(<AuditLogPage />, { route: "/admin/audit" });
 
     const link = await screen.findByTestId("audit-export-button");
-    expect(link.getAttribute("href")).toContain("limit=50");
+    // Export intentionally has no href until the displayed query is ready.
+    await waitFor(() => {
+      expect(link).toHaveAttribute("aria-disabled", "false");
+      expect(link.getAttribute("href")).toContain("limit=50");
+    });
   });
 
   it("A7: the users confirmation dialog is described by its message", async () => {
@@ -179,7 +183,7 @@ describe("admin core audit fixes (RED first)", () => {
   it("K4: all four dialog surfaces call the shared focus trap", () => {
     const files = [
       "src/pages/admin/AdminUI.tsx",
-      "src/pages/admin/AdminScreens.tsx",
+      "src/pages/admin/screens/UsersPage.tsx",
       "src/pages/admin/AdminLayout.tsx",
       "src/components/site/Chrome.tsx",
     ];

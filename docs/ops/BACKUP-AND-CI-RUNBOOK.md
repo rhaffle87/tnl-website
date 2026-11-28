@@ -1,186 +1,190 @@
-# Runbook Operasional: Backup Harian Otomatis & GitHub Actions CI
-**Laboratorium Jaringan Telekomunikasi (TNL) ITS — `https://labtnl.site`**
-*Target Node:* Proxmox LXC Cluster (`CT 102`, `CT 103`, `CT 116`, `CT 117`)  
-*Versi Dokumen:* 1.0 (November 2026)
+# Backup, Restore-Drill, CI, and Monitoring Runbook
 
----
+Scope: the TNL application guests CT 102, CT 103, CT 116, and CT 117. This runbook
+distinguishes checked-in procedures from what has actually been installed. A script,
+service unit, dashboard, green local test, or CI definition is not proof that a
+production host has it enabled or that a backup has been restored successfully.
 
-## 1. Arsitektur & Jadwal Otomatisasi
+## Backup Jobs and Status
 
-Untuk menjamin keberlanjutan operasional (*kepengurusan keberlanjutan*), sistem backup dan pengujian otomatis telah dipasang tanpa intervensi manual:
+The repository includes `tnl-backup-db.timer` and `tnl-backup-media.timer` for the
+existing daily jobs. The database job writes compressed MongoDB archives on CT 116;
+the media job writes compressed tar archives on CT 103. Their scripts verify the
+archive format before replacing `latest` and export timestamp/size metrics to the
+node-exporter textfile collector. Retention keeps at least three archives and prunes
+archives older than fourteen days. Confirm that the units are installed and enabled
+on the actual guests before relying on these source definitions.
 
-```
-+-----------------------------------------------------------------------------------------+
-|                                    PROXMOX LXC CLUSTER                                  |
-|                                                                                         |
-|  [CT 116: labtnl-db]                                                                    |
-|  - Systemd Timer : tnl-backup-db.timer (Pukul 02:00 WIB setiap hari)                    |
-|  - Skrip         : /usr/local/bin/tnl-backup-db.sh (mongodump --gzip)                   |
-|  - Lokasi Arsip  : /var/backups/tnl/db/tnl-db-YYYYMMDD-HHMMSS.archive.gz                |
-|  - Symlink       : /var/backups/tnl/db/latest.archive.gz                                |
-|  - Kebijakan     : Retensi 14 hari (tetap mempertahankan minimal 3 arsip terbaru)       |
-|                                                                                         |
-|  [CT 103: labtnl-app]                                                                   |
-|  - Systemd Timer : tnl-backup-media.timer (Pukul 02:30 WIB setiap hari)                 |
-|  - Skrip         : /usr/local/bin/tnl-backup-media.sh (tar -czf /opt/tnl/media)         |
-|  - Lokasi Arsip  : /var/backups/tnl/media/tnl-media-YYYYMMDD-HHMMSS.tar.gz              |
-|  - Symlink       : /var/backups/tnl/media/latest.tar.gz                                 |
-|  - Kebijakan     : Retensi 14 hari (tetap mempertahankan minimal 3 arsip terbaru)       |
-+-----------------------------------------------------------------------------------------+
-                                            |
-                         (Tarik Off-site secara berkala via Tailscale)
-                                            v
-+-----------------------------------------------------------------------------------------+
-|  [PC Lokal / Admin Workstation]                                                         |
-|  - Skrip Pull : powershell -ExecutionPolicy Bypass -File scripts\ops\pull-latest-backups.ps1 |
-|  - Hasil      : Tersimpan di backups/offsite/ (disarankan backup bulanan ke GDrive lab) |
-+-----------------------------------------------------------------------------------------+
-
-+-----------------------------------------------------------------------------------------+
-|                                  GITHUB ACTIONS CI / CD                                 |
-|                                                                                         |
-|  [.github/workflows/ci.yml]                                                             |
-|  - Trigger : Push ke `main`, Pull Request ke `main`, dan manual workflow_dispatch        |
-|  - Job 1   : backend-tests (Python 3.12, pytest **minimal 154 tes**, in-memory mock DB)             |
-|  - Job 2   : frontend-checks (Node.js **22**, `tsc -b`, Vitest **minimal 360 tes**, vite build,   |
-|              Playwright geometry gate)                                                            |
-|  - Job 3   : repository hygiene & security guard (cek `.env`/arsip ter-commit, working tree       |
-|              bersih, dan pemindaian assignment kredensial di source)                             |
-|                                                                                         |
-|  [.github/workflows/live-smoke.yml]                                                     |
-|  - Trigger : Cron Harian 01:00 UTC (08:00 WIB) & workflow_dispatch pasca-deploy         |
-|  - Job     : Playwright Chromium Read-Only Smoke Test terhadap https://labtnl.site      |
-+-----------------------------------------------------------------------------------------+
-```
-
-> **Catatan angka:** 154 (backend) dan 360 (frontend) adalah angka gate terverifikasi sebelum perbaikan audit dan merupakan **minimum; final counts recorded by parent after audit fixes**. Node.js 22 adalah runtime CI saat ini.
-
-> **Penamaan arsip:** backup *terjadwal di server* (CT 116) menghasilkan `.archive.gz` (mongodump `--gzip`), sedangkan `scripts/deploy/backup-db.ps1` menghasilkan dump ad-hoc `.archive` (tanpa gzip) di `backups/db/`. Keduanya sengaja berbeda; gunakan `--gzip` hanya untuk `.archive.gz`.
-
----
-
-## 2. Pemantauan & Pengecekan Status Backup di Server
-
-### A. Melihat Status Timer Terjadwal
-Login via SSH ke masing-masing container:
-```bash
-# Di CT 116 (Database):
-ssh root@100.111.32.102 "systemctl list-timers --all | grep tnl-backup"
-
-# Di CT 103 (Media):
-ssh root@100.65.129.8 "systemctl list-timers --all | grep tnl-backup"
-```
-
-### B. Menjalankan Backup Manual Kapan Saja
-Jika ingin mencadangkan database atau media sesaat sebelum melakukan perubahan besar:
-```bash
-# Eksekusi manual database backup di CT 116:
-ssh root@100.111.32.102 "systemctl start tnl-backup-db.service"
-
-# Eksekusi manual media backup di CT 103:
-ssh root@100.65.129.8 "systemctl start tnl-backup-media.service"
-```
-
-### C. Membaca Log Riwayat Eksekusi
-```bash
-# Log backup database di CT 116:
-ssh root@100.111.32.102 "journalctl -u tnl-backup-db.service -n 30 --no-pager"
-
-# Log backup media di CT 103:
-ssh root@100.65.129.8 "journalctl -u tnl-backup-media.service -n 30 --no-pager"
-```
-
-### D. Mengaudit Status Menyeluruh dari Windows
-Jalankan audit kesehatan kluster Proxmox yang sudah mengintegrasikan deteksi file backup:
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\deploy\health-check.ps1
-```
-
----
-
-## 3. Prosedur Pemulihan (Disaster Recovery / Restore)
-
-> **PERINGATAN PENTING:** Operasi restore database akan menimpa data yang ada saat ini. Pastikan untuk selalu menjalankan backup cadangan sebelum merestore!
-
-### A. Restore Database MongoDB (`CT 116`)
-
-1. **Restore dari Backup Terbaru (`latest`):**
-   ```bash
-   ssh root@100.111.32.102
-   mongorestore --gzip --archive=/var/backups/tnl/db/latest.archive.gz --drop
-   ```
-2. **Restore dari File Backup Tanggal Tertentu:**
-   ```bash
-   # Lihat daftar file yang tersedia:
-   ls -la /var/backups/tnl/db/
-
-   # Jalankan restore pada tanggal yang diinginkan:
-   mongorestore --gzip --archive=/var/backups/tnl/db/tnl-db-20261120-093618.archive.gz --drop
-   ```
-3. **Verifikasi Data Pasca-Restore:**
-   ```bash
-   mongosh --eval "use tnl; db.users.countDocuments(); db.events.countDocuments();"
-   ```
-4. **Restore dump ad-hoc dari workstation (`backup-db.ps1`, ekstensi `.archive`, TANPA gzip):**
-   ```bash
-   # Jalankan di workstation Windows; file lokal berada di backups/db/
-   scp backups\db\tnl-backup-<TIMESTAMP>.archive root@100.111.32.102:/tmp/restore.archive
-   ssh root@100.111.32.102 "mongorestore --drop --archive=/tmp/restore.archive && rm -f /tmp/restore.archive"
-   ```
-   Jangan menambahkan `--gzip` untuk arsip `.archive`; flag tersebut hanya untuk arsip server `.archive.gz`.
-
-### B. Restore Berkas Media & Unggahan (`CT 103`)
-
-1. **Restore dari Arsip Terbaru (`latest`):**
-   ```bash
-   ssh root@100.65.129.8
-   tar -xzf /var/backups/tnl/media/latest.tar.gz -C /opt/tnl/
-   ```
-2. **Pastikan Kepemilikan & Izin Least-Privilege:**
-   ```bash
-   # Sesuaikan group dengan user yang menjalankan Nginx di CT 103 (umumnya www-data).
-   chown -R root:www-data /opt/tnl/media
-   find /opt/tnl/media -type d -exec chmod 750 {} +
-   find /opt/tnl/media -type f -exec chmod 640 {} +
-   ```
-   Hindari `chmod -R 777`: izin tersebut memberi hak tulis kepada semua user dan melemahkan isolasi media. Berikan hanya hak baca bagi group web server; gunakan `chown`/`chmod` tambahan hanya jika backend perlu menulis (`root` sudah memiliki akses penuh pada layanan systemd saat ini).
-3. **Verifikasi:**
-   ```bash
-   ls -ld /opt/tnl/media && find /opt/tnl/media -maxdepth 1 -type f -printf '%m %u:%g %p\n' | head
-   ```
-
----
-
-## 4. Prosedur Sinkronisasi Salinan Off-Site ke Komputer Lokal
-
-Admin atau asisten lab dapat mengunduh salinan backup terverifikasi ke workstation lokal (misalnya seminggu atau sebulan sekali) menggunakan:
+Read-only status checks (do not print journal contents, environment files, or backup
+payloads):
 
 ```powershell
-# Jalankan dari root workspace tnl-website di PowerShell:
-powershell -ExecutionPolicy Bypass -File scripts\ops\pull-latest-backups.ps1
+ssh -o BatchMode=yes -o ConnectTimeout=5 root@100.111.32.102 "systemctl is-active tnl-backup-db.timer; systemctl list-timers --all --no-legend tnl-backup-db.timer; systemctl show tnl-backup-db.service -p Result -p ExecMainStatus -p InactiveExitTimestamp --no-pager; stat -c 'size=%s mtime=%y' /var/backups/tnl/db/latest.archive.gz"
+ssh -o BatchMode=yes -o ConnectTimeout=5 root@100.65.129.8 "systemctl is-active tnl-backup-media.timer; systemctl list-timers --all --no-legend tnl-backup-media.timer; systemctl show tnl-backup-media.service -p Result -p ExecMainStatus -p InactiveExitTimestamp --no-pager; stat -c 'size=%s mtime=%y' /var/backups/tnl/media/latest.tar.gz"
 ```
 
-File akan tersimpan rapi di direktori `backups/offsite/`:
-* `tnl-db-offsite-YYYYMMDD-HHMMSS.archive.gz`
-* `tnl-media-offsite-YYYYMMDD-HHMMSS.tar.gz`
-* `latest-db.archive.gz` & `latest-media.tar.gz`
+Prometheus rules alert when a server-side backup timestamp is more than 28 hours
+old, when either timestamp metric is absent, and when the edge or backend probes
+fail. `tnl_backup_success` is emitted by successful backup runs; a stale timestamp
+is the primary signal for a failed or missed run. Prometheus cannot observe a
+workstation copy unless a separate metric integration is added.
 
-Folder `backups/` telah dikecualikan secara ketat pada `.gitignore` agar tidak pernah ter-commit ke repositori publik Git.
+The server-side `.archive.gz` files and the on-demand `scripts/deploy/backup-db.ps1`
+`.archive` files are different formats. The former require `--gzip`; the latter do
+not. Avoid restoring either into production without a separately approved incident
+procedure.
 
----
+## Workstation Copy
 
-## 5. Panduan GitHub Actions CI & Scheduled Live Smoke
+`scripts/ops/pull-latest-backups.ps1` downloads both `latest` archives over SSH with
+`BatchMode`, bounded connection/keepalive options, and remote integrity-command timeouts.
+It rejects backups older than 30 hours or more than five minutes in the future,
+checks source and local size plus SHA-256, validates gzip and tar integrity, and
+rejects unsafe media archive paths and special files. It only advances local latest
+copies after validation and writes
+`backups/offsite/latest-backups.json` as a metadata manifest. The manifest contains
+timestamps, sizes, hashes, source guest addresses, and archive filenames, not backup
+contents.
 
-Setiap asisten yang melakukan *pull request* atau *push* ke branch `main`:
+The read-only pull completed successfully on 2026-11-27T18:20:17Z. The CT 116 database
+archive was 99,620 bytes with SHA-256
+`05e69350bdcbb0ca13b0b3a9c7cad5ffccf0af96689f32922ecc814a004804ff`; the CT 103 media
+archive was 53,749,692 bytes with SHA-256
+`347bbba62d0b6e917941b2f592c2e499872a821fc2e07162b42239a0629d685b`. Both source
+archives passed freshness and integrity checks, and the downloaded copies matched.
+No remote backup files were modified.
 
-1. **Workflow `CI` Otomatis Berjalan:**
-   - Menjalankan **minimal 154** tes backend `pytest` dengan database terisolasi (`mongomock_motor`).
-   - Menjalankan static typecheck TypeScript `tsc -b` dengan Node.js 22.
-   - Menjalankan **minimal 360** tes komponen frontend `Vitest`.
-   - Menjalankan kompilasi produksi `vite build` dan geometry gate Playwright.
-   - Memastikan tidak ada file `.env`, private key, atau arsip backup yang tidak sengaja terdorong ke Git, working tree bersih, serta tidak ada assignment kredensial hardcoded di source.
-   - Angka tes tersebut adalah minimum; final counts recorded by parent after audit fixes.
-2. **Workflow `Live Smoke` Berjalan Setiap Pagi (08:00 WIB):**
-   - Headless Playwright Chromium membuka `https://labtnl.site`.
-   - Memeriksa zero broken images, responsive viewport (Desktop, Laptop, iPhone), dan keabsahan HTTP 200 di seluruh 8 rute publik.
-   - Jika ada anomali atau downtime, GitHub Actions akan mengirim email notifikasi kegagalan secara instan ke pengelola repositori.
+Run a pull manually from the repository root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\ops\pull-latest-backups.ps1
+```
+
+To register the optional daily Windows Task Scheduler task, first inspect the plan;
+registration requires the explicit `-Execute` switch:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\ops\install-offsite-backup-task.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\ops\install-offsite-backup-task.ps1 -Execute
+```
+
+The task uses the current Windows identity, runs only during an interactive logged-on
+session, stores no password, and requires Tailscale and SSH to be available. The
+task was registered on the operator workstation on 2026-11-28 for 05:00 local time;
+Task Scheduler reports it ready with the first run due 2026-11-29. The scheduled task
+has not run yet, so the latest confirmed pull remains the manual run recorded above.
+`backups/offsite/` is a workstation copy, not an immutable or geographic off-site
+backup; copy it to an independently managed encrypted backup destination to protect
+against workstation loss. Protect the workstation volume because backup archives may
+contain personal data.
+
+## Isolated Restore Drill
+
+The repository's restore drill is deliberately local and isolated. It validates both
+archives, extracts media only into a unique temporary directory, and restores the
+database into a uniquely named database in a temporary MongoDB container with
+`--network none`, a read-only archive mount, no published port, and tmpfs data. It
+does not accept a production connection string, does not use `--drop`, and removes
+the container and temporary media directory when finished.
+
+Example command (run only on an operator workstation with Docker available):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\ops\restore-drill.ps1 `
+  -DatabaseArchive backups\offsite\latest-db.archive.gz `
+  -MediaArchive backups\offsite\latest-media.tar.gz
+```
+
+A separate isolated restore validation was completed against the scheduled archives.
+The CT 116 database archive restored into a temporary MongoDB instance on port 19434
+under a scratch database, yielding 22 non-system collections and 952 documents. The
+CT 103 media archive extracted to scratch as 159 files totaling 54,926,445 bytes; all
+file hashes matched, and the temporary database and extracted files were cleaned.
+No production database was mutated. This validation was separate from the
+`restore-drill.ps1` wrapper, which was syntax checked but not executed. Production
+disaster recovery is intentionally not automated by this drill.
+
+## Monitoring and Alert Routing
+
+The checked-in Prometheus config now defines:
+
+- Node-exporter targets and server backup freshness metrics.
+- A CT 102 Nginx-exporter target on port 9113.
+- A local blackbox exporter on CT 117 port 9115 probing CT 103 `/api/health`; the
+  health endpoint reports the Redis limiter dependency as well as application/DB
+  readiness.
+- A local Alertmanager endpoint on CT 117 port 9093.
+
+The default Alertmanager configuration intentionally has no delivery endpoint. It
+does not invent an email address or send webhook notifications. To enable webhook
+delivery after an operator configures the root-only `/etc/tnl/alertmanager.env` on
+CT 117, the deployment hook has a separate explicit switch. It accepts
+`TNL_ALERTMANAGER_WEBHOOK_URL` and optionally
+`TNL_ALERTMANAGER_BEARER_TOKEN_FILE`; the token value remains in the protected file
+and is not stored in this repository or passed as a command-line argument.
+
+The setup scripts and dashboards are source-controlled, not proof of guest state.
+`scripts/monitoring/deploy-monitoring.ps1` is plan-only by default. After parent
+integration approval, `-Execute` stages configuration, validates it, installs CT
+117 monitoring packages and Grafana provisioning, then restarts the services.
+`-InstallNginxExporter` also configures the CT 102 status exporter; its port should
+be restricted to CT 117 by the existing Tailscale ACL/firewall. No monitoring
+deployment or notification was performed for this change. The last read-only probe
+before implementation found no CT 102 listener on 9113 and no active CT 117
+Alertmanager target, so these remain unconfigured until the guarded hook is run.
+
+After an approved setup, safe readiness checks include:
+
+```powershell
+ssh -o BatchMode=yes -o ConnectTimeout=5 root@100.114.215.48 "systemctl is-active prometheus grafana-server tnl-alertmanager.service tnl-blackbox-exporter.service; curl -fsS --max-time 4 http://127.0.0.1:9090/-/ready; curl -fsS --max-time 4 http://127.0.0.1:9093/-/ready"
+ssh -o BatchMode=yes -o ConnectTimeout=5 root@100.102.105.77 "systemctl is-active nginx tnl-nginx-exporter.service; ss -ltn | awk 'NR==1 || /:9113 /'"
+```
+
+To inspect scrape health without dumping application payloads, query Prometheus's
+target API and retain only job, instance, health, and sanitized error status fields.
+Do not inspect or print application response bodies, guest environment files, or
+backup payloads as part of routine verification.
+
+## CI and Live Smoke
+
+`.github/workflows/ci.yml` runs on pushes and pull requests for `main` and `develop`,
+and on manual dispatch. It uses read-only GitHub token permissions, pinned action
+commits, Python 3.11/3.12 hash locks, `npm ci`, dependency audits, Docker image builds,
+monitoring-config validation, a disposable Compose startup with volume cleanup, and
+a separate Mongo 7 service for `scripts/test/verify_mongo_workflows.py`. That harness
+requires the explicit `TNL_INTEGRATION_MONGO_URL`, creates a fresh generated
+`tnl_integration_<uuid>` database, uses multiple OS processes against real MongoDB,
+and removes only the database it owns. It does not load `.env` or connect to a
+production database.
+
+Python resolver inputs are `backend/requirements.in` and
+`backend/requirements-dev.in`. `backend/requirements.txt` is the full transitive
+production lock with hashes consumed by Docker and deployment tooling.
+`backend/requirements-dev.txt` and `backend/requirements-dev-py312.lock` are full
+hash locks for CI/test Python 3.11 and 3.12 respectively. Install using
+`python -m pip install --require-hashes -r <lockfile>`. Docker base images and
+Compose Mongo/Redis images are pinned to registry digests; Dependabot monitors image,
+Python, npm, and GitHub Action updates.
+
+To update these lock artifacts, change the `.in` inputs deliberately, run the pinned
+resolver from `backend/`, review the dependency diff, then test both interpreter locks:
+
+```bash
+uv pip compile requirements.in --python-version 3.11 --universal --generate-hashes --no-header --output-file requirements.txt
+uv pip compile requirements-dev.in --python-version 3.11 --universal --generate-hashes --no-header --output-file requirements-dev.txt
+uv pip compile requirements-dev.in --python-version 3.12 --universal --generate-hashes --no-header --output-file requirements-dev-py312.lock
+```
+
+`requirements-dev.in` constrains its production set with `requirements.txt`, keeping
+CI and Docker on the same production dependency versions.
+
+`.github/workflows/live-smoke.yml` runs on its daily schedule or manual dispatch. It
+checks HTTP status, critical browser console errors, and broken images on each public
+route without submitting forms or changing server data. Neither workflow contains
+SMTP/webhook notification configuration; GitHub account notifications remain under
+GitHub's own settings.
+
+Compose startup and container image builds were not part of these checks. The separate
+isolated restore validation is recorded above. Hosted CI has not run the new uncommitted
+workflows; a push or pull request is required to trigger those hosted checks. No commit,
+push, branch-protection change, deployment, or external notification was made.

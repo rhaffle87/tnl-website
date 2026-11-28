@@ -14,6 +14,7 @@
 .member-profile-sheet { border: 1px solid var(--tnl-border); background: var(--card); color: var(--card-foreground); }
 .member-modal-close { background: var(--card); color: var(--card-foreground); border: 1px solid var(--tnl-border); }
 .member-assistants { background: var(--tnl-surface); border-block: 1px solid var(--tnl-border); }
+.dark .member-assistants .tnl-count-chip { color: var(--tnl-tan-text); }
 .activity-editorial .activity-masthead { padding-block: clamp(2rem, 6vw, 5rem); }
 .activity-masthead .activity-kicker, .event-detail-kicker { font: var(--tnl-type-label)/1.6 var(--font-mono); text-transform: uppercase; letter-spacing: .12em; color: var(--tnl-tan-text); }
 .activity-masthead h1 { font: 600 var(--tnl-type-h1)/1.05 var(--font-heading); letter-spacing: -.04em; margin-top: 1rem; max-width: 20ch; }

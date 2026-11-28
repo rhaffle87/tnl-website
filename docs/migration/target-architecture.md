@@ -28,7 +28,9 @@ flowchart TD
 
         subgraph CT117 ["CT 117: labtnl-monitor (100.114.215.48)"]
             Prometheus["Prometheus Server (9090)"]
-            Grafana["Grafana Dashboards (3001)"]
+            Grafana["Grafana Dashboards (3000)"]
+            Alertmanager["Alertmanager (127.0.0.1:9093)"]
+            Blackbox["Blackbox Exporter (127.0.0.1:9115)"]
         end
 
         subgraph Preserved ["Existing External Nodes (Untouched)"]
@@ -49,11 +51,19 @@ flowchart TD
     FastAPI -->|Motor Async Driver (27017)| MongoDB
     FastAPI -->|Local File IO| MediaStorage
 
-    Prometheus -.->|Scrape Node Exporter 9100| CT102
+    Prometheus -.->|Scrape Node Exporter 9100 and Nginx Exporter 9113| CT102
     Prometheus -.->|Scrape Node Exporter 9100| CT103
     Prometheus -.->|Scrape Node Exporter 9100| CT116
+    Prometheus -->|HTTP health probe through Blackbox| FastAPI
+    Prometheus -->|Alert rules| Alertmanager
     Grafana -->|Data Query| Prometheus
 ```
+
+The ports and routes below describe checked-in configuration and intended setup, not
+proof that an exporter or Alertmanager is installed on a guest. Use
+`scripts/monitoring/deploy-monitoring.ps1` after approval; it defaults to a no-op plan.
+The backend health probe is intended to reflect the Redis rate-limiter dependency as
+well as the database and application health.
 
 ---
 
@@ -62,11 +72,14 @@ flowchart TD
 | Container | Hostname | Tailscale IP | Service & Process | Port(s) | Listening Interface |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **CT 102** | `labtnl-web` | `100.102.105.77` | Nginx (Edge Proxy) | 80, 443 | `0.0.0.0` / Tailscale |
+| **CT 102** | `labtnl-web` | `100.102.105.77` | Nginx Prometheus exporter (setup script) | 9113 | Tailscale; restrict to CT 117 |
 | **CT 103** | `labtnl-app` | `100.65.129.8` | Nginx (Frontend SPA) | 3000 | `100.65.129.8`, `127.0.0.1` |
 | **CT 103** | `labtnl-app` | `100.65.129.8` | FastAPI (Uvicorn backend) | 8001 | `100.65.129.8`, `127.0.0.1` |
 | **CT 116** | `labtnl-db` | `100.111.32.102` | MongoDB Server 7.0 | 27017 | `100.111.32.102`, `127.0.0.1` |
 | **CT 117** | `labtnl-monitor` | `100.114.215.48` | Prometheus | 9090 | `100.114.215.48`, `127.0.0.1` |
-| **CT 117** | `labtnl-monitor` | `100.114.215.48` | Grafana | 3001 | `100.114.215.48`, `127.0.0.1` |
+| **CT 117** | `labtnl-monitor` | `100.114.215.48` | Grafana | 3000 | `100.114.215.48`, `127.0.0.1` |
+| **CT 117** | `labtnl-monitor` | `100.114.215.48` | Alertmanager (setup script) | 9093 | `127.0.0.1` only |
+| **CT 117** | `labtnl-monitor` | `100.114.215.48` | Blackbox exporter (setup script) | 9115 | `127.0.0.1` only |
 
 ---
 
@@ -80,4 +93,8 @@ flowchart TD
    - Enforces strict HTTP security headers: `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `X-XSS-Protection: 1; mode=block`.
 3. **Data Protection & Persistence:**
    - MongoDB database files reside on CT 116 root storage (`/var/lib/mongodb`).
-   - Media directory `/opt/tnl/media` on CT 103 stores uploads, avatars, and certificate PDFs.
+    - Media directory `/opt/tnl/media` on CT 103 stores uploads, avatars, and certificate PDFs.
+4. **Monitoring Readiness:**
+   - CT 117 blackbox probes CT 103 `/api/health`; Alertmanager receives Prometheus alerts on loopback.
+   - The default Alertmanager config has no external receiver. Optional webhook routing uses a root-only environment file and a separate explicit deployment switch.
+   - The edge exporter listener is on the Tailscale address and must be restricted to CT 117 by the existing ACL/firewall. The installer does not change firewall rules.

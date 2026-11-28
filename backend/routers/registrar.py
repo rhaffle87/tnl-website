@@ -4,21 +4,22 @@ Plus the contact inbox with local triage and reply-by-email."""
 
 import csv
 import io
-import posixpath
 import re
 import secrets
-from datetime import datetime, timedelta, timezone
-from urllib.parse import unquote, urlsplit
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from fastapi.responses import Response
 
 from lib.auth import audit, require
+from lib.cache import invalidate_public_cache
 from lib.db import db
 from lib.advisor import triage_message
-from lib.mailer import send_email
+from lib.mailer import send_email, public_delivery, retry_email
+from lib.registration_workflow import event_ledger, sync_ledger, change_registration, queue_registration_notifications
+from lib.privacy import (private_upload_key as _private_upload_key, delete_private_upload as delete_object,
+                         request_erasure, run_retention_sweep, erase_notifications)
 from lib.serialize import jsonable
-from lib.storage import delete_object
 from models.core import BulkEmailIn, CheckinIn, IssueCertificatesIn, MessagePatch, RegistrationPatch
 
 router = APIRouter(prefix="/admin", tags=["registrar"])
@@ -42,31 +43,13 @@ def _display_name(reg: dict) -> str:
     return reg.get("email") or "Participant"
 
 
-def _private_upload_key(value: str) -> str | None:
-    """Extract a canonical storage key below uploads/ from an upload URL."""
-    if not value or "\\" in value or "\x00" in value:
-        return None
-    try:
-        path = unquote(urlsplit(value).path)
-    except ValueError:
-        return None
-    if "\\" in path or "\x00" in path:
-        return None
-    marker = "/api/media-files/"
-    if marker in path:
-        path = path.split(marker, 1)[1]
-    key = path.lstrip("/")
-    parts = key.split("/")
-    if (not key.startswith("uploads/") or posixpath.normpath(key) != key
-            or any(part in ("", ".", "..") for part in parts)):
-        return None
-    return key
-
-
 # ---------------------------------------------------------------- registrations
 @router.get("/registrations", dependencies=[Depends(require("registrations:read"))])
 async def list_registrations(event_id: str | None = None, status: str | None = None,
-                             q: str | None = None, limit: int = 100, offset: int = 0):
+                             q: str | None = None, limit: int = Query(100, ge=1, le=200),
+                             offset: int = Query(0, ge=0)):
+    if event_id:
+        await sync_ledger(await event_ledger(event_id))
     query: dict = {}
     if event_id:
         query["event_id"] = event_id
@@ -94,25 +77,22 @@ async def update_registration(reg_id: str, payload: RegistrationPatch, request: 
     if not reg:
         raise HTTPException(status_code=404, detail="Registration not found.")
     patch = payload.model_dump(exclude_unset=True)
-    if patch.get("status") in ("accepted", "attended") and not reg.get("certificate_code"):
-        patch["certificate_code"] = secrets.token_hex(4).upper()
+    if reg.get("privacy_pending") or reg.get("anonymized"):
+        raise HTTPException(409, "Personal data has been erased or is pending erasure.")
+    if "notes" in patch:
+        if patch["notes"] is None or len(patch["notes"]) > 4000:
+            raise HTTPException(422, "Notes must be text of at most 4000 characters.")
+        patch["notes"] = patch["notes"].strip()
+    if "status" in patch:
+        if patch["status"] not in STATUSES:
+            raise HTTPException(422, "A registration status is required.")
+        ledger = await change_registration(reg["event_id"], reg_id, status=patch.pop("status"))
+        await queue_registration_notifications(ledger)
     if patch:
-        await db.registrations.update_one({"id": reg_id}, {"$set": patch})
-    # Accepting a seat may free a waitlist slot — promote the oldest waitlisted entry.
-    if patch.get("status") in ("rejected",):
-        ev = await db.events.find_one({"id": reg.get("event_id")})
-        cap = (ev or {}).get("capacity") or 0
-        if cap:
-            used = await db.registrations.count_documents(
-                {"event_id": reg["event_id"], "status": {"$in": ["pending", "accepted", "attended"]}})
-            if used < cap:
-                nxt = await db.registrations.find_one(
-                    {"event_id": reg["event_id"], "status": "waitlisted"}, sort=[("created_at", 1)])
-                if nxt:
-                    await db.registrations.update_one({"id": nxt["id"]}, {"$set": {"status": "pending"}})
-                    await send_email(nxt.get("email", ""), f"A place opened up — {reg.get('event_title', '')}",
-                                     "<p>Good news: a seat has opened up and your registration is now pending review.</p>")
-    await audit(request, "update", "registrations", reg_id, {"status": patch.get("status")})
+        await db.registrations.update_one({"id": reg_id, "privacy_pending": {"$ne": True},
+                                          "anonymized": {"$ne": True}}, {"$set": patch})
+    await invalidate_public_cache("events")
+    await audit(request, "update", "registrations", reg_id, {"status": payload.status})
     fresh = await db.registrations.find_one({"id": reg_id})
     fresh["display_name"] = _display_name(fresh)
     return jsonable(fresh)
@@ -120,19 +100,41 @@ async def update_registration(reg_id: str, payload: RegistrationPatch, request: 
 
 @router.post("/registrations/bulk-email", dependencies=[Depends(require("registrations:manage"))])
 async def bulk_email(payload: BulkEmailIn, request: Request):
+    if not payload.subject.strip() or len(payload.subject) > 200 or not payload.body.strip() or len(payload.body) > 20000:
+        raise HTTPException(422, "Subject must contain 1 to 200 characters and body 1 to 20000 characters.")
     query: dict = {"event_id": payload.event_id}
     if payload.status_filter in STATUSES:
         query["status"] = payload.status_filter
     regs = await db.registrations.find(query).to_list(1000)
-    sent = 0
+    queued = failed = skipped = 0
+    notification_ids = []
     for reg in regs:
-        if not reg.get("email"):
+        if not reg.get("email") or reg.get("anonymized") or reg.get("privacy_pending"):
+            skipped += 1
             continue
         body = payload.body.replace("{name}", _display_name(reg)).replace("{event}", reg.get("event_title", ""))
-        await send_email(reg["email"], payload.subject, body)
-        sent += 1
-    await audit(request, "bulk-email", "registrations", payload.event_id, {"sent": sent})
-    return {"ok": True, "sent": sent}
+        try:
+            job = await send_email(reg["email"], payload.subject, body, registration_id=reg["id"])
+            queued += job["status"] == "queued"
+            notification_ids.append(job["id"])
+        except HTTPException:
+            failed += 1
+    await audit(request, "bulk-email", "registrations", payload.event_id, {"queued": queued, "failed": failed})
+    return {"ok": True, "queued": queued, "delivered": 0, "failed": failed, "skipped": skipped,
+            "notification_ids": notification_ids}
+
+
+@router.post("/registrations/{reg_id}/withdraw", dependencies=[Depends(require("registrations:manage"))])
+async def withdraw_registration(reg_id: str, request: Request):
+    reg = await db.registrations.find_one({"id": reg_id})
+    if not reg:
+        raise HTTPException(404, "Registration not found.")
+    ledger = await change_registration(reg["event_id"], reg_id, status="rejected")
+    await db.registrations.update_one({"id": reg_id}, {"$set": {"withdrawn_at": datetime.now(timezone.utc)}})
+    await queue_registration_notifications(ledger)
+    await invalidate_public_cache("events")
+    await audit(request, "withdraw", "registrations", reg_id)
+    return {"ok": True, "status": "rejected"}
 
 
 @router.get("/registrations/export", dependencies=[Depends(require("registrations:read"))])
@@ -238,13 +240,26 @@ async def checkin(payload: CheckinIn, request: Request):
     reg = await db.registrations.find_one({"$or": [{"id": code}, {"certificate_code": code.upper()}]})
     if not reg:
         raise HTTPException(status_code=404, detail="No registration matches this code.")
+    if reg.get("privacy_pending") or reg.get("anonymized"):
+        raise HTTPException(409, "This registration is not eligible for check-in.")
+    ledger = await event_ledger(reg["event_id"])
+    await sync_ledger(ledger)
+    reg = await db.registrations.find_one({"id": reg["id"]})
     if reg.get("status") == "attended":
         return {"ok": True, "already": True, "name": _display_name(reg),
                 "event_title": reg.get("event_title"), "message": "Already checked in."}
+    override = bool(getattr(payload, "override", False))
+    reason = (getattr(payload, "override_reason", None) or "").strip()
+    if reg.get("status") != "accepted" and not (override and len(reason) >= 10):
+        raise HTTPException(409, "Only accepted registrations may check in. An override requires an explicit reason.")
+    await change_registration(reg["event_id"], reg["id"], status="attended")
     cert = reg.get("certificate_code") or secrets.token_hex(4).upper()
-    await db.registrations.update_one({"id": reg["id"]},
-                                      {"$set": {"status": "attended", "certificate_code": cert}})
-    await audit(request, "checkin", "registrations", reg["id"])
+    await db.registrations.update_one({"id": reg["id"], "status": "attended"},
+                                      {"$set": {"certificate_code": cert}})
+    overridden = reg.get("status") != "accepted"
+    await invalidate_public_cache("events")
+    await audit(request, "checkin-override" if overridden else "checkin", "registrations", reg["id"],
+                {"override_reason": reason} if overridden else None)
     return {"ok": True, "already": False, "name": _display_name(reg), "certificate_code": cert,
             "event_title": reg.get("event_title"), "message": "Checked in."}
 
@@ -312,12 +327,11 @@ async def anonymize_registration(reg_id: str, request: Request):
     reg = await db.registrations.find_one({"id": reg_id})
     if not reg:
         raise HTTPException(status_code=404, detail="Registration not found.")
-    await db.registrations.update_one({"id": reg_id}, {"$set": {
-        "data": {"f_full-name": "[anonymized]"}, "email": "", "nim": "",
-        "anonymized": True, "anonymized_at": datetime.now(timezone.utc),
-    }})
+    result = await request_erasure(reg_id, delete_file=delete_object)
+    await invalidate_public_cache("events")
     await audit(request, "anonymize", "registrations", reg_id)  # no personal data in the log
-    return {"ok": True, "message": "Personal details removed; the attendance record is kept."}
+    return {"ok": True, **result, "message": ("Personal details removed; the attendance record is kept."
+            if result["privacy_status"] == "completed" else "Erasure queued for retry; attachments are no longer accessible.")}
 
 
 @router.delete("/registrations/{reg_id}", dependencies=[Depends(require("registrations:manage"))])
@@ -325,36 +339,36 @@ async def delete_registration(reg_id: str, request: Request):
     reg = await db.registrations.find_one({"id": reg_id})
     if not reg:
         raise HTTPException(status_code=404, detail="Registration not found.")
-    res = await db.registrations.delete_one({"id": reg_id})
-    if not res.deleted_count:
-        raise HTTPException(status_code=404, detail="Registration not found.")
-    # UU PDP erasure covers uploaded CV/portfolio files too. Only keys under the
-    # private uploads/ directory are removed; never touch the public media library.
-    for value in (reg.get("data") or {}).values():
-        if not isinstance(value, dict):
-            continue
-        key = _private_upload_key(value.get("url") or value.get("absolute_url") or "")
-        if key:
-            delete_object(key)
+    result = await request_erasure(reg_id, delete=True, delete_file=delete_object)
+    await invalidate_public_cache("events")
     await audit(request, "delete", "registrations", reg_id)
-    return {"ok": True}
+    return {"ok": True, **result}
 
 
 @router.post("/registrations/retention-sweep", dependencies=[Depends(require("registrations:manage"))])
 async def retention_sweep(request: Request):
     """Anonymize registrations older than the retention window set in Settings."""
-    from lib.settings import get_settings
-    s = await get_settings()
-    days = int(s.get("retention_days") or 90)
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
-    stale = await db.registrations.find(
-        {"created_at": {"$lt": cutoff}, "anonymized": {"$ne": True}}).to_list(5000)
-    for reg in stale:
-        await db.registrations.update_one({"id": reg["id"]}, {"$set": {
-            "data": {"f_full-name": "[anonymized]"}, "email": "", "nim": "",
-            "anonymized": True, "anonymized_at": datetime.now(timezone.utc)}})
-    await audit(request, "retention-sweep", "registrations", None, {"count": len(stale), "days": days})
-    return {"ok": True, "anonymized": len(stale), "retention_days": days}
+    result = await run_retention_sweep()
+    await invalidate_public_cache("events")
+    await audit(request, "retention-sweep", "registrations", None, result)
+    return {"ok": True, **result}
+
+
+@router.get("/privacy-jobs", dependencies=[Depends(require("registrations:manage"))])
+async def list_privacy_jobs():
+    jobs = await db.privacy_jobs.find({"status": "pending"}, {"keys": 0, "key_hashes": 0}).sort("created_at", 1).limit(200).to_list(200)
+    return {"items": jsonable([{**job, "id": str(job["_id"])} for job in jobs]),
+            "pending": await db.privacy_jobs.count_documents({"status": "pending"})}
+
+
+@router.post("/privacy-jobs/{reg_id}/retry", dependencies=[Depends(require("registrations:manage"))])
+async def retry_privacy_job(reg_id: str, request: Request):
+    from lib.privacy import process_erasure
+    if not await db.privacy_jobs.find_one({"_id": reg_id}):
+        raise HTTPException(404, "Privacy job not found.")
+    result = await process_erasure(reg_id, delete_file=delete_object)
+    await audit(request, "privacy-retry", "registrations", reg_id, result)
+    return {"ok": True, **result}
 
 
 # ---------------------------------------------------------------- contact inbox
@@ -409,10 +423,18 @@ async def update_message(msg_id: str, payload: MessagePatch, request: Request):
         raise HTTPException(status_code=404, detail="Message not found.")
     patch = payload.model_dump(exclude_unset=True)
     reply = patch.pop("reply_body", None)
+    if reply is not None and not reply.strip():
+        raise HTTPException(422, "Reply must contain text.")
     if reply:
-        await send_email(msg.get("email", ""), f"Re: {msg.get('subject', '')}", reply)
-        patch["status"] = "replied"
-        patch["replied_at"] = datetime.now(timezone.utc)
+        if len(reply.strip()) > 20000 or not reply.strip():
+            raise HTTPException(422, "Reply must contain 1 to 20000 characters.")
+        job = await send_email(msg.get("email", ""), f"Re: {msg.get('subject', '')}", reply, message_id=msg_id)
+        patch["reply_delivery"] = job["status"]
+        patch["reply_notification_id"] = job["id"]
+        if patch.get("status") == "replied":
+            patch.pop("status")
+    elif patch.get("status") == "replied" and not msg.get("replied_at"):
+        raise HTTPException(409, "No reply has been delivered for this message.")
     if patch:
         await db.messages.update_one({"id": msg_id}, {"$set": patch})
     await audit(request, "update", "messages", msg_id, {"status": patch.get("status")})
@@ -421,6 +443,9 @@ async def update_message(msg_id: str, payload: MessagePatch, request: Request):
 
 @router.delete("/messages/{msg_id}", dependencies=[Depends(require("messages:manage"))])
 async def delete_message(msg_id: str, request: Request):
+    msg = await db.messages.find_one({"id": msg_id})
+    if msg:
+        await erase_notifications(message_id=msg_id, email=msg.get("email"))
     res = await db.messages.delete_one({"id": msg_id})
     if not res.deleted_count:
         raise HTTPException(status_code=404, detail="Message not found.")
@@ -430,6 +455,16 @@ async def delete_message(msg_id: str, request: Request):
 
 @router.get("/outbox", dependencies=[Depends(require("outbox:read"))])
 async def list_outbox():
-    """Every email the app generated (redacted). With no SMTP configured these are status=logged."""
-    docs = await db.outbox.find({}).sort("created_at", -1).limit(200).to_list(200)
-    return {"items": jsonable(docs), "smtp_configured": bool(__import__("os").environ.get("SMTP_HOST"))}
+    docs = await db.outbox.find({}, {"payload": 0, "claim": 0, "lease_until": 0}).sort("created_at", -1).limit(200).to_list(200)
+    counts = {status: await db.outbox.count_documents({"status": status})
+              for status in ("queued", "delivering", "delivered", "failed", "expired", "erased", "cancelled")}
+    privacy_pending = await db.privacy_jobs.count_documents({"status": "pending"})
+    return {"items": jsonable([public_delivery(d) for d in docs]), "counts": counts,
+            "privacy_pending": privacy_pending, "smtp_configured": bool(__import__("os").environ.get("SMTP_HOST"))}
+
+
+@router.post("/outbox/{notification_id}/retry", dependencies=[Depends(require("outbox:read"))])
+async def retry_outbox(notification_id: str, request: Request):
+    result = await retry_email(notification_id)
+    await audit(request, "retry", "outbox", notification_id)
+    return result

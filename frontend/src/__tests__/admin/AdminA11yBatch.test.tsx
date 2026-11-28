@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MediaPickerModal } from "@/components/admin/media";
@@ -8,7 +8,6 @@ import { RichTextField } from "@/components/admin/editor/RichTextField";
 import { FormFieldsBuilder } from "@/components/admin/repeaters/FormFieldsBuilder";
 import { KeyValueMapEditor } from "@/components/admin/repeaters/KeyValueMapEditor";
 import { ObjectListRepeater } from "@/components/admin/repeaters/ObjectListRepeater";
-import { fireEvent, act } from "@testing-library/react";
 
 // The shared i18n module belongs to another shard. Mock it so these accessibility
 // regressions can be exercised in isolation with deterministic English strings.
@@ -23,6 +22,7 @@ const TEST_STRINGS = vi.hoisted(() => ({
     adminReady: "Ready",
     adminError: "Error",
     adminNothingSelected: "Nothing selected yet",
+    adminMediaNothingSelectedYet: "Nothing selected yet",
     adminSelected: "Selected",
     adminItems: "items",
     adminCrop: "Crop",

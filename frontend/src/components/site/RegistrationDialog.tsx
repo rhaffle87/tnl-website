@@ -7,6 +7,7 @@ import { Check, CheckCircle2, Copy, MessageCircle, X } from "lucide-react";
 import { useLocale, pick } from "@/lib/i18n/i18n";
 import type { LabEvent } from "@/lib/types/types";
 import { useFocusTrap } from "@/lib/a11y/useFocusTrap";
+import { apiUrl } from "@/lib/api/api";
 
 function fieldKey(label: string): string {
     const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -22,12 +23,10 @@ interface SubmitResult {
 
 export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClose: () => void }) {
     const { locale, t } = useLocale();
+    const full = Boolean(event.is_full || event.reg_status === "full" || event.closed_reason === "full");
     const isClosed = Boolean(
-        event.registration_closed ||
-        event.is_full ||
-        event.reg_status === "full" ||
-        event.reg_status === "closed" ||
-        event.reg_status === "past"
+        event.is_deadline_passed ||
+        (full ? event.waitlist_open === false : event.registration_closed || ["closed", "past", "upcoming"].includes(event.reg_status ?? ""))
     );
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState<SubmitResult | null>(null);
@@ -83,7 +82,11 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
         }
         setSubmitting(true);
         try {
-            const res = await fetch(`/api/registrations/${event.id}`, { method: "POST", body: data });
+            const res = await fetch(apiUrl(`/registrations/${encodeURIComponent(event.id)}`), {
+                method: "POST",
+                body: data,
+                cache: "no-store",
+            });
             const body = (await res.json().catch(() => null)) as
                 | SubmitResult
                 | { detail?: string | { message?: string; missing?: string[]; errors?: string[] } }
@@ -155,7 +158,7 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                 </div>
 
                 {result ? (
-                    <div className="px-7 py-10 text-center space-y-6" data-testid="registration-success">
+                    <div className="px-7 py-10 text-center space-y-6" data-testid="registration-success" role="status" aria-live="polite">
                         <CheckCircle2 className="mx-auto h-12 w-12" style={{ color: "var(--tnl-green)" }} aria-hidden="true" />
                         <div>
                             <h3 className="tnl-h5 mt-2 text-[20px]">
@@ -164,7 +167,7 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                             <p className="mt-2 text-sm text-[var(--tnl-body)]">{result.message}</p>
                         </div>
 
-                        {result.whatsapp_group_url ? (
+                        {result.status === "accepted" && result.whatsapp_group_url ? (
                             <div
                                 className="rounded-xl border border-[var(--gsm-emerald)] bg-[var(--gsm-bg-elevated)] p-5 text-left max-w-md mx-auto space-y-3"
                                 data-testid="registration-wa-group-card"

@@ -22,13 +22,14 @@ import {
 } from "lucide-react";
 import { pick, pickProp, useLocale } from "@/lib/i18n/i18n";
 import { categoryKey, localizeCategory } from "@/lib/i18n/categoryLabels";
-import { useMembers, usePartners, usePosts, useSettings, useStats } from "@/lib/api/hooks";
-import { EmptyState, SectionHeading, formatDate } from "@/components/site/Primitives";
+import { useMembers, usePartners, usePosts, usePublicCollection, useSettings, useStats } from "@/lib/api/hooks";
+import { EmptyState, SectionHeading, Spinner, formatDate } from "@/components/site/Primitives";
+import { PublicRequestError } from "@/components/site/PublicRequestError";
 import { MemberSections } from "@/components/site/MemberSections";
 import { ContactForm } from "@/components/site/ContactForm";
 import { SignalHero } from "@/components/site/SignalHero";
 import { SignalGallery } from "@/components/site/SignalGallery";
-import type { Block } from "@/lib/types/types";
+import type { Block, CollectionField, CollectionItem } from "@/lib/types/types";
 
 const ICONS = [Radio, Wrench, GraduationCap, Users, ActivityIcon];
 
@@ -343,11 +344,12 @@ function QuickLinksBlock({ props }: { props: Record<string, unknown> }) {
 // ---------------------------------------------------------------- news feed
 export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
     const { locale, t } = useLocale();
-    const count = num(props, "count", 3);
+    const pageSize = Math.min(50, Math.max(1, Math.floor(num(props, "count", 3))));
     const showFilters = props.show_filters === true;
     const [category, setCategory] = useState("");
     const [searchInput, setSearchInput] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -356,12 +358,17 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
         return () => clearTimeout(timer);
     }, [searchInput]);
 
-    const { data, isLoading, isFetching } = usePosts({
-        limit: count,
+    const { data, isLoading, isFetching, isError, refetch } = usePosts({
+        limit: pageSize,
+        offset: showFilters ? (page - 1) * pageSize : 0,
         category: category || undefined,
         q: debouncedSearch || undefined,
     });
     const posts = useMemo(() => data?.items ?? [], [data?.items]);
+    const total = data?.total ?? posts.length;
+    const pageCount = Math.max(1, Math.ceil(total / pageSize));
+    const firstResult = total === 0 ? 0 : (page - 1) * pageSize + 1;
+    const lastResult = Math.min(page * pageSize, total);
 
     const [masterCategories, setMasterCategories] = useState<string[]>([]);
     useEffect(() => {
@@ -398,7 +405,10 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                         <input
                             type="search"
                             value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
+                            onChange={(e) => {
+                                setSearchInput(e.target.value);
+                                setPage(1);
+                            }}
                             placeholder={t("search_news")}
                             className="tnl-field sm:max-w-sm"
                             aria-label={t("search_news")}
@@ -407,7 +417,7 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                         <div className="flex flex-wrap gap-2">
                             <button
                                 type="button"
-                                onClick={() => setCategory("")}
+                                onClick={() => { setCategory(""); setPage(1); }}
                                 className="relative inline-flex min-h-[44px] items-center rounded-full border px-4 py-2 text-sm font-medium transition-colors"
                                 style={{ borderColor: category === "" ? "var(--tnl-green)" : "var(--tnl-border)" }}
                                 data-testid="news-category-all-button"
@@ -428,7 +438,7 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                                 <button
                                     key={c}
                                     type="button"
-                                    onClick={() => setCategory(c)}
+                                    onClick={() => { setCategory(c); setPage(1); }}
                                     className="relative inline-flex min-h-[44px] items-center rounded-full border px-4 py-2 text-sm font-medium transition-colors"
                                     style={{ borderColor: category === c ? "var(--tnl-green)" : "var(--tnl-border)" }}
                                     data-testid={`news-category-${categoryKey(c)}-button`}
@@ -450,9 +460,28 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                     </div>
                 ) : null}
 
-                {!isLoading && posts.length === 0 ? (
-                    <EmptyState title={t("coming_soon")} body={t("empty_news")} testId="news-empty-state" />
-                ) : (
+                {isError ? (
+                    <PublicRequestError
+                        onRetry={() => void refetch()}
+                        retrying={isFetching}
+                        locale={locale}
+                        testId="news-request-error"
+                        stale={Boolean(data)}
+                    />
+                ) : null}
+                {isLoading && !data ? (
+                    <div className="py-8"><Spinner label={t("loading")} /></div>
+                ) : posts.length === 0 && !isError ? (
+                    <EmptyState
+                        title={category || debouncedSearch
+                            ? locale === "id" ? "Tidak ada artikel yang cocok" : "No matching articles"
+                            : t("coming_soon")}
+                        body={category || debouncedSearch
+                            ? locale === "id" ? "Coba kata kunci atau kategori lain." : "Try a different search or category."
+                            : t("empty_news")}
+                        testId="news-empty-state"
+                    />
+                ) : posts.length > 0 ? (
                     <div className={`${showFilters ? "grid gap-5 md:grid-cols-2 lg:grid-cols-3" : "signal-news-grid"} ${isFetching && !isLoading ? "opacity-80 transition-opacity" : "transition-opacity"}`}>
                         {posts.map((post) => (
                             <Link
@@ -493,7 +522,39 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                             </Link>
                         ))}
                     </div>
-                )}
+                ) : null}
+                {showFilters && total > pageSize ? (
+                    <nav className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-[var(--tnl-border)] pt-5 sm:flex-row" aria-label={locale === "id" ? "Halaman berita" : "News pages"} data-testid="news-pagination">
+                        <p className="text-sm text-[var(--tnl-muted)]" aria-live="polite" data-testid="news-pagination-summary">
+                            {locale === "id"
+                                ? `Menampilkan ${firstResult}–${lastResult} dari ${total} artikel`
+                                : `Showing ${firstResult}–${lastResult} of ${total} articles`}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                                disabled={page <= 1 || isFetching}
+                                className="tnl-btn tnl-btn-outline min-h-[44px]"
+                                data-testid="news-previous-page"
+                            >
+                                {locale === "id" ? "Sebelumnya" : "Previous"}
+                            </button>
+                            <span className="min-w-20 text-center text-sm tabular-nums text-[var(--tnl-body)]" data-testid="news-pagination-current">
+                                {locale === "id" ? `Halaman ${page} dari ${pageCount}` : `Page ${page} of ${pageCount}`}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+                                disabled={page >= pageCount || isFetching}
+                                className="tnl-btn tnl-btn-outline min-h-[44px]"
+                                data-testid="news-next-page"
+                            >
+                                {locale === "id" ? "Berikutnya" : "Next"}
+                            </button>
+                        </div>
+                    </nav>
+                ) : null}
                 {!showFilters && posts.length > 0 ? (
                     <div className="mt-8">
                         <Link to="/news" className="tnl-btn tnl-btn-outline" data-testid="news-see-all-button">
@@ -837,6 +898,165 @@ function DownloadListBlock({ props }: { props: Record<string, unknown> }) {
     );
 }
 
+function collectionText(value: unknown, locale: "en" | "id"): string {
+    if (typeof value === "string") return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    if (typeof value === "number") return String(value);
+    if (typeof value === "boolean") return value ? (locale === "id" ? "Ya" : "Yes") : (locale === "id" ? "Tidak" : "No");
+    if (Array.isArray(value)) return value.map((entry) => collectionText(entry, locale)).filter(Boolean).join(", ");
+    return "";
+}
+
+function collectionLink(value: string): { href: string; external: boolean } | undefined {
+    const href = value.trim();
+    if (href.startsWith("/") && !href.startsWith("//")) return { href, external: false };
+    if (/^https?:\/\//i.test(href) || /^(mailto|tel):/i.test(href)) return { href, external: true };
+    return undefined;
+}
+
+function collectionMedia(value: string): string | undefined {
+    const src = value.trim();
+    if (src.startsWith("/") && !src.startsWith("//")) return src;
+    if (/^https?:\/\//i.test(src)) return src;
+    return undefined;
+}
+
+function CollectionValue({ field, value, locale }: { field: CollectionField; value: unknown; locale: "en" | "id" }) {
+    const text = collectionText(value, locale);
+    if (!text) return null;
+    if (field.type === "media") {
+        const src = collectionMedia(text);
+        return src ? <img src={src} alt="" width="1200" height="675" loading="lazy" className="aspect-video w-full rounded-lg object-cover" /> : null;
+    }
+    if (field.type === "url") {
+        const link = collectionLink(text);
+        if (!link) return <span>{text}</span>;
+        return link.external
+            ? <a href={link.href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4" style={{ color: "var(--tnl-link)" }}>{text}</a>
+            : <Link to={link.href} className="underline underline-offset-4" style={{ color: "var(--tnl-link)" }}>{text}</Link>;
+    }
+    return <span className="whitespace-pre-line">{text}</span>;
+}
+
+function CollectionFields({ fields, item, locale, excluded = [] }: {
+    fields: CollectionField[];
+    item: CollectionItem;
+    locale: "en" | "id";
+    excluded?: string[];
+}) {
+    const rows = fields.filter((field) => !excluded.includes(field.key) && collectionText(item.values[field.key], locale));
+    if (!rows.length) return null;
+    return (
+        <dl className="mt-3 space-y-2 text-sm">
+            {rows.map((field) => (
+                <div key={field.key} className="flex flex-col gap-1 sm:flex-row sm:gap-3">
+                    <dt className="font-semibold text-[var(--tnl-body)]">{field.label}</dt>
+                    <dd className="min-w-0 text-[var(--tnl-muted)]"><CollectionValue field={field} value={item.values[field.key]} locale={locale} /></dd>
+                </div>
+            ))}
+        </dl>
+    );
+}
+
+function CustomCollectionBlock({ props }: { props: Record<string, unknown> }) {
+    const { locale, t } = useLocale();
+    const key = str(props, "collection_key");
+    const pageSize = Math.min(100, Math.max(1, Math.floor(num(props, "count", 24))));
+    const [page, setPage] = useState(1);
+    useEffect(() => setPage(1), [key]);
+    const query = usePublicCollection(key || undefined, { limit: pageSize, offset: (page - 1) * pageSize });
+    const { data, isLoading, isError, isFetching, refetch } = query;
+    if (!key) return null;
+
+    const fields = data?.definition.fields ?? [];
+    const items = data?.items.filter((item) => item.status === "published") ?? [];
+    const total = data?.total ?? 0;
+    const pageCount = Math.max(1, Math.ceil(total / pageSize));
+    const firstResult = total ? (page - 1) * pageSize + 1 : 0;
+    const lastResult = Math.min(page * pageSize, total);
+    useEffect(() => setPage((current) => Math.min(current, pageCount)), [pageCount]);
+    const template = data?.definition.template;
+    const title = pickProp(locale, props, "heading") || data?.definition.name;
+
+    return (
+        <section className="tnl-section" data-testid={`block-collection-${key}`}>
+            <div className="tnl-container">
+                {title ? <SectionHeading title={title} count={data?.total} testId={`collection-${key}-heading`} /> : null}
+                {isError ? (
+                    <PublicRequestError onRetry={() => void refetch()} retrying={isFetching} locale={locale} testId={`collection-${key}-error`} stale={Boolean(data)} />
+                ) : null}
+                {isLoading && !data ? (
+                    <Spinner label={t("loading")} />
+                ) : isError && !data ? null : items.length === 0 ? (
+                    <EmptyState
+                        title={locale === "id" ? "Belum ada konten" : "No content yet"}
+                        body={locale === "id" ? "Konten untuk bagian ini akan ditampilkan setelah dipublikasikan." : "Items will appear here after they are published."}
+                        testId={`collection-${key}-empty`}
+                    />
+                ) : template === "table" ? (
+                    <div className="mt-6 overflow-x-auto rounded-xl border border-[var(--tnl-border)]">
+                        <table className="w-full border-collapse text-left text-sm" data-testid={`collection-${key}-table`}>
+                            <thead className="bg-[var(--tnl-surface)]">
+                                <tr>{fields.map((field) => <th key={field.key} scope="col" className="px-4 py-3 font-semibold">{field.label}</th>)}</tr>
+                            </thead>
+                            <tbody>
+                                {items.map((item) => (
+                                    <tr key={item.id} className="border-t border-[var(--tnl-border)]">
+                                        {fields.map((field) => <td key={field.key} className="px-4 py-3 align-top text-[var(--tnl-body)]"><CollectionValue field={field} value={item.values[field.key]} locale={locale} /></td>)}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : template === "cards" ? (
+                    <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-testid={`collection-${key}-cards`}>
+                        {items.map((item) => {
+                            const primary = fields.find((field) => ["title", "name"].includes(field.key)) ?? fields.find((field) => !["media", "url", "html"].includes(field.type));
+                            const image = fields.find((field) => field.type === "media");
+                            return (
+                                <article key={item.id} className="tnl-card flex flex-col" data-testid={`collection-item-${item.id}`}>
+                                    {image ? <CollectionValue field={image} value={item.values[image.key]} locale={locale} /> : null}
+                                    {primary ? <h3 className="mt-3 text-lg font-semibold">{collectionText(item.values[primary.key], locale)}</h3> : null}
+                                    <CollectionFields fields={fields} item={item} locale={locale} excluded={[primary?.key ?? "", image?.key ?? ""]} />
+                                </article>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <ul className="mt-6 divide-y divide-[var(--tnl-border)]" data-testid={`collection-${key}-list`}>
+                        {items.map((item) => {
+                            const primary = fields.find((field) => ["title", "name"].includes(field.key)) ?? fields.find((field) => !["media", "url", "html"].includes(field.type));
+                            return (
+                                <li key={item.id} className="py-4" data-testid={`collection-item-${item.id}`}>
+                                    {primary ? <h3 className="font-semibold">{collectionText(item.values[primary.key], locale)}</h3> : null}
+                                    <CollectionFields fields={fields} item={item} locale={locale} excluded={[primary?.key ?? ""]} />
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+                {data && total > pageSize ? (
+                    <nav className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-[var(--tnl-border)] pt-5 sm:flex-row" aria-label={locale === "id" ? "Halaman konten" : "Collection pages"} data-testid={`collection-${key}-pagination`}>
+                        <p className="text-sm text-[var(--tnl-muted)]" aria-live="polite">
+                            {locale === "id" ? `Menampilkan ${firstResult}–${lastResult} dari ${total} konten` : `Showing ${firstResult}–${lastResult} of ${total} items`}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1 || isFetching} className="tnl-btn tnl-btn-outline min-h-[44px]" data-testid={`collection-${key}-previous`}>
+                                {locale === "id" ? "Sebelumnya" : "Previous"}
+                            </button>
+                            <span className="min-w-20 text-center text-sm tabular-nums text-[var(--tnl-body)]" data-testid={`collection-${key}-current-page`}>
+                                {locale === "id" ? `Halaman ${page} dari ${pageCount}` : `Page ${page} of ${pageCount}`}
+                            </span>
+                            <button type="button" onClick={() => setPage((current) => Math.min(pageCount, current + 1))} disabled={page >= pageCount || isFetching} className="tnl-btn tnl-btn-outline min-h-[44px]" data-testid={`collection-${key}-next`}>
+                                {locale === "id" ? "Berikutnya" : "Next"}
+                            </button>
+                        </div>
+                    </nav>
+                ) : null}
+            </div>
+        </section>
+    );
+}
+
 // ---------------------------------------------------------------- dispatcher
 export function BlockRenderer({ blocks }: { blocks: Block[] }) {
     return (
@@ -898,6 +1118,8 @@ function BlockView({ block }: { block: Block }) {
             return <DownloadListBlock props={props} />;
         case "member_sections":
             return <MemberSections />;
+        case "collection_list":
+            return <CustomCollectionBlock props={props} />;
         default:
             return null;
     }

@@ -152,6 +152,8 @@ async def test_public_posts_hide_drafts_and_keep_published(async_client, mock_db
     assert slug in [item["slug"] for item in res.json()["items"]]
 
     await mock_db.posts.update_one({"_id": published["_id"]}, {"$set": {"status": "draft"}})
+    from lib.cache import invalidate_public_cache
+    await invalidate_public_cache("posts")
     try:
         res = await async_client.get("/public/posts")
         assert slug not in [item["slug"] for item in res.json()["items"]]
@@ -159,6 +161,7 @@ async def test_public_posts_hide_drafts_and_keep_published(async_client, mock_db
         assert detail.status_code == 404
     finally:
         await mock_db.posts.update_one({"_id": published["_id"]}, {"$set": {"status": "published"}})
+        await invalidate_public_cache("posts")
 
 
 @pytest.mark.asyncio

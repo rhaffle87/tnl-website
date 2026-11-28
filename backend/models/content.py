@@ -348,6 +348,8 @@ class PageDoc(BaseModel):
     slug: str
     title: str
     title_id: str | None = None
+    meta_description: str | None = None
+    meta_description_id: str | None = None
     blocks: list[BlockModel] = []
     status: str = "draft"  # draft | published
     is_system: bool = False

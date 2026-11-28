@@ -66,6 +66,51 @@ describe("RegistrationDialog accessibility", () => {
     expect(container.innerHTML).not.toContain("#b91c1c");
   });
 
+  it("submits a full event and shows the waitlist response without exposing a WhatsApp URL", async () => {
+    localStorage.setItem("tnl-locale", "en");
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        id: "registration-1",
+        status: "waitlisted",
+        message: "The event is full. Your registration is on the waitlist.",
+        whatsapp_group_url: "https://chat.whatsapp.com/private-invite",
+      }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const fullEvent = { ...event, is_full: true, registration_closed: true, reg_status: "full", closed_reason: "full", waitlist_open: true };
+    renderWithProviders(<RegistrationDialog event={fullEvent} onClose={vi.fn()} />);
+
+    expect(screen.getByTestId("registration-form")).toBeInTheDocument();
+    fireEvent.submit(screen.getByTestId("registration-form"));
+
+    expect(await screen.findByTestId("registration-success")).toHaveAttribute("role", "status");
+    expect(screen.getByText("Added to the waiting list")).toBeInTheDocument();
+    expect(screen.getByText("The event is full. Your registration is on the waitlist.")).toBeInTheDocument();
+    expect(screen.queryByTestId("registration-wa-group-card")).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/api/registrations/ev-1", expect.objectContaining({ method: "POST", cache: "no-store" }));
+  });
+
+  it("preserves WhatsApp instructions for accepted registrations only", async () => {
+    localStorage.setItem("tnl-locale", "en");
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        id: "registration-2",
+        status: "accepted",
+        message: "Registration received.",
+        whatsapp_group_url: "https://chat.whatsapp.com/accepted-invite",
+      }),
+    })));
+    renderWithProviders(<RegistrationDialog event={event} onClose={vi.fn()} />);
+    fireEvent.submit(screen.getByTestId("registration-form"));
+
+    expect(await screen.findByTestId("registration-wa-group-card")).toBeInTheDocument();
+    expect(screen.getByTestId("registration-wa-group-join-button")).toHaveAttribute("href", "https://chat.whatsapp.com/accepted-invite");
+  });
+
   it("traps focus, closes on Escape and locks scroll with theme-derived chrome", () => {
     const onClose = vi.fn();
     const opener = document.createElement("button");

@@ -48,9 +48,12 @@ async def test_health_check_degraded_on_error(async_client, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_ensure_indexes_runs_cleanly(mock_db):
+async def test_ensure_indexes_runs_cleanly(monkeypatch):
     import lib.db
-    # Call ensure_indexes directly
+    from mongomock_motor import AsyncMongoMockClient
+    # Index creation requires a clean database; other session fixtures intentionally insert legacy duplicates.
+    isolated = AsyncMongoMockClient()
+    monkeypatch.setattr(lib.db, "db", isolated["index_creation_test"])
     await lib.db.ensure_indexes()
     # Check that indexes dictionary has expected critical collections
     assert "users" in lib.db.INDEXES

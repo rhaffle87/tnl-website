@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from lib.auth import audit, require
+from lib.cache import invalidate_public_cache
 from lib.db import db
 from lib.quality import publish_blockers, run_scan
 from lib.serialize import jsonable
@@ -258,6 +259,8 @@ async def import_publications(payload: ImportRequest, request: Request):
                          "doi": pub["doi"], "blocking_issues": len(publish_blockers(issues)),
                          "linked_members_count": len(matched_member_ids)})
 
+    if imported:
+        await invalidate_public_cache("publications")
     await audit(request, "import", "publications", "crossref",
                 {"imported": len(imported), "duplicates": len(duplicates), "failed": len(failed)})
     return jsonable({
@@ -290,6 +293,8 @@ async def relink_publication_authors(request: Request):
         if matched_ids or existing_ids:
             total_linked += 1
 
+    if updated_count:
+        await invalidate_public_cache("publications")
     await audit(request, "relink-authors", "publications", None,
                 {"updated_publications": updated_count, "total_with_links": total_linked})
     return {"ok": True, "updated": updated_count, "total_with_links": total_linked, "total": len(pubs)}

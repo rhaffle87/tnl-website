@@ -131,6 +131,8 @@ window.fetch = (async (input: RequestInfo | URL) => {
     let payload: unknown = SETTINGS;
     if (url.includes("/auth/me")) {
         payload = { id: "u-1", name: "Rafli Alif", email: "admin@its.ac.id", role: "super_admin", divisions: [] };
+    } else if (url.endsWith("/admin/content/members/m-1")) {
+        payload = MEMBERS[0];
     } else if (url.includes("/admin/content/")) {
         payload = { items: MEMBERS, total: MEMBERS.length, limit: 200, offset: 0 };
     } else if (url.includes("/admin/media") || url.includes("/media")) {
