@@ -8,7 +8,7 @@
 // All API calls (paths, verbs, payloads) mirror the old inline editor exactly —
 // this file is UI/routing only.
 
-import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -148,6 +148,11 @@ function bucketize(groups: FieldGroup[], spec: ResourceSpec): Record<Bucket, Fie
     for (const group of groups) out[bucketOf(group, spec)].push(group);
     return out;
 }
+
+const EMPTY_BUCKETS: Record<Bucket, FieldGroup[]> = {
+    basic: [], bilingual: [], richtext: [], tags: [], links: [], repeater: [],
+    galleries: [], publish: [], media: [], classification: [], private: [],
+};
 
 /* --------------------------------------------------------------- primitives */
 
@@ -483,6 +488,8 @@ export default function ContentEditor() {
     const [issues, setIssues] = useState<QualityIssue[]>([]);
     const [snapshot, setSnapshot] = useState<string | null>(null);
     const [loadedKey, setLoadedKey] = useState<string | null>(null);
+    const [statusAction, setStatusAction] = useState<"publish" | "unpublish" | null>(null);
+    const statusBackup = useRef<{ form: Record<string, unknown>; snapshot: string } | null>(null);
 
     // Autosave & Recovery states
     const draftKey = useMemo(() => `tnl-draft:${resource}:${routeId ?? "new"}`, [resource, routeId]);
@@ -574,7 +581,17 @@ export default function ContentEditor() {
         }
     }, [loadedKey, draftKey, snapshot]);
 
-    const dirty = snapshot !== null && JSON.stringify(form) !== snapshot;
+    const dirty = useMemo(() => snapshot !== null && JSON.stringify(form) !== snapshot, [form, snapshot]);
+    const groups = useMemo(() => (spec ? buildGroups(spec) : []), [spec]);
+    const buckets = useMemo(() => (spec ? bucketize(groups, spec) : EMPTY_BUCKETS), [groups, spec]);
+    const ctx = useMemo<Ctx>(() => ({ resource, itemId: isNew ? null : routeId ?? null, members: membersList ?? [] }), [resource, isNew, routeId, membersList]);
+    const previewBody = previewOpen
+        ? String(previewLang === "id" && form.body_id ? form.body_id : form.body || "<p>No content written yet.</p>")
+        : "";
+    const previewSrcDoc = useMemo(
+        () => `<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><style>body{font:16px/1.7 system-ui,sans-serif;margin:0;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style></head><body>${previewBody}</body></html>`,
+        [previewBody]
+    );
 
     // Debounced autosave effect (5s after last keystroke when dirty)
     useEffect(() => {
@@ -598,7 +615,6 @@ export default function ContentEditor() {
         void qc.invalidateQueries({ queryKey: ["admin", "content", resource] });
         void qc.invalidateQueries({ queryKey: ["admin", "dashboard"] });
         void qc.invalidateQueries({ queryKey: ["admin", "review-queue"] });
-        void qc.invalidateQueries({ queryKey: ["public"] });
     };
 
     const saveMutation = useMutation({
@@ -607,6 +623,8 @@ export default function ContentEditor() {
             return apiPost<Row>(`/admin/content/${resource}`, payload);
         },
         onSuccess: (saved) => {
+            statusBackup.current = null;
+            setStatusAction(null);
             try {
                 localStorage.removeItem(draftKey);
             } catch {
@@ -638,6 +656,12 @@ export default function ContentEditor() {
             }
         },
         onError: (err) => {
+            if (statusBackup.current) {
+                setForm(statusBackup.current.form);
+                setSnapshot(statusBackup.current.snapshot);
+                statusBackup.current = null;
+            }
+            setStatusAction(null);
             const found = issuesFromError(err);
             if (found.length) setIssues(found);
             toast.error(adminError(err, "Could not save. Please check the fields."));
@@ -675,6 +699,18 @@ export default function ContentEditor() {
         }
     };
 
+    const publishSaved = (willPublish: boolean) => {
+        if (!spec || saveMutation.isPending) return;
+        const action = willPublish ? "publish" : "unpublish";
+        const value = spec.publishField === "published" ? willPublish : willPublish ? "published" : "draft";
+        const next = { ...form, [spec.publishField]: value };
+        statusBackup.current = { form, snapshot: snapshot ?? JSON.stringify(form) };
+        setForm(next);
+        setSnapshot(JSON.stringify(next));
+        setStatusAction(action);
+        saveMutation.mutate(spec.publishField === "published" ? { published: willPublish } : { status: value });
+    };
+
     if (!spec) {
         return (
             <div data-testid="content-editor-unknown" className="tnl-card p-6">
@@ -696,10 +732,6 @@ export default function ContentEditor() {
             </div>
         );
     }
-
-    const groups = buildGroups(spec);
-    const buckets = bucketize(groups, spec);
-    const ctx: Ctx = { resource, itemId: isNew ? null : routeId ?? null, members: membersList ?? [] };
 
     const publishedNow = spec.publishField === "published" ? Boolean(form.published) : form.status === "published";
     const title = isNew ? `New ${SINGULARS[resource] ?? spec.label}` : String(form[spec.titleField] ?? "") || "Untitled";
@@ -786,8 +818,8 @@ export default function ContentEditor() {
                                         : "Create as Draft"
                                     : row?.live_status === "published" ? t("adminDraftSave") : "Save changes"}
                         </button>
-                        {!isNew && (row?.has_draft || row?.live_status === "published") && ["editor", "super_admin"].includes(me?.role ?? "") ? <button type="button" className="tnl-btn tnl-btn-primary h-10 text-sm" disabled={dirty || saveMutation.isPending} onClick={() => saveMutation.mutate(spec.publishField === "published" ? { published: true } : { status: "published" })} data-testid="content-publish-saved-button">{t("adminDraftPublish")}</button> : null}
-                        {!isNew && row?.live_status === "published" && ["editor", "super_admin"].includes(me?.role ?? "") ? <button type="button" className="tnl-btn tnl-btn-outline h-10 text-sm" disabled={dirty || saveMutation.isPending} onClick={() => saveMutation.mutate(spec.publishField === "published" ? { published: false } : { status: "draft" })} data-testid="content-unpublish-button">{t("adminUnpublish")}</button> : null}
+                        {!isNew && (row?.has_draft || row?.live_status === "published") && ["editor", "super_admin"].includes(me?.role ?? "") ? <button type="button" className="tnl-btn tnl-btn-primary h-10 text-sm" disabled={dirty || saveMutation.isPending} aria-busy={statusAction === "publish"} onClick={() => publishSaved(true)} data-testid="content-publish-saved-button">{statusAction === "publish" ? "Publishing..." : t("adminDraftPublish")}</button> : null}
+                        {!isNew && row?.live_status === "published" && ["editor", "super_admin"].includes(me?.role ?? "") ? <button type="button" className="tnl-btn tnl-btn-outline h-10 text-sm" disabled={dirty || saveMutation.isPending} aria-busy={statusAction === "unpublish"} onClick={() => publishSaved(false)} data-testid="content-unpublish-button">{statusAction === "unpublish" ? "Unpublishing..." : t("adminUnpublish")}</button> : null}
                     </div>
                 </div>
             </div>
@@ -1069,7 +1101,7 @@ export default function ContentEditor() {
                                             <img src={String(form.cover_url)} alt={t("adminCoverAlt")} className="h-full w-full object-cover" />
                                         </div>
                                     ) : null}
-                                    <iframe title="Article body preview" sandbox="" referrerPolicy="no-referrer" className="min-h-80 w-full border-0" srcDoc={`<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><style>body{font:16px/1.7 system-ui,sans-serif;margin:0;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style></head><body>${String(previewLang === "id" && form.body_id ? form.body_id : form.body || "<p>No content written yet.</p>")}</body></html>`} />
+                                    <iframe title="Article body preview" sandbox="" referrerPolicy="no-referrer" className="min-h-80 w-full border-0" srcDoc={previewSrcDoc} />
                                 </article>
                             ) : resource === "events" ? (
                                 <div className="space-y-4">

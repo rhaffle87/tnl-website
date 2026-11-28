@@ -175,28 +175,22 @@ describe("admin UX/a11y audit fixes", () => {
     expect(screen.getAllByTestId("content-row-p1")).toHaveLength(1);
   });
 
-  it("refreshes the first page after hiding a row from an accumulated list", async () => {
-    let hidden = false;
-    const originalGet = mocks.apiGet.getMockImplementation()!;
-    mocks.apiPut.mockImplementation(async () => {
-      hidden = true;
-      return { ...contentRows()[0], status: "draft" };
-    });
-    mocks.apiGet.mockImplementation((url: string) => {
-      if (hidden && url.includes("/admin/content/posts") && url.includes("offset=0")) {
-        return Promise.resolve({ items: [{ ...contentRows()[0], status: "draft" }], total: 2 });
-      }
-      return originalGet(url);
-    });
+  it("hides a row in place without wiping accumulated rows or refetching the list", async () => {
+    mocks.apiPut.mockResolvedValue({ ...contentRows()[0], status: "draft" });
     renderContentManager();
     await screen.findByTestId("content-row-p1");
     fireEvent.click(screen.getByTestId("load-more-content"));
     await screen.findByTestId("content-row-d1");
-    fireEvent.click(screen.getByTestId("content-toggle-publish-p1"));
+    const listGetsBefore = mocks.apiGet.mock.calls.filter(([url]) => String(url).includes("/admin/content/posts")).length;
 
+    fireEvent.click(screen.getByTestId("content-toggle-publish-p1"));
+    expect(screen.getByTestId("content-toggle-publish-p1")).toBeDisabled();
     await waitFor(() => expect(screen.getByTestId("content-status-p1")).toHaveTextContent("Draft"));
-    expect(screen.getByTestId("content-toggle-publish-p1")).toHaveTextContent("Publish");
-    expect(screen.queryByTestId("content-row-d1")).toBeNull();
+
+    await waitFor(() => expect(screen.getByTestId("content-toggle-publish-p1")).toHaveTextContent("Publish"));
+    expect(screen.getByTestId("content-row-d1")).toBeInTheDocument();
+    const listGetsAfter = mocks.apiGet.mock.calls.filter(([url]) => String(url).includes("/admin/content/posts")).length;
+    expect(listGetsAfter).toBe(listGetsBefore);
   });
 
   it("ConfirmButton is a real dialog: Escape cancels and double submit is guarded", async () => {

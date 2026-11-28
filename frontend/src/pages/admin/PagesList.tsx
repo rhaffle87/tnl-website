@@ -1,7 +1,7 @@
 // Page builder: list of pages, then a block workbench with add / reorder /
 // duplicate / hide / delete, live preview link and revision restore.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -163,6 +163,8 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
     const [propsError, setPropsError] = useState<string | null>(null);
     const [visualPropsValid, setVisualPropsValid] = useState(true);
     const [issues, setIssues] = useState<QualityIssue[]>([]);
+    const [busy, setBusy] = useState(false);
+    const busyRef = useRef(false);
 
     const { data: page, isLoading, isError, error, refetch } = useQuery({
         queryKey: ["admin", "page", pageId],
@@ -195,11 +197,13 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
     const refresh = (updated?: PageDoc) => {
         if (updated) qc.setQueryData(["admin", "page", pageId], updated);
         void qc.invalidateQueries({ queryKey: ["admin", "pages"] });
-        void qc.invalidateQueries({ queryKey: ["public"] });
     };
 
-    const mutate = <T,>(fn: () => Promise<T>, success: string) => {
-        fn()
+    const mutate = <T,>(fn: () => Promise<T>, success: string): Promise<void> => {
+        if (busyRef.current) return Promise.resolve();
+        busyRef.current = true;
+        setBusy(true);
+        return fn()
             .then((res) => {
                 refresh(res as unknown as PageDoc);
                 toast.success(success);
@@ -208,6 +212,11 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                 const found = issuesFromError(err);
                 if (found.length) setIssues(found);
                 toast.error(adminError(err, t("adminPagesSaveError")));
+                void qc.invalidateQueries({ queryKey: ["admin", "page", pageId] });
+            })
+            .finally(() => {
+                busyRef.current = false;
+                setBusy(false);
             });
     };
 
@@ -251,7 +260,9 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
     };
 
     const publish = (status: string) => {
+        if (busyRef.current) return;
         setIssues([]);
+        qc.setQueryData<WorkingPage>(["admin", "page", pageId], (old) => (old ? { ...old, status } : old));
         mutate(() => apiPatch<PageDoc>(`/admin/pages/${pageId}`, { status }), status === "published" ? t("adminPagesPublished") : t("adminPagesUnpublished"));
     };
 
@@ -297,13 +308,13 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                         </button>
                         {page.status === "published" ? (
                             <>
-                            {page.has_draft ? <button type="button" onClick={() => publish("published")} className="tnl-btn tnl-btn-primary h-9 min-h-[36px] text-xs" data-testid="page-publish-button">{t("adminDraftPublish")}</button> : null}
-                            <button type="button" onClick={() => publish("draft")} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs" data-testid="page-unpublish-button">
+                            {page.has_draft ? <button type="button" onClick={() => publish("published")} disabled={busy} aria-busy={busy} className="tnl-btn tnl-btn-primary h-9 min-h-[36px] text-xs disabled:opacity-60" data-testid="page-publish-button">{t("adminDraftPublish")}</button> : null}
+                            <button type="button" onClick={() => publish("draft")} disabled={busy} aria-busy={busy} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-xs disabled:opacity-60" data-testid="page-unpublish-button">
                                 {t("adminUnpublish")}
                             </button>
                             </>
                         ) : (
-                            <button type="button" onClick={() => publish("published")} className="tnl-btn tnl-btn-primary h-9 min-h-[36px] text-xs" data-testid="page-publish-button">
+                            <button type="button" onClick={() => publish("published")} disabled={busy} aria-busy={busy} className="tnl-btn tnl-btn-primary h-9 min-h-[36px] text-xs disabled:opacity-60" data-testid="page-publish-button">
                                 {t("adminPublish")}
                             </button>
                         )}
@@ -312,7 +323,7 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
             </div>
 
             {page.has_draft ? <p className="mb-4 text-sm" role="status">{t("adminDraftStaged")}</p> : null}
-            <PageDetails key={`${page.id}:${page.updated_at}`} page={page} onSave={(values) => mutate(() => apiPatch<PageDoc>(`/admin/pages/${pageId}`, values), t("adminPagesWidgetUpdated"))} onDelete={() => apiDelete(`/admin/pages/${pageId}`).then(() => { void qc.invalidateQueries({ queryKey: ["admin", "pages"] }); onBack(); }).catch((err) => toast.error(adminError(err, t("adminPagesSaveError"))))} />
+            <PageDetails key={page.id} page={page} onSave={(values) => mutate(() => apiPatch<PageDoc>(`/admin/pages/${pageId}`, values), t("adminPagesWidgetUpdated"))} onDelete={() => apiDelete(`/admin/pages/${pageId}`).then(() => { void qc.invalidateQueries({ queryKey: ["admin", "pages"] }); onBack(); }, (err) => { toast.error(adminError(err, t("adminPagesSaveError"))); })} />
 
             {issues.length ? (
                 <Panel className="mb-5">
@@ -342,7 +353,8 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                     onClick={() =>
                                         mutate(() => apiPost<PageDoc>(`/admin/pages/${pageId}/revisions/${rev.id}/restore`), t("adminPagesRestored"))
                                     }
-                                    className="rounded-[6px] border px-3 py-1.5 text-xs font-medium"
+                                    disabled={busy}
+                                    className="rounded-[6px] border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                                     style={{ borderColor: "var(--tnl-border)" }}
                                     data-testid={`revision-restore-${rev.id}`}
                                 >
@@ -373,7 +385,8 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                 key={item.type}
                                 type="button"
                                 onClick={() => addBlock(item.type)}
-                                className="rounded-[10px] border p-4 text-left transition-colors hover:border-[var(--tnl-green)]"
+                                disabled={busy}
+                                className="rounded-[10px] border p-4 text-left transition-colors hover:border-[var(--tnl-green)] disabled:opacity-50"
                                 style={{ borderColor: "var(--tnl-border)" }}
                                 data-testid={`widget-option-${item.type}`}
                             >
@@ -403,16 +416,17 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                     </h3>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="flex h-9 w-9 items-center justify-center rounded-[6px] border disabled:opacity-40" style={{ borderColor: "var(--tnl-border)" }} aria-label={t("adminPagesMoveUp")} data-testid={`block-up-${block.id}`}>
+                                    <button type="button" onClick={() => move(index, -1)} disabled={index === 0 || busy} className="flex h-9 w-9 items-center justify-center rounded-[6px] border disabled:opacity-40" style={{ borderColor: "var(--tnl-border)" }} aria-label={t("adminPagesMoveUp")} data-testid={`block-up-${block.id}`}>
                                         <ArrowUp className="h-4 w-4" />
                                     </button>
-                                    <button type="button" onClick={() => move(index, 1)} disabled={index === blocks.length - 1} className="flex h-9 w-9 items-center justify-center rounded-[6px] border disabled:opacity-40" style={{ borderColor: "var(--tnl-border)" }} aria-label={t("adminPagesMoveDown")} data-testid={`block-down-${block.id}`}>
+                                    <button type="button" onClick={() => move(index, 1)} disabled={index === blocks.length - 1 || busy} className="flex h-9 w-9 items-center justify-center rounded-[6px] border disabled:opacity-40" style={{ borderColor: "var(--tnl-border)" }} aria-label={t("adminPagesMoveDown")} data-testid={`block-down-${block.id}`}>
                                         <ArrowDown className="h-4 w-4" />
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => mutate(() => apiPatch<PageDoc>(`/admin/pages/${pageId}/blocks/${block.id}`, { hidden: !block.hidden }), block.hidden ? t("adminPagesWidgetShown") : t("adminPagesWidgetHidden"))}
-                                        className="flex h-9 w-9 items-center justify-center rounded-[6px] border"
+                                        disabled={busy}
+                                        className="flex h-9 w-9 items-center justify-center rounded-[6px] border disabled:opacity-40"
                                         style={{ borderColor: "var(--tnl-border)" }}
                                         aria-label={block.hidden ? t("adminPagesShowWidget") : t("adminPagesHideWidget")}
                                         data-testid={`block-toggle-${block.id}`}
@@ -422,7 +436,8 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                     <button
                                         type="button"
                                         onClick={() => mutate(() => apiPost<PageDoc>(`/admin/pages/${pageId}/blocks/${block.id}/duplicate`), t("adminPagesWidgetDuplicated"))}
-                                        className="flex h-9 w-9 items-center justify-center rounded-[6px] border"
+                                        disabled={busy}
+                                        className="flex h-9 w-9 items-center justify-center rounded-[6px] border disabled:opacity-40"
                                         style={{ borderColor: "var(--tnl-border)" }}
                                         aria-label={t("adminPagesDuplicateWidget")}
                                         data-testid={`block-duplicate-${block.id}`}
@@ -552,7 +567,7 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
                                             {propsError}
                                         </p>
                                     ) : null}
-                                    <button type="button" onClick={() => saveProps(block)} disabled={Boolean(propsError) || !visualPropsValid} className="tnl-btn tnl-btn-primary mt-3 h-10 min-h-[40px] text-sm disabled:opacity-50" data-testid={`block-props-save-${block.id}`}>
+                                    <button type="button" onClick={() => saveProps(block)} disabled={Boolean(propsError) || !visualPropsValid || busy} className="tnl-btn tnl-btn-primary mt-3 h-10 min-h-[40px] text-sm disabled:opacity-50" data-testid={`block-props-save-${block.id}`}>
                                         <Save className="h-4 w-4" aria-hidden="true" />
                                         {t("adminPagesSaveSettings")}
                                     </button>
@@ -575,7 +590,7 @@ function PageBuilder({ pageId, onBack }: { pageId: string; onBack: () => void })
 
 export { Trash2 };
 
-function PageDetails({ page, onSave, onDelete }: { page: WorkingPage; onSave: (values: { title: string; title_id: string; meta_description: string; meta_description_id: string }) => void; onDelete: () => void }) {
+function PageDetails({ page, onSave, onDelete }: { page: WorkingPage; onSave: (values: { title: string; title_id: string; meta_description: string; meta_description_id: string }) => void; onDelete: () => void | Promise<void> }) {
     const t = useAdminT();
     const [title, setTitle] = useState(page.title);
     const [titleId, setTitleId] = useState(page.title_id ?? "");

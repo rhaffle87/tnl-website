@@ -199,6 +199,29 @@ describe("Admin CMS Components", () => {
     });
   });
 
+  it("ignores a second publish click while the first request is still in flight", async () => {
+    let finish!: (value: unknown) => void;
+    vi.mocked(api.apiPut).mockClear();
+    vi.mocked(api.apiPut).mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/content/:resource" element={<ContentManager />} />
+      </Routes>,
+      { route: "/admin/content/events" }
+    );
+
+    const toggleBtn = await screen.findByTestId("content-toggle-publish-ev-1");
+    fireEvent.click(toggleBtn);
+    fireEvent.click(screen.getByTestId("content-toggle-publish-ev-1"));
+    await waitFor(() => expect(api.apiPut).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId("content-toggle-publish-ev-1")).toBeDisabled();
+    expect(screen.getByTestId("content-toggle-publish-ev-1")).toHaveAttribute("aria-busy", "true");
+    await waitFor(() => expect(screen.getByTestId("content-status-ev-1")).toHaveTextContent("Draft"));
+
+    finish({ id: "ev-1", status: "draft" });
+    await waitFor(() => expect(screen.getByTestId("content-toggle-publish-ev-1")).toHaveTextContent("Publish"));
+  });
+
   it("RegistrarPage shows the live 15s badge and can pause polling", async () => {
     renderWithProviders(<RegistrarPage />, { route: "/admin/registrations" });
 

@@ -3,7 +3,7 @@
 // not raw JSON. The dedicated create/edit form lives in ContentEditor.tsx and
 // is mounted on its own routes (/new and /:id).
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -272,6 +272,12 @@ export const RESOURCE_SPECS: Record<string, ResourceSpec> = {
             { key: "cover_image", label: "Cover image", type: "media", folder: "practicum", aspect: "video", help: "Preview image for practicum card." },
             { key: "gallery_images", label: "Gallery image links", type: "media_list", folder: "practicum", help: "Carousel images for this practicum module." },
             {
+                key: "available_to_download",
+                label: "Available to download",
+                type: "checkbox",
+                help: "Allow visitors to download module files on the website. When unchecked, download links stay hidden and visitors are asked to contact an assistant.",
+            },
+            {
                 key: "resources",
                 label: "Downloadable Resources (PDF/PKT/PY/ZIP)",
                 type: "repeater",
@@ -457,6 +463,8 @@ export default function ContentManager() {
     const [selected, setSelected] = useState<string[]>([]);
     const [offset, setOffset] = useState(0);
     const [accumulated, setAccumulated] = useState<Row[]>([]);
+    const [pendingIds, setPendingIds] = useState<string[]>([]);
+    const pendingToggles = useRef<Set<string>>(new Set());
 
     const relinkMutation = useMutation({
         mutationFn: () => apiPost<{ ok: boolean; updated: number; total_with_links: number; total: number }>("/admin/publications/relink-authors"),
@@ -501,11 +509,40 @@ export default function ContentManager() {
     const rows = accumulated;
     const totalRows = data?.total ?? rows.length;
 
-    const invalidate = () => {
-        void qc.invalidateQueries({ queryKey: ["admin", "content", resource] });
+    const isPublished = useCallback(
+        (row: Row) => (spec?.publishField === "published" ? Boolean(row.published) : row.status === "published"),
+        [spec?.publishField]
+    );
+    const visibleRows = useMemo(
+        () => rows.filter((row) => tab === "all" || (tab === "published" ? isPublished(row) : !isPublished(row))),
+        [rows, tab, isPublished]
+    );
+    const publishedCount = useMemo(() => rows.filter(isPublished).length, [rows, isPublished]);
+    const draftCount = rows.length - publishedCount;
+    const selectedIds = useMemo(() => new Set(selected), [selected]);
+    const allVisibleSelected = visibleRows.length > 0 && visibleRows.every((row) => selectedIds.has(row.id));
+    const metaFor = useCallback((row: Row): string => {
+        const candidates = ["authors", "venue", "year", "position_label", "role", "division", "category", "type", "kind", "start_date", "date", "location", "code", "semester"];
+        const parts = candidates
+            .map((k) => row[k])
+            .filter((v) => v !== undefined && v !== null && String(v).trim() !== "")
+            .map((v) => String(v));
+        return parts.slice(0, 3).join(" · ");
+    }, []);
+
+    const statusPatch = (willPublish: boolean): Partial<Row> =>
+        spec?.publishField === "published"
+            ? { published: willPublish }
+            : { status: willPublish ? "published" : "draft" };
+
+    const invalidateMeta = () => {
         void qc.invalidateQueries({ queryKey: ["admin", "dashboard"] });
         void qc.invalidateQueries({ queryKey: ["admin", "review-queue"] });
-        void qc.invalidateQueries({ queryKey: ["public"] });
+    };
+
+    const invalidate = () => {
+        void qc.invalidateQueries({ queryKey: ["admin", "content", resource] });
+        invalidateMeta();
     };
 
     const resetContentPages = () => {
@@ -540,18 +577,40 @@ export default function ContentManager() {
     });
 
     const togglePublishMutation = useMutation({
-        mutationFn: async ({ id, willPublish }: { id: string; willPublish: boolean }) => {
-            const patch = spec!.publishField === "published"
-                ? { published: willPublish }
-                : { status: willPublish ? "published" : "draft" };
-            return apiPut<Row>(`/admin/content/${resource}/${id}`, patch);
+        mutationFn: ({ id, willPublish }: { id: string; willPublish: boolean }) =>
+            apiPut<Row>(`/admin/content/${resource}/${id}`, statusPatch(willPublish)),
+        onMutate: async ({ id, willPublish }) => {
+            const key = ["admin", "content", resource];
+            await qc.cancelQueries({ queryKey: key });
+            const previous = qc.getQueriesData<ListResponse<Row>>({ queryKey: key });
+            const patch = statusPatch(willPublish);
+            qc.setQueriesData<ListResponse<Row>>({ queryKey: key }, (old) =>
+                old
+                    ? { ...old, items: old.items.map((row) => (row.id === id ? { ...row, ...patch } : row)) }
+                    : old
+            );
+            setAccumulated((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+            return { previous };
         },
-        onSuccess: (_res, variables) => {
-            resetContentPages();
-            invalidate();
+        onSuccess: (saved, variables) => {
+            qc.setQueriesData<ListResponse<Row>>({ queryKey: ["admin", "content", resource] }, (old) =>
+                old ? { ...old, items: old.items.map((row) => (row.id === saved.id ? saved : row)) } : old
+            );
+            setAccumulated((prev) => prev.map((row) => (row.id === saved.id ? saved : row)));
+            invalidateMeta();
             toast.success(variables.willPublish ? "Published." : "Moved to draft / Hidden.");
         },
-        onError: (err) => toast.error(adminError(err, "Could not update status.")),
+        onError: (err, variables, context) => {
+            for (const [queryKey, data] of context?.previous ?? []) qc.setQueryData(queryKey, data);
+            setAccumulated((prev) =>
+                prev.map((row) => (row.id === variables.id ? { ...row, ...statusPatch(!variables.willPublish) } : row))
+            );
+            toast.error(adminError(err, "Could not update status."));
+        },
+        onSettled: (_res, _err, variables) => {
+            pendingToggles.current.delete(variables.id);
+            setPendingIds((prev) => prev.filter((id) => id !== variables.id));
+        },
     });
 
     const bulkMutation = useMutation({
@@ -582,36 +641,13 @@ export default function ContentManager() {
         );
     }
 
-    const isPublished = (row: Row) =>
-        spec.publishField === "published" ? Boolean(row.published) : row.status === "published";
-
-    const publishedCount = rows.filter(isPublished).length;
-    const draftCount = rows.length - publishedCount;
-
-    const visibleRows = rows.filter((row) => {
-        if (tab === "all") return true;
-        if (tab === "published") return isPublished(row);
-        return !isPublished(row);
-    });
-
     const photoKey = PHOTO_KEYS.find((k) => spec.fields.some((f) => f.key === k));
-
-    const metaFor = (row: Row): string => {
-        const candidates = ["authors", "venue", "year", "position_label", "role", "division", "category", "type", "kind", "start_date", "date", "location", "code", "semester"];
-        const parts = candidates
-            .map((k) => row[k])
-            .filter((v) => v !== undefined && v !== null && String(v).trim() !== "")
-            .map((v) => String(v));
-        return parts.slice(0, 3).join(" · ");
-    };
 
     const tabs: { id: StatusTab; label: string; count: number }[] = [
         { id: "all", label: t("adminAll"), count: rows.length },
         { id: "published", label: t("adminPublished"), count: publishedCount },
         { id: "draft", label: t("adminDraft"), count: draftCount },
     ];
-
-    const allVisibleSelected = visibleRows.length > 0 && visibleRows.every((r) => selected.includes(r.id));
 
     return (
         <div data-testid={`content-manager-${resource}`}>
@@ -730,17 +766,17 @@ export default function ContentManager() {
                         <span className="text-sm" style={{ color: "var(--tnl-tan-text)" }}>
                             {selected.length} {t("adminSelected")}
                         </span>
-                        <button type="button" onClick={() => bulkMutation.mutate("publish")} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-sm" data-testid="bulk-publish-button">
+                        <button type="button" onClick={() => bulkMutation.mutate("publish")} disabled={bulkMutation.isPending} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-sm" data-testid="bulk-publish-button">
                             {t("adminPublish")}
                         </button>
-                        <button type="button" onClick={() => bulkMutation.mutate("unpublish")} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-sm" data-testid="bulk-unpublish-button">
+                        <button type="button" onClick={() => bulkMutation.mutate("unpublish")} disabled={bulkMutation.isPending} className="tnl-btn tnl-btn-outline h-9 min-h-[36px] text-sm" data-testid="bulk-unpublish-button">
                             {t("adminUnpublish")}
                         </button>
                         <ConfirmButton
                             label={t("adminDelete")}
                             confirmLabel={t("adminDeleteThem")}
                             question={`${t("adminDelete")} ${selected.length} ${t("adminItems")}?`}
-                            onConfirm={() => bulkMutation.mutate("delete")}
+                            onConfirm={() => bulkMutation.mutateAsync("delete").then(() => undefined, () => undefined)}
                             testId="bulk-delete-button"
                         />
                     </div>
@@ -802,7 +838,7 @@ export default function ContentManager() {
                                             <input
                                                 type="checkbox"
                                                 aria-label={`Select ${title}`}
-                                                checked={selected.includes(row.id)}
+                                                checked={selectedIds.has(row.id)}
                                                 onChange={(e) =>
                                                     setSelected((s) => (e.target.checked ? [...s, row.id] : s.filter((x) => x !== row.id)))
                                                 }
@@ -853,14 +889,20 @@ export default function ContentManager() {
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <button
                                                     type="button"
-                                                    onClick={() => togglePublishMutation.mutate({ id: row.id, willPublish: !published })}
-                                                    disabled={togglePublishMutation.isPending}
-                                                    className="rounded-[6px] border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-[var(--tnl-surface)]"
+                                                    onClick={() => {
+                                                        if (pendingToggles.current.has(row.id)) return;
+                                                        pendingToggles.current.add(row.id);
+                                                        setPendingIds((prev) => [...prev, row.id]);
+                                                        togglePublishMutation.mutate({ id: row.id, willPublish: !published });
+                                                    }}
+                                                    disabled={pendingIds.includes(row.id)}
+                                                    aria-busy={pendingIds.includes(row.id)}
+                                                    className="rounded-[6px] border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-[var(--tnl-surface)] disabled:opacity-60"
                                                     style={{ borderColor: "var(--tnl-border)" }}
                                                     data-testid={`content-toggle-publish-${row.id}`}
                                                     title={published ? "Hide from website (set to draft)" : "Publish to website"}
                                                 >
-                                                    {published ? "Hide" : t("adminPublish")}
+                                                    {pendingIds.includes(row.id) ? "Saving..." : published ? "Hide" : t("adminPublish")}
                                                 </button>
                                                 <Link
                                                     to={`/admin/content/${resource}/${row.id}`}
@@ -874,7 +916,7 @@ export default function ContentManager() {
                                                     label={t("adminDelete")}
                                                     confirmLabel={t("adminDeleteItems")}
                                                     question="Delete this item?"
-                                                    onConfirm={() => deleteMutation.mutate(row.id)}
+                                                    onConfirm={() => deleteMutation.mutateAsync(row.id).then(() => undefined, () => undefined)}
                                                     testId={`content-delete-${row.id}`}
                                                 />
                                             </div>
