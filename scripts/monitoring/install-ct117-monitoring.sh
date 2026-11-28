@@ -25,6 +25,13 @@ script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y prometheus-alertmanager prometheus-blackbox-exporter
 
+# The Debian package units bind wildcard addresses; TNL units are loopback-only.
+for unit in prometheus-alertmanager.service prometheus-blackbox-exporter.service; do
+  if systemctl cat "$unit" >/dev/null 2>&1; then
+    systemctl disable --now "$unit"
+  fi
+done
+
 alertmanager_bin=$(command -v prometheus-alertmanager || command -v alertmanager || true)
 amtool_bin=$(command -v prometheus-amtool || command -v amtool || true)
 blackbox_bin=$(command -v prometheus-blackbox-exporter || command -v blackbox_exporter || true)
@@ -74,7 +81,7 @@ RuntimeDirectory=tnl-alertmanager
 RuntimeDirectoryMode=0750
 ExecStartPre=/usr/bin/python3 /usr/local/lib/tnl-monitoring/render-alertmanager-config.py --output /run/tnl-alertmanager/alertmanager.yml
 ExecStartPre=$amtool_bin check-config /run/tnl-alertmanager/alertmanager.yml
-ExecStart=$alertmanager_bin --config.file=/run/tnl-alertmanager/alertmanager.yml --storage.path=/var/lib/prometheus/tnl-alertmanager --web.listen-address=127.0.0.1:9093
+ExecStart=$alertmanager_bin --config.file=/run/tnl-alertmanager/alertmanager.yml --storage.path=/var/lib/prometheus/tnl-alertmanager --web.listen-address=127.0.0.1:9093 --cluster.listen-address=""
 Restart=on-failure
 RestartSec=5s
 NoNewPrivileges=true

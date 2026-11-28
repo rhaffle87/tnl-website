@@ -21,7 +21,7 @@ Write-Host "Database:    $Database"
 Write-Host "Destination: $localArchive`n"
 
 Write-Host "[1/3] Executing mongodump on CT 116..." -ForegroundColor Yellow
-$dumpCmd = "mongodump --db $Database --archive=$remoteArchive"
+$dumpCmd = "set -e; if test -f /root/.tnl-mongo-backup.env; then . /root/.tnl-mongo-backup.env; mongodump --uri=`$MONGO_BACKUP_URI --archive=$remoteArchive; else mongodump --db $Database --archive=$remoteArchive; fi"
 $sshResult = ssh root@$DbNode "$dumpCmd"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Remote mongodump failed: $sshResult" -ForegroundColor Red

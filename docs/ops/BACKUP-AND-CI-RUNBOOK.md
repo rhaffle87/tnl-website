@@ -109,8 +109,10 @@ disaster recovery is intentionally not automated by this drill.
 The checked-in Prometheus config now defines:
 
 - Node-exporter targets and server backup freshness metrics.
-- A CT 102 Nginx-exporter target on port 9113.
-- A local blackbox exporter on CT 117 port 9115 probing CT 103 `/api/health`; the
+- A CT 102 Nginx-exporter target on port 9113, exposed through an Nginx proxy that
+  allows only CT 117's Tailscale address.
+- Redis metrics from CT 103 and a local blackbox exporter on CT 117 port 9115 probing
+  CT 103 `/api/health`, CT 102 `/api/health`, and the public site. The application
   health endpoint reports the Redis limiter dependency as well as application/DB
   readiness.
 - A local Alertmanager endpoint on CT 117 port 9093.
@@ -123,21 +125,43 @@ CT 117, the deployment hook has a separate explicit switch. It accepts
 `TNL_ALERTMANAGER_BEARER_TOKEN_FILE`; the token value remains in the protected file
 and is not stored in this repository or passed as a command-line argument.
 
-The setup scripts and dashboards are source-controlled, not proof of guest state.
-`scripts/monitoring/deploy-monitoring.ps1` is plan-only by default. After parent
-integration approval, `-Execute` stages configuration, validates it, installs CT
-117 monitoring packages and Grafana provisioning, then restarts the services.
-`-InstallNginxExporter` also configures the CT 102 status exporter; its port should
-be restricted to CT 117 by the existing Tailscale ACL/firewall. No monitoring
-deployment or notification was performed for this change. The last read-only probe
-before implementation found no CT 102 listener on 9113 and no active CT 117
-Alertmanager target, so these remain unconfigured until the guarded hook is run.
+The monitoring stack was installed on CT 117, and CT 102 exporter access was hardened
+on 2026-11-28. At verification, Prometheus reported 12/12 targets up; Prometheus,
+Grafana, Alertmanager, and the blackbox exporter were active. Grafana listens on
+CT 117's Tailscale address `100.114.215.48:3000`, not loopback, so its health check
+must use that address. The Alertmanager runtime remains configured without an
+external delivery endpoint; alerts are evaluated but are not sent.
 
-After an approved setup, safe readiness checks include:
+The CT 102 exporter service runs as `prometheus` and binds only to `127.0.0.1:9114`.
+Nginx exposes the metrics proxy at `100.102.105.77:9113` and permits only CT 117
+(`100.114.215.48`). The CT 117 scrape returned `nginx_up`; a direct request from CT
+103 returned HTTP 403. The public site and edge API health check both returned HTTP
+200. Debian's package-default exporter unit is disabled; the other legacy unit is
+not installed. The guarded rollback snapshot was removed after both access probes
+passed.
+
+`scripts/monitoring/deploy-monitoring.ps1` is plan-only by default. The regular
+`-Execute` path installs/validates CT 117 monitoring configuration and Grafana
+provisioning. To deploy or re-verify only the edge exporter without restarting CT
+117 services or Grafana, use the exporter-only mode:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\monitoring\deploy-monitoring.ps1 `
+  -Execute -InstallNginxExporter -ExporterOnly
+```
+
+This mode snapshots CT 102's managed files and service states, checks the scrape from
+CT 117, requires HTTP 403 from CT 103, then removes its rollback snapshot. Do not pass
+`-EnableAlertDelivery` unless a separately authorized recipient/endpoint is configured.
+
+Safe readiness checks include:
 
 ```powershell
 ssh -o BatchMode=yes -o ConnectTimeout=5 root@100.114.215.48 "systemctl is-active prometheus grafana-server tnl-alertmanager.service tnl-blackbox-exporter.service; curl -fsS --max-time 4 http://127.0.0.1:9090/-/ready; curl -fsS --max-time 4 http://127.0.0.1:9093/-/ready"
-ssh -o BatchMode=yes -o ConnectTimeout=5 root@100.102.105.77 "systemctl is-active nginx tnl-nginx-exporter.service; ss -ltn | awk 'NR==1 || /:9113 /'"
+ssh -o BatchMode=yes -o ConnectTimeout=5 root@100.114.215.48 "curl -fsS --max-time 4 http://100.114.215.48:3000/api/health"
+ssh -o BatchMode=yes -o ConnectTimeout=5 root@100.102.105.77 "systemctl is-active nginx tnl-nginx-exporter.service; ss -ltn | awk 'NR==1 || /:9113 |:9114 /'; nginx -t"
+ssh -o BatchMode=yes -o ConnectTimeout=5 root@100.114.215.48 "curl -fsS --max-time 4 http://100.102.105.77:9113/metrics | grep -q nginx_up"
+ssh -o BatchMode=yes -o ConnectTimeout=5 root@100.65.129.8 "curl --silent --max-time 4 --output /dev/null --write-out %{http_code} http://100.102.105.77:9113/metrics"
 ```
 
 To inspect scrape health without dumping application payloads, query Prometheus's

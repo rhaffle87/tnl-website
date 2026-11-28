@@ -127,7 +127,7 @@ try {
     if ($SkipFrontendBuild -and (-not (Test-Path (Join-Path $distPath "index.html")))) {
         throw "Frontend dist/index.html tidak ditemukan; build terlebih dahulu."
     }
-    Invoke-RemoteChecked "Preflight CT 103: layanan, Redis, dan site aktif" $AppNode "set -e; test -f /opt/tnl/backend/.env; test -x /opt/tnl/backend/venv/bin/python; test -f /etc/systemd/system/tnl-backend.service; test -d /opt/tnl/frontend/dist; test -f /etc/nginx/sites-available/tnl-frontend; test /etc/nginx/sites-enabled/tnl-frontend -ef /etc/nginx/sites-available/tnl-frontend; test ! -e /etc/nginx/sites-enabled/nginx-ct103.conf; systemctl is-active --quiet tnl-backend nginx redis-server; redis-cli ping; nginx -t"
+    Invoke-RemoteChecked "Preflight CT 103: layanan, Redis, dan site aktif" $AppNode 'set -e; test -f /opt/tnl/backend/.env; test -x /opt/tnl/backend/venv/bin/python; test -f /etc/systemd/system/tnl-backend.service; test -d /opt/tnl/frontend/dist; test -f /etc/nginx/sites-available/tnl-frontend; test /etc/nginx/sites-enabled/tnl-frontend -ef /etc/nginx/sites-available/tnl-frontend; test ! -e /etc/nginx/sites-enabled/nginx-ct103.conf; systemctl is-active --quiet tnl-backend nginx redis-server; REDIS_URL_ENV=$(grep -m1 ^REDIS_URL= /opt/tnl/backend/.env | cut -d= -f2- || true); case $REDIS_URL_ENV in *@*) REDIS_PW=${REDIS_URL_ENV#*://}; REDIS_PW=${REDIS_PW%%@*}; REDIS_PW=${REDIS_PW#*:}; REDISCLI_AUTH=$REDIS_PW redis-cli --no-auth-warning ping;; *) redis-cli ping;; esac; nginx -t'
     if (Test-Path "$PSScriptRoot\nginx-ct102.conf") {
         Invoke-RemoteChecked "Snapshot konfigurasi Nginx CT 102" $EdgeNode "set -e; test -d /etc/nginx; test -f /etc/nginx/sites-available/labtnl; nginx -t; mkdir -p -m 0700 '$edgeSnapshot'; cp -a /etc/nginx/sites-available/labtnl '$edgeSnapshot/labtnl'"
     }
@@ -228,7 +228,7 @@ cp -a /opt/tnl/backend/venv '$snapshot/backend/venv'
         Invoke-RemoteChecked "[4/6] Install fallback SEO frontend site" $AppNode "install -m 0644 /tmp/nginx-ct103.conf /etc/nginx/sites-available/tnl-frontend"
     }
     if (-not $SkipBackendDeploy) {
-        Invoke-RemoteChecked "[4/6] Install lock, migrate identity keys & restart backend" $AppNode "set -e; /opt/tnl/backend/venv/bin/python -m pip install --quiet --require-hashes -r /opt/tnl/backend/requirements.txt; /opt/tnl/backend/venv/bin/python -m pip check; cd /opt/tnl/backend; /opt/tnl/backend/venv/bin/python -m lib.registration_integrity --apply; systemctl restart tnl-backend; curl --fail --silent --show-error --retry 20 --retry-connrefused --retry-delay 1 --max-time 3 http://127.0.0.1:8001/api/health >/dev/null"
+        Invoke-RemoteChecked "[4/6] Install lock, migrate identity keys & restart backend" $AppNode "set -e; /opt/tnl/backend/venv/bin/python -m pip install --quiet --require-hashes -r /opt/tnl/backend/requirements.txt; /opt/tnl/backend/venv/bin/python -m pip check; cd /opt/tnl/backend; /opt/tnl/backend/venv/bin/python -m lib.registration_integrity --apply; if id tnl >/dev/null 2>&1; then chown root:tnl /opt/tnl/backend/.env && chmod 0640 /opt/tnl/backend/.env; if [ -d /opt/tnl/media ]; then chown -R tnl:tnl /opt/tnl/media; fi; fi; systemctl restart tnl-backend; curl --fail --silent --show-error --retry 20 --retry-connrefused --retry-delay 1 --max-time 3 http://127.0.0.1:8001/api/health >/dev/null"
     }
     Invoke-RemoteChecked "[4/6] Validate & reload Nginx CT 103" $AppNode "nginx -t && systemctl reload nginx"
 
@@ -240,6 +240,8 @@ cp -a /opt/tnl/backend/venv '$snapshot/backend/venv'
 
     Invoke-PsScriptChecked "[6/6] Post-deploy health check" (Join-Path $PSScriptRoot "health-check.ps1")
     Invoke-RemoteChecked "[6/6] Verify production environment unchanged" $AppNode "sha256sum --status -c '$snapshot/config/env.sha256'"
+    Invoke-RemoteChecked "[6/6] Prune old rollback snapshots (keep 3)" $AppNode 'ls -1dt /opt/tnl/.deploy-rollback/* 2>/dev/null | tail -n +4 | xargs -r rm -rf'
+    Invoke-RemoteChecked "[6/6] Prune old Nginx rollback snapshots (keep 3)" $EdgeNode 'ls -1dt /etc/nginx/.deploy-rollback/* 2>/dev/null | tail -n +4 | xargs -r rm -rf'
 
     Write-Host "`n==========================================================" -ForegroundColor Green
     Write-Host "   Deployment successfully executed to Proxmox LXC!       " -ForegroundColor Green

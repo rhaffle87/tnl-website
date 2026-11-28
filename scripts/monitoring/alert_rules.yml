@@ -133,3 +133,57 @@ groups:
         annotations:
           summary: "Alertmanager notification delivery is failing"
           description: "Alertmanager reported failed notification attempts in the last five minutes."
+
+      - alert: EdgeHealthProbeFailed
+        expr: probe_success{job="edge_health"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Edge reverse-proxy health probe failed on CT 102"
+          description: "CT 102 edge proxy is not returning HTTP 2xx for /api/health."
+
+      - alert: PublicSiteProbeFailed
+        expr: probe_success{job="public_site"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Public site https://labtnl.site/ probe failed"
+          description: "External access through Cloudflare Tunnel and edge Nginx is returning non-2xx or timing out."
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0 or redis_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis on CT 103 is down"
+          description: "Redis exporter reports Redis unavailable or scrape failed."
+
+      - alert: RedisHighMemory
+        expr: (redis_memory_used_bytes / redis_memory_max_bytes) > 0.85 and redis_memory_max_bytes > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage high on CT 103"
+          description: "Redis memory usage exceeded 85% of configured maxmemory."
+
+      - alert: MongodbDown
+        expr: tnl_mongodb_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MongoDB on CT 116 is down"
+          description: "CT 116 MongoDB metrics collector reported MongoDB unavailable."
+
+      - alert: MongodbMetricsMissing
+        expr: absent(tnl_mongodb_up)
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MongoDB health metric is missing on CT 116"
+          description: "Prometheus has no recent tnl_mongodb_up metric from CT 116."

@@ -5,12 +5,30 @@ Wants=redis-server.service
 
 [Service]
 Type=simple
-User=root
+User=tnl
+Group=tnl
 WorkingDirectory=/opt/tnl/backend
 EnvironmentFile=/opt/tnl/backend/.env
 ExecStart=/opt/tnl/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8001 --workers 2 --proxy-headers --forwarded-allow-ips "100.102.105.77,127.0.0.1"
 Restart=always
 RestartSec=3
+UMask=0027
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+ReadWritePaths=/opt/tnl/media
 
 [Install]
 WantedBy=multi-user.target

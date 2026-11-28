@@ -53,6 +53,15 @@ scrape_configs:
           role: 'reverse-proxy'
           ct_id: '102'
 
+  - job_name: 'redis'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['100.65.129.8:9121']
+        labels:
+          instance: 'labtnl-app'
+          role: 'cache-redis'
+          ct_id: '103'
+
   - job_name: 'alertmanager'
     scrape_interval: 15s
     static_configs:
@@ -81,6 +90,43 @@ scrape_configs:
           instance: 'labtnl-app'
           role: 'application-backend'
           ct_id: '103'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance_url
+      - target_label: __address__
+        replacement: '127.0.0.1:9115'
+
+  - job_name: 'edge_health'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ['http://100.102.105.77/api/health']
+        labels:
+          instance: 'labtnl-web'
+          role: 'reverse-proxy'
+          ct_id: '102'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance_url
+      - target_label: __address__
+        replacement: '127.0.0.1:9115'
+
+  - job_name: 'public_site'
+    scrape_interval: 30s
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ['https://labtnl.site/']
+        labels:
+          instance: 'labtnl.site'
+          role: 'public-edge'
+          ct_id: '102'
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
