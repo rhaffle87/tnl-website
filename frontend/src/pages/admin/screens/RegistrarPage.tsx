@@ -317,26 +317,26 @@ export function RegistrarPage() {
 
             <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="checkin-kpi-strip">
                 <AdminCard className="!p-4" testId="checkin-kpi-registered">
-                    <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>{t("adminRegistrarKpiRegistered")}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>{t("adminRegistrarKpiRegistered")}</p>
                     <p className="mt-1 text-2xl font-bold tabular-nums">{registered} <span className="text-base font-medium" style={{ color: "var(--tnl-tan-text)" }}>/ {quota || "—"}</span></p>
                     <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--tnl-border)" }}>
                         <div className="h-full rounded-full bg-[var(--tnl-green)]" style={{ width: `${quota ? Math.min(100, Math.round((registered / quota) * 100)) : 0}%` }} />
                     </div>
                 </AdminCard>
                 <AdminCard className="!p-4" testId="checkin-kpi-attended">
-                    <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>{t("adminRegistrarKpiAttended")}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>{t("adminRegistrarKpiAttended")}</p>
                     <p className="mt-1 text-2xl font-bold tabular-nums" style={{ color: "var(--tnl-green)" }}>{attended} <span className="text-base font-medium">· {attendedPct}%</span></p>
                     <p className="mt-2 text-xs" style={{ color: "var(--tnl-tan-text)" }}>{t("adminRegistrarKpiAttendedSub")}</p>
                 </AdminCard>
                 <AdminCard className="!p-4" testId="checkin-kpi-pending">
-                    <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>{t("adminRegistrarKpiPending")}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>{t("adminRegistrarKpiPending")}</p>
                     <p className="mt-1 text-2xl font-bold tabular-nums">{pending}</p>
                     <p className="mt-2 text-xs" style={{ color: "var(--tnl-tan-text)" }}>{t("adminRegistrarKpiPendingSub")}</p>
                 </AdminCard>
                 {rejected > 0 ? (
                     <AdminCard className="!p-4" testId="checkin-kpi-rejected">
-                        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>{t("adminRegistrarKpiRejected")}</p>
-                        <p className="mt-1 text-2xl font-bold tabular-nums text-red-600 dark:text-red-400">{rejected}</p>
+                        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-tan-text)" }}>{t("adminRegistrarKpiRejected")}</p>
+                        <p className="mt-1 text-2xl font-bold tabular-nums text-[var(--tnl-danger)]">{rejected}</p>
                     </AdminCard>
                 ) : null}
             </div>
@@ -362,7 +362,7 @@ export function RegistrarPage() {
                 </div>
                 {FEATURES.doorCheckIn ? (
                 <div className="mt-4 rounded-xl border border-[var(--tnl-green)]/40 bg-[var(--tnl-green)]/5 p-3">
-                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--tnl-green)" }}>{t("adminDoorCheckIn")}</p>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--tnl-link)" }}>{t("adminDoorCheckIn")}</p>
                     <div className="flex flex-col gap-2 sm:flex-row">
                         <input
                             className="tnl-field h-11 text-base"
@@ -393,7 +393,7 @@ export function RegistrarPage() {
                             className={`mt-3 flex items-start gap-3 rounded-lg border px-3 py-2.5 text-sm ${
                                 checkinResult.ok
                                     ? "border-[var(--tnl-green)] bg-[var(--tnl-green)]/10 text-[var(--tnl-green)]"
-                                    : "border-red-500 bg-red-500/10 text-red-600 dark:text-red-400"
+                                    : "border-[var(--tnl-danger-border)] bg-[var(--tnl-danger)]/10 text-[var(--tnl-danger)]"
                             }`}
                             role={checkinResult.ok ? "status" : "alert"}
                             data-testid="checkin-result-banner"
@@ -435,7 +435,7 @@ export function RegistrarPage() {
                                     {reg.nim ? <p className="mt-0.5 font-mono text-xs">{reg.nim}</p> : null}
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
-                                    <span className="shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize" style={{ borderColor: "var(--tnl-border)", color: reg.status === "attended" ? "var(--tnl-green)" : "var(--tnl-tan-text)" }}>
+                                    <span className="shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold capitalize" style={{ borderColor: "var(--tnl-border)", color: reg.status === "attended" ? "var(--tnl-green)" : "var(--tnl-tan-text)" }}>
                                         {reg.status}
                                     </span>
                                     {reg.anonymized ? <AdminStatusBadge variant="neutral">{t("adminRegistrarAnonymizedBadge")}</AdminStatusBadge> : null}
@@ -456,7 +456,7 @@ export function RegistrarPage() {
                                 <button
                                     type="button"
                                     onClick={() => setRegStatus.mutate({ id: reg.id, next: "rejected" })}
-                                    className="tnl-btn tnl-btn-outline min-h-[40px] text-xs text-red-600 dark:text-red-400"
+                                    className="tnl-btn tnl-btn-outline min-h-[40px] text-xs text-[var(--tnl-danger)]"
                                     data-testid={`registration-reject-${reg.id}`}
                                 >
                                     {t("adminRegistrarRejectMobile")}
@@ -576,8 +576,8 @@ export function RegistrarPage() {
                                                 onClick={() => setRegStatus.mutate({ id: reg.id, next: "rejected" })}
                                                 className={`rounded-[6px] border px-2.5 py-1 text-xs font-medium transition-colors ${
                                                     reg.status === "rejected"
-                                                        ? "bg-red-600 text-white border-red-600"
-                                                        : "text-red-600 dark:text-red-400 hover:border-red-500 hover:bg-red-500/10"
+                                                        ? "bg-[var(--tnl-danger)] text-white border-[var(--tnl-danger)]"
+                                                        : "text-[var(--tnl-danger)] hover:border-[var(--tnl-danger)] hover:bg-[var(--tnl-danger)]/10"
                                                 }`}
                                                 style={{ borderColor: reg.status === "rejected" ? undefined : "var(--tnl-border)" }}
                                                 data-testid={`registration-rejected-${reg.id}`}

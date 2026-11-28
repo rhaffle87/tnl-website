@@ -57,7 +57,7 @@ function renderPresetIcon(icon?: string) {
         case "instagram":
             return <Instagram className="h-4 w-4 text-[#E4405F]" aria-hidden="true" />;
         case "github":
-            return <Github className="h-4 w-4 text-neutral-800 dark:text-neutral-200" aria-hidden="true" />;
+            return <Github className="h-4 w-4 text-[var(--foreground)]" aria-hidden="true" />;
         case "scholar":
             return <GraduationCap className="h-4 w-4 text-[#4285F4]" aria-hidden="true" />;
         case "scopus":
@@ -67,10 +67,10 @@ function renderPresetIcon(icon?: string) {
         case "orcid":
             return <Fingerprint className="h-4 w-4 text-[#A6CE39]" aria-hidden="true" />;
         case "cv":
-            return <FileText className="h-4 w-4 text-amber-600" aria-hidden="true" />;
+            return <FileText className="h-4 w-4 text-[var(--tnl-warning)]" aria-hidden="true" />;
         case "website":
         default:
-            return <Globe className="h-4 w-4 text-neutral-500" aria-hidden="true" />;
+            return <Globe className="h-4 w-4 text-[var(--tnl-muted)]" aria-hidden="true" />;
     }
 }
 
@@ -189,7 +189,7 @@ export function KeyValueMapEditor({
     };
 
     return (
-        <div className="space-y-3 rounded-xl border p-4 transition-colors" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} data-testid={testId}>
+        <div className="space-y-3 rounded-xl border p-4 transition-colors" style={{ backgroundColor: "var(--card)", borderColor: "var(--tnl-border)" }} data-testid={testId}>
             {/* Header row */}
             <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5" style={{ borderColor: "var(--tnl-border)" }}>
                 <div>
@@ -199,7 +199,7 @@ export function KeyValueMapEditor({
                 <button
                     type="button"
                     onClick={toggleRawMode}
-                    className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-mono font-medium transition-colors hover:bg-neutral-500/10"
+                    className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-mono font-medium transition-colors hover:bg-[var(--tnl-surface-2)]"
                     style={{ color: rawMode ? "var(--gsm-accent)" : "var(--tnl-tan-text)" }}
                     data-testid={`${testId}-raw-toggle`}
                 >
@@ -220,11 +220,11 @@ export function KeyValueMapEditor({
                         aria-invalid={jsonError ? true : undefined}
                         aria-describedby={jsonError ? `${testId}-raw-error` : undefined}
                         className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
-                        style={{ backgroundColor: "var(--tnl-bg)", borderColor: jsonError ? "var(--tnl-red)" : "var(--tnl-border)" }}
+                        style={{ backgroundColor: "var(--tnl-surface-2)", borderColor: jsonError ? "var(--tnl-danger)" : "var(--tnl-border)" }}
                         data-testid={`${testId}-raw-textarea`}
                     />
                     {jsonError && (
-                        <div id={`${testId}-raw-error`} role="alert" className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400">
+                        <div id={`${testId}-raw-error`} role="alert" className="flex items-center gap-1.5 text-xs text-[var(--tnl-danger)]">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                             <span>{jsonError}</span>
                         </div>
@@ -265,13 +265,13 @@ export function KeyValueMapEditor({
                                             placeholder={item.placeholder || `Enter ${item.label}`}
                                             className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none transition-colors focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
                                             style={{
-                                                backgroundColor: "var(--tnl-bg)",
-                                                borderColor: isInvalidUrl ? "var(--tnl-red)" : "var(--tnl-border)",
+                                                backgroundColor: "var(--tnl-surface-2)",
+                                                borderColor: isInvalidUrl ? "var(--tnl-danger)" : "var(--tnl-border)",
                                             }}
                                             data-testid={`${testId}-preset-${item.key}`}
                                         />
                                         {isInvalidUrl && (
-                                            <p className="text-[11px] text-[var(--tnl-warning)]">
+                                            <p className="text-xs text-[var(--tnl-warning)]">
                                                 Tip: URL sebaiknya diawali https://
                                             </p>
                                         )}
@@ -297,7 +297,7 @@ export function KeyValueMapEditor({
                                             placeholder={keyPlaceholder}
                                             aria-label={`${keyPlaceholder}: ${keyName}`}
                                             className="w-1/3 rounded-lg border px-2.5 py-1.5 font-mono text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
-                                            style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }}
+                                            style={{ backgroundColor: "var(--tnl-surface-2)", borderColor: "var(--tnl-border)" }}
                                             data-testid={`${testId}-key-${keyName}`}
                                         />
                                         <div className="min-w-0 flex-1">
@@ -310,7 +310,7 @@ export function KeyValueMapEditor({
                                         <button
                                             type="button"
                                             onClick={() => removeCustomKey(keyName)}
-                                            className="rounded p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                                            className="rounded p-1.5 text-[var(--tnl-muted)] hover:text-[var(--tnl-danger)] hover:bg-[var(--tnl-danger)]/10 transition-colors"
                                             aria-label={`Remove property ${keyName}`}
                                             data-testid={`${testId}-remove-${keyName}`}
                                         >
@@ -327,7 +327,7 @@ export function KeyValueMapEditor({
                         type="button"
                         onClick={addCustomEntry}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-1.5 text-xs font-medium transition-colors hover:border-[var(--gsm-emerald)] hover:text-[var(--gsm-primary)] dark:hover:text-[var(--gsm-emerald)]"
-                        style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-text)" }}
+                        style={{ borderColor: "var(--tnl-border)", color: "var(--foreground)" }}
                         data-testid={`${testId}-add-custom`}
                     >
                         <Plus className="h-3.5 w-3.5" aria-hidden="true" />

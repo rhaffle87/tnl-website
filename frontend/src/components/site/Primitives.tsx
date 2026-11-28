@@ -79,7 +79,25 @@ export function EmptyState({
     );
 }
 
-export function Spinner({ label }: { label?: string }) {
+export function Spinner({ label, variant = "inline" }: { label?: string; variant?: "inline" | "cards" }) {
+    if (variant === "cards") {
+        // Skeleton cards mirror the card grid that replaces them, so content swaps in without a layout jump.
+        return (
+            <div className="py-8" role="status" aria-busy="true" data-testid="loading-spinner">
+                {label ? <span className="sr-only">{label}</span> : null}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
+                    {[0, 1, 2].map((i) => (
+                        <div key={i} className="tnl-skeleton-card">
+                            <span className="tnl-skeleton aspect-[16/10] w-full" />
+                            <span className="tnl-skeleton h-4 w-3/4" />
+                            <span className="tnl-skeleton h-3 w-full" />
+                            <span className="tnl-skeleton h-3 w-1/2" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
     return (
         <div className="flex items-center justify-center gap-3 py-12" role="status" data-testid="loading-spinner">
             <span

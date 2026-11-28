@@ -57,7 +57,7 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
                     <div className="mb-10 flex items-start justify-between gap-6">
                         <TnlLogo variant="light" className="h-14 w-14" />
                         <div
-                            className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em]"
+                            className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em]"
                             style={{ color: "var(--tnl-tan)" }}
                             data-testid="login-signal-readout"
                         >
@@ -102,7 +102,7 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
                     data-testid="login-meta"
                 >
                     <div
-                        className="grid grid-cols-3 gap-4 font-mono text-[10px] uppercase leading-relaxed tracking-[0.2em]"
+                        className="grid grid-cols-3 gap-4 font-mono text-xs uppercase leading-relaxed tracking-[0.2em]"
                         style={{ color: "var(--gsm-accent)" }}
                     >
                         <span data-testid="login-meta-cell">{t("adminAuthLaboratory")}<br />TNL</span>
@@ -124,7 +124,7 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
                             </div>
                         </div>
                         <span
-                            className="hidden font-mono text-[10px] uppercase tracking-[0.2em] sm:inline"
+                            className="hidden font-mono text-xs uppercase tracking-[0.2em] sm:inline"
                             style={{ color: "var(--tnl-tan-text)" }}
                             data-testid="login-surface-kicker"
                         >
@@ -204,7 +204,7 @@ export default function AdminLogin() {
                 {!googleChallenge ? <>
                 <div>
                     <span
-                        className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.2em]"
+                        className="mb-1.5 block font-mono text-xs uppercase tracking-[0.2em]"
                         style={{ color: "var(--tnl-tan-text)" }}
                         data-testid="login-field-label-email"
                     >
@@ -215,7 +215,7 @@ export default function AdminLogin() {
                 </div>
                 <div>
                     <span
-                        className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.2em]"
+                        className="mb-1.5 block font-mono text-xs uppercase tracking-[0.2em]"
                         style={{ color: "var(--tnl-tan-text)" }}
                         data-testid="login-field-label-password"
                     >
@@ -248,7 +248,7 @@ export default function AdminLogin() {
                 {needsCode ? (
                     <div>
                         <span
-                            className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.2em]"
+                            className="mb-1.5 block font-mono text-xs uppercase tracking-[0.2em]"
                             style={{ color: "var(--tnl-tan-text)" }}
                             data-testid="login-field-label-code"
                         >
@@ -336,7 +336,7 @@ export function AdminInviteAccept() {
         }
     };
 
-    const labelClass = "mb-1.5 block font-mono text-[10px] uppercase tracking-[0.2em]";
+    const labelClass = "mb-1.5 block font-mono text-xs uppercase tracking-[0.2em]";
     const labelStyle = { color: "var(--tnl-tan-text)" };
 
     return (

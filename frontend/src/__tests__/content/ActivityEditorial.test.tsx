@@ -85,4 +85,28 @@ describe("Activity editorial collection", () => {
     expect(screen.getByTestId(`activity-panel-${active}`)).toHaveAttribute("aria-label");
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
   });
+  it("hides download links and prompts contacting an assistant when available_to_download is false", async () => {
+    const { usePracticum } = await import("@/lib/api/hooks");
+    vi.mocked(usePracticum).mockReturnValueOnce({
+      data: [{
+        id: "locked-p1",
+        code: "CISCO",
+        name: "Locked Training",
+        name_id: "Pelatihan Terkunci",
+        description: "desc",
+        description_id: "desc id",
+        available_to_download: false,
+        resources_restricted: true,
+        resources_count: 1,
+        resources: [{ id: "r1", title: "Modul 01: VLAN Configuration (PDF)", file_type: "pdf" }],
+        shifts: [],
+        shifts_count: 0,
+      }],
+    } as never);
+    renderWithProviders(<ActivityPage />, { route: "/activity?tab=practicum" });
+    expect(screen.getByTestId("practicum-locked-locked-p1")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Modul 01/ })).not.toBeInTheDocument();
+    expect(screen.getByTestId("practicum-assistant-lock-locked-p1")).toHaveTextContent(/Contact a lab assistant to obtain the module|Hubungi asisten untuk mendapatkan modulnya/);
+    expect(screen.getByTestId("practicum-contact-cta-locked-p1")).toHaveAttribute("href", "/contact?topic=academic&ref=practicum-CISCO");
+  });
 });

@@ -27,6 +27,7 @@ import { EmptyState, SectionHeading, Spinner, formatDate } from "@/components/si
 import { PublicRequestError } from "@/components/site/PublicRequestError";
 import { MemberSections } from "@/components/site/MemberSections";
 import { ContactForm } from "@/components/site/ContactForm";
+import { CountUp } from "@/components/site/CountUp";
 import { SignalHero } from "@/components/site/SignalHero";
 import { SignalGallery } from "@/components/site/SignalGallery";
 import type { Block, CollectionField, CollectionItem } from "@/lib/types/types";
@@ -105,7 +106,7 @@ function StatsBlock() {
                 {items.map((item) => (
                     <div key={item.key} className="tnl-scroll-reveal flex flex-col items-center justify-center text-center px-4 py-5 sm:py-2" data-testid={`stat-${item.key}`}>
                         <div className="text-[38px] lg:text-[52px] font-bold font-mono tracking-tight tabular-nums leading-none" style={{ color: "var(--tnl-tan)" }}>
-                            {item.value}
+                            <CountUp value={item.value} />
                         </div>
                         <div className="mt-2.5 text-xs lg:text-sm font-medium tracking-wide uppercase text-center" style={{ color: "var(--tnl-inverse-muted)" }}>
                             {item.label}
@@ -179,7 +180,7 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                                 : [];
                             return (
                                 <div key={tile.name ?? tile.title ?? i} className="pt-6 first:pt-0" data-testid={`about-topic-${i}`}>
-                                    <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--tnl-muted)]">
+                                    <div className="font-mono text-xs uppercase tracking-[0.14em] text-[var(--tnl-muted)]">
                                         {eyebrow}
                                     </div>
                                     <p className="mt-2 text-sm leading-relaxed text-[var(--tnl-body)]">{description}</p>
@@ -192,7 +193,7 @@ function AboutBlock({ props }: { props: Record<string, unknown> }) {
                                                     data-testid={`about-testbed-item-${j}`}
                                                 >
                                                     <span
-                                                        className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--gsm-emerald,#5D8A6B)]"
+                                                        className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--gsm-emerald)]"
                                                         aria-hidden="true"
                                                     />
                                                     <span>{item}</span>
@@ -419,18 +420,18 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                                 type="button"
                                 onClick={() => { setCategory(""); setPage(1); }}
                                 className="relative inline-flex min-h-[44px] items-center rounded-full border px-4 py-2 text-sm font-medium transition-colors"
-                                style={{ borderColor: category === "" ? "var(--tnl-green)" : "var(--tnl-border)" }}
+                                style={{ borderColor: category === "" ? "var(--primary)" : "var(--tnl-border)" }}
                                 data-testid="news-category-all-button"
                             >
                                 {category === "" ? (
                                     <m.span
                                         layoutId="news-category-active-pill"
                                         className="absolute inset-0 rounded-full"
-                                        style={{ background: "var(--tnl-green)" }}
+                                        style={{ background: "var(--primary)" }}
                                         transition={{ type: "spring", stiffness: 420, damping: 34 }}
                                     />
                                 ) : null}
-                                <span className="relative z-10" style={{ color: category === "" ? "var(--tnl-inverse-foreground)" : "inherit" }}>
+                                <span className="relative z-10" style={{ color: category === "" ? "var(--primary-foreground)" : "inherit" }}>
                                     {t("all_categories")}
                                 </span>
                             </button>
@@ -440,18 +441,18 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                                     type="button"
                                     onClick={() => { setCategory(c); setPage(1); }}
                                     className="relative inline-flex min-h-[44px] items-center rounded-full border px-4 py-2 text-sm font-medium transition-colors"
-                                    style={{ borderColor: category === c ? "var(--tnl-green)" : "var(--tnl-border)" }}
+                                    style={{ borderColor: category === c ? "var(--primary)" : "var(--tnl-border)" }}
                                     data-testid={`news-category-${categoryKey(c)}-button`}
                                 >
                                     {category === c ? (
                                         <m.span
                                             layoutId="news-category-active-pill"
                                             className="absolute inset-0 rounded-full"
-                                            style={{ background: "var(--tnl-green)" }}
+                                            style={{ background: "var(--primary)" }}
                                             transition={{ type: "spring", stiffness: 420, damping: 34 }}
                                         />
                                     ) : null}
-                                    <span className="relative z-10" style={{ color: category === c ? "var(--tnl-inverse-foreground)" : "inherit" }}>
+                                    <span className="relative z-10" style={{ color: category === c ? "var(--primary-foreground)" : "inherit" }}>
                                         {localizeCategory(c, locale)}
                                     </span>
                                 </button>
@@ -470,7 +471,7 @@ export function NewsFeedBlock({ props }: { props: Record<string, unknown> }) {
                     />
                 ) : null}
                 {isLoading && !data ? (
-                    <div className="py-8"><Spinner label={t("loading")} /></div>
+                    <div className="py-8"><Spinner variant="cards" label={t("loading")} /></div>
                 ) : posts.length === 0 && !isError ? (
                     <EmptyState
                         title={category || debouncedSearch
@@ -604,7 +605,7 @@ function PartnersBlock({ props }: { props: Record<string, unknown> }) {
                     {p.name.replace("Institut Teknologi Sepuluh Nopember", "ITS Surabaya")}
                 </span>
                 <span
-                    className="mt-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
+                    className="mt-1 rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap"
                     style={{
                         background: "color-mix(in srgb, var(--tnl-tan) 18%, transparent)",
                         color: "var(--tnl-tan-text)",
@@ -750,7 +751,7 @@ function RichTextBlock({ props }: { props: Record<string, unknown> }) {
         <section className="tnl-section" data-testid="block-rich-text">
             <div className="tnl-container">
                 {/* Sanitized server-side by lib/sanitize.py before storage. */}
-                <div className="tnl-prose max-w-3xl text-justify [hyphens:auto]" dangerouslySetInnerHTML={{ __html: html }} />
+                <div className="tnl-prose max-w-3xl" dangerouslySetInnerHTML={{ __html: html }} />
             </div>
         </section>
     );
@@ -820,7 +821,7 @@ function TimelineBlock({ props }: { props: Record<string, unknown> }) {
                     {steps.map((step, i) => (
                         <li key={i} className="relative pb-8 last:pb-0" data-testid={`timeline-step-${i}`}>
                             <span
-                                className="absolute -left-[41px] flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                                className="absolute -left-[41px] flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white"
                                 style={{ background: "var(--tnl-green)" }}
                                 aria-hidden="true"
                             >
@@ -859,7 +860,7 @@ function AccordionBlock({ props }: { props: Record<string, unknown> }) {
                                 {open === i ? <Minus className="h-5 w-5 shrink-0" style={{ color: "var(--tnl-link)" }} /> : <Plus className="h-5 w-5 shrink-0" style={{ color: "var(--tnl-link)" }} />}
                             </button>
                             {open === i ? (
-                                <div className="px-6 pb-5 text-sm leading-relaxed text-[var(--tnl-body)]">
+                                <div className="tnl-accordion-panel px-6 pb-5 text-sm leading-relaxed text-[var(--tnl-body)]">
                                     {pick(locale, item.description, item.description_id)}
                                 </div>
                             ) : null}
@@ -985,7 +986,7 @@ function CustomCollectionBlock({ props }: { props: Record<string, unknown> }) {
                     <PublicRequestError onRetry={() => void refetch()} retrying={isFetching} locale={locale} testId={`collection-${key}-error`} stale={Boolean(data)} />
                 ) : null}
                 {isLoading && !data ? (
-                    <Spinner label={t("loading")} />
+                    <Spinner variant="cards" label={t("loading")} />
                 ) : isError && !data ? null : items.length === 0 ? (
                     <EmptyState
                         title={locale === "id" ? "Belum ada konten" : "No content yet"}
@@ -1013,7 +1014,7 @@ function CustomCollectionBlock({ props }: { props: Record<string, unknown> }) {
                             const primary = fields.find((field) => ["title", "name"].includes(field.key)) ?? fields.find((field) => !["media", "url", "html"].includes(field.type));
                             const image = fields.find((field) => field.type === "media");
                             return (
-                                <article key={item.id} className="tnl-card flex flex-col" data-testid={`collection-item-${item.id}`}>
+                                <article key={item.id} className="tnl-card flex flex-col p-6" data-testid={`collection-item-${item.id}`}>
                                     {image ? <CollectionValue field={image} value={item.values[image.key]} locale={locale} /> : null}
                                     {primary ? <h3 className="mt-3 text-lg font-semibold">{collectionText(item.values[primary.key], locale)}</h3> : null}
                                     <CollectionFields fields={fields} item={item} locale={locale} excluded={[primary?.key ?? "", image?.key ?? ""]} />

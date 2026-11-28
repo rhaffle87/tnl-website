@@ -18,6 +18,7 @@ export default function PublicationsPage() {
     const { data: publications, isLoading } = usePublications();
     const [year, setYear] = useState<string>("");
     const [ptype, setPtype] = useState<string>("");
+    const [search, setSearch] = useState<string>("");
 
     const list = useMemo(() => publications ?? [], [publications]);
     const years = useMemo(
@@ -25,9 +26,13 @@ export default function PublicationsPage() {
         [list],
     );
     const types = useMemo(() => Array.from(new Set(list.map((p) => p.ptype).filter(Boolean))), [list]);
-    const filtered = list.filter(
-        (p) => (!year || String(p.year) === year) && (!ptype || p.ptype === ptype),
-    );
+    const q = search.trim().toLowerCase();
+    const filtered = list.filter((p) => {
+        if (year && String(p.year) !== year) return false;
+        if (ptype && p.ptype !== ptype) return false;
+        if (!q) return true;
+        return [p.title, p.authors, p.venue, p.doi, ...(p.tags ?? [])].some((v) => String(v || "").toLowerCase().includes(q));
+    });
 
     const heroBlocks = (page?.blocks ?? []).filter((b) => b.type === "inner_hero");
     // Built as single strings: a multi-expression child inside <option> is invalid HTML.
@@ -62,6 +67,15 @@ export default function PublicationsPage() {
 
                     {list.length ? (
                         <div className="editorial-publication-filters" role="group" aria-label={locale === "id" ? "Filter publikasi" : "Publication filters"}>
+                            <input
+                                type="search"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder={locale === "id" ? "Cari judul, penulis, DOI…" : "Search title, author, DOI…"}
+                                aria-label={locale === "id" ? "Cari publikasi" : "Search publications"}
+                                className="tnl-field"
+                                data-testid="publications-search-input"
+                            />
                             <select
                                 value={year}
                                 onChange={(e) => setYear(e.target.value)}
@@ -161,29 +175,31 @@ export default function PublicationsPage() {
                                     {pub.abstract ? (
                                         <p className="mt-3 text-sm leading-relaxed text-[var(--tnl-body)]">{pub.abstract}</p>
                                     ) : null}
-                                    {pub.url || pub.doi ? (
-                                        <a
-                                            href={pub.url || `https://doi.org/${pub.doi}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold"
+                                    <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+                                        {pub.url || pub.doi ? (
+                                            <a
+                                                href={pub.url || `https://doi.org/${pub.doi}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold hover:underline"
+                                                style={{ color: "var(--tnl-link)" }}
+                                                data-testid={`publication-link-${pub.id}`}
+                                            >
+                                                {pub.doi ? `DOI ${pub.doi}` : t("read_more")}
+                                                <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                                            </a>
+                                        ) : null}
+                                        <button
+                                            type="button"
+                                            onClick={() => copyCitation(pub)}
+                                            className="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-semibold hover:underline"
                                             style={{ color: "var(--tnl-link)" }}
-                                            data-testid={`publication-link-${pub.id}`}
+                                            data-testid={`publication-copy-citation-${pub.id}`}
                                         >
-                                            {pub.doi ? `DOI ${pub.doi}` : t("read_more")}
-                                            <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                                        </a>
-                                    ) : null}
-                                    <button
-                                        type="button"
-                                        onClick={() => copyCitation(pub)}
-                                        className="mt-4 ml-3 inline-flex items-center gap-1.5 text-sm font-semibold"
-                                        style={{ color: "var(--tnl-link)" }}
-                                        data-testid={`publication-copy-citation-${pub.id}`}
-                                    >
-                                        <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                                        {locale === "id" ? "Salin sitasi" : "Copy citation"}
-                                    </button>
+                                            <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                                            {locale === "id" ? "Salin sitasi" : "Copy citation"}
+                                        </button>
+                                    </div>
                                 </article>
                                 </li>
                             ))}

@@ -156,7 +156,7 @@ export function VerifyPage() {
                         data.valid ? (
                             <div role="status" aria-live="polite" className="verify-result" data-testid="verify-valid">
                                 <TnlLogo variant="auto" className="mb-4 h-12 w-12" />
-                                <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gsm-emerald,#5D8A6B)]/15 px-3 py-1 text-xs font-semibold text-[var(--tnl-body)]">
+                                <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gsm-emerald)]/15 px-3 py-1 text-xs font-semibold text-[var(--tnl-body)]">
                                     <BadgeCheck className="h-4 w-4" aria-hidden="true" />
                                     <span>{t("certificate_valid")}</span>
                                 </div>
@@ -169,7 +169,7 @@ export function VerifyPage() {
                                 )}
                                 <div className="my-4 border-t border-dashed" style={{ borderColor: "var(--tnl-border)" }} />
                                 {data.code ? <p className="verify-record-code">{data.code}</p> : null}
-                                <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                                <div className="mt-6 flex flex-col items-start justify-start gap-3 sm:flex-row sm:items-center">
                                     {data.code ? (
                                         <a
                                             href={apiUrl(`/certificates/${encodeURIComponent(data.code)}/pdf`)}

@@ -128,7 +128,7 @@ export function PrivacyPage() {
                     <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6 print:hidden">
                         {/* Table of Contents */}
                         <div className="legal-note p-5 sm:p-6" data-testid="privacy-toc">
-                            <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
+                            <span className="text-xs font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                 {isId ? "DAFTAR ISI KEBIJAKAN" : "TABLE OF CONTENTS"}
                             </span>
                             <nav className="mt-4 space-y-1 text-xs" aria-label="Privacy sections">
@@ -180,7 +180,7 @@ export function PrivacyPage() {
 
                         {/* Privacy Help Card */}
                         <div className="legal-note p-5 sm:p-6 space-y-3" data-testid="privacy-help-card">
-                            <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
+                            <span className="text-xs font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                 {isId ? "KONTAK DATA PRIVASI" : "DATA PRIVACY DESK"}
                             </span>
                             <p className="text-xs text-[var(--tnl-body)]">
@@ -190,7 +190,7 @@ export function PrivacyPage() {
                             </p>
                             <a
                                 href="mailto:telconnetlab@gmail.com?subject=[Permintaan%20UU%20PDP]%20Hak%20Subjek%20Data"
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] p-2.5 text-xs font-semibold hover:border-[var(--gsm-emerald)] hover:text-[var(--tnl-body)] transition-colors"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--tnl-border)] bg-[var(--tnl-surface)] p-2.5 text-xs font-semibold hover:border-[var(--gsm-emerald)] hover:text-[var(--tnl-body)] transition-colors"
                             >
                                 <Mail className="h-3.5 w-3.5" />
                                 <span>telconnetlab@gmail.com</span>
@@ -249,7 +249,7 @@ export function PrivacyPage() {
 
                             <div className="overflow-x-auto legal-note p-0 border border-black/10 dark:border-white/10">
                                 <table className="w-full text-left text-xs border-collapse">
-                                    <thead className="border-b border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03]">
+                                    <thead className="border-b border-[var(--tnl-border)] bg-[var(--tnl-surface)]">
                                         <tr>
                                             <th className="py-3 px-4 font-bold text-[var(--tnl-heading)]">{isId ? "Konteks Interaksi" : "Interaction Context"}</th>
                                             <th className="py-3 px-4 font-bold text-[var(--tnl-heading)]">{isId ? "Kategori Data yang Dikumpulkan" : "Data Collected"}</th>
@@ -348,7 +348,7 @@ export function PrivacyPage() {
 
                             <div className="overflow-x-auto legal-note p-0 border border-black/10 dark:border-white/10">
                                 <table className="w-full text-left text-xs border-collapse">
-                                    <thead className="border-b border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03]">
+                                    <thead className="border-b border-[var(--tnl-border)] bg-[var(--tnl-surface)]">
                                         <tr>
                                             <th className="py-3 px-4 font-bold text-[var(--tnl-heading)]">{isId ? "Kunci Penyimpanan" : "Storage Key"}</th>
                                             <th className="py-3 px-4 font-bold text-[var(--tnl-heading)]">{isId ? "Mekanisme" : "Mechanism"}</th>
@@ -770,7 +770,7 @@ export function TermsPage() {
                     <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6 print:hidden">
                         {/* Table of Contents */}
                         <div className="legal-note p-5 sm:p-6" data-testid="terms-toc">
-                            <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
+                            <span className="text-xs font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                 {isId ? "DAFTAR ISI KETENTUAN" : "TABLE OF CONTENTS"}
                             </span>
                             <nav className="mt-4 space-y-1 text-xs" aria-label="Terms sections">
@@ -822,7 +822,7 @@ export function TermsPage() {
 
                         {/* Legal Help Card */}
                         <div className="legal-note p-5 sm:p-6 space-y-3" data-testid="terms-help-card">
-                            <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
+                            <span className="text-xs font-mono font-bold uppercase tracking-widest text-[var(--tnl-tan-text)]">
                                 {isId ? "KONTAK ADMINISTRASI LAB" : "ADMINISTRATIVE DESK"}
                             </span>
                             <p className="text-xs text-[var(--tnl-body)]">
@@ -832,7 +832,7 @@ export function TermsPage() {
                             </p>
                             <Link
                                 to="/contact"
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] p-2.5 text-xs font-semibold hover:border-[var(--gsm-emerald)] hover:text-[var(--tnl-body)] transition-colors"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--tnl-border)] bg-[var(--tnl-surface)] p-2.5 text-xs font-semibold hover:border-[var(--gsm-emerald)] hover:text-[var(--tnl-body)] transition-colors"
                             >
                                 <Mail className="h-3.5 w-3.5" />
                                 <span>{isId ? "Hubungi Ruang B-301" : "Contact Room B-301"}</span>
@@ -918,19 +918,19 @@ export function TermsPage() {
                                 )}
                             </p>
                             <div className="space-y-2 text-xs">
-                                <div className="legal-note p-3 border-rose-500/20 bg-rose-500/5">
+                                <div className="legal-note p-3 border-[var(--tnl-danger-border)] bg-[var(--tnl-danger)]/5">
                                     <strong>{isId ? "1. Peretasan & Pemindaian Ilegal:" : "1. Unauthorized Penetration & Scanning:"}</strong>{" "}
                                     {isId ? "Dilarang melakukan pemindaian kerentanan (vulnerability scanning), penetrasi tanpa izin tertulis, atau eksploitasi terhadap infrastruktur server klaster lab." : "Running automated vulnerability scans or unauthorized penetration attempts against the laboratory server cluster."}
                                 </div>
-                                <div className="legal-note p-3 border-rose-500/20 bg-rose-500/5">
+                                <div className="legal-note p-3 border-[var(--tnl-danger-border)] bg-[var(--tnl-danger)]/5">
                                     <strong>{isId ? "2. Serangan Penolakan Layanan (DoS/DDoS) & Spam:" : "2. Denial-of-Service & Spam Bots:"}</strong>{" "}
                                     {isId ? "Dilarang membanjiri request server, mengirimkan spam otomatis melalui formulir kontak/pendaftaran, atau mengakali mekanisme rate-limiting." : "Flooding server requests, deploying spam bots through forms, or circumventing rate limits."}
                                 </div>
-                                <div className="legal-note p-3 border-rose-500/20 bg-rose-500/5">
+                                <div className="legal-note p-3 border-[var(--tnl-danger-border)] bg-[var(--tnl-danger)]/5">
                                     <strong>{isId ? "3. Pengunggahan Berkas Berbahaya:" : "3. Malicious File Uploads:"}</strong>{" "}
                                     {isId ? "Dilarang mengunggah berkas yang mengandung skrip berbahaya, virus, trojan, atau berkas yang sengaja disamarkan (manipulasi MIME/ekstensi)." : "Uploading malicious payloads, embedded shell scripts, or falsified MIME binaries."}
                                 </div>
-                                <div className="legal-note p-3 border-rose-500/20 bg-rose-500/5">
+                                <div className="legal-note p-3 border-[var(--tnl-danger-border)] bg-[var(--tnl-danger)]/5">
                                     <strong>{isId ? "4. Pemalsuan Identitas & Data Akademik:" : "4. Identity Theft & Academic Falsification:"}</strong>{" "}
                                     {isId ? "Dilarang mendaftar menggunakan identitas (Nama/NRP) milik mahasiswa lain atau memalsukan bukti persyaratan." : "Registering with another student's credentials (Name/NRP) or submitting forged prerequisite documents."}
                                 </div>

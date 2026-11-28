@@ -602,11 +602,11 @@ export function AnnouncementPopup({ onOpenChange }: { onOpenChange?: (open: bool
             <span
                 aria-hidden="true"
                 className="absolute inset-x-0 top-0 h-[3px]"
-                style={{ background: "linear-gradient(90deg, var(--gsm-primary, var(--tnl-green)), var(--gsm-accent, #F4C26C))" }}
+                style={{ background: "linear-gradient(90deg, var(--gsm-primary, var(--tnl-green)), var(--gsm-accent))" }}
             />
 
             <div className="flex items-start justify-between gap-4 px-5 pt-5 sm:px-7 sm:pt-6">
-                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--tnl-body)]">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] px-2.5 py-1 text-xs font-bold uppercase tracking-widest text-[var(--tnl-body)]">
                     <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[var(--tnl-green)]" />
                     {t("announcement")}
                 </span>
@@ -614,7 +614,7 @@ export function AnnouncementPopup({ onOpenChange }: { onOpenChange?: (open: bool
                     type="button"
                     onClick={dismiss}
                     aria-label={pick(locale, "Close announcement", "Tutup pengumuman")}
-                    className="-mr-2 -mt-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--tnl-body)] transition-colors hover:bg-[var(--tnl-surface-2)] hover:text-[var(--tnl-heading)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tnl-green)]"
+                    className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[var(--tnl-body)] transition-colors hover:bg-[var(--tnl-surface-2)] hover:text-[var(--tnl-heading)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tnl-link)]"
                     data-testid="announcement-close-button"
                 >
                     <X className="h-4 w-4" aria-hidden="true" />
@@ -743,7 +743,7 @@ export function MobileRegistrationBar({ announcementOpen = false }: { announceme
         >
             <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-col min-w-0 pr-1">
-                    <span className="tnl-eyebrow text-[10px] text-[var(--tnl-inverse-muted)] flex items-center gap-1.5 font-bold">
+                    <span className="tnl-eyebrow text-xs text-[var(--tnl-inverse-muted)] flex items-center gap-1.5 font-bold">
                         <span className="h-2 w-2 rounded-full bg-[var(--gsm-emerald)] animate-pulse" aria-hidden="true" />
                         {t("reg_open")}
                     </span>

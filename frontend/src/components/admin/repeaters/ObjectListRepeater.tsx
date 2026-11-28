@@ -189,13 +189,13 @@ export function ObjectListRepeater({
     };
 
     return (
-        <div className="space-y-3 rounded-xl border p-4 transition-colors" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} data-testid={testId}>
+        <div className="space-y-3 rounded-xl border p-4 transition-colors" style={{ backgroundColor: "var(--card)", borderColor: "var(--tnl-border)" }} data-testid={testId}>
             {/* Header row */}
             <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5" style={{ borderColor: "var(--tnl-border)" }}>
                 <div>
                     <div className="flex items-center gap-2">
                         {label && <h4 className="text-sm font-semibold tracking-tight">{resolveCopy(label)}</h4>}
-                        <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ backgroundColor: "var(--tnl-bg)", color: "var(--tnl-gold)" }}>
+                        <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: "var(--tnl-surface-2)", color: "var(--tnl-tan-text)" }}>
                             {items.length} {t(items.length === 1 ? "adminItem" : "adminBuilderItems")}
                         </span>
                     </div>
@@ -206,7 +206,7 @@ export function ObjectListRepeater({
                         <button
                             type="button"
                             onClick={toggleAllCollapse}
-                            className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                            className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--tnl-muted)] hover:text-[var(--foreground)]"
                             title={t("adminBuilderToggleCollapseAll")}
                         >
                             {items.some((_, idx) => !collapsedMap[idx]) ? (
@@ -225,8 +225,8 @@ export function ObjectListRepeater({
                     <button
                         type="button"
                         onClick={toggleRawMode}
-                        className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-mono font-medium transition-colors hover:bg-neutral-500/10"
-                        style={{ color: rawMode ? "var(--tnl-gold)" : "var(--tnl-tan-text)" }}
+                        className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-mono font-medium transition-colors hover:bg-[var(--tnl-surface-2)]"
+                        style={{ color: rawMode ? "var(--tnl-tan-text)" : "var(--tnl-tan-text)" }}
                         data-testid={`${testId}-raw-toggle`}
                     >
                         <Code className="h-3.5 w-3.5" aria-hidden="true" />
@@ -246,11 +246,11 @@ export function ObjectListRepeater({
                         aria-invalid={jsonError ? true : undefined}
                         aria-describedby={jsonError ? `${testId}-raw-error` : undefined}
                         className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
-                        style={{ backgroundColor: "var(--tnl-bg)", borderColor: jsonError ? "var(--tnl-red)" : "var(--tnl-border)" }}
+                        style={{ backgroundColor: "var(--tnl-surface-2)", borderColor: jsonError ? "var(--tnl-danger)" : "var(--tnl-border)" }}
                         data-testid={`${testId}-raw-textarea`}
                     />
                     {jsonError && (
-                        <div id={`${testId}-raw-error`} role="alert" className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400">
+                        <div id={`${testId}-raw-error`} role="alert" className="flex items-center gap-1.5 text-xs text-[var(--tnl-danger)]">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                             <span>{t(jsonError)}</span>
                         </div>
@@ -275,13 +275,13 @@ export function ObjectListRepeater({
                                     key={itemIdx}
                                     className="rounded-lg border transition-all"
                                     style={{
-                                        backgroundColor: "var(--tnl-bg)",
+                                        backgroundColor: "var(--tnl-surface-2)",
                                         borderColor: "var(--tnl-border)",
                                     }}
                                     data-testid={`${testId}-card-${itemIdx}`}
                                 >
                                     {/* Card Header */}
-                                    <div className="flex items-center justify-between px-3.5 py-2.5 select-none bg-neutral-500/5 rounded-t-lg">
+                                    <div className="flex items-center justify-between px-3.5 py-2.5 select-none bg-[var(--tnl-surface-2)] rounded-t-lg">
                                         <div
                                             className="flex flex-1 items-center gap-2.5 cursor-pointer"
                                             onClick={() => toggleCollapse(itemIdx)}
@@ -293,7 +293,7 @@ export function ObjectListRepeater({
                                                 {titleValue}
                                             </span>
                                             {subtitleValue && (
-                                                <span className="text-[11px] truncate opacity-60 hidden sm:inline">
+                                                <span className="text-xs truncate opacity-60 hidden sm:inline">
                                                     · {subtitleValue}
                                                 </span>
                                             )}
@@ -304,7 +304,7 @@ export function ObjectListRepeater({
                                                 type="button"
                                                 onClick={() => moveItem(itemIdx, "up")}
                                                 disabled={itemIdx === 0}
-                                                className="rounded p-1 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-20"
+                                                className="rounded p-1 text-[var(--tnl-muted)] hover:text-[var(--foreground)] disabled:opacity-20"
                                                 title={t("adminBuilderMoveUp")}
                                                 aria-label={t("adminBuilderMoveItemUp")}
                                                 data-testid={`${testId}-card-up-${itemIdx}`}
@@ -315,7 +315,7 @@ export function ObjectListRepeater({
                                                 type="button"
                                                 onClick={() => moveItem(itemIdx, "down")}
                                                 disabled={itemIdx === items.length - 1}
-                                                className="rounded p-1 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-20"
+                                                className="rounded p-1 text-[var(--tnl-muted)] hover:text-[var(--foreground)] disabled:opacity-20"
                                                 title={t("adminBuilderMoveDown")}
                                                 aria-label={t("adminBuilderMoveItemDown")}
                                                 data-testid={`${testId}-card-down-${itemIdx}`}
@@ -325,7 +325,7 @@ export function ObjectListRepeater({
                                             <button
                                                 type="button"
                                                 onClick={() => duplicateItem(itemIdx)}
-                                                className="rounded p-1 text-neutral-400 hover:text-[var(--gsm-primary)] hover:bg-[var(--gsm-primary-soft)] dark:hover:text-[var(--gsm-accent)]"
+                                                className="rounded p-1 text-[var(--tnl-muted)] hover:text-[var(--gsm-primary)] hover:bg-[var(--gsm-primary-soft)] dark:hover:text-[var(--gsm-accent)]"
                                                 title={t("adminBuilderDuplicateItem")}
                                                 aria-label={t("adminBuilderDuplicateItem")}
                                                 data-testid={`${testId}-card-dup-${itemIdx}`}
@@ -335,7 +335,7 @@ export function ObjectListRepeater({
                                             <button
                                                 type="button"
                                                 onClick={() => removeItem(itemIdx)}
-                                                className="rounded p-1 text-neutral-400 hover:text-rose-600 hover:bg-rose-500/10"
+                                                className="rounded p-1 text-[var(--tnl-muted)] hover:text-[var(--tnl-danger)] hover:bg-[var(--tnl-danger)]/10"
                                                 title={t("adminBuilderDeleteItem")}
                                                 aria-label={t("adminBuilderDeleteItem")}
                                                 data-testid={`${testId}-card-remove-${itemIdx}`}
@@ -345,7 +345,7 @@ export function ObjectListRepeater({
                                             <button
                                                 type="button"
                                                 onClick={() => toggleCollapse(itemIdx)}
-                                                className="rounded p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 ml-1"
+                                                className="rounded p-1 text-[var(--tnl-muted)] hover:text-[var(--foreground)] ml-1"
                                                 title={t(isCollapsed ? "adminBuilderExpand" : "adminBuilderCollapse")}
                                                 aria-label={t(isCollapsed ? "adminBuilderExpandItem" : "adminBuilderCollapseItem")}
                                             >
@@ -378,7 +378,7 @@ export function ObjectListRepeater({
                                                                 onChange={(e) => updateItemField(itemIdx, f.key, e.target.value)}
                                                                 placeholder={f.placeholder === undefined ? undefined : resolveCopy(f.placeholder)}
                                                                 className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
-                                                                style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
+                                                                style={{ backgroundColor: "var(--card)", borderColor: "var(--tnl-border)" }}
                                                                 data-testid={`${testId}-item-${itemIdx}-${f.key}`}
                                                             />
                                                         ) : f.type === "select" ? (
@@ -430,13 +430,13 @@ export function ObjectListRepeater({
                                                                 }
                                                                 placeholder={f.placeholder === undefined ? undefined : resolveCopy(f.placeholder)}
                                                                 className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
-                                                                style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
+                                                                style={{ backgroundColor: "var(--card)", borderColor: "var(--tnl-border)" }}
                                                                 data-testid={`${testId}-item-${itemIdx}-${f.key}`}
                                                             />
                                                         )}
 
                                                         {f.help && (
-                                                            <p className="text-[11px]" style={{ color: "var(--tnl-tan-text)" }}>
+                                                            <p className="text-xs" style={{ color: "var(--tnl-tan-text)" }}>
                                                                 {resolveCopy(f.help)}
                                                             </p>
                                                         )}
@@ -455,7 +455,7 @@ export function ObjectListRepeater({
                         type="button"
                         onClick={addItem}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-2 text-xs font-medium transition-colors hover:border-[var(--gsm-emerald)] hover:text-[var(--gsm-primary)] dark:hover:text-[var(--gsm-emerald)] w-full justify-center"
-                        style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-text)" }}
+                        style={{ borderColor: "var(--tnl-border)", color: "var(--foreground)" }}
                         data-testid={`${testId}-add`}
                     >
                         <Plus className="h-4 w-4" aria-hidden="true" />

@@ -34,6 +34,7 @@ class MemberProject(BaseModel):
     title: str
     title_id: str | None = None
     year: str | None = None
+    funding: str | None = None
     role: str | None = None
     role_id: str | None = None
     description: str | None = None
@@ -47,6 +48,7 @@ class Member(BaseModel):
     title_prefix: str | None = None  # Dr., Prof., Dr.techn.
     role: str = "assistant"  # lecturer | researcher | assistant
     position: str | None = None  # coordinator | head | vice | staff | member
+    position_label: str | None = None
     division: str | None = None
     batch: str | None = None  # e.g. 2025/2026
     bio: str | None = None
@@ -291,6 +293,7 @@ class PracticumModule(BaseModel):
     cover_image: str | None = None
     gallery_images: list[str] = []
     semester: str | None = None
+    available_to_download: bool = False
     resources: list[PracticumResource] = []
     shifts: list[PracticumShift] = []
     order: int = 0

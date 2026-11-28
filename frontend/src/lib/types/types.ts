@@ -276,6 +276,7 @@ export interface PracticumModule {
   cover_image?: string | null;
   gallery_images?: string[];
   semester?: string | null;
+  available_to_download?: boolean;
   resources?: PracticumResource[];
   shifts?: PracticumShift[];
   /** True when the current session may download module files (assistant roles and above). */

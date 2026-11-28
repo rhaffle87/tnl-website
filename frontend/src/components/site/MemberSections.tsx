@@ -7,7 +7,6 @@ import "@/pages/activity-editorial.css";
 import "@/components/site/member-profile.css";
 import { useSearchParams } from "react-router-dom";
 import { m, AnimatePresence } from "motion/react";
-import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
 import { BookOpen, Briefcase, ExternalLink, FileText, Github, Instagram, Linkedin, Mail, Users, X } from "lucide-react";
 import { pick, useLocale } from "@/lib/i18n/i18n";
 import { useMembers, usePublications } from "@/lib/api/hooks";
@@ -24,9 +23,28 @@ function getInitials(name: string): string {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+function normalizeRoleText(raw: string): string {
+    const trimmed = raw.trim();
+    if (!trimmed) return "";
+    const coHeadOf = trimmed.match(/^co-?head\s+of\s+(.+)$/i);
+    if (coHeadOf) return `Expert Staff of ${coHeadOf[1]}`;
+    if (/^co-?head$/i.test(trimmed)) return "Expert Staff";
+    if (/^staff$/i.test(trimmed)) return "Staff";
+    if (/^vice$/i.test(trimmed)) return "Expert Staff";
+    if (/^head$/i.test(trimmed)) return "Head";
+    if (/^coordinator$/i.test(trimmed)) return "Coordinator";
+    return trimmed;
+}
+
+function normalizeBioRole(text: string): string {
+    return text.replace(/\bco-?head\s+of\s+/gi, "Expert Staff of ");
+}
+
 function roleChip(member: Member): { label: string; bg: string; fg: string } {
     const pos = (member.position || "").toLowerCase();
-    const label = member.position_label || member.position || (member.role === "assistant" ? "Assistant" : "");
+    const rawLabel = member.position_label || member.position || (member.role === "assistant" ? "Assistant" : "");
+    const label = normalizeRoleText(rawLabel);
+    const labelLower = label.toLowerCase();
     const div = member.division || "";
 
     // BPH or Coordinator (board)
@@ -39,13 +57,14 @@ function roleChip(member: Member): { label: string; bg: string; fg: string } {
         return { label, bg: "var(--primary)", fg: "var(--primary-foreground)" };
     }
 
-    // Division heads, co-heads, leads, vices
+    // Division heads, expert staff, leads, vices
     if (
         pos.includes("head") ||
         pos.includes("lead") ||
         pos.includes("vice") ||
         pos.includes("kepala") ||
-        pos.includes("wakil")
+        pos.includes("wakil") ||
+        labelLower.includes("expert staff")
     ) {
         return { label, bg: "var(--secondary)", fg: "var(--secondary-foreground)" };
     }
@@ -80,10 +99,10 @@ function LightPlaceholder({ member, isModal }: { member: Member; isModal?: boole
             >
                 {initials}
             </div>
-            <span className="mt-2.5 text-[11px] font-mono font-medium text-[var(--tnl-body)] tracking-wider uppercase">
+            <span className="mt-2.5 text-xs font-mono font-medium text-[var(--tnl-body)] tracking-wider uppercase">
                 {member.batch ? `Batch ${member.batch}` : "TNL"}
             </span>
-            <span className="text-[10px] text-[var(--tnl-body)]">Photo Pending</span>
+            <span className="text-xs text-[var(--tnl-body)]">Photo Pending</span>
         </div>
     );
 }
@@ -172,7 +191,7 @@ function HeadBanner({ member, onOpen }: { member: Member; onOpen: () => void }) 
                                     <a
                                         href={`mailto:${member.email_public}`}
                                         className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium hover:underline"
-                                        style={{ color: "var(--tnl-tan-text)" }}
+                                        style={{ color: "var(--tnl-link)" }}
                                         data-testid="head-of-lab-email-link"
                                     >
                                         <Mail className="h-4 w-4" aria-hidden="true" />
@@ -199,14 +218,15 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
     const { locale, t } = useLocale();
     const chip = roleChip(member);
     const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
+    const ig = formatInstagram(member.social?.instagram);
+    const hasContacts = Boolean(member.email_public || member.social?.linkedin || ig);
     return (
         <article
             onClick={onOpen}
-            onPointerMove={handleSpotlightPointerMove}
-            className="member-directory-card flex flex-col overflow-hidden text-left"
+            className="member-directory-card flex h-full flex-col overflow-hidden text-left"
             data-testid={testId}
         >
-            <div className="tnl-parallax-media relative aspect-[3/4] w-full overflow-hidden bg-[var(--muted)]">
+            <div className="tnl-parallax-media relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-[var(--muted)]">
                 {member.photo_url && failedPhoto !== member.photo_url ? (
                     <img
                         src={member.photo_url}
@@ -221,35 +241,34 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
                     <LightPlaceholder member={member} />
                 )}
             </div>
-            <div className="flex flex-1 flex-col p-4">
-                <span
-                    className="mb-2 inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold"
-                    style={{ background: chip.bg, color: chip.fg }}
-                >
-                    {chip.label}
-                </span>
-                <h3 className="text-[15px] font-bold leading-snug">{member.name}</h3>
-                {member.batch ? (
-                    <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
-                        Batch {member.batch}
-                    </p>
-                ) : member.division ? (
-                    <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
-                        {member.division}
-                    </p>
-                ) : null}
-                {member.projects && member.projects.length > 0 ? (
-                    <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: "var(--tnl-tan-text)" }}>
-                        <Briefcase className="h-3 w-3" aria-hidden="true" />
-                        {member.projects.length} {locale === "id" ? "Proyek Riset" : "Projects"}
+            <div className="member-card-body flex flex-1 flex-col">
+                <div>
+                    <span
+                        className="mb-2 inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-bold"
+                        style={{ background: chip.bg, color: chip.fg }}
+                    >
+                        {chip.label}
                     </span>
-                ) : null}
-                {(() => {
-                    const ig = formatInstagram(member.social?.instagram);
-                    const hasContacts = Boolean(member.email_public || member.social?.linkedin || ig);
-                    if (!hasContacts) return null;
-                    return (
-                        <div className="mt-2.5 flex items-center gap-3">
+                    <h3 className="text-base font-bold leading-snug">{member.name}</h3>
+                    {member.batch ? (
+                        <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
+                            Batch {member.batch}
+                        </p>
+                    ) : member.division ? (
+                        <p className="mt-1 text-xs" style={{ color: "var(--tnl-tan-text)" }}>
+                            {member.division}
+                        </p>
+                    ) : null}
+                    {member.projects && member.projects.length > 0 ? (
+                        <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium" style={{ color: "var(--tnl-tan-text)" }}>
+                            <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
+                            {member.projects.length} {locale === "id" ? "Proyek Riset" : "Projects"}
+                        </span>
+                    ) : null}
+                </div>
+                <div className="member-card-footer mt-auto pt-3 flex flex-col gap-1">
+                    {hasContacts ? (
+                        <div className="flex items-center gap-1.5">
                             {member.email_public ? (
                                 <a
                                     href={`mailto:${member.email_public}`}
@@ -291,13 +310,13 @@ function MemberCard({ member, onOpen, testId }: { member: Member; onOpen: () => 
                                 </a>
                             ) : null}
                         </div>
-                    );
-                })()}
-                <button type="button" className="member-profile-action mt-3 inline-flex min-h-[44px] items-center" aria-label={`${t("view_profile")}: ${member.name}`} onClick={(event) => { event.stopPropagation(); onOpen(); }}>
-                    {t("view_profile")} →
-                </button>
+                    ) : null}
+                    <button type="button" className="member-profile-action inline-flex min-h-[44px] items-center" aria-label={`${t("view_profile")}: ${member.name}`} onClick={(event) => { event.stopPropagation(); onOpen(); }}>
+                        {t("view_profile")} →
+                    </button>
+                </div>
             </div>
-            <span className="sr-only">{pick(locale, member.bio, member.bio_id)}</span>
+            <span className="sr-only">{normalizeBioRole(pick(locale, member.bio, member.bio_id))}</span>
         </article>
     );
 }
@@ -409,7 +428,7 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
                     <section className="member-profile-overview" aria-labelledby="member-profile-bio-title">
                         <h3 id="member-profile-bio-title" className="member-profile-section-title">{locale === "id" ? "Profil" : "Profile"}</h3>
                         <p className="member-profile-bio">
-                            {pick(locale, member.bio, member.bio_id)}
+                            {normalizeBioRole(pick(locale, member.bio, member.bio_id))}
                         </p>
                         {member.expertise?.length ? (
                             <div className="member-profile-expertise">
@@ -546,7 +565,7 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
 }
 
 export function MemberSections() {
-    const { locale, t } = useLocale();
+    const { t } = useLocale();
     const [statusFilter, setStatusFilter] = useState<"active" | "alumni">("active");
     // Fetch all members so switching to alumni never removes lecturers or Head of Lab
     const { data: members, isLoading } = useMembers();
@@ -640,7 +659,7 @@ export function MemberSections() {
                         testId="lecturers-heading"
                     />
                     {isLoading ? (
-                        <Spinner label={t("loading")} />
+                        <Spinner variant="cards" label={t("loading")} />
                     ) : lecturers.length === 0 ? (
                         <EmptyState title={t("coming_soon")} body={t("empty_members")} testId="lecturers-empty-state" />
                     ) : (
@@ -654,7 +673,7 @@ export function MemberSections() {
             </section>
 
             <section className="tnl-section member-assistants" data-testid="assistants-section">
-                <div className="tnl-container pt-[50px] md:pt-[60px]">
+                <div className="tnl-container">
                     <SectionHeading
                         title={t("assistants")}
                         count={currentAssistants.length}
@@ -686,7 +705,7 @@ export function MemberSections() {
                                         onClick={() => setAlumniBatch(b)}
                                         className="relative rounded-full border px-4 py-2 text-sm font-medium transition-colors"
                                         style={{
-                                            borderColor: activeAlumniBatch === b ? "var(--tnl-green)" : "var(--tnl-border)",
+                                            borderColor: activeAlumniBatch === b ? "var(--primary)" : "var(--tnl-border)",
                                         }}
                                         data-testid={`member-batch-${b.replace("/", "-")}-tab`}
                                     >
@@ -719,7 +738,7 @@ export function MemberSections() {
                                     aria-pressed={statusFilter === s}
                                     className="relative rounded-full border px-4 py-2 text-sm font-medium transition-colors"
                                     style={{
-                                        borderColor: statusFilter === s ? "var(--tnl-tan)" : "var(--tnl-border)",
+                                        borderColor: statusFilter === s ? "var(--primary)" : "var(--tnl-border)",
                                     }}
                                     data-testid={`member-status-${s}-filter`}
                                 >
@@ -727,13 +746,13 @@ export function MemberSections() {
                                         <m.span
                                             layoutId="member-status-pill"
                                             className="absolute inset-0 rounded-full"
-                                            style={{ background: "var(--secondary)" }}
+                                            style={{ background: "var(--primary)" }}
                                             transition={{ type: "spring", stiffness: 420, damping: 34 }}
                                         />
                                     ) : null}
                                     <span
                                         className="relative z-10"
-                                        style={{ color: statusFilter === s ? "var(--secondary-foreground)" : "inherit" }}
+                                        style={{ color: statusFilter === s ? "var(--primary-foreground)" : "inherit" }}
                                     >
                                         {s === "active" ? t("active") : t("alumni")}
                                     </span>
@@ -743,7 +762,7 @@ export function MemberSections() {
                     </div>
 
                     {isLoading ? (
-                        <Spinner label={t("loading")} />
+                        <Spinner variant="cards" label={t("loading")} />
                     ) : groups.length === 0 ? (
                         <EmptyState
                             title={t("coming_soon")}
@@ -777,7 +796,6 @@ export function MemberSections() {
             <AnimatePresence>
                 {selected ? <MemberModal member={selected} onClose={() => setSelected(null)} /> : null}
             </AnimatePresence>
-            <span className="sr-only">{locale}</span>
         </div>
     );
 }

@@ -196,15 +196,15 @@ export default function ContactPage() {
 
                         {/* Quick Info Strip */}
                         <div className="editorial-contact-strip">
-                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.06] px-3 py-1.5 font-medium backdrop-blur-sm">
+                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--tnl-border)] bg-[var(--background)] px-3 py-1.5 font-medium">
                                 <MapPin className="h-4 w-4 text-[var(--gsm-accent)]" aria-hidden="true" />
                                 <span>Gedung B, Ruang B-301</span>
                             </div>
-                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.06] px-3 py-1.5 font-medium backdrop-blur-sm">
+                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--tnl-border)] bg-[var(--background)] px-3 py-1.5 font-medium">
                                 <Building2 className="h-4 w-4 text-[var(--gsm-accent)]" aria-hidden="true" />
                                 <span>Departemen Teknik Elektro ITS</span>
                             </div>
-                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.06] px-3 py-1.5 font-medium backdrop-blur-sm">
+                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--tnl-border)] bg-[var(--background)] px-3 py-1.5 font-medium">
                                 <Clock className="h-4 w-4 text-[var(--gsm-accent)]" aria-hidden="true" />
                                 <span>{isId ? "Respon Resmi: 1–2 Hari Kerja" : "Official Response: 1–2 Workdays"}</span>
                             </div>
@@ -247,7 +247,7 @@ export default function ContactPage() {
                                     <button
                                         type="button"
                                         onClick={handleCopyAddress}
-                                        className="inline-flex items-center gap-2 rounded-lg border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-[#F6F7F4] dark:bg-[var(--gsm-bg-recessed)] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary)] hover:text-white hover:border-[var(--gsm-primary)] dark:hover:bg-[var(--gsm-accent)] dark:hover:text-[var(--gsm-accent-ink)] dark:hover:border-[var(--gsm-accent)] shadow-2xs"
+                                        className="inline-flex items-center gap-2 rounded-lg border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-[var(--tnl-surface)] dark:bg-[var(--gsm-bg-recessed)] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary)] hover:text-white hover:border-[var(--gsm-primary)] dark:hover:bg-[var(--gsm-accent)] dark:hover:text-[var(--gsm-accent-ink)] dark:hover:border-[var(--gsm-accent)] shadow-2xs"
                                         data-testid="copy-address-button"
                                     >
                                         {copiedAddress ? (
@@ -282,7 +282,7 @@ export default function ContactPage() {
                             <div className="p-6 sm:p-7 space-y-3.5">
                                 <div className="tnl-inset-tile p-3.5 flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-3 min-w-0">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--gsm-primary)]/10 dark:bg-[var(--gsm-emerald)]/20 text-[var(--gsm-primary)] dark:text-[var(--gsm-accent,#A3C9AE)] border border-[var(--gsm-primary)]/15 dark:border-[var(--gsm-emerald)]/30">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--gsm-primary)]/10 dark:bg-[var(--gsm-emerald)]/20 text-[var(--gsm-primary)] dark:text-[var(--gsm-accent)] border border-[var(--gsm-primary)]/15 dark:border-[var(--gsm-emerald)]/30">
                                             <Mail className="h-5 w-5" aria-hidden="true" />
                                         </div>
                                         <div className="min-w-0">
@@ -361,7 +361,7 @@ export default function ContactPage() {
                                 </div>
 
                                 <div className="p-6 sm:p-7 space-y-4">
-                                    <div className="divide-y divide-[var(--tnl-border)] border border-[var(--tnl-border)] rounded-xl bg-[#F6F7F4] dark:bg-[var(--gsm-bg-recessed)] overflow-hidden text-sm">
+                                    <div className="divide-y divide-[var(--tnl-border)] border border-[var(--tnl-border)] rounded-xl bg-[var(--tnl-surface)] dark:bg-[var(--gsm-bg-recessed)] overflow-hidden text-sm">
                                         <div className="p-3.5 flex items-center justify-between gap-2">
                                             <span className="text-xs sm:text-sm font-medium text-[var(--tnl-body)]">
                                                 {isId ? "Layanan Ruang B-301" : "Office Hours"}
@@ -390,21 +390,21 @@ export default function ContactPage() {
                                     <div className="flex flex-wrap gap-2 text-xs">
                                         <Link
                                             to="/open-house"
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-[#F6F7F4] dark:bg-[var(--gsm-bg-recessed)] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary)] hover:text-white hover:border-[var(--gsm-primary)] dark:hover:bg-[var(--gsm-accent)] dark:hover:text-[var(--gsm-accent-ink)] dark:hover:border-[var(--gsm-accent)] shadow-2xs"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-[var(--tnl-surface)] dark:bg-[var(--gsm-bg-recessed)] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary)] hover:text-white hover:border-[var(--gsm-primary)] dark:hover:bg-[var(--gsm-accent)] dark:hover:text-[var(--gsm-accent-ink)] dark:hover:border-[var(--gsm-accent)] shadow-2xs"
                                         >
                                             <span>Open House</span>
                                             <ArrowUpRight className="h-3 w-3" />
                                         </Link>
                                         <Link
                                             to="/activity"
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-[#F6F7F4] dark:bg-[var(--gsm-bg-recessed)] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary)] hover:text-white hover:border-[var(--gsm-primary)] dark:hover:bg-[var(--gsm-accent)] dark:hover:text-[var(--gsm-accent-ink)] dark:hover:border-[var(--gsm-accent)] shadow-2xs"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-[var(--tnl-surface)] dark:bg-[var(--gsm-bg-recessed)] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary)] hover:text-white hover:border-[var(--gsm-primary)] dark:hover:bg-[var(--gsm-accent)] dark:hover:text-[var(--gsm-accent-ink)] dark:hover:border-[var(--gsm-accent)] shadow-2xs"
                                         >
                                             <span>{isId ? "Kegiatan & Riset" : "Activities & Research"}</span>
                                             <ArrowUpRight className="h-3 w-3" />
                                         </Link>
                                         <Link
                                             to="/verify"
-                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-[#F6F7F4] dark:bg-[var(--gsm-bg-recessed)] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary)] hover:text-white hover:border-[var(--gsm-primary)] dark:hover:bg-[var(--gsm-accent)] dark:hover:text-[var(--gsm-accent-ink)] dark:hover:border-[var(--gsm-accent)] shadow-2xs"
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-[var(--tnl-surface)] dark:bg-[var(--gsm-bg-recessed)] px-3 py-1.5 font-semibold text-[var(--foreground)] transition-all hover:bg-[var(--gsm-primary)] hover:text-white hover:border-[var(--gsm-primary)] dark:hover:bg-[var(--gsm-accent)] dark:hover:text-[var(--gsm-accent-ink)] dark:hover:border-[var(--gsm-accent)] shadow-2xs"
                                         >
                                             <span>{isId ? "Verifikasi Sertifikat" : "Verify Certificate"}</span>
                                             <ArrowUpRight className="h-3 w-3" />
@@ -454,7 +454,7 @@ export default function ContactPage() {
                                                         className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 py-1.5 text-xs transition-all ${
                                                             isSelected
                                                                 ? "bg-[var(--gsm-primary)] text-white border border-[var(--gsm-primary)] dark:bg-[var(--gsm-accent)] dark:text-[var(--gsm-accent-ink)] dark:border-[var(--gsm-accent)] font-semibold shadow-xs"
-                                                                : "border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-[#F6F7F4] dark:bg-[var(--gsm-bg-recessed)] text-[var(--foreground)] hover:border-[var(--gsm-primary)] dark:hover:border-[var(--gsm-accent)] font-medium shadow-2xs"
+                                                                : "border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-[var(--tnl-surface)] dark:bg-[var(--gsm-bg-recessed)] text-[var(--foreground)] hover:border-[var(--gsm-primary)] dark:hover:border-[var(--gsm-accent)] font-medium shadow-2xs"
                                                         }`}
                                                         data-testid={`topic-pill-${pill.id}`}
                                                     >
@@ -487,7 +487,7 @@ export default function ContactPage() {
                                             <button
                                                 type="button"
                                                 onClick={handleResetForm}
-                                                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--gsm-primary)] hover:opacity-90 text-white dark:bg-[var(--gsm-accent)] dark:hover:bg-[var(--gsm-accent-hover,#C2B091)] dark:text-[var(--gsm-accent-ink)] px-5 py-2.5 text-xs font-bold transition-all shadow-sm"
+                                                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--gsm-primary)] hover:opacity-90 text-white dark:bg-[var(--gsm-accent)] dark:hover:bg-[var(--gsm-accent-hover)] dark:text-[var(--gsm-accent-ink)] px-5 py-2.5 text-xs font-bold transition-all shadow-sm"
                                                 data-testid="send-another-message-button"
                                             >
                                                 <span>{isId ? "Kirim Pesan Lain" : "Send Another Message"}</span>
@@ -533,7 +533,7 @@ export default function ContactPage() {
                                                         aria-describedby={errors.name ? "contact-name-error" : undefined}
                                                     />
                                                     {errors.name ? (
-                                                        <p id="contact-name-error" className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-name-error">
+                                                        <p id="contact-name-error" className="mt-1 text-xs font-medium text-[var(--tnl-danger)]" data-testid="contact-name-error">
                                                             {errors.name}
                                                         </p>
                                                     ) : null}
@@ -561,7 +561,7 @@ export default function ContactPage() {
                                                         aria-describedby={errors.email ? "contact-email-error" : undefined}
                                                     />
                                                     {errors.email ? (
-                                                        <p id="contact-email-error" className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-email-error">
+                                                        <p id="contact-email-error" className="mt-1 text-xs font-medium text-[var(--tnl-danger)]" data-testid="contact-email-error">
                                                             {errors.email}
                                                         </p>
                                                     ) : null}
@@ -591,7 +591,7 @@ export default function ContactPage() {
                                                     aria-describedby={errors.subject ? "contact-subject-error" : undefined}
                                                 />
                                                 {errors.subject ? (
-                                                    <p id="contact-subject-error" className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-subject-error">
+                                                    <p id="contact-subject-error" className="mt-1 text-xs font-medium text-[var(--tnl-danger)]" data-testid="contact-subject-error">
                                                         {errors.subject}
                                                     </p>
                                                 ) : null}
@@ -629,14 +629,14 @@ export default function ContactPage() {
                                                     aria-describedby={errors.message ? "contact-message-error" : undefined}
                                                 />
                                                 {errors.message ? (
-                                                    <p id="contact-message-error" className="mt-1 text-xs font-medium text-rose-500" data-testid="contact-message-error">
+                                                    <p id="contact-message-error" className="mt-1 text-xs font-medium text-[var(--tnl-danger)]" data-testid="contact-message-error">
                                                         {errors.message}
                                                     </p>
                                                 ) : null}
                                             </div>
 
                                             {/* UU PDP Consent Checkbox */}
-                                            <div className="rounded-xl border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-[#F6F7F4] dark:bg-[var(--gsm-bg-recessed)] p-4">
+                                            <div className="rounded-xl border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-[var(--tnl-surface)] dark:bg-[var(--gsm-bg-recessed)] p-4">
                                                 <div className="flex items-start gap-3">
                                                     <input
                                                         id="contact-pdp-consent"
@@ -674,7 +674,7 @@ export default function ContactPage() {
                                                     </label>
                                                 </div>
                                                 {errors.consent ? (
-                                                    <p id="contact-consent-error" className="mt-2 text-xs font-medium text-rose-500 pl-7" data-testid="contact-consent-error">
+                                                    <p id="contact-consent-error" className="mt-2 text-xs font-medium text-[var(--tnl-danger)] pl-7" data-testid="contact-consent-error">
                                                         {errors.consent}
                                                     </p>
                                                 ) : null}
@@ -684,7 +684,7 @@ export default function ContactPage() {
                                             <button
                                                 type="submit"
                                                 disabled={sending}
-                                                className="w-full min-h-[48px] rounded-[10px] bg-[var(--gsm-primary)] hover:opacity-90 text-white dark:bg-[var(--gsm-accent)] dark:hover:bg-[var(--gsm-accent-hover,#C2B091)] dark:text-[var(--gsm-accent-ink)] text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all"
+                                                className="w-full min-h-[48px] rounded-xl bg-[var(--gsm-primary)] hover:opacity-90 text-white dark:bg-[var(--gsm-accent)] dark:hover:bg-[var(--gsm-accent-hover)] dark:text-[var(--gsm-accent-ink)] text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all"
                                                 data-testid="contact-submit-button"
                                             >
                                                 {sending ? (
@@ -730,7 +730,7 @@ export default function ContactPage() {
                                     href={mapLinks.openUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-white dark:bg-[var(--gsm-bg-surface)] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] shadow-2xs transition-all hover:bg-[#F6F7F4] dark:hover:bg-white/[0.06]"
+                                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-[var(--gsm-border-hairline)] dark:border-white/15 bg-white dark:bg-[var(--gsm-bg-surface)] px-3.5 py-2 text-xs font-semibold text-[var(--foreground)] shadow-2xs transition-all hover:bg-[var(--tnl-surface-2)] dark:hover:bg-white/[0.06]"
                                     data-testid="map-open-google-maps"
                                 >
                                     <span>{isId ? "Buka di Google Maps" : "Open in Google Maps"}</span>
@@ -740,7 +740,7 @@ export default function ContactPage() {
                                     href={mapLinks.directionsUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-[var(--gsm-primary)] hover:opacity-90 text-white dark:bg-[var(--gsm-accent)] dark:hover:bg-[var(--gsm-accent-hover,#C2B091)] dark:text-[var(--gsm-accent-ink)] px-4 py-2 text-xs font-semibold shadow-2xs transition-all"
+                                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-[var(--gsm-primary)] hover:opacity-90 text-white dark:bg-[var(--gsm-accent)] dark:hover:bg-[var(--gsm-accent-hover)] dark:text-[var(--gsm-accent-ink)] px-4 py-2 text-xs font-semibold shadow-2xs transition-all"
                                     data-testid="map-get-directions"
                                 >
                                     <Navigation className="h-3.5 w-3.5" aria-hidden="true" />
@@ -750,7 +750,7 @@ export default function ContactPage() {
                         </div>
 
                         {/* Interactive Google Maps Frame */}
-                        <div className="p-3 sm:p-4 bg-[#F6F7F4] dark:bg-[var(--gsm-bg-recessed)]">
+                        <div className="p-3 sm:p-4 bg-[var(--tnl-surface)] dark:bg-[var(--gsm-bg-recessed)]">
                             <div className="relative w-full rounded-xl overflow-hidden border border-[var(--gsm-border-hairline)] dark:border-white/15 shadow-inner">
                                 <iframe
                                     src={mapLinks.embedUrl}
@@ -763,7 +763,7 @@ export default function ContactPage() {
                                 />
 
                                 {/* Floating Non-Blocking Info Badge */}
-                                <div className="pointer-events-none absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-2.5 rounded-xl border border-white/15 bg-[var(--gsm-obsidian,#111613)]/92 text-white px-3.5 py-2 text-xs font-medium shadow-lg backdrop-blur-md">
+                                <div className="pointer-events-none absolute bottom-4 left-4 z-10 hidden sm:flex items-center gap-2.5 rounded-xl border border-white/15 bg-[var(--gsm-obsidian)]/92 text-white px-3.5 py-2 text-xs font-medium shadow-lg backdrop-blur-md">
                                     <span className="flex h-2 w-2 rounded-full bg-[var(--gsm-emerald)]" />
                                     <span>Ruang B-301 · Lantai 3 Gedung B, Teknik Elektro ITS</span>
                                 </div>

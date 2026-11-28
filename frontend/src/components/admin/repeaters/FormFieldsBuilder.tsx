@@ -205,13 +205,13 @@ export function FormFieldsBuilder({
     };
 
     return (
-        <div className="space-y-3 rounded-xl border p-4 transition-colors" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} data-testid={testId}>
+        <div className="space-y-3 rounded-xl border p-4 transition-colors" style={{ backgroundColor: "var(--card)", borderColor: "var(--tnl-border)" }} data-testid={testId}>
             {/* Header row */}
             <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5" style={{ borderColor: "var(--tnl-border)" }}>
                 <div>
                     <div className="flex items-center gap-2">
                         <h4 className="text-sm font-semibold tracking-tight">{label === undefined ? t("adminBuilderFormLabel") : resolveCopy(label)}</h4>
-                        <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ backgroundColor: "var(--tnl-bg)", color: "var(--tnl-gold)" }}>
+                        <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: "var(--tnl-surface-2)", color: "var(--tnl-tan-text)" }}>
                             {fields.length} {t(fields.length === 1 ? "adminBuilderQuestion" : "adminBuilderQuestions")}
                         </span>
                     </div>
@@ -223,8 +223,8 @@ export function FormFieldsBuilder({
                         <button
                             type="button"
                             onClick={() => setPreviewMode(!previewMode)}
-                            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors hover:bg-neutral-500/10"
-                            style={{ color: previewMode ? "var(--tnl-gold)" : "var(--tnl-text)" }}
+                            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors hover:bg-[var(--tnl-surface-2)]"
+                            style={{ color: previewMode ? "var(--tnl-tan-text)" : "var(--foreground)" }}
                             data-testid={`${testId}-preview-toggle`}
                         >
                             {previewMode ? <EyeOff className="h-3.5 w-3.5" aria-hidden="true" /> : <Eye className="h-3.5 w-3.5" aria-hidden="true" />}
@@ -234,8 +234,8 @@ export function FormFieldsBuilder({
                     <button
                         type="button"
                         onClick={toggleRawMode}
-                        className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-mono font-medium transition-colors hover:bg-neutral-500/10"
-                        style={{ color: rawMode ? "var(--tnl-gold)" : "var(--tnl-tan-text)" }}
+                        className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-mono font-medium transition-colors hover:bg-[var(--tnl-surface-2)]"
+                        style={{ color: rawMode ? "var(--tnl-tan-text)" : "var(--tnl-tan-text)" }}
                         data-testid={`${testId}-raw-toggle`}
                     >
                         <Code className="h-3.5 w-3.5" aria-hidden="true" />
@@ -246,12 +246,12 @@ export function FormFieldsBuilder({
 
             {/* Mode 1: Live Interactive Preview */}
             {previewMode && (
-                <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }} data-testid={`${testId}-preview-pane`}>
+                <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: "var(--tnl-surface-2)", borderColor: "var(--tnl-border)" }} data-testid={`${testId}-preview-pane`}>
                     <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: "var(--tnl-border)" }}>
                         <span className="text-xs font-semibold uppercase tracking-wider text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)]">
                             {t("adminBuilderPreviewHeading")}
                         </span>
-                        <span className="text-[11px] opacity-60">{t("adminBuilderPreviewHint")}</span>
+                        <span className="text-xs opacity-60">{t("adminBuilderPreviewHint")}</span>
                     </div>
 
                     {fields.length === 0 ? (
@@ -262,16 +262,16 @@ export function FormFieldsBuilder({
                                 <div key={i} className="space-y-1.5">
                                     <label className="block text-xs font-medium">
                                         <span>{f.label || t("adminBuilderPreviewQuestion").replace("{number}", String(i + 1))}</span>
-                                        {f.required && <span className="text-rose-500 ml-1">*</span>}
+                                        {f.required && <span className="text-[var(--tnl-danger)] ml-1">*</span>}
                                     </label>
 
                                     {/* Native controls on purpose: this pane previews what the
                                         public registration form renders, so it must not adopt the
                                         admin house style (AdminSelect / AdminSwitch). */}
                                     {f.type === "textarea" ? (
-                                        <textarea rows={3} disabled placeholder={t("adminBuilderLongAnswer")} className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} />
+                                        <textarea rows={3} disabled placeholder={t("adminBuilderLongAnswer")} className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--card)", borderColor: "var(--tnl-border)" }} />
                                     ) : f.type === "select" ? (
-                                        <select disabled className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}>
+                                        <select disabled className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--card)", borderColor: "var(--tnl-border)" }}>
                                             <option>{t("adminBuilderChooseOption")}</option>
                                             {(f.options || []).map((o, oi) => (
                                                 <option key={oi}>{o}</option>
@@ -283,12 +283,12 @@ export function FormFieldsBuilder({
                                             <span>{t("adminBuilderAgree")}</span>
                                         </label>
                                     ) : f.type === "file" ? (
-                                        <div className="rounded-lg border border-dashed p-3 text-center text-xs opacity-75 cursor-not-allowed" style={{ borderColor: "var(--tnl-border)", backgroundColor: "var(--tnl-card-bg)" }}>
+                                        <div className="rounded-lg border border-dashed p-3 text-center text-xs opacity-75 cursor-not-allowed" style={{ borderColor: "var(--tnl-border)", backgroundColor: "var(--card)" }}>
                                             <UploadCloud className="mx-auto h-5 w-5 mb-1 opacity-50" aria-hidden="true" />
                                             <span>{t("adminBuilderFileHint")}</span>
                                         </div>
                                     ) : (
-                                        <input type="text" disabled placeholder={t(f.type === "email" ? "adminBuilderPreviewEmail" : f.type === "nim" ? "adminBuilderPreviewStudent" : "adminBuilderAnswer")} className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} />
+                                        <input type="text" disabled placeholder={t(f.type === "email" ? "adminBuilderPreviewEmail" : f.type === "nim" ? "adminBuilderPreviewStudent" : "adminBuilderAnswer")} className="w-full rounded-lg border px-3 py-1.5 text-xs opacity-75 cursor-not-allowed" style={{ backgroundColor: "var(--card)", borderColor: "var(--tnl-border)" }} />
                                     )}
                                 </div>
                             ))}
@@ -308,11 +308,11 @@ export function FormFieldsBuilder({
                         aria-invalid={jsonError ? true : undefined}
                         aria-describedby={jsonError ? `${testId}-raw-error` : undefined}
                         className="w-full rounded-lg border p-2.5 font-mono text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
-                        style={{ backgroundColor: "var(--tnl-bg)", borderColor: jsonError ? "var(--tnl-red)" : "var(--tnl-border)" }}
+                        style={{ backgroundColor: "var(--tnl-surface-2)", borderColor: jsonError ? "var(--tnl-danger)" : "var(--tnl-border)" }}
                         data-testid={`${testId}-raw-textarea`}
                     />
                     {jsonError && (
-                        <div id={`${testId}-raw-error`} role="alert" className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400">
+                        <div id={`${testId}-raw-error`} role="alert" className="flex items-center gap-1.5 text-xs text-[var(--tnl-danger)]">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                             <span>{t(jsonError)}</span>
                         </div>
@@ -341,13 +341,13 @@ export function FormFieldsBuilder({
                                     key={idx}
                                     className="rounded-lg border transition-all"
                                     style={{
-                                        backgroundColor: "var(--tnl-bg)",
+                                        backgroundColor: "var(--tnl-surface-2)",
                                         borderColor: "var(--tnl-border)",
                                     }}
                                     data-testid={`${testId}-question-${idx}`}
                                 >
                                     {/* Question Card Header */}
-                                    <div className="flex items-center justify-between px-3.5 py-2.5 select-none bg-neutral-500/5 rounded-t-lg">
+                                    <div className="flex items-center justify-between px-3.5 py-2.5 select-none bg-[var(--tnl-surface-2)] rounded-t-lg">
                                         <div
                                             className="flex flex-1 items-center gap-2.5 cursor-pointer"
                                             onClick={() => toggleCollapse(idx)}
@@ -355,12 +355,12 @@ export function FormFieldsBuilder({
                                             <span className="font-mono text-xs font-bold text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)]">
                                                 {String(idx + 1).padStart(2, "0")}
                                             </span>
-                                            <TypeIcon className="h-3.5 w-3.5 text-neutral-400 shrink-0" aria-hidden="true" />
+                                            <TypeIcon className="h-3.5 w-3.5 text-[var(--tnl-muted)] shrink-0" aria-hidden="true" />
                                             <span className="text-xs font-semibold truncate max-w-[240px] md:max-w-[380px]" data-testid={`${testId}-question-title-${idx}`}>
                                                 {field.label || t("adminBuilderUntitledQuestion").replace("{number}", String(idx + 1))}
                                             </span>
                                             {field.required && (
-                                                <span className="rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                                                <span className="rounded bg-[var(--tnl-danger)]/10 px-1.5 py-0.5 text-xs font-semibold text-[var(--tnl-danger)]">
                                                     {t("adminRequired")}
                                                 </span>
                                             )}
@@ -371,7 +371,7 @@ export function FormFieldsBuilder({
                                                 type="button"
                                                 onClick={() => moveQuestion(idx, "up")}
                                                 disabled={idx === 0}
-                                                className="rounded p-1 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-20"
+                                                className="rounded p-1 text-[var(--tnl-muted)] hover:text-[var(--foreground)] disabled:opacity-20"
                                                 title={t("adminBuilderMoveUp")}
                                                 aria-label={t("adminBuilderMoveQuestionUp")}
                                                 data-testid={`${testId}-question-up-${idx}`}
@@ -382,7 +382,7 @@ export function FormFieldsBuilder({
                                                 type="button"
                                                 onClick={() => moveQuestion(idx, "down")}
                                                 disabled={idx === fields.length - 1}
-                                                className="rounded p-1 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-20"
+                                                className="rounded p-1 text-[var(--tnl-muted)] hover:text-[var(--foreground)] disabled:opacity-20"
                                                 title={t("adminBuilderMoveDown")}
                                                 aria-label={t("adminBuilderMoveQuestionDown")}
                                                 data-testid={`${testId}-question-down-${idx}`}
@@ -392,7 +392,7 @@ export function FormFieldsBuilder({
                                             <button
                                                 type="button"
                                                 onClick={() => duplicateQuestion(idx)}
-                                                className="rounded p-1 text-neutral-400 hover:text-[var(--gsm-primary)] hover:bg-[var(--gsm-primary-soft)] dark:hover:text-[var(--gsm-accent)]"
+                                                className="rounded p-1 text-[var(--tnl-muted)] hover:text-[var(--gsm-primary)] hover:bg-[var(--gsm-primary-soft)] dark:hover:text-[var(--gsm-accent)]"
                                                 title={t("adminBuilderDuplicateQuestion")}
                                                 aria-label={t("adminBuilderDuplicateQuestion")}
                                                 data-testid={`${testId}-question-dup-${idx}`}
@@ -402,7 +402,7 @@ export function FormFieldsBuilder({
                                             <button
                                                 type="button"
                                                 onClick={() => removeQuestion(idx)}
-                                                className="rounded p-1 text-neutral-400 hover:text-rose-600 hover:bg-rose-500/10"
+                                                className="rounded p-1 text-[var(--tnl-muted)] hover:text-[var(--tnl-danger)] hover:bg-[var(--tnl-danger)]/10"
                                                 title={t("adminBuilderDeleteQuestion")}
                                                 aria-label={t("adminBuilderDeleteQuestion")}
                                                 data-testid={`${testId}-question-remove-${idx}`}
@@ -412,7 +412,7 @@ export function FormFieldsBuilder({
                                             <button
                                                 type="button"
                                                 onClick={() => toggleCollapse(idx)}
-                                                className="rounded p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 ml-1"
+                                                className="rounded p-1 text-[var(--tnl-muted)] hover:text-[var(--foreground)] ml-1"
                                                 title={t(isCollapsed ? "adminBuilderExpand" : "adminBuilderCollapse")}
                                                 aria-label={t(isCollapsed ? "adminBuilderExpandQuestion" : "adminBuilderCollapseQuestion")}
                                             >
@@ -440,7 +440,7 @@ export function FormFieldsBuilder({
                                                         onChange={(e) => updateField(idx, { label: e.target.value })}
                                                         placeholder={t("adminBuilderQuestionExample")}
                                                         className="w-full rounded-lg border px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--gsm-emerald)]/30 focus:border-[var(--gsm-emerald)]"
-                                                        style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
+                                                        style={{ backgroundColor: "var(--card)", borderColor: "var(--tnl-border)" }}
                                                         data-testid={`${testId}-label-${idx}`}
                                                     />
                                                 </div>
@@ -453,7 +453,7 @@ export function FormFieldsBuilder({
                                                         <button
                                                             type="button"
                                                             onClick={() => toggleLockKey(idx)}
-                                                            className="flex items-center gap-1 text-[11px] text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)] hover:underline"
+                                                            className="flex items-center gap-1 text-xs text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)] hover:underline"
                                                             title={t(isKeyUnlocked ? "adminBuilderLockSlug" : "adminBuilderUnlockSlug")}
                                                         >
                                                             {isKeyUnlocked ? (
@@ -475,7 +475,7 @@ export function FormFieldsBuilder({
                                                         readOnly={!isKeyUnlocked}
                                                         disabled={!isKeyUnlocked}
                                                         className="w-full rounded-lg border px-3 py-1.5 font-mono text-xs outline-none disabled:opacity-60 disabled:cursor-not-allowed"
-                                                        style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }}
+                                                        style={{ backgroundColor: "var(--card)", borderColor: "var(--tnl-border)" }}
                                                         data-testid={`${testId}-key-${idx}`}
                                                     />
                                                 </div>
@@ -514,7 +514,7 @@ export function FormFieldsBuilder({
 
                                             {/* Options Sub-Builder (Conditional for select type) */}
                                             {field.type === "select" && (
-                                                <div className="rounded-lg border p-3 space-y-2.5" style={{ backgroundColor: "var(--tnl-card-bg)", borderColor: "var(--tnl-border)" }} data-testid={`${testId}-options-pane-${idx}`}>
+                                                <div className="rounded-lg border p-3 space-y-2.5" style={{ backgroundColor: "var(--card)", borderColor: "var(--tnl-border)" }} data-testid={`${testId}-options-pane-${idx}`}>
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-xs font-semibold uppercase tracking-wider text-[var(--tnl-tan-text)] dark:text-[var(--gsm-accent)]">
                                                             {t("adminBuilderDropdownOptions")}
@@ -545,13 +545,13 @@ export function FormFieldsBuilder({
                                                                         onChange={(e) => updateOption(idx, optIdx, e.target.value)}
                                                                         placeholder={t("adminBuilderOptionPlaceholder").replace("{number}", String(optIdx + 1))}
                                                                         className="flex-1 rounded-md border px-2.5 py-1 text-xs outline-none focus:ring-1 focus:ring-[var(--gsm-emerald)] focus:border-[var(--gsm-emerald)]"
-                                                                        style={{ backgroundColor: "var(--tnl-bg)", borderColor: "var(--tnl-border)" }}
+                                                                        style={{ backgroundColor: "var(--tnl-surface-2)", borderColor: "var(--tnl-border)" }}
                                                                         data-testid={`${testId}-option-${idx}-${optIdx}`}
                                                                     />
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => removeOption(idx, optIdx)}
-                                                                        className="rounded p-1 text-neutral-400 hover:text-rose-600 transition-colors"
+                                                                        className="rounded p-1 text-[var(--tnl-muted)] hover:text-[var(--tnl-danger)] transition-colors"
                                                                         aria-label={t("adminBuilderRemoveOption").replace("{option}", opt)}
                                                                         data-testid={`${testId}-option-remove-${idx}-${optIdx}`}
                                                                     >
@@ -575,7 +575,7 @@ export function FormFieldsBuilder({
                         type="button"
                         onClick={addQuestion}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-dashed px-3 py-2 text-xs font-medium transition-colors hover:border-[var(--gsm-emerald)] hover:text-[var(--gsm-primary)] dark:hover:text-[var(--gsm-emerald)] w-full justify-center"
-                        style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-text)" }}
+                        style={{ borderColor: "var(--tnl-border)", color: "var(--foreground)" }}
                         data-testid={`${testId}-add-question`}
                     >
                         <Plus className="h-4 w-4" aria-hidden="true" />

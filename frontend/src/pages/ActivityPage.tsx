@@ -7,7 +7,6 @@ import { useId, useMemo, useState } from "react";
 import "@/pages/activity-editorial.css";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { handleSpotlightPointerMove } from "@/components/site/SpotlightCard";
 import {
     Calendar,
     Clock,
@@ -135,7 +134,6 @@ export function EventCard({ event, detail = false }: { event: LabEvent; detail?:
     return (
         <article
             className={`activity-record${detail ? " event-story" : ""}`}
-            onPointerMove={handleSpotlightPointerMove}
             data-testid={`event-card-${eventKey}`}
         >
             <div className="activity-record-header">
@@ -401,8 +399,7 @@ function ProjectCard({ project }: { project: Project }) {
     const { locale, t } = useLocale();
     return (
         <article
-            className="project-record"
-            onPointerMove={handleSpotlightPointerMove}
+            className="project-record flex flex-col justify-between"
             data-testid={`project-card-${project.id}`}
         >
             <div className="project-metadata flex flex-wrap items-center gap-2">
@@ -494,8 +491,7 @@ function EquipmentCard({ item }: { item: Equipment }) {
 
     return (
         <article
-            className="equipment-record flex flex-col justify-between overflow-hidden"
-            onPointerMove={handleSpotlightPointerMove}
+            className="equipment-record flex flex-col overflow-hidden"
             data-testid={`equipment-card-${item.id}`}
         >
             <div>
@@ -528,7 +524,7 @@ function EquipmentCard({ item }: { item: Equipment }) {
                         ) : null}
                     </div>
                 ) : (
-                    <div className="mb-4 flex h-36 w-full items-center justify-center rounded-xl border border-dashed border-[var(--tnl-border)] bg-[var(--tnl-surface)]/50">
+                    <div className="mb-4 flex aspect-[16/10] w-full items-center justify-center rounded-xl border border-dashed border-[var(--tnl-border)] bg-[var(--tnl-surface)]/50">
                         {item.category === "server" ? (
                             <Server className="h-10 w-10 text-[var(--tnl-tan)]/40" />
                         ) : item.category === "sdr" ? (
@@ -568,8 +564,14 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const resources = mod.resources ?? [];
     const shifts = mod.shifts ?? [];
-    // Backend redaction: anonymous / viewer / API-key sessions get metadata only.
-    const locked = mod.resources_restricted === true;
+    // Downloads depend on the CMS available_to_download flag (and presence of file_url);
+    // shift schedules stay assistant-only.
+    const downloadsLocked =
+        mod.resources_restricted === true ||
+        mod.available_to_download === false ||
+        (resources.length > 0 && resources.every((r) => !r.file_url));
+    const shiftsLocked = mod.can_access_modules === false;
+    const locked = downloadsLocked;
     const resourceCount = mod.resources_count ?? resources.length;
     const shiftCount = mod.shifts_count ?? shifts.length;
     const fmt = (s: string, n: number) => s.replace("{{count}}", String(n));
@@ -590,8 +592,7 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
 
     return (
         <article
-            className="practicum-record flex flex-col justify-between"
-            onPointerMove={handleSpotlightPointerMove}
+            className="practicum-record flex flex-col"
             data-testid={`practicum-card-${mod.id}`}
         >
             <div>
@@ -648,7 +649,7 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
                                             <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                                             <span className="min-w-0 truncate font-medium">{res.title}</span>
                                         </div>
-                                        <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-mono border" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-body)" }}>
+                                        <span className="shrink-0 rounded px-1.5 py-0.5 text-xs font-mono border" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-body)" }}>
                                             {res.file_type?.toUpperCase() || "FILE"}
                                             {res.size_bytes ? ` · ${formatBytes(res.size_bytes)}` : ""}
                                         </span>
@@ -674,7 +675,7 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
                                             <ResourceIcon type={res.file_type} />
                                             <span className="font-medium group-hover:underline">{res.title}</span>
                                         </div>
-                                        <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-mono border" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-body)" }}>
+                                        <span className="shrink-0 rounded px-1.5 py-0.5 text-xs font-mono border" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-body)" }}>
                                             {res.file_type?.toUpperCase() || "FILE"}
                                             {res.size_bytes ? ` · ${formatBytes(res.size_bytes)}` : ""}
                                         </span>
@@ -694,7 +695,7 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
                         <div className="overflow-x-auto">
                             <table className="w-full border-collapse text-left text-sm" aria-label={`${t("shift_schedule")} — ${pick(locale, mod.name, mod.name_id)}`}>
                                 <thead>
-                                    <tr className="border-b text-[11px] font-semibold" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-tan-text)" }}>
+                                    <tr className="border-b text-xs font-semibold" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-tan-text)" }}>
                                         <th scope="col" className="py-1.5 pr-2">{t("day")}</th>
                                         <th scope="col" className="py-1.5 px-2">{t("time_slot")}</th>
                                         <th scope="col" className="py-1.5 px-2">{t("coordinator")}</th>
@@ -714,13 +715,13 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
                             </table>
                         </div>
                     </div>
-                ) : locked && shiftCount ? (
+                ) : shiftsLocked && shiftCount ? (
                     <p className="mt-5 border-t pt-4 text-xs" style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-body)" }}>
                         {fmt(t("practicum_locked_shifts"), shiftCount)}
                     </p>
                 ) : null}
 
-                {locked ? (
+                {downloadsLocked && (resources.length > 0 || resourceCount > 0) ? (
                     <div
                         className="mt-5 rounded-xl border p-4"
                         style={{ borderColor: "var(--tnl-border)" }}
@@ -740,7 +741,7 @@ function PracticumCard({ mod, index }: { mod: PracticumModule; index: number }) 
                             style={{ borderColor: "var(--tnl-border)", color: "var(--tnl-link)" }}
                         >
                             <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                            {t("contact_us")}
+                            {t("practicum_contact_cta")}
                         </Link>
                     </div>
                 ) : null}
@@ -831,7 +832,7 @@ export default function ActivityPage() {
                                 />
                             ) : null}
                             {projectsLoading && !projects ? (
-                                <Spinner label={t("loading")} />
+                                <Spinner variant="cards" label={t("loading")} />
                             ) : projectsError && !projects ? null : clusters.length === 0 ? (
                                 <EmptyState
                                     title={t("coming_soon")}
@@ -861,13 +862,11 @@ export default function ActivityPage() {
                             <div className="activity-equipment-section" id="equipment" data-testid="lab-equipment-section">
                                 <SectionHeading
                                     title={t("lab_equipment")}
+                                    description={t("equipment_subtitle")}
                                     count={filteredEquip.length}
                                     countLabel={locale === "id" ? "perangkat" : "items"}
                                     testId="equipment-heading"
                                 />
-                                <p className="mt-1 text-sm max-w-3xl" style={{ color: "var(--tnl-body)" }}>
-                                    {t("equipment_subtitle")}
-                                </p>
 
                                 <div className="equipment-filters" role="group" aria-label={t("lab_equipment")}>
                                     {EQUIP_CATEGORIES.map((cat) => (
@@ -902,7 +901,7 @@ export default function ActivityPage() {
                                 ) : null}
                                 {equipLoading && !equipment ? (
                                     <div className="mt-8">
-                                        <Spinner label={t("loading")} />
+                                        <Spinner variant="cards" label={t("loading")} />
                                     </div>
                                 ) : equipError && !equipment ? null : filteredEquip.length === 0 ? (
                                     <div className="mt-8">
@@ -942,7 +941,7 @@ export default function ActivityPage() {
                                 />
                             ) : null}
                             {practicumLoading && !practicum ? (
-                                <Spinner label={t("loading")} />
+                                <Spinner variant="cards" label={t("loading")} />
                             ) : practicumError && !practicum ? null : (practicum ?? []).length === 0 ? (
                                 <EmptyState title={t("coming_soon")} body={t("coming_soon_body")} testId="practicum-empty-state" />
                             ) : (
@@ -959,13 +958,11 @@ export default function ActivityPage() {
                         <div role="region" id="activity-panel-events" aria-label={t("nav_events")} data-testid="activity-panel-events">
                             <SectionHeading
                                 title={t("events_heading")}
+                                description={t("events_subtitle")}
                                 count={(events ?? []).length}
                                 countLabel={locale === "id" ? "acara" : "events"}
                                 testId="events-heading"
                             />
-                            <p className="mt-1 text-sm max-w-3xl" style={{ color: "var(--tnl-body)" }}>
-                                {t("events_subtitle")}
-                            </p>
                             {eventsError ? (
                                 <PublicRequestError
                                     onRetry={() => void retryEvents()}
@@ -976,7 +973,7 @@ export default function ActivityPage() {
                                 />
                             ) : null}
                             {eventsLoading && !events ? (
-                                <Spinner label={t("loading")} />
+                                <Spinner variant="cards" label={t("loading")} />
                             ) : eventsError && !events ? null : (events ?? []).length === 0 ? (
                                 <EmptyState
                                     title={t("coming_soon")}
@@ -1012,7 +1009,7 @@ export default function ActivityPage() {
                                 />
                             ) : null}
                             {activitiesLoading && !activities ? (
-                                <Spinner label={t("loading")} />
+                                <Spinner variant="cards" label={t("loading")} />
                             ) : activitiesError && !activities ? null : (activities ?? []).length === 0 ? (
                                 <EmptyState
                                     title={t("coming_soon")}

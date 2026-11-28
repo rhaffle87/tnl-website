@@ -349,7 +349,7 @@ export function MediaPickerModal({
                             <ImageIcon className="h-4 w-4 shrink-0 text-[var(--tnl-green)]" />
                             <span>{t("adminMediaLibrary")}</span>
                         </DialogTitle>
-                        <span className="text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap border border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] text-[var(--tnl-body)]">
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap border border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] text-[var(--tnl-body)]">
                             {mode === "single" ? t("adminMediaSingleSelect") : t("adminMediaMultiSelect")}
                         </span>
                     </div>
@@ -525,20 +525,20 @@ export function MediaPickerModal({
                                                         ) : (
                                                             <span className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-2 text-center">
                                                                 {asset.filename.endsWith(".pdf") ? (
-                                                                    <FileText className="h-8 w-8 text-rose-500" />
+                                                                    <FileText className="h-8 w-8 text-[var(--tnl-danger)]" />
                                                                 ) : asset.filename.endsWith(".pkt") || asset.filename.endsWith(".py") ? (
-                                                                    <FileCode className="h-8 w-8 text-amber-500" />
+                                                                    <FileCode className="h-8 w-8 text-[var(--tnl-warning)]" />
                                                                 ) : (
-                                                                    <FileIcon className="h-8 w-8 text-sky-500" />
+                                                                    <FileIcon className="h-8 w-8 text-[var(--tnl-link)]" />
                                                                 )}
-                                                                <span className="text-[10px] font-mono line-clamp-2 break-all">
+                                                                <span className="text-xs font-mono line-clamp-2 break-all">
                                                                     {asset.original_name || asset.filename}
                                                                 </span>
                                                             </span>
                                                         )}
 
                                                         {/* Extension badge */}
-                                                        <span className="absolute top-1.5 left-1.5 rounded-md bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-white backdrop-blur-xs">
+                                                        <span className="absolute top-1.5 left-1.5 rounded-md bg-black/65 px-1.5 py-0.5 text-xs font-semibold tracking-wide text-white backdrop-blur-xs">
                                                             {ext}
                                                         </span>
 
@@ -553,12 +553,12 @@ export function MediaPickerModal({
                                                     {/* Card caption — readable, one line, never crushed */}
                                                     <span className="block w-full px-2.5 py-2 border-t border-[var(--tnl-border)]">
                                                         <span
-                                                            className="block truncate text-[11px] font-medium text-[var(--tnl-heading)]"
+                                                            className="block truncate text-xs font-medium text-[var(--tnl-heading)]"
                                                             title={asset.original_name || asset.filename}
                                                         >
                                                             {asset.original_name || asset.filename}
                                                         </span>
-                                                        <span className="block text-[10px] text-[var(--tnl-body)] opacity-70">
+                                                        <span className="block text-xs text-[var(--tnl-body)] opacity-70">
                                                             {formatBytes(asset.size_bytes || asset.bytes)}
                                                         </span>
                                                     </span>
@@ -589,7 +589,7 @@ export function MediaPickerModal({
                         <div className="hidden md:flex w-[320px] shrink-0 border-l border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] flex-col overflow-hidden">
                             {focusedAsset ? (
                                 <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
-                                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-[var(--tnl-body)]">
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--tnl-body)]">
                                         {t("adminAssetDetails")}
                                     </h3>
 
@@ -609,7 +609,7 @@ export function MediaPickerModal({
                                     {/* Structured metadata */}
                                     <div className="text-xs space-y-2 text-[var(--tnl-body)]">
                                         <div>
-                                            <span className="block text-[10px] uppercase tracking-wider opacity-60">{t("adminMediaFilename")}</span>
+                                            <span className="block text-xs uppercase tracking-wider opacity-60">{t("adminMediaFilename")}</span>
                                             <span
                                                 className="block font-semibold text-[var(--tnl-heading)] break-all"
                                                 title={focusedAsset.original_name || focusedAsset.filename}
@@ -619,22 +619,22 @@ export function MediaPickerModal({
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
                                             <div>
-                                                <span className="block text-[10px] uppercase tracking-wider opacity-60">{t("adminFolder")}</span>
+                                                <span className="block text-xs uppercase tracking-wider opacity-60">{t("adminFolder")}</span>
                                                 <span className="capitalize">{focusedFolder ? t(focusedFolder.label) : focusedAsset.folder}</span>
                                             </div>
                                             <div>
-                                                <span className="block text-[10px] uppercase tracking-wider opacity-60">{t("adminMediaSize")}</span>
+                                                <span className="block text-xs uppercase tracking-wider opacity-60">{t("adminMediaSize")}</span>
                                                 <span>{formatBytes(focusedAsset.size_bytes || focusedAsset.bytes)}</span>
                                             </div>
                                             {focusedAsset.width && focusedAsset.height && (
                                                 <div>
-                                                    <span className="block text-[10px] uppercase tracking-wider opacity-60">{t("adminMediaDimensions")}</span>
+                                                    <span className="block text-xs uppercase tracking-wider opacity-60">{t("adminMediaDimensions")}</span>
                                                     <span>{focusedAsset.width} × {focusedAsset.height} px</span>
                                                 </div>
                                             )}
                                             {focusedAsset.used_in !== undefined && (
                                                 <div>
-                                                    <span className="block text-[10px] uppercase tracking-wider opacity-60">{t("adminMediaUsedIn")}</span>
+                                                    <span className="block text-xs uppercase tracking-wider opacity-60">{t("adminMediaUsedIn")}</span>
                                                     <span>{focusedAsset.used_in} {t("adminMediaPlaces")}</span>
                                                 </div>
                                             )}
@@ -645,7 +645,7 @@ export function MediaPickerModal({
                                     <div className="space-y-2 pt-3 border-t border-[var(--tnl-border)]">
                                         <label
                                             htmlFor="media-picker-alt"
-                                            className="text-[11px] font-semibold text-[var(--tnl-heading)] block"
+                                            className="text-xs font-semibold text-[var(--tnl-heading)] block"
                                         >
                                             {t("adminMediaAltLabel")}
                                         </label>
@@ -804,7 +804,7 @@ export function MediaPickerModal({
                                                 />
                                                 <div className="min-w-0">
                                                     <p className="truncate font-medium">{item.file.name}</p>
-                                                    <p className="text-[10px] text-[var(--tnl-body)]">
+                                                    <p className="text-xs text-[var(--tnl-body)]">
                                                         {formatBytes(item.file.size)}
                                                     </p>
                                                 </div>
@@ -815,7 +815,7 @@ export function MediaPickerModal({
                                                     <span
                                                         role="status"
                                                         aria-live="polite"
-                                                        className="flex items-center gap-1 text-[var(--gsm-accent)] text-[11px]"
+                                                        className="flex items-center gap-1 text-[var(--gsm-accent)] text-xs"
                                                     >
                                                         <Loader2 className="h-3 w-3 animate-spin" /> {t("adminUploading")}
                                                     </span>
@@ -824,7 +824,7 @@ export function MediaPickerModal({
                                                     <span
                                                         role="status"
                                                         aria-live="polite"
-                                                        className="flex items-center gap-1 text-[var(--tnl-green)] text-[11px] font-semibold"
+                                                        className="flex items-center gap-1 text-[var(--tnl-green)] text-xs font-semibold"
                                                     >
                                                         <CheckCircle2 className="h-3.5 w-3.5" /> {t("adminReady")}
                                                     </span>
@@ -832,7 +832,7 @@ export function MediaPickerModal({
                                                 {item.status === "error" && (
                                                     <span
                                                         role="alert"
-                                                        className="text-rose-500 text-[11px] truncate max-w-[150px]"
+                                                        className="text-[var(--tnl-danger)] text-xs truncate max-w-[150px]"
                                                     >
                                                         {t("adminUploadFailed")}: {item.errorMsg}
                                                     </span>

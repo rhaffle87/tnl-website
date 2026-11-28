@@ -195,7 +195,7 @@ export function ContactForm() {
                         ) : null}
                     </div>
 
-                    <div className="rounded-xl border border-[var(--tnl-inverse-border)] bg-[var(--tnl-surface-2)] p-4 text-xs">
+                    <div className="rounded-xl border border-[var(--tnl-border)] bg-[var(--tnl-surface-2)] p-4 text-xs">
                         <label className="flex min-h-[44px] items-start gap-2.5 cursor-pointer">
                             <input
                                 type="checkbox"
@@ -209,7 +209,7 @@ export function ContactForm() {
                                 {t("contact_consent_label")}{" "}
                                 <Link
                                     to="/privacy"
-                                    className="font-semibold underline text-[var(--gsm-primary)] hover:opacity-80"
+                                    className="font-semibold underline hover:opacity-80" style={{ color: "var(--tnl-link)" }}
                                 >
                                     {t("contact_privacy_link")}
                                 </Link>

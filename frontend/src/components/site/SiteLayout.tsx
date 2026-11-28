@@ -281,7 +281,7 @@ function MaintenanceNotice() {
     return (
         <div
             className="px-4 py-3 text-center text-sm font-medium"
-            style={{ background: "var(--tnl-tan)", color: "var(--tnl-inverse-foreground)" }}
+            style={{ background: "var(--tnl-tan)", color: "var(--gsm-accent-ink)" }}
             data-testid="maintenance-banner"
         >
             {t("maintenance_notice")}

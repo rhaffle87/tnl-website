@@ -42,6 +42,8 @@ describe("editorial content pages", () => {
   fireEvent.change(screen.getByTestId("publications-type-filter"), { target: { value: "Journal" } });
   expect(screen.queryByTestId("publication-p2")).not.toBeInTheDocument();
   expect(screen.getByTestId("publication-p1")).toBeInTheDocument();
+  fireEvent.change(screen.getByTestId("publications-search-input"), { target: { value: "no-match-query" } });
+  expect(screen.queryByTestId("publication-p1")).not.toBeInTheDocument();
  });
  it("presents CMS article metadata with a machine-readable date and unboxed reading column", () => {
   const { container } = renderWithProviders(<Routes><Route path="/news/:slug" element={<NewsArticlePage />} /></Routes>, { route: "/news/network" });

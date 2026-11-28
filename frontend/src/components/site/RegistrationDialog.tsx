@@ -149,7 +149,7 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25"
                         aria-label={t("close")}
                         data-testid="registration-close-button"
                     >
@@ -159,7 +159,7 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
 
                 {result ? (
                     <div className="px-7 py-10 text-center space-y-6" data-testid="registration-success" role="status" aria-live="polite">
-                        <CheckCircle2 className="mx-auto h-12 w-12" style={{ color: "var(--tnl-green)" }} aria-hidden="true" />
+                        <CheckCircle2 className="mx-auto h-12 w-12" style={{ color: "var(--tnl-link)" }} aria-hidden="true" />
                         <div>
                             <h3 className="tnl-h5 mt-2 text-[20px]">
                                 {result.status === "waitlisted" ? t("waitlisted_title") : t("registration_received")}
@@ -229,7 +229,7 @@ export function RegistrationDialog({ event, onClose }: { event: LabEvent; onClos
                     </div>
                 ) : isClosed ? (
                     <div className="px-7 py-10 text-center space-y-4" data-testid="registration-closed-dialog">
-                        <p className="text-base font-semibold text-red-600 dark:text-red-400">
+                        <p className="text-base font-semibold" style={{ color: "var(--tnl-danger)" }}>
                             {event.is_full || event.reg_status === "full"
                                 ? (locale === "id" ? "Kuota pendaftaran untuk acara ini sudah penuh." : "Registration for this event is full.")
                                 : (locale === "id" ? "Pendaftaran untuk acara ini sedang ditutup." : "Registration for this event is closed.")}

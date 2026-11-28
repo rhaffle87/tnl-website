@@ -690,6 +690,61 @@
     }
   }
 
+  /* 2b. Accordion panel: short fade-and-drop on open (replaced by the global reduced-motion override) */
+  @keyframes tnlAccordionOpen {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tnl-accordion-panel {
+      animation: tnlAccordionOpen 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+  }
+
+  /* 2c. Skeleton loading cards: low-contrast shimmer, static for reduced-motion users */
+  @keyframes tnlShimmer {
+    from { background-position: 100% 0; }
+    to { background-position: -100% 0; }
+  }
+
+  .tnl-skeleton-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--tnl-border);
+    border-radius: 12px;
+    background: var(--card);
+  }
+
+  .tnl-skeleton {
+    display: block;
+    border-radius: 8px;
+    background-color: var(--tnl-surface-2);
+    background-image: linear-gradient(
+      90deg,
+      transparent 25%,
+      color-mix(in srgb, var(--background) 60%, transparent) 50%,
+      transparent 75%
+    );
+    background-size: 200% 100%;
+    animation: tnlShimmer 1.8s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tnl-skeleton {
+      animation: none;
+      background-image: none;
+    }
+  }
+
   /* 3. Inner Image Parallax (Editorial Depth in overflow: clip) */
   .tnl-parallax-media {
     overflow: clip;

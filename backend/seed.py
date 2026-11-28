@@ -137,6 +137,41 @@ LECTURER_PROJECTS = {
 # citable record; anything the laboratory still needs to confirm is seeded as a draft instead.
 PUBLICATIONS = [
     {
+        "title": "Single-Feed Dual-Aperture Vivaldi Antenna for GPR Detection of Arbitrarily-Oriented Objects",
+        "authors": "K. P. K. Riyanti, E. Setijadi, G. Hendrantoro, N. Nurhayati",
+        "venue": "IEEE Antennas and Wireless Propagation Letters",
+        "year": 2026, "ptype": "journal",
+        "tags": ["Vivaldi antenna", "ground penetrating radar", "dual-aperture"],
+        "abstract": ("Design of a single-feed dual-aperture Vivaldi antenna tailored for ground-penetrating radar "
+                     "detection of arbitrarily oriented subsurface targets."),
+        "author_match": ["Eko Setijadi"],
+    },
+    {
+        "title": "A Robust Surrogate-Assisted Framework for Simultaneous Multi-Parameter Optimization in Microstrip Antenna Design",
+        "authors": "Agusriandi, Achmad Affandi, Eko Setijadi",
+        "venue": "Engineering, Technology & Applied Science Research (ETASR)",
+        "year": 2026, "ptype": "journal",
+        "doi": "10.48084/etasr.18616",
+        "url": "https://doi.org/10.48084/etasr.18616",
+        "tags": ["microstrip antenna", "surrogate optimization", "RF engineering"],
+        "abstract": ("A surrogate-assisted multi-parameter optimization framework that accelerates electromagnetic "
+                     "tuning of microstrip antenna geometry across simultaneous performance constraints."),
+        "author_match": ["Achmad Affandi", "Eko Setijadi"],
+    },
+    {
+        "title": ("Multi Criteria Prioritization of Advanced Metering Infrastructure Ecosystem in Urban Areas "
+                  "Based on Fuzzy Analytical Hierarchy Process"),
+        "authors": "Lutfi Nur Rachmad, Heri Suryoatmojo, Achmad Affandi",
+        "venue": "27th International Seminar on Intelligent Technology and Its Applications (ISITIA 2026)",
+        "year": 2026, "ptype": "conference",
+        "doi": "10.1109/ISITIA71267.2026.11642259",
+        "url": "https://doi.org/10.1109/ISITIA71267.2026.11642259",
+        "tags": ["smart grid", "advanced metering infrastructure", "ICT governance"],
+        "abstract": ("Decision prioritization of urban advanced metering infrastructure deployment using a "
+                     "Fuzzy Analytical Hierarchy Process across technical, security, and operational criteria."),
+        "author_match": ["Achmad Affandi"],
+    },
+    {
         "title": ("A Comparative Study on the Impact of Antenna Height in Okumura-Hata Propagation "
                   "Model for VHF/UHF in Mataram City"),
         "authors": "A. Affandi et al.",
@@ -145,6 +180,7 @@ PUBLICATIONS = [
         "tags": ["propagation", "VHF/UHF", "Okumura-Hata"],
         "abstract": ("A comparative study of how antenna height affects path-loss prediction with the "
                      "Okumura-Hata model for VHF/UHF bands, evaluated for Mataram City."),
+        "author_match": ["Achmad Affandi"],
     },
     {
         "title": ("IEC104-IDS-2025: Labeled Network Traffic Dataset for Intrusion Detection in "
@@ -155,15 +191,31 @@ PUBLICATIONS = [
         "tags": ["network security", "intrusion detection", "SCADA", "dataset"],
         "abstract": ("A labelled network traffic dataset for intrusion detection research on "
                      "IEC 60870-5-104 SCADA communication."),
+        "author_match": ["Achmad Affandi"],
+    },
+    {
+        "title": "Receiver Processing of the Multibeam Azimuth Scanning CC-OFDM-MIMO Radar",
+        "authors": "Devy Kuswidiastuti, L. P. Ligthart, Gamantyo Hendrantoro, T. Suryani, Prasetiyono Hari Mukti, et al.",
+        "venue": "IEEE Access, vol. 13, pp. 109894–109906",
+        "year": 2025, "ptype": "journal",
+        "doi": "10.1109/ACCESS.2025.3529362",
+        "url": "https://doi.org/10.1109/ACCESS.2025.3529362",
+        "tags": ["MIMO radar", "OFDM", "array signal processing"],
+        "abstract": ("Receiver signal processing architecture for multibeam azimuth-scanning CC-OFDM-MIMO radar "
+                     "systems operating across wide angular sectors."),
+        "author_match": ["Prasetiyono Hari Mukti"],
     },
     {
         "title": "Software Defined Modem for Interconnection of Terrestrial and Underwater Acoustics Network",
-        "authors": "A. Affandi et al.",
-        "venue": "2025 International Seminar on Intelligent Technology and Its Applications (ISITIA)",
+        "authors": "Maulidya Nurrafifah, Wirawan, Endang Widjiati, Achmad Affandi, et al.",
+        "venue": "26th International Seminar on Intelligent Technology and Its Applications (ISITIA 2025)",
         "year": 2025, "ptype": "conference",
+        "doi": "10.1109/ISITIA66279.2025.11137541",
+        "url": "https://doi.org/10.1109/ISITIA66279.2025.11137541",
         "tags": ["software defined radio", "underwater acoustics", "network interconnection"],
         "abstract": ("Design of a software defined modem that interconnects terrestrial networks with an "
                      "underwater acoustic network."),
+        "author_match": ["Achmad Affandi"],
     },
     {
         "title": ("Impact Analysis of Electronic-Based Government System Implementation by the Local "
@@ -174,6 +226,7 @@ PUBLICATIONS = [
         "tags": ["public Wi-Fi", "e-government", "digital services"],
         "abstract": ("An impact analysis of electronic-based government services delivered to citizens "
                      "through local-government public Wi-Fi."),
+        "author_match": ["Achmad Affandi"],
     },
     {
         "title": "Decision Support System for Personnel Transfer Recommendation",
@@ -182,6 +235,7 @@ PUBLICATIONS = [
         "year": 2025, "ptype": "conference",
         "tags": ["decision support", "information systems"],
         "abstract": "A decision support system that produces personnel transfer recommendations.",
+        "author_match": ["Achmad Affandi"],
     },
     {
         "title": ("Implementasi Jaringan Internet Desa untuk Mendukung Transformasi Digital di Kantor "
@@ -190,10 +244,48 @@ PUBLICATIONS = [
         "venue": "Sewagati — Jurnal Pengabdian kepada Masyarakat, vol. 9, no. 2, pp. 358–365",
         "year": 2025, "ptype": "journal",
         "doi": "10.12962/j26139960.v9i2.2416",
+        "url": "https://doi.org/10.12962/j26139960.v9i2.2416",
         "tags": ["community service", "rural connectivity", "digital transformation"],
         "abstract": ("A community service report on building a village internet network with Mikrotik LHG "
                      "point-to-point links to support digital transformation at the Sedaeng village office, "
                      "Tosari, Pasuruan."),
+        "author_match": ["Prasetiyono Hari Mukti"],
+    },
+    {
+        "title": "Bandwidth, Gain Improvement, and Notched-Band Frequency of SWB Wave Coplanar Vivaldi Antenna Using CSRR",
+        "authors": "N. Nurhayati, F. Y. Zulkifli, E. Setijadi, B. E. Sukoco, M. N. M. Yasin, A. M. de Oliveira",
+        "venue": "IEEE Access, vol. 12, pp. 16926–16938",
+        "year": 2024, "ptype": "journal",
+        "doi": "10.1109/ACCESS.2024.3359168",
+        "url": "https://doi.org/10.1109/ACCESS.2024.3359168",
+        "tags": ["Vivaldi antenna", "super wideband", "CSRR", "notched band"],
+        "abstract": ("Enhancement of impedance bandwidth, realized gain, and interference band-notching on a "
+                     "coplanar super-wideband Vivaldi antenna via complementary split-ring resonators."),
+        "author_match": ["Eko Setijadi"],
+    },
+    {
+        "title": "Gain Enhanced 26 GHz Antenna for 5G Communication Technology",
+        "authors": "Eko Setijadi, Prasetiyono Hari Mukti, Wolfgang Bosch",
+        "venue": "Progress In Electromagnetics Research C (PIER C), vol. 139, pp. 187–195",
+        "year": 2024, "ptype": "journal",
+        "doi": "10.2528/PIERC23102602",
+        "url": "https://doi.org/10.2528/PIERC23102602",
+        "tags": ["5G", "26 GHz", "millimeter wave antenna"],
+        "abstract": ("Design and gain enhancement of a 26 GHz millimeter-wave antenna targeting 5G wireless "
+                     "communication links."),
+        "author_match": ["Eko Setijadi", "Prasetiyono Hari Mukti"],
+    },
+    {
+        "title": "Enhancing Array Antenna Radiation Patterns Using Hadamard Difference Sets and Windowing Functions",
+        "authors": "Nayla Najati, Gamantyo Hendrantoro, Wahyudi Hasbi, Prasetiyono Hari Mukti",
+        "venue": "2024 IEEE International Conference on Aerospace Electronics and Remote Sensing Technology (ICARES)",
+        "year": 2024, "ptype": "conference",
+        "doi": "10.1109/ICARES64249.2024.10768058",
+        "url": "https://doi.org/10.1109/ICARES64249.2024.10768058",
+        "tags": ["array antenna", "sidelobe suppression", "Hadamard difference sets"],
+        "abstract": ("Sidelobe reduction and pattern shaping for thinned antenna arrays combining Hadamard "
+                     "difference sets with spatial windowing functions."),
+        "author_match": ["Prasetiyono Hari Mukti"],
     },
     {
         "title": "Cloud Node Auto-Scaling System Automation Based on Computing Workload Prediction",
@@ -201,18 +293,21 @@ PUBLICATIONS = [
         "venue": "Jurnal RESTI (Rekayasa Sistem dan Teknologi Informasi), vol. 8, no. 5, pp. 597–606",
         "year": 2024, "ptype": "journal",
         "doi": "10.29207/resti.v8i5.5928",
+        "url": "https://doi.org/10.29207/resti.v8i5.5928",
         "tags": ["cloud computing", "auto-scaling", "workload prediction"],
         "abstract": ("Automation of horizontal cloud node auto-scaling driven by machine-learning predictions "
                      "of computing workload from CPU and RAM usage."),
+        "author_match": ["Achmad Affandi"],
     },
     {
         "title": "Assessment of IT Governance in Supporting XYZ University KPIs Using COBIT 2019",
-        "authors": "A. Affandi et al.",
+        "authors": "Solekhan, Achmad Affandi, E. Endroyono",
         "venue": "2024 International Seminar on Intelligent Technology and Its Applications (ISITIA)",
         "year": 2024, "ptype": "conference",
         "tags": ["IT governance", "COBIT 2019"],
         "abstract": ("An assessment of IT governance maturity and its support for university key performance "
                      "indicators using the COBIT 2019 framework."),
+        "author_match": ["Achmad Affandi"],
     },
     {
         "title": "The Implementation of ISO 37301:2021 on Compliance Management System",
@@ -221,6 +316,67 @@ PUBLICATIONS = [
         "year": 2024, "ptype": "conference",
         "tags": ["compliance management", "ISO 37301"],
         "abstract": "A study of implementing an ISO 37301:2021 compliance management system.",
+        "author_match": ["Achmad Affandi"],
+    },
+    {
+        "title": "Design a Microstrip Log-Periodic Dipole Antenna for Partial Discharge Detection in the VHF and UHF Frequency Bands",
+        "authors": "Ahwan Muru, Eko Setijadi",
+        "venue": "24th International Seminar on Intelligent Technology and Its Applications (ISITIA 2023)",
+        "year": 2023, "ptype": "conference",
+        "doi": "10.1109/ISITIA59021.2023.10221040",
+        "url": "https://doi.org/10.1109/ISITIA59021.2023.10221040",
+        "tags": ["LPDA antenna", "partial discharge", "VHF/UHF"],
+        "abstract": ("Design of a compact microstrip log-periodic dipole antenna tuned for VHF and UHF "
+                     "partial-discharge diagnostics in high-voltage equipment."),
+        "author_match": ["Eko Setijadi"],
+    },
+    {
+        "title": "Experimental Study of 500 MHz Low-Power Radiative WPT for Low-Power Home Electronic Appliances",
+        "authors": "Dwi Edi Setyawan, Wirawan, Eko Setijadi",
+        "venue": "12th IEEE International Conference on Communication, Networks and Satellite (COMNETSAT)",
+        "year": 2023, "ptype": "conference",
+        "doi": "10.1109/COMNETSAT59769.2023.10420775",
+        "url": "https://doi.org/10.1109/COMNETSAT59769.2023.10420775",
+        "tags": ["wireless power transfer", "500 MHz", "RF energy"],
+        "abstract": ("Experimental evaluation of radiative wireless power transfer at 500 MHz for energizing "
+                     "low-power domestic electronic nodes."),
+        "author_match": ["Eko Setijadi"],
+    },
+    {
+        "title": "The Effect of Parasitic Patches Addition on Bandwidth Enhancement and Mutual Coupling in 2×2 Sub-Arrays",
+        "authors": "Fitri Amillia, Eko Setijadi, Gamantyo Hendrantoro",
+        "venue": "IEEE Access, vol. 10, pp. 72058–72068",
+        "year": 2022, "ptype": "journal",
+        "doi": "10.1109/ACCESS.2022.3185999",
+        "url": "https://doi.org/10.1109/ACCESS.2022.3185999",
+        "tags": ["microstrip sub-array", "mutual coupling", "bandwidth enhancement"],
+        "abstract": ("Analysis of parasitic patch elements to widen impedance bandwidth and suppress inter-element "
+                     "mutual coupling in 2×2 microstrip antenna sub-arrays."),
+        "author_match": ["Eko Setijadi"],
+    },
+    {
+        "title": "Effect of Signal Shape Modulation on Received Power Efficiency in Wireless Power Transfer Systems Using Radio Frequency",
+        "authors": "Eko Setijadi, Hadiawan W. Aditama, Achmad Mauludiyanto, Achmad Affandi, Endroyono, Gatot Kusrahardjo, Sri Rahayu",
+        "venue": "5th International Seminar on Research of Information Technology and Intelligent Systems (ISRITI)",
+        "year": 2022, "ptype": "conference",
+        "doi": "10.1109/ISRITI56927.2022.10053024",
+        "url": "https://doi.org/10.1109/ISRITI56927.2022.10053024",
+        "tags": ["wireless power transfer", "RF modulation", "received power efficiency"],
+        "abstract": ("Investigation of waveform modulation shapes on RF-to-DC conversion and received power "
+                     "efficiency in wireless power transfer testbeds."),
+        "author_match": ["Eko Setijadi", "Achmad Affandi", "Sri Rahayu"],
+    },
+    {
+        "title": "Planning of Arrayed Waveguide Grating (AWG) for 16×16 Channels Transmission System of Dense Wavelength Division Multiplexing (DWDM)",
+        "authors": "Sri Rahayu, Harris Pirngadi",
+        "venue": "Journal on Advanced Research in Electrical Engineering (JAREE), vol. 2, no. 1",
+        "year": 2018, "ptype": "journal",
+        "doi": "10.12962/j25796216.v2.i1.41",
+        "url": "https://doi.org/10.12962/j25796216.v2.i1.41",
+        "tags": ["optical fiber", "DWDM", "AWG"],
+        "abstract": ("Transmission planning and channel allocation of a 16×16 arrayed waveguide grating for "
+                     "dense wavelength division multiplexed optical networks."),
+        "author_match": ["Sri Rahayu"],
     },
 ]
 
@@ -354,35 +510,35 @@ ACTIVE_ASSISTANTS_2026 = [
 
     # Academic Division (5 members: 3 Batch 2023, 2 Batch 2024)
     ("Steffano Asian Budi Setyo", "5048231022", "2023", "15.png", "head", "Head of Academic", "Academic", "steffano.asianbudisetyo@gmail.com", "steffanobudisetyo"),
-    ("Rafli Alif Ihza Hartono", "5048231003", "2023", "14.png", "head", "Co-Head of Academic", "Academic", "raflihartono87@gmail.com", "rhaffle87"),
-    ("Nathanael Tumpal Sianturi", "5048231066", "2023", "17.png", "head", "Co-Head of Academic", "Academic", "natumpal2004@gmail.com", "nathanaell_ts"),
-    ("Darel Christianto Oktavian", "5048241037", "2024", None, "staff", "Academic Staff", "Academic", "doktavian425@gmail.com", "dareloktvn"),
-    ("Muhammad Izzul Wafa", "5048241013", "2024", None, "staff", "Academic Staff", "Academic", "muhamaizzul@gmail.com", "zzlwafaa"),
+    ("Rafli Alif Ihza Hartono", "5048231003", "2023", "14.png", "head", "Expert Staff of Academic", "Academic", "raflihartono87@gmail.com", "rhaffle87"),
+    ("Nathanael Tumpal Sianturi", "5048231066", "2023", "17.png", "head", "Expert Staff of Academic", "Academic", "natumpal2004@gmail.com", "nathanaell_ts"),
+    ("Darel Christianto Oktavian", "5048241037", "2024", None, "staff", "Staff", "Academic", "doktavian425@gmail.com", "dareloktvn"),
+    ("Muhammad Izzul Wafa", "5048241013", "2024", None, "staff", "Staff", "Academic", "muhamaizzul@gmail.com", "zzlwafaa"),
 
     # Research Division (4 members: 2 Batch 2023, 2 Batch 2024)
     ("Rafi Adin Maulvi Nazir Ahmad", "5048231011", "2023", "24.png", "head", "Head of Research", "Research", "rafiadin28@gmail.com", "rafiadin28"),
-    ("Raihan Muzhaffar Athallah", "5048231031", "2023", "25.png", "head", "Co-Head of Research", "Research", "raihanmuzhaffar18@gmail.com", "rhnma.13"),
-    ("Nindita Putri Aisyah", "5048241003", "2024", None, "staff", "Research Staff", "Research", "ninditaaisyah@gmail.com", "ninditaaptr_"),
-    ("Zein Aditya Pasha", "5048241035", "2024", None, "staff", "Research Staff", "Research", "adityapashaaaa@gmail.com", "zeynnnaditt"),
+    ("Raihan Muzhaffar Athallah", "5048231031", "2023", "25.png", "head", "Expert Staff of Research", "Research", "raihanmuzhaffar18@gmail.com", "rhnma.13"),
+    ("Nindita Putri Aisyah", "5048241003", "2024", None, "staff", "Staff", "Research", "ninditaaisyah@gmail.com", "ninditaaptr_"),
+    ("Zein Aditya Pasha", "5048241035", "2024", None, "staff", "Staff", "Research", "adityapashaaaa@gmail.com", "zeynnnaditt"),
 
     # Social Division (5 members: 2 Batch 2023, 3 Batch 2024)
     ("Muhammad Zidan Hifzhurrahman", "5038231007", "2023", "16.png", "head", "Head of Social", "Social", "zidanplatr@gmail.com", "mz_hifzhurrahman"),
-    ("Roy Wiranata", "5048231051", "2023", "18.png", "head", "Co-Head of Social", "Social", "roywira8@gmail.com", "roywira8"),
-    ("Kreshna Kamaludin Kusnadi", "5048241029", "2024", None, "staff", "Social Staff", "Social", "kreshna.kusnadi@gmail.com", "kreshnakus"),
-    ("Annisa Fathinatuzzahra", "5048241030", "2024", None, "staff", "Social Staff", "Social", "annisaftzhr@gmail.com", "annisaafath"),
-    ("Nouval Ramadhan", "5048241012", "2024", None, "staff", "Social Staff", "Social", "nouvalrmdhn1@gmail.com", "nouval.ramadhan"),
+    ("Roy Wiranata", "5048231051", "2023", "18.png", "head", "Expert Staff of Social", "Social", "roywira8@gmail.com", "roywira8"),
+    ("Kreshna Kamaludin Kusnadi", "5048241029", "2024", None, "staff", "Staff", "Social", "kreshna.kusnadi@gmail.com", "kreshnakus"),
+    ("Annisa Fathinatuzzahra", "5048241030", "2024", None, "staff", "Staff", "Social", "annisaftzhr@gmail.com", "annisaafath"),
+    ("Nouval Ramadhan", "5048241012", "2024", None, "staff", "Staff", "Social", "nouvalrmdhn1@gmail.com", "nouval.ramadhan"),
 
     # Internal Division (4 members: 2 Batch 2023, 2 Batch 2024)
     ("Lidya Melisa Ardeori Remindauw", "5048231002", "2023", "melisa.png", "head", "Head of Internal", "Internal", "lidya.melisa12@gmail.com", "lidya_melisa12"),
-    ("Sarah Sofhi Susanty", "5048231075", "2023", "19.png", "head", "Co-Head of Internal", "Internal", "sarahssusanty@gmail.com", "sarahssnty"),
-    ("Ida Ayu Sayla Nadia Putri", "5048241009", "2024", None, "staff", "Internal Staff", "Internal", "idaayusaylanadiaputri@gmail.com", "idaayusayla"),
-    ("Ryan Raditya Bagaskara", "5048241027", "2024", None, "staff", "Internal Staff", "Internal", "rbagaskara70@gmail.com", "radityarb"),
+    ("Sarah Sofhi Susanty", "5048231075", "2023", "19.png", "head", "Expert Staff of Internal", "Internal", "sarahssusanty@gmail.com", "sarahssnty"),
+    ("Ida Ayu Sayla Nadia Putri", "5048241009", "2024", None, "staff", "Staff", "Internal", "idaayusaylanadiaputri@gmail.com", "idaayusayla"),
+    ("Ryan Raditya Bagaskara", "5048241027", "2024", None, "staff", "Staff", "Internal", "rbagaskara70@gmail.com", "radityarb"),
 
     # External Division (4 members: 2 Batch 2023, 2 Batch 2024)
     ("Bulan Nurhaliza", "5048231073", "2023", "21.png", "head", "Head of External", "External", "bulannurh@gmail.com", "bulannhz"),
-    ("Janice Kayleen Eliana", "5048231070", "2023", "22.png", "head", "Co-Head of External", "External", "janicekayleen@gmail.com", "janiceliana"),
-    ("Adelia Zahrasanti Bintoro", "5048241028", "2024", None, "staff", "External Staff", "External", "zahrasanti.adelia@gmail.com", "adeliiazahraa"),
-    ("Nailah Puteri Maharani", "5048241018", "2024", None, "staff", "External Staff", "External", "nailahputeri02@gmail.com", "nailahputerii"),
+    ("Janice Kayleen Eliana", "5048231070", "2023", "22.png", "head", "Expert Staff of External", "External", "janicekayleen@gmail.com", "janiceliana"),
+    ("Adelia Zahrasanti Bintoro", "5048241028", "2024", None, "staff", "Staff", "External", "zahrasanti.adelia@gmail.com", "adeliiazahraa"),
+    ("Nailah Puteri Maharani", "5048241018", "2024", None, "staff", "Staff", "External", "nailahputeri02@gmail.com", "nailahputerii"),
 ]
 
 # Alumni Assistant Roster (Batch 2022 - 10 members, all with real portraits)
@@ -1328,9 +1484,19 @@ async def seed_unverified_drafts() -> None:
 
 
 async def seed_publications() -> None:
-    """Real, citable scholarly records involving laboratory staff — published."""
+    """Real, citable scholarly records involving laboratory staff — published and linked."""
     await db.publications.delete_many({})
-    docs = [Publication(status="published", **p).model_dump() for p in PUBLICATIONS]
+    members = await db.members.find({}, {"id": 1, "name": 1}).to_list(200)
+    docs = []
+    for raw in PUBLICATIONS:
+        entry = dict(raw)
+        author_terms = entry.pop("author_match", [])
+        linked_ids = [
+            m["id"]
+            for m in members
+            if any(term.lower() in (m.get("name") or "").lower() for term in author_terms)
+        ]
+        docs.append(Publication(status="published", linked_member_ids=linked_ids, **entry).model_dump())
     await db.publications.insert_many(docs)
     years = sorted({d["year"] for d in docs}, reverse=True)
     print(f"  publications: {len(docs)} real records ({years[-1]}–{years[0]}), all published")
@@ -1428,6 +1594,103 @@ async def seed_posts(photos: dict[str, str] | None = None) -> None:
                      "situs ini.</p>"),
             author="Telecommunication Network Laboratory",
             status="published", published_at=NOW - timedelta(days=58),
+        ),
+        Post(
+            title="26 GHz 5G antenna and Vivaldi GPR research published by TNL lecturers",
+            title_id="Riset antena 5G 26 GHz dan antena Vivaldi GPR diterbitkan dosen TNL",
+            slug="5g-26ghz-antenna-vivaldi-research",
+            category="Research",
+            tags=["5G", "26 GHz", "Vivaldi antenna", "IEEE Access"],
+            cover_url=photos.get("news-rural-telecom.jpg"),
+            cover_alt="Telecommunication antenna and wireless propagation testbed",
+            excerpt=("Prof. Eko Setijadi and Dr. Prasetiyono Hari Mukti published millimeter-wave 5G antenna "
+                     "and super-wideband Vivaldi GPR studies across IEEE AWPL, IEEE Access, and PIER C."),
+            excerpt_id=("Prof. Eko Setijadi dan Dr. Prasetiyono Hari Mukti menerbitkan kajian antena gelombang "
+                        "milimeter 5G serta antena Vivaldi super-wideband pada IEEE AWPL, IEEE Access, dan PIER C."),
+            body=("<p>Faculty researchers at the Telecommunication Network Laboratory — Prof. Eko Setijadi and "
+                  "Dr.techn. Prasetiyono Hari Mukti — authored peer-reviewed studies advancing high-gain 26 GHz "
+                  "antennas for 5G links (Progress In Electromagnetics Research C, vol. 139) alongside "
+                  "dual-aperture and CSRR notched-band Vivaldi antennas (IEEE AWPL and IEEE Access).</p>"
+                  "<p>Full bibliographic citations and DOIs are linked to the respective faculty profiles on the "
+                  "Publications page.</p>"),
+            body_id=("<p>Peneliti dosen di Laboratorium Jaringan Telekomunikasi — Prof. Eko Setijadi dan "
+                     "Dr.techn. Prasetiyono Hari Mukti — menerbitkan riset tentang peningkatan penguatan antena "
+                     "26 GHz untuk sistem komunikasi 5G (PIER C, vol. 139) serta desain antena Vivaldi "
+                     "dual-aperture dan notched-band CSRR (IEEE AWPL dan IEEE Access).</p>"
+                     "<p>Sitasi lengkap dan tautan DOI tersedia pada halaman Publikasi serta profil masing-masing "
+                     "dosen.</p>"),
+            author="Telecommunication Network Laboratory",
+            status="published", published_at=NOW - timedelta(days=10),
+        ),
+        Post(
+            title="Multibeam CC-OFDM-MIMO radar and Hadamard array research in IEEE Access",
+            title_id="Riset radar multibeam CC-OFDM-MIMO dan array Hadamard terbit di IEEE Access",
+            slug="cc-ofdm-mimo-radar-and-array-research",
+            category="Research",
+            tags=["MIMO radar", "OFDM", "array antenna", "IEEE Access"],
+            cover_url=photos.get("news-cisco-packet-tracer.jpg"),
+            cover_alt="RF signal processing and telecommunication laboratory workbench",
+            excerpt=("Dr. Prasetiyono Hari Mukti co-authored IEEE Access and IEEE ICARES studies on multibeam "
+                     "CC-OFDM-MIMO radar receiver processing and Hadamard difference-set array synthesis."),
+            excerpt_id=("Dr. Prasetiyono Hari Mukti bersama tim riset mempublikasikan pemrosesan sinyal penerima "
+                        "radar CC-OFDM-MIMO multibeam di IEEE Access dan sintesis array Hadamard di IEEE ICARES."),
+            body=("<p>Research co-authored by Dr.techn. Prasetiyono Hari Mukti on multibeam azimuth-scanning "
+                  "CC-OFDM-MIMO radar receiver processing was published in IEEE Access (vol. 13, 2025), building on "
+                  "array pattern sidelobe control presented at IEEE ICARES 2024.</p>"
+                  "<p>All indexed DOI references are browsable in the Publications archive.</p>"),
+            body_id=("<p>Penelitian bersama Dr.techn. Prasetiyono Hari Mukti mengenai arsitektur pemrosesan "
+                     "penerima radar CC-OFDM-MIMO pemindaian azimut multibeam terbit di IEEE Access (vol. 13, 2025), "
+                     "melengkapi studi pengendalian sidelobe antena array menggunakan himpunan beda Hadamard pada "
+                     "IEEE ICARES 2024.</p><p>Referensi DOI lengkap tersedia pada arsip Publikasi.</p>"),
+            author="Telecommunication Network Laboratory",
+            status="published", published_at=NOW - timedelta(days=18),
+        ),
+        Post(
+            title="Surrogate antenna optimization and smart metering ecosystem studies (2026)",
+            title_id="Optimasi antena berbasis surrogate dan prioritisasi AMI perkotaan (2026)",
+            slug="surrogate-antenna-ami-scada-research-2026",
+            category="Research",
+            tags=["smart grid", "microstrip antenna", "ISITIA", "ETASR"],
+            cover_url=photos.get("news-scientific-conference.jpg"),
+            cover_alt="Engineering research presentation and laboratory symposium",
+            excerpt=("Dr. Ir. Achmad Affandi and Prof. Eko Setijadi published surrogate-assisted microstrip "
+                     "antenna optimization alongside Fuzzy AHP smart-metering studies at ISITIA 2026."),
+            excerpt_id=("Dr. Ir. Achmad Affandi dan Prof. Eko Setijadi menerbitkan kerangka optimasi antena "
+                        "mikrostrip berbasis surrogate serta studi ekosistem AMI perkotaan pada ISITIA 2026."),
+            body=("<p>Recent 2026 publications led with Dr. Ir. Achmad Affandi, DEA. cover multi-parameter "
+                  "surrogate-assisted microstrip antenna optimization (with Prof. Eko Setijadi in ETASR) and "
+                  "Fuzzy AHP prioritization for urban Advanced Metering Infrastructure presented at the 27th ISITIA "
+                  "conference.</p><p>Explore both papers directly from the faculty profiles and Publications page.</p>"),
+            body_id=("<p>Publikasi tahun 2026 yang melibatkan Dr. Ir. Achmad Affandi, DEA. mencakup kerangka optimasi "
+                     "multi-parameter antena mikrostrip berbasis surrogate (bersama Prof. Eko Setijadi di ETASR) "
+                     "serta prioritisasi ekosistem Advanced Metering Infrastructure di kawasan perkotaan pada "
+                     "konferensi ISITIA ke-27.</p><p>Tautan DOI kedua makalah tersedia di halaman Publikasi dan "
+                     "profil dosen.</p>"),
+            author="Telecommunication Network Laboratory",
+            status="published", published_at=NOW - timedelta(days=6),
+        ),
+        Post(
+            title="RF wireless power transfer efficiency and 16x16 DWDM optical network studies",
+            title_id="Riset efisiensi transfer daya nirkabel RF dan jaringan optik DWDM 16x16",
+            slug="rf-wireless-power-transfer-and-dwdm-optical-networks",
+            category="Research",
+            tags=["wireless power transfer", "DWDM", "optical fiber", "IEEE ISRITI"],
+            cover_url=photos.get("news-rural-telecom.jpg"),
+            cover_alt="Optical transmission and wireless radio research equipment",
+            excerpt=("Sri Rahayu, Prof. Eko Setijadi, and Dr. Achmad Affandi investigated RF waveform modulation "
+                     "for wireless power transfer alongside 16x16 AWG DWDM optical transmission planning."),
+            excerpt_id=("Sri Rahayu, Prof. Eko Setijadi, dan Dr. Achmad Affandi meneliti modulasi sinyal transfer "
+                        "daya nirkabel RF serta perencanaan sistem transmisi optik DWDM 16x16 kanal."),
+            body=("<p>Cross-faculty work by Sri Rahayu, S.T., M.Kom., Prof. Eko Setijadi, and Dr. Ir. Achmad "
+                  "Affandi at IEEE ISRITI examined how RF signal shape modulation impacts wireless power transfer "
+                  "received efficiency, complementing optical transmission studies on 16x16 Arrayed Waveguide "
+                  "Grating (AWG) DWDM networks published in JAREE.</p>"),
+            body_id=("<p>Kolaborasi riset Sri Rahayu, S.T., M.Kom., Prof. Eko Setijadi, dan Dr. Ir. Achmad Affandi "
+                     "pada IEEE ISRITI mengkaji pengaruh modulasi bentuk sinyal RF terhadap efisiensi daya terima "
+                     "wireless power transfer, melengkapi kajian perencanaan jaringan optik DWDM 16x16 berbasis "
+                     "AWG di jurnal JAREE.</p>"),
+            author="Telecommunication Network Laboratory",
+            status="published", published_at=NOW - timedelta(days=36),
         ),
     ]
     await db.posts.insert_many([p.model_dump() for p in posts])

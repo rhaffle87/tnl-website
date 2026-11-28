@@ -87,7 +87,7 @@ export function TagChipsField({
             <div
                 className="flex min-h-[46px] flex-wrap items-center gap-1.5 rounded-lg border p-1.5 transition-colors focus-within:ring-2 focus-within:ring-[var(--gsm-emerald)]/30 focus-within:border-[var(--gsm-emerald)]"
                 style={{
-                    backgroundColor: "var(--tnl-bg)",
+                    backgroundColor: "var(--tnl-surface-2)",
                     borderColor: "var(--tnl-border)",
                 }}
             >
@@ -96,8 +96,8 @@ export function TagChipsField({
                         key={`${tag}-${idx}`}
                         className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
                         style={{
-                            backgroundColor: "var(--tnl-card-bg)",
-                            color: "var(--tnl-text)",
+                            backgroundColor: "var(--card)",
+                            color: "var(--foreground)",
                             border: "1px solid var(--tnl-border)",
                         }}
                         data-testid={`tag-chip-${idx}`}
@@ -106,7 +106,7 @@ export function TagChipsField({
                         <button
                             type="button"
                             onClick={() => removeTag(idx)}
-                            className="rounded p-0.5 opacity-60 hover:opacity-100 hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
+                            className="rounded p-0.5 opacity-60 hover:opacity-100 hover:bg-[var(--tnl-danger)]/10 hover:text-[var(--tnl-danger)] transition-colors"
                             aria-label={`Remove tag ${tag}`}
                             data-testid={`tag-chip-remove-${idx}`}
                         >
@@ -127,7 +127,7 @@ export function TagChipsField({
                         }
                     }}
                     placeholder={tags.length === 0 ? placeholder : "Add more..."}
-                    className="flex-1 min-w-[140px] bg-transparent px-2 py-1 text-sm outline-none placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
+                    className="flex-1 min-w-[140px] bg-transparent px-2 py-1 text-sm outline-none placeholder:text-[var(--tnl-muted)]"
                     data-testid={testId ? `${testId}-input` : "tag-chips-input"}
                 />
             </div>

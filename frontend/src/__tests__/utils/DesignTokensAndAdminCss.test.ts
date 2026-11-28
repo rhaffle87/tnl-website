@@ -244,4 +244,14 @@ describe("single heading type scale", () => {
         expect(independent, `in ${file}`).toEqual([]);
         expect(css).toMatch(/var\(--tnl-type-h[12]\)/);
     });
+
+    it("keeps undefined legacy tokens out of admin repeaters", () => {
+        const repeaterDir = path.join(srcDir, "components/admin/repeaters");
+        const undefinedTokens = /var\(--(?:tnl-card-bg|tnl-bg|tnl-text|tnl-gold|tnl-red)\b/;
+        for (const entry of readdirSync(repeaterDir)) {
+            if (!entry.endsWith(".tsx")) continue;
+            const source = readFileSync(path.join(repeaterDir, entry), "utf8");
+            expect(source, `in ${entry}`).not.toMatch(undefinedTokens);
+        }
+    });
 });

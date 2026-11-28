@@ -46,6 +46,7 @@ vi.mock("@/lib/api/hooks", async (importOriginal) => {
           batch: "2023",
           division: "Academics",
           position: "coordinator",
+          position_label: "Co-Head of Academic",
           email_public: "fadhil@labtnl.site",
           show_nim: false,
           nim: "5024201001",
@@ -142,5 +143,16 @@ describe("MemberSections Component", () => {
     expect(modal).toBeInTheDocument();
     expect(screen.queryByText(/5024201001/)).toBeNull();
     expect(screen.queryByText(/NRP/)).toBeNull();
+  });
+
+  it("normalizes Co-Head role labels to Expert Staff of and staff to Staff", async () => {
+    renderWithProviders(<MemberSections />);
+    expect(screen.getByText("Expert Staff of Academic")).toBeInTheDocument();
+    expect(screen.queryByText(/Co-Head/i)).toBeNull();
+
+    fireEvent.click(screen.getByTestId("member-status-alumni-filter"));
+    await waitFor(() => {
+      expect(screen.getByText("Staff")).toBeInTheDocument();
+    });
   });
 });

@@ -295,13 +295,13 @@ export function SettingsPage() {
                     <div className="mt-3 space-y-3">
                         <AdminCard className="p-3 sm:p-3">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t("adminSettingsGsmActive")}</span>
+                                <span className="text-xs font-semibold text-[var(--foreground)]">{t("adminSettingsGsmActive")}</span>
                                 <span className="px-2 py-0.5 rounded text-xs font-bold bg-[var(--gsm-emerald)] text-white">
                                     {current.theme_tokens?.gsm_edition_label || "GSM Kabinet Keberlanjutan 2026"}
                                 </span>
                             </div>
                             <div className="mt-3 flex items-center gap-2">
-                                <span className="text-[11px] text-gray-500">{t("adminSettingsGsmPalette")}</span>
+                                <span className="text-xs text-[var(--tnl-muted)]">{t("adminSettingsGsmPalette")}</span>
                                 <div className="flex items-center gap-1.5">
                                     <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[var(--gsm-primary)]" title="Primary (CMS)" />
                                     <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[var(--gsm-emerald)]" title="Emerald Glow (CMS)" />
@@ -309,7 +309,7 @@ export function SettingsPage() {
                                     <span className="h-4 w-4 rounded-full border border-black/10 inline-block bg-[var(--gsm-accent)]" title="Accent Warm Sand (CMS)" />
                                 </div>
                             </div>
-                            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                            <p className="mt-2 text-xs text-[var(--tnl-muted)]">
                                 {t("adminSettingsGsmHelp")}
                             </p>
                         </AdminCard>
@@ -328,7 +328,7 @@ export function SettingsPage() {
                         <FileJson className="h-5 w-5 text-[var(--gsm-accent)]" />
                         <AdminSectionHeader title={t("adminSettingsFigmaImportTitle")} />
                     </div>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs text-[var(--tnl-muted)]">
                         {t("adminSettingsFigmaImportDesc")}
                     </p>
 
@@ -340,7 +340,7 @@ export function SettingsPage() {
                                 type="file"
                                 accept=".json,application/json"
                                 onChange={handleFileUpload}
-                                className="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[var(--gsm-primary)] file:text-white hover:file:opacity-90"
+                                className="block w-full text-xs text-[var(--tnl-muted)] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[var(--gsm-primary)] file:text-white hover:file:opacity-90"
                             />
                         </div>
 
@@ -349,7 +349,7 @@ export function SettingsPage() {
                             <textarea
                                 id="settings-figma-json-paste"
                                 rows={4}
-                                className="tnl-field font-mono text-[11px]"
+                                className="tnl-field font-mono text-xs"
                                 placeholder='{"primary": {"value": "#223027"}, "emerald": {"value": "#5D8A6B"}, "accent": {"value": "#A8977B"}}'
                                 value={figmaRawJson}
                                 onChange={(e) => handleJsonPaste(e.target.value)}
@@ -359,7 +359,7 @@ export function SettingsPage() {
                         {jsonImportPreview && (
                             <div className="rounded-lg border p-2.5 bg-[var(--gsm-bg-elevated)] border-[var(--gsm-emerald)] text-xs text-[var(--gsm-emerald)]">
                                 <span className="font-semibold block mb-1">{t("adminSettingsFigmaValidJson")}</span>
-                                <span className="text-[11px]">{t("adminSettingsFigmaValidJsonDesc")}</span>
+                                <span className="text-xs">{t("adminSettingsFigmaValidJsonDesc")}</span>
                             </div>
                         )}
 
@@ -387,32 +387,32 @@ export function SettingsPage() {
                         <KeyRound className="h-5 w-5 text-[var(--gsm-emerald)]" />
                         <AdminSectionHeader title={t("adminSettingsFigmaPluginTitle")} />
                     </div>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs text-[var(--tnl-muted)]">
                         {t("adminSettingsFigmaPluginDesc")}
                     </p>
 
                     <div className="mt-3 space-y-3">
                         <AdminCard className="p-3 sm:p-3 text-xs space-y-1.5">
                             <div className="flex items-center justify-between">
-                                <span className="text-gray-500">{t("adminSettingsFigmaTokenStatus")}</span>
-                                <span className={`font-bold px-2 py-0.5 rounded text-[11px] ${figmaStatus?.configured ? "bg-[var(--gsm-bg-elevated)] text-[var(--gsm-emerald)]" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"}`}>
+                                <span className="text-[var(--tnl-muted)]">{t("adminSettingsFigmaTokenStatus")}</span>
+                                <span className={`font-bold px-2 py-0.5 rounded text-xs ${figmaStatus?.configured ? "bg-[var(--gsm-bg-elevated)] text-[var(--gsm-emerald)]" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"}`}>
                                     {figmaStatus?.configured ? t("adminSettingsFigmaConfigured").replace("{prefix}", figmaStatus.prefix ?? "") : t("adminSettingsFigmaUnconfigured")}
                                 </span>
                             </div>
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-gray-500">{t("adminSettingsFigmaEndpoint")}</span>
-                                <code className="font-mono text-[10px] break-all p-1 bg-[var(--tnl-surface-2)] rounded">
+                                <span className="text-[var(--tnl-muted)]">{t("adminSettingsFigmaEndpoint")}</span>
+                                <code className="font-mono text-xs break-all p-1 bg-[var(--tnl-surface-2)] rounded">
                                     {figmaStatus?.endpoint_sync_frame || "https://labtnl.site/api/admin/figma/sync-frame"}
                                 </code>
                             </div>
                         </AdminCard>
 
                         {generatedToken && (
-                            <div className="rounded-lg border p-3 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/50">
-                                <span className="text-xs font-bold text-amber-900 dark:text-amber-200 block mb-1">
+                            <div className="rounded-lg border p-3 bg-[var(--tnl-surface-2)] border-[var(--tnl-warning)]/40">
+                                <span className="text-xs font-bold text-[var(--tnl-warning)] block mb-1">
                                     {t("adminSettingsFigmaSaveTokenNow")}
                                 </span>
-                                <p className="text-[11px] text-amber-700 dark:text-amber-300 mb-2">
+                                <p className="text-xs text-[var(--tnl-body)] mb-2">
                                     {t("adminSettingsFigmaTokenOnce")}
                                 </p>
                                 <div className="flex items-center gap-1.5">

@@ -459,8 +459,12 @@ def test_practicum_resources_and_shifts(client):
     assert isinstance(first["resources"], list)
     assert isinstance(first["shifts"], list)
     if first["resources"]:
-        assert "file_url" in first["resources"][0]
+        assert "title" in first["resources"][0]
         assert "file_type" in first["resources"][0]
+        if first.get("available_to_download"):
+            assert "file_url" in first["resources"][0]
+        else:
+            assert "file_url" not in first["resources"][0]
     if first["shifts"]:
         assert "day" in first["shifts"][0]
         assert "time_slot" in first["shifts"][0]

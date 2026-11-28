@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 
 from lib.auth import (allowed, audit, lab_assistant_for_request, principal, require, user_for_request,
                       verify_upload_sig)
-from lib.practicum_access import RESTRICTED_MEDIA_NOTE, media_path_is_restricted
+from lib.practicum_access import RESTRICTED_MEDIA_NOTE, media_path_is_restricted, media_url_candidates
 from lib.db import db
 from lib.serialize import jsonable
 from lib.storage import MEDIA_DIR, delete_object, local_path, put_object, safe_name, sniff_content_type
@@ -503,13 +503,28 @@ async def serve_media(path: str, request: Request):
             },
         )
 
-    # Practicum module files live under academic/ — laboratory assistants only, never indexed.
+    # Practicum module files live under academic/ — gated by lab-assistant session OR
+    # published practicum module with available_to_download=True.
     if media_path_is_restricted(path):
         if await lab_assistant_for_request(request) is None:
-            raise HTTPException(
-                status_code=403,
-                detail=RESTRICTED_MEDIA_NOTE,
-                headers={"X-Robots-Tag": "noindex, nofollow"},
+            candidates = media_url_candidates(path)
+            public_mod = await db.practicum.find_one(
+                {
+                    "published": True,
+                    "available_to_download": True,
+                    "resources.file_url": {"$in": candidates},
+                },
+                {"_id": 1},
+            )
+            if not public_mod:
+                raise HTTPException(
+                    status_code=403,
+                    detail=RESTRICTED_MEDIA_NOTE,
+                    headers={"X-Robots-Tag": "noindex, nofollow"},
+                )
+            return FileResponse(
+                full,
+                headers={"Cache-Control": "private, no-cache"},
             )
         return FileResponse(
             full,

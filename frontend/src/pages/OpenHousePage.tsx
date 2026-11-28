@@ -163,20 +163,20 @@ export default function OpenHousePage() {
 
                             {/* Meta Badges */}
                             <div className="open-house-facts flex flex-wrap items-center gap-2.5">
-                                <span className="inline-flex items-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 px-3 py-1.5 border border-black/5 dark:border-white/10 text-xs">
+                                <span className="inline-flex items-center gap-2 rounded-lg bg-[var(--tnl-surface)] px-3 py-1.5 border border-[var(--tnl-border)] text-xs">
                                     <MapPin className="h-4 w-4 text-[var(--tnl-body)]" />
                                     <span>Ruang B-301, Teknik Elektro ITS</span>
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 px-3 py-1.5 border border-black/5 dark:border-white/10 text-xs">
+                                <span className="inline-flex items-center gap-2 rounded-lg bg-[var(--tnl-surface)] px-3 py-1.5 border border-[var(--tnl-border)] text-xs">
                                     <Calendar className="h-4 w-4 text-[var(--tnl-body)]" />
                                     <span>{locale === "id" ? "Sabtu, 28 November 2026" : "Saturday, 28 November 2026"}</span>
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 px-3 py-1.5 border border-black/5 dark:border-white/10 text-xs">
+                                <span className="inline-flex items-center gap-2 rounded-lg bg-[var(--tnl-surface)] px-3 py-1.5 border border-[var(--tnl-border)] text-xs">
                                     <Users className="h-4 w-4 text-[var(--tnl-body)]" />
                                     <span>Terbuka Mahasiswa Baru & Aktif</span>
                                 </span>
                                 {isClosed ? (
-                                    <span className="inline-flex items-center gap-2 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 px-3 py-1.5 border border-red-500/20 font-semibold text-xs" data-testid="open-house-status-closed">
+                                    <span className="inline-flex items-center gap-2 rounded-lg bg-[var(--tnl-danger)]/10 text-[var(--tnl-danger)] px-3 py-1.5 border border-[var(--tnl-danger-border)] font-semibold text-xs" data-testid="open-house-status-closed">
                                         <XCircle className="h-4 w-4" />
                                         <span>
                                             {event?.is_full || event?.reg_status === "full"
@@ -336,7 +336,7 @@ export default function OpenHousePage() {
                                         setMotivation("");
                                         setIgFile(null);
                                     }}
-                                    className="rounded-lg border border-black/15 dark:border-white/15 px-4 py-2 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5"
+                                    className="rounded-lg border border-[var(--tnl-border)] px-4 py-2 text-sm font-medium hover:bg-[var(--tnl-surface-2)]"
                                 >
                                     Daftar Lagi untuk Rekan
                                 </button>
@@ -344,7 +344,7 @@ export default function OpenHousePage() {
                         </div>
                     ) : isClosed ? (
                         <div role="status" className="open-house-success space-y-6 max-w-xl mx-auto py-8 text-center" data-testid="open-house-closed-banner">
-                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-600 dark:text-red-400 shadow-md">
+                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--tnl-danger)]/10 text-[var(--tnl-danger)] shadow-md">
                                 <XCircle className="h-8 w-8" />
                             </div>
                             <div className="space-y-2">
@@ -381,7 +381,7 @@ export default function OpenHousePage() {
                         </div>
                     ) : (
                         <div className="open-house-form space-y-8">
-                            <div className="space-y-2 border-b border-black/5 dark:border-white/10 pb-6">
+                            <div className="space-y-2 border-b border-[var(--tnl-border)] pb-6">
                                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
                                     Formulir Pendaftaran Peserta
                                 </h2>
@@ -407,7 +407,7 @@ export default function OpenHousePage() {
                                         value={fullName}
                                         onChange={(e) => setFullName(e.target.value)}
                                         placeholder="cth. Bagas Dwi Prakoso"
-                                        className="w-full rounded-xl border border-black/15 dark:border-white/15 bg-transparent px-4 py-3 text-sm focus:border-[#A8977B] focus:outline-none focus:ring-1 focus:ring-[#A8977B]"
+                                        className="tnl-input min-h-[44px]"
                                     />
                                 </div>
 
@@ -427,7 +427,7 @@ export default function OpenHousePage() {
                                         value={nrp}
                                         onChange={(e) => setNrp(e.target.value)}
                                         placeholder="cth. 5022201045"
-                                        className="w-full rounded-xl border border-black/15 dark:border-white/15 bg-transparent px-4 py-3 text-sm focus:border-[#A8977B] focus:outline-none focus:ring-1 focus:ring-[#A8977B]"
+                                        className="tnl-input min-h-[44px]"
                                     />
                                     <p className="mt-1.5 text-xs text-[var(--tnl-body)]">
                                         Format angka NRP mahasiswa ITS (minimal 7 digit).
@@ -446,7 +446,7 @@ export default function OpenHousePage() {
                                         id={batchId}
                                         value={batch}
                                         onChange={(e) => setBatch(e.target.value)}
-                                        className="w-full rounded-xl border border-black/15 dark:border-white/15 bg-[var(--tnl-surface)] px-4 py-3 text-sm focus:border-[#A8977B] focus:outline-none focus:ring-1 focus:ring-[#A8977B]"
+                                        className="tnl-input min-h-[44px]"
                                     >
                                         {BATCH_OPTIONS.map((opt) => (
                                             <option key={opt} value={opt}>
@@ -471,7 +471,7 @@ export default function OpenHousePage() {
                                         value={motivation}
                                         onChange={(e) => setMotivation(e.target.value)}
                                         placeholder="Ceritakan minatmu di bidang jaringan telekomunikasi, serat optik, SDR, atau ketertarikanmu menjadi asisten..."
-                                        className="w-full rounded-xl border border-black/15 dark:border-white/15 bg-transparent px-4 py-3 text-sm focus:border-[#A8977B] focus:outline-none focus:ring-1 focus:ring-[#A8977B]"
+                                        className="tnl-input min-h-[44px]"
                                     />
                                     <div className="mt-1 flex items-center justify-between text-xs text-[var(--tnl-body)]">
                                         <span>Minimal 15 karakter.</span>
@@ -505,7 +505,7 @@ export default function OpenHousePage() {
                                         </span>
                                     </div>
 
-                                    <div className="relative mt-2 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-black/15 dark:border-white/15 p-6 hover:border-[#A8977B] transition-colors bg-black/[0.01] dark:bg-white/[0.01]">
+                                    <div className="relative mt-2 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--tnl-border)] p-6 hover:border-[var(--tnl-link)] transition-colors bg-[var(--tnl-surface)]">
                                         <UploadCloud className="h-8 w-8 text-[var(--tnl-body)] mb-2" />
                                         <input
                                             id={igFileId}
@@ -538,14 +538,14 @@ export default function OpenHousePage() {
                                 </div>
 
                                 {/* UU PDP Consent */}
-                                <div className="flex items-start gap-3 rounded-xl bg-black/5 dark:bg-white/5 p-4 border border-black/5 dark:border-white/10">
+                                <div className="flex items-start gap-3 rounded-xl bg-[var(--tnl-surface)] p-4 border border-[var(--tnl-border)]">
                                     <input
                                         id={consentId}
                                         type="checkbox"
                                         required
                                         checked={consent}
                                         onChange={(e) => setConsent(e.target.checked)}
-                                        className="mt-1 h-4 w-4 rounded border-gray-300 text-[var(--tnl-body)] focus:ring-[#A8977B]"
+                                        className="mt-1 h-4 w-4 rounded border-[var(--tnl-border)] text-[var(--gsm-primary)] dark:text-[var(--gsm-accent)] focus:ring-[var(--tnl-link)]"
                                     />
                                     <label htmlFor={consentId} className="text-xs leading-relaxed text-[var(--tnl-body)]">
                                         Saya menyetujui pemrosesan data diri (nama, NRP, dan kontak) oleh panitia Laboratorium Jaringan Telekomunikasi ITS semata-mata untuk verifikasi dan pelaksanaan kegiatan Open House sesuai ketentuan UU PDP.

@@ -137,7 +137,7 @@ export function NewsArticlePage() {
                     <button
                         type="button"
                         onClick={copyLink}
-                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold"
+                        className="mt-3 inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold hover:underline underline-offset-4"
                         style={{ color: "var(--tnl-link)" }}
                         data-testid="article-copy-link-button"
                     >
@@ -147,7 +147,7 @@ export function NewsArticlePage() {
                 </div>
             </header>
 
-            <div className="tnl-section" style={{ background: "var(--tnl-surface)" }}>
+            <div className="tnl-section" style={{ background: "var(--background)" }}>
                 <div className="tnl-container editorial-reading-column">
                     {post.cover_url ? (
                         <button
